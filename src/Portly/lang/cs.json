@@ -411,5 +411,17 @@
   "pkgcat.runtime": "Běhová prostředí",
   "pkgcat.dev": "Vývojářské nástroje",
   "pkgcat.share": "Sdílení",
-  "main.chooseServices": "Vybrat služby"
+  "main.chooseServices": "Vybrat služby",
+  "pkg.onSystem": "Nainstalováno ve Windows: Portly ho používá, stahování není potřeba",
+  "pkg.inUse": "Používá se: {0}",
+  "share.confirm": "Sdílet {0} na internetu?\n\nBezplatný rychlý tunel Cloudflare dá webu náhodnou veřejnou adresu (https://...trycloudflare.com). Kdokoli s odkazem může web otevřít; není potřeba účet ani nastavení routeru.\n\n- Sdílí se jen tento web. Ostatní weby, databáze a nástroje (phpMyAdmin, Adminer) zůstávají soukromé.\n- Běží, dokud sdílení nezastavíte nebo nezavřete Portly.\n- Poprvé se stáhne program cloudflared (asi 55 MB).\n\nPokračovat?",
+  "transfer.export": "Exportovat nastavení",
+  "transfer.import": "Importovat nastavení",
+  "transfer.exported": "Uloženo: {0}\n\nObsahuje: nastavení, volby webů, vaše šablony a seznam nainstalovaných balíčků. Projekty a databáze nejsou součástí: zkopírujte složku projektů a použijte „{1}“. Z bezpečnostních důvodů se heslo root MySQL a klíč místního certifikátu neexportují.",
+  "transfer.importConfirm": "Nahradit aktuální nastavení nastavením z tohoto souboru? Projekty a databáze zůstanou beze změny.",
+  "transfer.imported": "Nastavení importováno. Jazyk a vzhled se použijí při dalším spuštění Portly.",
+  "transfer.docRootKept": "Stará složka projektů na tomto počítači neexistuje, ponechána je aktuální: {0}",
+  "transfer.manual": "Na starém počítači přidáno ručně, přidejte znovu: {0}",
+  "transfer.missing": "Chybí zde {0} balíčků, které byly nainstalovány na starém počítači. Okno Balíčky se otevře s nimi vybranými: klikněte na „{1}“.",
+  "transfer.notPortly": "Tento soubor není soubor nastavení Portly."
 }

@@ -411,5 +411,17 @@
   "pkgcat.runtime": "Medii de rulare",
   "pkgcat.dev": "Instrumente pentru dezvoltatori",
   "pkgcat.share": "Partajare",
-  "main.chooseServices": "Alege serviciile"
+  "main.chooseServices": "Alege serviciile",
+  "pkg.onSystem": "Instalat în Windows: Portly îl folosește, nu e nevoie de descărcare",
+  "pkg.inUse": "În uz: {0}",
+  "share.confirm": "Partajezi {0} pe internet?\n\nUn tunel rapid gratuit Cloudflare oferă site-ului o adresă publică aleatorie (https://...trycloudflare.com). Oricine are linkul poate deschide site-ul; nu e nevoie de cont sau setări de router.\n\n- Doar acest site este partajat. Celelalte site-uri, baza de date și instrumentele (phpMyAdmin, Adminer) rămân private.\n- Rulează până opriți partajarea sau închideți Portly.\n- Prima dată se descarcă programul cloudflared (aproximativ 55 MB).\n\nContinui?",
+  "transfer.export": "Exportă setările",
+  "transfer.import": "Importă setările",
+  "transfer.exported": "Salvat: {0}\n\nConține: setările, opțiunile site-urilor, șabloanele tale și lista pachetelor instalate. Proiectele și bazele de date nu sunt incluse: copiază folderul proiectelor și folosește „{1}”. Din motive de securitate, parola root MySQL și cheia certificatului local nu sunt exportate.",
+  "transfer.importConfirm": "Înlocuiești setările curente cu cele din acest fișier? Proiectele și bazele de date nu sunt atinse.",
+  "transfer.imported": "Setări importate. Limba și tema se aplică la următoarea deschidere a Portly.",
+  "transfer.docRootKept": "Vechiul folder al proiectelor nu există pe acest computer, se păstrează cel curent: {0}",
+  "transfer.manual": "Adăugate manual pe vechiul computer, adaugă-le din nou: {0}",
+  "transfer.missing": "Aici lipsesc {0} pachete instalate pe vechiul computer. Fereastra Pachete se deschide cu ele selectate: apasă „{1}”.",
+  "transfer.notPortly": "Acest fișier nu este un fișier de setări Portly."
 }

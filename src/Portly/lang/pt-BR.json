@@ -411,5 +411,17 @@
   "pkgcat.runtime": "Runtimes",
   "pkgcat.dev": "Ferramentas de desenvolvimento",
   "pkgcat.share": "Compartilhamento",
-  "main.chooseServices": "Escolher serviços"
+  "main.chooseServices": "Escolher serviços",
+  "pkg.onSystem": "Instalado no Windows: o Portly o usa, sem necessidade de download",
+  "pkg.inUse": "Em uso: {0}",
+  "share.confirm": "Compartilhar {0} na internet?\n\nUm túnel rápido gratuito da Cloudflare dá ao site um endereço público aleatório (https://...trycloudflare.com). Qualquer pessoa com o link pode abrir este site; não é preciso conta nem configurar o roteador.\n\n- Só este site é compartilhado. Seus outros sites, o banco de dados e as ferramentas (phpMyAdmin, Adminer) continuam privados.\n- Funciona até você parar o compartilhamento ou fechar o Portly.\n- Na primeira vez, o programa cloudflared (cerca de 55 MB) é baixado.\n\nContinuar?",
+  "transfer.export": "Exportar configurações",
+  "transfer.import": "Importar configurações",
+  "transfer.exported": "Salvo: {0}\n\nInclui: configurações, opções dos sites, seus modelos e a lista de pacotes instalados. Projetos e bancos de dados não estão incluídos: copie a pasta de projetos e use \"{1}\". Por segurança, a senha root do MySQL e a chave do certificado local não são exportadas.",
+  "transfer.importConfirm": "Substituir as configurações atuais pelas deste arquivo? Projetos e bancos de dados não são alterados.",
+  "transfer.imported": "Configurações importadas. Idioma e tema são aplicados quando o Portly for aberto novamente.",
+  "transfer.docRootKept": "A pasta de projetos antiga não existe neste computador; a atual foi mantida: {0}",
+  "transfer.manual": "Adicionados manualmente no computador antigo, adicione-os novamente: {0}",
+  "transfer.missing": "Faltam aqui {0} pacotes que estavam instalados no computador antigo. A janela Pacotes abre com eles selecionados: clique em \"{1}\".",
+  "transfer.notPortly": "Este arquivo não é um arquivo de configurações do Portly."
 }

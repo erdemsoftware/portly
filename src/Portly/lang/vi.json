@@ -411,5 +411,17 @@
   "pkgcat.runtime": "Môi trường chạy",
   "pkgcat.dev": "Công cụ lập trình",
   "pkgcat.share": "Chia sẻ",
-  "main.chooseServices": "Chọn dịch vụ"
+  "main.chooseServices": "Chọn dịch vụ",
+  "pkg.onSystem": "Đã cài trên Windows: Portly dùng bản này, không cần tải về",
+  "pkg.inUse": "Đang dùng: {0}",
+  "share.confirm": "Chia sẻ {0} lên internet?\n\nĐường hầm nhanh miễn phí của Cloudflare cấp cho trang một địa chỉ công khai ngẫu nhiên (https://...trycloudflare.com). Ai có liên kết đều mở được trang này; không cần tài khoản hay cấu hình router.\n\n- Chỉ trang này được chia sẻ. Các trang khác, cơ sở dữ liệu và công cụ (phpMyAdmin, Adminer) vẫn riêng tư.\n- Chạy cho đến khi bạn dừng chia sẻ hoặc đóng Portly.\n- Lần đầu sẽ tải chương trình cloudflared (khoảng 55 MB).\n\nTiếp tục?",
+  "transfer.export": "Xuất cài đặt",
+  "transfer.import": "Nhập cài đặt",
+  "transfer.exported": "Đã lưu: {0}\n\nGồm: cài đặt, tùy chọn trang, mẫu của bạn và danh sách gói đã cài. Không gồm dự án và cơ sở dữ liệu: hãy sao chép thư mục dự án và dùng \"{1}\". Vì lý do bảo mật, mật khẩu root MySQL và khóa chứng chỉ cục bộ không được xuất.",
+  "transfer.importConfirm": "Thay cài đặt hiện tại bằng cài đặt trong tệp này? Dự án và cơ sở dữ liệu không bị ảnh hưởng.",
+  "transfer.imported": "Đã nhập cài đặt. Ngôn ngữ và giao diện áp dụng khi mở lại Portly.",
+  "transfer.docRootKept": "Thư mục dự án cũ không có trên máy này, giữ nguyên thư mục hiện tại: {0}",
+  "transfer.manual": "Đã thêm thủ công trên máy cũ, hãy thêm lại: {0}",
+  "transfer.missing": "Thiếu {0} gói đã cài trên máy cũ. Cửa sổ Gói sẽ mở với các gói này được chọn: bấm \"{1}\".",
+  "transfer.notPortly": "Tệp này không phải tệp cài đặt Portly."
 }

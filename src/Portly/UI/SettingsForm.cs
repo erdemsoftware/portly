@@ -144,11 +144,49 @@ namespace Portly.UI
             var ok = Ui.Button(I18n.T("common.save"), (o, e) => Save(), true);
             buttons.Controls.Add(cancel);
             buttons.Controls.Add(ok);
+            // move the whole setup to another computer
+            var import = Ui.Button(I18n.T("transfer.import"), (o, e) => ImportSettings(), false, "import");
+            import.Margin = Ui.P(0, 0, 24, 0);
+            var export = Ui.Button(I18n.T("transfer.export"), (o, e) => ExportSettings(), false, "box");
+            export.Margin = Ui.P(0, 0, 8, 0);
+            buttons.Controls.Add(import);
+            buttons.Controls.Add(export);
             Controls.Add(scroll);
             Controls.Add(new Panel { Dock = DockStyle.Bottom, Height = 1, BackColor = Ui.Line });
             Controls.Add(buttons);
             scroll.BringToFront();
             CancelButton = cancel;
+        }
+
+        /// <summary>Set when settings were imported from a file; the main window then offers the missing packages.</summary>
+        public SettingsTransfer.ImportResult Imported;
+
+        void ExportSettings()
+        {
+            using (var dlg = new SaveFileDialog { Filter = "Zip (*.zip)|*.zip", FileName = "portly-settings-" + DateTime.Now.ToString("yyyyMMdd") + ".zip" })
+            {
+                if (dlg.ShowDialog(this) != DialogResult.OK) return;
+                try
+                {
+                    SettingsTransfer.Export(dlg.FileName);
+                    Ui.Info(this, I18n.T("transfer.exported", dlg.FileName, I18n.T("db.backup")));
+                }
+                catch (Exception ex) { Ui.Error(this, ex.Message); }
+            }
+        }
+
+        void ImportSettings()
+        {
+            using (var dlg = new OpenFileDialog { Filter = "Zip (*.zip)|*.zip" })
+            {
+                if (dlg.ShowDialog(this) != DialogResult.OK) return;
+                if (!Ui.Confirm(this, I18n.T("transfer.importConfirm"))) return;
+                try { Imported = SettingsTransfer.Import(dlg.FileName); }
+                catch (Exception ex) { Ui.Error(this, ex.Message); return; }
+            }
+            // the settings on this form are now out of date: close without saving them
+            DialogResult = DialogResult.OK;
+            Close();
         }
 
         static void Section(TableLayoutPanel stack, string title, TableLayoutPanel grid)

@@ -22,9 +22,10 @@ namespace Portly.UI
             public PackageEntry Entry;   // catalog entry (null for a manually added folder)
             public PackageEntry Update;  // newer build of the same branch
             public bool Installed;
+            public string SystemExe;     // installed on Windows outside Portly (VS Code, Git ...): used as is
         }
 
-        static readonly string[] FirstRunTypes = { "apache", "php", "mysql", "phpmyadmin", "adminer", "composer", "mailpit", "mailhog" };
+        static readonly string[] FirstRunTypes = { "apache", "php", "mysql", "phpmyadmin", "composer", "redis", "mailpit", "mailhog" };
 
         readonly bool _firstRun;
         ComboBox _filter;
@@ -35,7 +36,7 @@ namespace Portly.UI
         CancellationTokenSource _cts;
         bool _busy;
 
-        public PackagesForm(string type, bool firstRun)
+        public PackagesForm(string type, bool firstRun, IEnumerable<PackageEntry> preselect = null)
         {
             _firstRun = firstRun;
             Ui.Apply(this);
@@ -89,9 +90,16 @@ namespace Portly.UI
                 using (var pen = new Pen(p.Border)) e.Graphics.DrawLine(pen, e.Bounds.Left, e.Bounds.Bottom - 1, e.Bounds.Right, e.Bounds.Bottom - 1);
                 TextRenderer.DrawText(e.Graphics, e.Header.Text, Ui.Bold, new Rectangle(e.Bounds.X + Ui.S(6), e.Bounds.Y, e.Bounds.Width - Ui.S(6), e.Bounds.Height), p.Muted, TextFormatFlags.VerticalCenter | TextFormatFlags.SingleLine | TextFormatFlags.EndEllipsis);
             };
-            if (Theme.IsDark) _list.BorderStyle = BorderStyle.None;
+            if (Theme.IsDark)
+            {
+                _list.BorderStyle = BorderStyle.None;
+                // the Windows dark list theme draws readable group titles (the default ones are dark blue)
+                _list.HandleCreated += (s, e) => { try { SetWindowTheme(_list.Handle, "DarkMode_ItemsView", null); } catch { } };
+            }
             _list.SelectedIndexChanged += (s, e) => UpdateButtons();
             _list.ItemChecked += (s, e) => UpdateButtons();
+            // nothing to install for a program that is already on Windows
+            _list.ItemCheck += (s, e) => { if (((PkgRow)_list.Items[e.Index].Tag).SystemExe != null) e.NewValue = CheckState.Unchecked; };
             var listHost = new Panel { Dock = DockStyle.Fill, Padding = Ui.P(14, 0, 14, 0), BackColor = Ui.Bg };
             listHost.Controls.Add(_list);
 
@@ -117,8 +125,17 @@ namespace Portly.UI
 
             Fill();
             if (firstRun) PreselectRecommended();
+            if (preselect != null)
+            {
+                // e.g. the packages of an imported setup: ready to install with one click
+                var keys = new HashSet<string>(preselect.Select(p => p.Type + "/" + p.Folder), StringComparer.OrdinalIgnoreCase);
+                foreach (ListViewItem it in _list.Items) if (keys.Contains(it.Name)) it.Checked = true;
+            }
             UpdateButtons();
         }
+
+        [System.Runtime.InteropServices.DllImport("uxtheme.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
+        static extern int SetWindowTheme(IntPtr hwnd, string appName, string idList);
 
         void Fill()
         {
@@ -138,11 +155,25 @@ namespace Portly.UI
                     rows.Add(new PkgRow { Type = t.Id, Folder = e.Folder, Entry = e, Installed = e.IsInstalled });
                 foreach (var f in installed.Where(f => !rows.Any(r => r.Type == t.Id && string.Equals(r.Folder, f, StringComparison.OrdinalIgnoreCase))))
                     rows.Add(new PkgRow { Type = t.Id, Folder = f, Entry = Catalog.FindByFolder(t.Id, f), Installed = true });
+                var sys = installed.Count == 0 ? DesktopApps.SystemExe(t.Id) : null;
+                if (sys != null)
+                {
+                    // above the downloadable versions of the same program
+                    int at = rows.FindIndex(r => r.Type == t.Id);
+                    rows.Insert(at < 0 ? rows.Count : at, new PkgRow { Type = t.Id, Folder = "", SystemExe = sys });
+                }
             }
             foreach (var r in rows)
             {
                 if (r.Installed && AppInfo.UpdatesSupported) r.Update = Catalog.UpdateFor(r.Type, r.Folder);
                 var name = PackageTypes.Get(r.Type).Name;
+                if (r.SystemExe != null)
+                {
+                    var sysItem = new ListViewItem(new[] { name, SystemVersion(r.SystemExe), I18n.T("pkg.onSystem"), I18n.T("pkg.inUse", r.SystemExe) })
+                        { Tag = r, Name = r.Type + "/system", Group = _list.Groups[PackageTypes.Get(r.Type).Category], ForeColor = Ui.Green };
+                    _list.Items.Add(sysItem);
+                    continue;
+                }
                 var version = r.Entry != null ? r.Entry.Version : PackageTypes.Label(r.Folder);
                 var note = r.Entry == null ? I18n.T("pkg.manual") : JoinNote(r.Entry);
                 string status;
@@ -160,6 +191,12 @@ namespace Portly.UI
             }
             _list.EndUpdate();
             UpdateButtons();
+        }
+
+        static string SystemVersion(string exe)
+        {
+            try { var v = System.Diagnostics.FileVersionInfo.GetVersionInfo(exe); return (v.ProductVersion ?? v.FileVersion ?? "").Split(' ', '+')[0]; }
+            catch { return ""; }
         }
 
         static string JoinNote(PackageEntry e)

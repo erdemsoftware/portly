@@ -411,5 +411,17 @@
   "pkgcat.runtime": "Runtime",
   "pkgcat.dev": "Alat pengembang",
   "pkgcat.share": "Berbagi",
-  "main.chooseServices": "Pilih layanan"
+  "main.chooseServices": "Pilih layanan",
+  "pkg.onSystem": "Terpasang di Windows: Portly memakainya, tidak perlu mengunduh",
+  "pkg.inUse": "Digunakan: {0}",
+  "share.confirm": "Bagikan {0} di internet?\n\nTunnel cepat Cloudflare gratis memberi situs alamat publik acak (https://...trycloudflare.com). Siapa pun yang punya tautannya dapat membuka situs ini; tidak perlu akun atau pengaturan router.\n\n- Hanya situs ini yang dibagikan. Situs lain, basis data, dan alat (phpMyAdmin, Adminer) tetap privat.\n- Berjalan sampai Anda menghentikan berbagi atau menutup Portly.\n- Pertama kali, program cloudflared (sekitar 55 MB) diunduh.\n\nLanjutkan?",
+  "transfer.export": "Ekspor pengaturan",
+  "transfer.import": "Impor pengaturan",
+  "transfer.exported": "Tersimpan: {0}\n\nIsinya: pengaturan, opsi situs, template Anda, dan daftar paket terpasang. Proyek dan basis data tidak termasuk: salin folder proyek dan gunakan \"{1}\". Demi keamanan, kata sandi root MySQL dan kunci sertifikat lokal tidak diekspor.",
+  "transfer.importConfirm": "Ganti pengaturan saat ini dengan yang ada di file ini? Proyek dan basis data tidak diubah.",
+  "transfer.imported": "Pengaturan diimpor. Bahasa dan tema berlaku saat Portly dibuka lagi.",
+  "transfer.docRootKept": "Folder proyek lama tidak ada di komputer ini, folder saat ini dipertahankan: {0}",
+  "transfer.manual": "Ditambahkan manual di komputer lama, tambahkan lagi: {0}",
+  "transfer.missing": "{0} paket yang terpasang di komputer lama tidak ada di sini. Jendela Paket terbuka dengan paket tersebut terpilih: klik \"{1}\".",
+  "transfer.notPortly": "File ini bukan file pengaturan Portly."
 }

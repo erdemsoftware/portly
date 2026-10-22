@@ -378,6 +378,25 @@ namespace Portly.SmokeTest
             redisBlocker.Stop();
             s.RedisPort = oldRedis; s.Save();
 
+            // ---------- move the setup to another computer: export, change, import ----------
+            try
+            {
+                var zip = Path.Combine(Paths.Tmp, "transfer-test.zip");
+                var themeBefore = s.Theme;
+                SettingsTransfer.Export(zip);
+                string[] entries;
+                using (var z = System.IO.Compression.ZipFile.OpenRead(zip)) entries = z.Entries.Select(e => e.FullName).ToArray();
+                var exportedIni = "";
+                using (var z = System.IO.Compression.ZipFile.OpenRead(zip))
+                using (var r = new StreamReader(z.GetEntry("portly.ini").Open())) exportedIni = r.ReadToEnd();
+                Check("settings export has settings and package list, no password", entries.Contains("portly.ini") && entries.Contains("packages.ini") && !exportedIni.Contains("RootPassword"), string.Join(", ", entries));
+                s.Theme = themeBefore == "dark" ? "light" : "dark"; s.Save();
+                var imported = SettingsTransfer.Import(zip);
+                Check("settings import restores settings, nothing missing", Settings.Current.Theme == themeBefore && imported.Missing.Count == 0, "missing " + imported.Missing.Count + ", theme " + Settings.Current.Theme);
+                File.Delete(zip);
+            }
+            catch (Exception ex) { Check("settings export / import", false, ex.Message); }
+
             // ---------- port guard: a leftover service from bin\ (e.g. after a crash) is closed silently ----------
             var orphan = Process.Start(new ProcessStartInfo(Path.Combine(PackageTypes.ActiveDir("redis"), "redis-server.exe"), "--port " + s.RedisPort) { UseShellExecute = false, CreateNoWindow = true });
             await Task.Delay(1500);

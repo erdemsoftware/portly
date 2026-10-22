@@ -411,5 +411,17 @@
   "pkgcat.runtime": "运行时",
   "pkgcat.dev": "开发工具",
   "pkgcat.share": "共享",
-  "main.chooseServices": "选择服务"
+  "main.chooseServices": "选择服务",
+  "pkg.onSystem": "已安装在 Windows 上:Portly 会直接使用,无需下载",
+  "pkg.inUse": "正在使用:{0}",
+  "share.confirm": "要在互联网上分享 {0} 吗?\n\nCloudflare 免费快速隧道会为网站分配一个随机公开地址(https://...trycloudflare.com)。任何拿到链接的人都能打开此网站;无需账号,也无需设置路由器。\n\n- 只分享此网站。其他网站、数据库和工具(phpMyAdmin、Adminer)保持私密。\n- 一直运行到你停止分享或关闭 Portly。\n- 首次使用会下载 cloudflared 程序(约 55 MB)。\n\n继续吗?",
+  "transfer.export": "导出设置",
+  "transfer.import": "导入设置",
+  "transfer.exported": "已保存:{0}\n\n包含:设置、站点选项、你的模板和已安装软件包列表。不包含项目和数据库:请复制项目文件夹并使用“{1}”。出于安全考虑,不导出 MySQL root 密码和本地证书密钥。",
+  "transfer.importConfirm": "用此文件中的设置替换当前设置吗?项目和数据库不受影响。",
+  "transfer.imported": "设置已导入。语言和主题将在重新打开 Portly 后生效。",
+  "transfer.docRootKept": "旧的项目文件夹在这台电脑上不存在,已保留当前文件夹:{0}",
+  "transfer.manual": "在旧电脑上手动添加的,请重新添加:{0}",
+  "transfer.missing": "旧电脑上安装的 {0} 个软件包在这里缺失。软件包窗口将以选中状态打开:点击“{1}”。",
+  "transfer.notPortly": "此文件不是 Portly 设置文件。"
 }

@@ -411,5 +411,17 @@
   "pkgcat.runtime": "Çalışma ortamları",
   "pkgcat.dev": "Geliştirici araçları",
   "pkgcat.share": "Paylaşım",
-  "main.chooseServices": "Servisleri seç"
+  "main.chooseServices": "Servisleri seç",
+  "pkg.onSystem": "Windows'ta kurulu: Portly bunu kullanır, indirmeye gerek yok",
+  "pkg.inUse": "Kullanılıyor: {0}",
+  "share.confirm": "{0} internette paylaşılsın mı?\n\nCloudflare'in ücretsiz hızlı tüneli siteye rastgele, herkese açık bir adres verir (https://...trycloudflare.com). Linki bilen herkes bu siteyi açabilir; hesap ya da modem ayarı gerekmez.\n\n- Yalnızca bu site paylaşılır. Diğer siteleriniz, veritabanı ve araçlar (phpMyAdmin, Adminer) kapalı kalır.\n- Paylaşımı durdurana ya da Portly'yi kapatana kadar açık kalır.\n- İlk seferde cloudflared programı (yaklaşık 55 MB) indirilir.\n\nDevam edilsin mi?",
+  "transfer.export": "Ayarları dışa aktar",
+  "transfer.import": "Ayarları içe aktar",
+  "transfer.exported": "Kaydedildi: {0}\n\nİçinde: ayarlar, site seçenekleri, kendi şablonlarınız ve kurulu paket listesi. Projeler ve veritabanları içinde değil: proje klasörünü kopyalayın ve \"{1}\"yi kullanın. Güvenlik için MySQL root şifresi ve yerel sertifika anahtarı dışa aktarılmaz.",
+  "transfer.importConfirm": "Şimdiki ayarlar bu dosyadakilerle değiştirilsin mi? Projelere ve veritabanlarına dokunulmaz.",
+  "transfer.imported": "Ayarlar içe aktarıldı. Dil ve tema değişiklikleri Portly yeniden açılınca uygulanır.",
+  "transfer.docRootKept": "Eski proje klasörü bu bilgisayarda yok, şimdiki klasör korundu: {0}",
+  "transfer.manual": "Eski bilgisayarda elle eklenmiş, yeniden eklemeniz gerekenler: {0}",
+  "transfer.missing": "Eski bilgisayarda kurulu olan {0} paket burada eksik. Paketler penceresi bunlar seçili olarak açılıyor: \"{1}\"a tıklayın.",
+  "transfer.notPortly": "Bu dosya bir Portly ayar dosyası değil."
 }

@@ -411,5 +411,17 @@
   "pkgcat.runtime": "Laufzeitumgebungen",
   "pkgcat.dev": "Entwicklerwerkzeuge",
   "pkgcat.share": "Teilen",
-  "main.chooseServices": "Dienste auswählen"
+  "main.chooseServices": "Dienste auswählen",
+  "pkg.onSystem": "Unter Windows installiert: Portly verwendet es, kein Download nötig",
+  "pkg.inUse": "In Verwendung: {0}",
+  "share.confirm": "{0} im Internet teilen?\n\nEin kostenloser Cloudflare-Quick-Tunnel gibt der Website eine zufällige öffentliche Adresse (https://...trycloudflare.com). Jeder mit dem Link kann die Website öffnen; kein Konto und keine Router-Einstellungen nötig.\n\n- Nur diese Website wird geteilt. Andere Websites, die Datenbank und die Tools (phpMyAdmin, Adminer) bleiben privat.\n- Läuft, bis Sie das Teilen beenden oder Portly schließen.\n- Beim ersten Mal wird das Programm cloudflared (ca. 55 MB) heruntergeladen.\n\nFortfahren?",
+  "transfer.export": "Einstellungen exportieren",
+  "transfer.import": "Einstellungen importieren",
+  "transfer.exported": "Gespeichert: {0}\n\nEnthalten: Einstellungen, Website-Optionen, Ihre Vorlagen und die Liste der installierten Pakete. Projekte und Datenbanken sind nicht enthalten: Kopieren Sie den Projektordner und nutzen Sie \"{1}\". Aus Sicherheitsgründen werden das MySQL-Root-Passwort und der lokale Zertifikatsschlüssel nicht exportiert.",
+  "transfer.importConfirm": "Die aktuellen Einstellungen durch die aus dieser Datei ersetzen? Projekte und Datenbanken bleiben unberührt.",
+  "transfer.imported": "Einstellungen importiert. Sprache und Design werden beim nächsten Start von Portly übernommen.",
+  "transfer.docRootKept": "Der alte Projektordner existiert auf diesem Computer nicht, der aktuelle bleibt: {0}",
+  "transfer.manual": "Auf dem alten Computer manuell hinzugefügt, bitte erneut hinzufügen: {0}",
+  "transfer.missing": "{0} Pakete, die auf dem alten Computer installiert waren, fehlen hier. Das Paketfenster öffnet sich mit ihnen ausgewählt: Klicken Sie auf \"{1}\".",
+  "transfer.notPortly": "Diese Datei ist keine Portly-Einstellungsdatei."
 }

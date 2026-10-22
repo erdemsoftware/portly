@@ -49,6 +49,8 @@ namespace Portly.Packages
             new PackageType { Id = "mongodb", Category = "db",    Name = "MongoDB",    DetectFile = @"bin\mongod.exe",  PathDirs = new[] { "bin" } },
             new PackageType { Id = "memcached", Category = "cache",  Name = "Memcached",  DetectFile = @"bin\memcached.exe", PathDirs = new string[0] },
             // database GUIs
+            new PackageType { Id = "phpmyadmin", Category = "dbtool", Name = "phpMyAdmin", DetectFile = "index.php",        PathDirs = new string[0] },
+            new PackageType { Id = "adminer", Category = "dbtool",    Name = "Adminer",    DetectFile = "index.php",        PathDirs = new string[0] },
             new PackageType { Id = "heidisql", Category = "dbtool",   Name = "HeidiSQL",   DetectFile = "heidisql.exe",     PathDirs = new string[0] },
             new PackageType { Id = "dbeaver", Category = "dbtool",    Name = "DBeaver",    DetectFile = "dbeaver.exe",      PathDirs = new string[0] },
             new PackageType { Id = "beekeeper", Category = "dbtool",  Name = "Beekeeper Studio", DetectFile = "Beekeeper-Studio.exe", PathDirs = new string[0] },
@@ -65,8 +67,6 @@ namespace Portly.Packages
             new PackageType { Id = "deno", Category = "runtime",       Name = "Deno",       DetectFile = "deno.exe" },
             new PackageType { Id = "wpcli", Category = "php",      Name = "WP-CLI",     DetectFile = "wp-cli.phar" },
             new PackageType { Id = "composer", Category = "php",   Name = "Composer",   DetectFile = "composer.phar" },
-            new PackageType { Id = "adminer", Category = "dbtool",    Name = "Adminer",    DetectFile = "index.php",        PathDirs = new string[0] },
-            new PackageType { Id = "phpmyadmin", Category = "dbtool", Name = "phpMyAdmin", DetectFile = "index.php",        PathDirs = new string[0] },
         };
 
         public static PackageType Get(string id)

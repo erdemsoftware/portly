@@ -411,5 +411,17 @@
   "pkgcat.runtime": "Ishga tushirish muhitlari",
   "pkgcat.dev": "Dasturchi vositalari",
   "pkgcat.share": "Ulashish",
-  "main.chooseServices": "Xizmatlarni tanlash"
+  "main.chooseServices": "Xizmatlarni tanlash",
+  "pkg.onSystem": "Windows'da o'rnatilgan: Portly undan foydalanadi, yuklab olish shart emas",
+  "pkg.inUse": "Foydalanilmoqda: {0}",
+  "share.confirm": "{0} internetda ulashilsinmi?\n\nCloudflare'ning bepul tezkor tunneli saytga tasodifiy ommaviy manzil beradi (https://...trycloudflare.com). Havolasi bor har kim bu saytni ocha oladi; hisob yoki router sozlamalari kerak emas.\n\n- Faqat shu sayt ulashiladi. Boshqa saytlaringiz, ma'lumotlar bazasi va vositalar (phpMyAdmin, Adminer) yopiq qoladi.\n- Ulashishni to'xtatguningizcha yoki Portly'ni yopguningizcha ishlaydi.\n- Birinchi marta cloudflared dasturi (taxminan 55 MB) yuklab olinadi.\n\nDavom etilsinmi?",
+  "transfer.export": "Sozlamalarni eksport qilish",
+  "transfer.import": "Sozlamalarni import qilish",
+  "transfer.exported": "Saqlandi: {0}\n\nIchida: sozlamalar, sayt parametrlari, shablonlaringiz va o'rnatilgan paketlar ro'yxati. Loyihalar va ma'lumotlar bazalari kirmaydi: loyihalar papkasini nusxalang va \"{1}\"dan foydalaning. Xavfsizlik uchun MySQL root paroli va mahalliy sertifikat kaliti eksport qilinmaydi.",
+  "transfer.importConfirm": "Joriy sozlamalar shu fayldagilar bilan almashtirilsinmi? Loyihalar va bazalarga tegilmaydi.",
+  "transfer.imported": "Sozlamalar import qilindi. Til va mavzu Portly qayta ochilganda qo'llanadi.",
+  "transfer.docRootKept": "Eski loyihalar papkasi bu kompyuterda yo'q, joriy papka saqlandi: {0}",
+  "transfer.manual": "Eski kompyuterda qo'lda qo'shilgan, qayta qo'shing: {0}",
+  "transfer.missing": "Eski kompyuterda o'rnatilgan {0} ta paket bu yerda yo'q. Paketlar oynasi ular tanlangan holda ochiladi: \"{1}\"ni bosing.",
+  "transfer.notPortly": "Bu fayl Portly sozlamalar fayli emas."
 }

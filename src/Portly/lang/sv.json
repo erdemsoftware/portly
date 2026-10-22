@@ -411,5 +411,17 @@
   "pkgcat.runtime": "Körmiljöer",
   "pkgcat.dev": "Utvecklarverktyg",
   "pkgcat.share": "Delning",
-  "main.chooseServices": "Välj tjänster"
+  "main.chooseServices": "Välj tjänster",
+  "pkg.onSystem": "Installerat i Windows: Portly använder det, ingen nedladdning behövs",
+  "pkg.inUse": "Används: {0}",
+  "share.confirm": "Dela {0} på internet?\n\nEn gratis Cloudflare-snabbtunnel ger webbplatsen en slumpmässig offentlig adress (https://...trycloudflare.com). Alla med länken kan öppna webbplatsen; inget konto eller routerinställningar behövs.\n\n- Bara den här webbplatsen delas. Dina andra webbplatser, databasen och verktygen (phpMyAdmin, Adminer) förblir privata.\n- Den körs tills du slutar dela eller stänger Portly.\n- Första gången laddas programmet cloudflared (cirka 55 MB) ned.\n\nFortsätta?",
+  "transfer.export": "Exportera inställningar",
+  "transfer.import": "Importera inställningar",
+  "transfer.exported": "Sparad: {0}\n\nInnehåller: inställningar, webbplatsalternativ, dina mallar och listan över installerade paket. Projekt och databaser ingår inte: kopiera projektmappen och använd ”{1}”. Av säkerhetsskäl exporteras inte MySQL-rootlösenordet och den lokala certifikatnyckeln.",
+  "transfer.importConfirm": "Ersätta de nuvarande inställningarna med dem i den här filen? Projekt och databaser påverkas inte.",
+  "transfer.imported": "Inställningarna importerades. Språk och tema gäller när Portly öppnas igen.",
+  "transfer.docRootKept": "Den gamla projektmappen finns inte på den här datorn, den nuvarande behålls: {0}",
+  "transfer.manual": "Tillagda manuellt på den gamla datorn, lägg till dem igen: {0}",
+  "transfer.missing": "{0} paket som var installerade på den gamla datorn saknas här. Fönstret Paket öppnas med dem markerade: klicka på ”{1}”.",
+  "transfer.notPortly": "Den här filen är inte en Portly-inställningsfil."
 }

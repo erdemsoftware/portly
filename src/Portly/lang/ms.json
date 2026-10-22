@@ -411,5 +411,17 @@
   "pkgcat.runtime": "Masa jalan",
   "pkgcat.dev": "Alatan pembangun",
   "pkgcat.share": "Perkongsian",
-  "main.chooseServices": "Pilih perkhidmatan"
+  "main.chooseServices": "Pilih perkhidmatan",
+  "pkg.onSystem": "Dipasang dalam Windows: Portly menggunakannya, tidak perlu memuat turun",
+  "pkg.inUse": "Sedang digunakan: {0}",
+  "share.confirm": "Kongsi {0} di internet?\n\nTerowong pantas Cloudflare percuma memberi laman ini alamat awam rawak (https://...trycloudflare.com). Sesiapa yang ada pautan boleh membuka laman ini; tiada akaun atau tetapan penghala diperlukan.\n\n- Hanya laman ini dikongsi. Laman lain, pangkalan data dan alatan (phpMyAdmin, Adminer) kekal peribadi.\n- Ia berjalan sehingga anda menghentikan perkongsian atau menutup Portly.\n- Kali pertama, program cloudflared (kira-kira 55 MB) dimuat turun.\n\nTeruskan?",
+  "transfer.export": "Eksport tetapan",
+  "transfer.import": "Import tetapan",
+  "transfer.exported": "Disimpan: {0}\n\nKandungan: tetapan, pilihan laman, templat anda dan senarai pakej yang dipasang. Projek dan pangkalan data tidak termasuk: salin folder projek dan gunakan \"{1}\". Demi keselamatan, kata laluan root MySQL dan kunci sijil tempatan tidak dieksport.",
+  "transfer.importConfirm": "Gantikan tetapan semasa dengan tetapan dalam fail ini? Projek dan pangkalan data tidak disentuh.",
+  "transfer.imported": "Tetapan diimport. Bahasa dan tema berkuat kuasa apabila Portly dibuka semula.",
+  "transfer.docRootKept": "Folder projek lama tiada pada komputer ini, folder semasa dikekalkan: {0}",
+  "transfer.manual": "Ditambah secara manual pada komputer lama, tambah semula: {0}",
+  "transfer.missing": "{0} pakej yang dipasang pada komputer lama tiada di sini. Tetingkap Pakej dibuka dengan pakej itu dipilih: klik \"{1}\".",
+  "transfer.notPortly": "Fail ini bukan fail tetapan Portly."
 }

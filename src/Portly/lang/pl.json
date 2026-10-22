@@ -411,5 +411,17 @@
   "pkgcat.runtime": "Środowiska uruchomieniowe",
   "pkgcat.dev": "Narzędzia programisty",
   "pkgcat.share": "Udostępnianie",
-  "main.chooseServices": "Wybierz usługi"
+  "main.chooseServices": "Wybierz usługi",
+  "pkg.onSystem": "Zainstalowany w Windows: Portly go używa, pobieranie niepotrzebne",
+  "pkg.inUse": "W użyciu: {0}",
+  "share.confirm": "Udostępnić {0} w internecie?\n\nDarmowy szybki tunel Cloudflare nadaje witrynie losowy publiczny adres (https://...trycloudflare.com). Każdy, kto ma link, może otworzyć tę witrynę; nie trzeba konta ani ustawień routera.\n\n- Udostępniana jest tylko ta witryna. Inne witryny, baza danych i narzędzia (phpMyAdmin, Adminer) pozostają prywatne.\n- Działa, dopóki nie zatrzymasz udostępniania lub nie zamkniesz Portly.\n- Za pierwszym razem pobierany jest program cloudflared (ok. 55 MB).\n\nKontynuować?",
+  "transfer.export": "Eksportuj ustawienia",
+  "transfer.import": "Importuj ustawienia",
+  "transfer.exported": "Zapisano: {0}\n\nZawiera: ustawienia, opcje witryn, Twoje szablony i listę zainstalowanych pakietów. Projekty i bazy danych nie są dołączone: skopiuj folder projektów i użyj \"{1}\". Ze względów bezpieczeństwa hasło root MySQL i klucz lokalnego certyfikatu nie są eksportowane.",
+  "transfer.importConfirm": "Zastąpić bieżące ustawienia ustawieniami z tego pliku? Projekty i bazy danych pozostaną bez zmian.",
+  "transfer.imported": "Ustawienia zaimportowane. Język i motyw zostaną zastosowane po ponownym otwarciu Portly.",
+  "transfer.docRootKept": "Stary folder projektów nie istnieje na tym komputerze, zachowano bieżący: {0}",
+  "transfer.manual": "Dodane ręcznie na starym komputerze, dodaj je ponownie: {0}",
+  "transfer.missing": "Brakuje tu {0} pakietów zainstalowanych na starym komputerze. Okno Pakiety otworzy się z nimi zaznaczonymi: kliknij \"{1}\".",
+  "transfer.notPortly": "Ten plik nie jest plikiem ustawień Portly."
 }

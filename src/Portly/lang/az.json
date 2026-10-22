@@ -411,5 +411,17 @@
   "pkgcat.runtime": "İcra mühitləri",
   "pkgcat.dev": "Tərtibatçı alətləri",
   "pkgcat.share": "Paylaşım",
-  "main.chooseServices": "Xidmətləri seç"
+  "main.chooseServices": "Xidmətləri seç",
+  "pkg.onSystem": "Windows-da quraşdırılıb: Portly ondan istifadə edir, yükləməyə ehtiyac yoxdur",
+  "pkg.inUse": "İstifadə olunur: {0}",
+  "share.confirm": "{0} internetdə paylaşılsın?\n\nCloudflare-in pulsuz sürətli tuneli sayta təsadüfi ictimai ünvan verir (https://...trycloudflare.com). Linki olan hər kəs bu saytı aça bilər; hesab və ya modem ayarı lazım deyil.\n\n- Yalnız bu sayt paylaşılır. Digər saytlarınız, verilənlər bazası və alətlər (phpMyAdmin, Adminer) gizli qalır.\n- Paylaşımı dayandırana və ya Portly-ni bağlayana qədər işləyir.\n- İlk dəfə cloudflared proqramı (təxminən 55 MB) yüklənir.\n\nDavam edilsin?",
+  "transfer.export": "Ayarları ixrac et",
+  "transfer.import": "Ayarları idxal et",
+  "transfer.exported": "Yadda saxlanıldı: {0}\n\nİçində: ayarlar, sayt seçimləri, şablonlarınız və quraşdırılmış paketlərin siyahısı. Layihələr və verilənlər bazaları daxil deyil: layihə qovluğunu kopyalayın və \"{1}\"ndən istifadə edin. Təhlükəsizlik üçün MySQL root şifrəsi və yerli sertifikat açarı ixrac edilmir.",
+  "transfer.importConfirm": "Cari ayarlar bu fayldakılarla əvəz olunsun? Layihələrə və bazalara toxunulmur.",
+  "transfer.imported": "Ayarlar idxal edildi. Dil və mövzu Portly yenidən açılanda tətbiq olunur.",
+  "transfer.docRootKept": "Köhnə layihə qovluğu bu kompüterdə yoxdur, cari qovluq saxlanıldı: {0}",
+  "transfer.manual": "Köhnə kompüterdə əl ilə əlavə edilib, yenidən əlavə edin: {0}",
+  "transfer.missing": "Köhnə kompüterdə quraşdırılmış {0} paket burada yoxdur. Paketlər pəncərəsi onlar seçilmiş halda açılır: \"{1}\" düyməsini basın.",
+  "transfer.notPortly": "Bu fayl Portly ayar faylı deyil."
 }

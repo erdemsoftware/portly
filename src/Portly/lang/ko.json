@@ -411,5 +411,17 @@
   "pkgcat.runtime": "런타임",
   "pkgcat.dev": "개발 도구",
   "pkgcat.share": "공유",
-  "main.chooseServices": "서비스 선택"
+  "main.chooseServices": "서비스 선택",
+  "pkg.onSystem": "Windows에 설치됨: Portly가 이것을 사용하므로 다운로드할 필요가 없습니다",
+  "pkg.inUse": "사용 중: {0}",
+  "share.confirm": "{0}을(를) 인터넷에 공유할까요?\n\nCloudflare의 무료 퀵 터널이 사이트에 임의의 공개 주소(https://...trycloudflare.com)를 부여합니다. 링크가 있는 누구나 이 사이트를 열 수 있으며, 계정이나 공유기 설정이 필요 없습니다.\n\n- 이 사이트만 공유됩니다. 다른 사이트, 데이터베이스, 도구(phpMyAdmin, Adminer)는 비공개로 유지됩니다.\n- 공유를 중지하거나 Portly를 닫을 때까지 실행됩니다.\n- 처음에는 cloudflared 프로그램(약 55MB)을 다운로드합니다.\n\n계속할까요?",
+  "transfer.export": "설정 내보내기",
+  "transfer.import": "설정 가져오기",
+  "transfer.exported": "저장됨: {0}\n\n포함 항목: 설정, 사이트 옵션, 사용자 템플릿, 설치된 패키지 목록. 프로젝트와 데이터베이스는 포함되지 않습니다. 프로젝트 폴더를 복사하고 \"{1}\"을 사용하세요. 보안을 위해 MySQL root 비밀번호와 로컬 인증서 키는 내보내지 않습니다.",
+  "transfer.importConfirm": "현재 설정을 이 파일의 설정으로 바꿀까요? 프로젝트와 데이터베이스는 건드리지 않습니다.",
+  "transfer.imported": "설정을 가져왔습니다. 언어와 테마는 Portly를 다시 열 때 적용됩니다.",
+  "transfer.docRootKept": "이전 프로젝트 폴더가 이 컴퓨터에 없어 현재 폴더를 유지했습니다: {0}",
+  "transfer.manual": "이전 컴퓨터에서 수동으로 추가한 항목입니다. 다시 추가하세요: {0}",
+  "transfer.missing": "이전 컴퓨터에 설치되어 있던 패키지 {0}개가 여기에 없습니다. 패키지 창이 이들을 선택한 상태로 열립니다. \"{1}\"를 클릭하세요.",
+  "transfer.notPortly": "이 파일은 Portly 설정 파일이 아닙니다."
 }

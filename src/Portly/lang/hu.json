@@ -411,5 +411,17 @@
   "pkgcat.runtime": "Futtatókörnyezetek",
   "pkgcat.dev": "Fejlesztői eszközök",
   "pkgcat.share": "Megosztás",
-  "main.chooseServices": "Szolgáltatások kiválasztása"
+  "main.chooseServices": "Szolgáltatások kiválasztása",
+  "pkg.onSystem": "Windowsra telepítve: a Portly ezt használja, nem kell letölteni",
+  "pkg.inUse": "Használatban: {0}",
+  "share.confirm": "Megosztod a(z) {0} webhelyet az interneten?\n\nEgy ingyenes Cloudflare gyors alagút véletlenszerű nyilvános címet ad a webhelynek (https://...trycloudflare.com). Bárki, akinek megvan a link, megnyithatja; nem kell fiók és router-beállítás.\n\n- Csak ez a webhely lesz megosztva. A többi webhely, az adatbázis és az eszközök (phpMyAdmin, Adminer) privátak maradnak.\n- Addig fut, amíg le nem állítod a megosztást vagy be nem zárod a Portlyt.\n- Első alkalommal letöltődik a cloudflared program (kb. 55 MB).\n\nFolytatod?",
+  "transfer.export": "Beállítások exportálása",
+  "transfer.import": "Beállítások importálása",
+  "transfer.exported": "Mentve: {0}\n\nTartalma: beállítások, webhely-beállítások, a saját sablonjaid és a telepített csomagok listája. A projektek és adatbázisok nincsenek benne: másold át a projektmappát, és használd az „{1}” lehetőséget. Biztonsági okból a MySQL root jelszó és a helyi tanúsítványkulcs nem kerül exportálásra.",
+  "transfer.importConfirm": "Lecseréled a jelenlegi beállításokat a fájlban lévőkre? A projektek és adatbázisok nem változnak.",
+  "transfer.imported": "Beállítások importálva. A nyelv és a téma a Portly következő indításakor lép életbe.",
+  "transfer.docRootKept": "A régi projektmappa nem létezik ezen a gépen, a jelenlegi megmarad: {0}",
+  "transfer.manual": "A régi gépen kézzel hozzáadva, add hozzá újra: {0}",
+  "transfer.missing": "Itt hiányzik {0} csomag, amely a régi gépen telepítve volt. A Csomagok ablak ezekkel kijelölve nyílik meg: kattints a „{1}” gombra.",
+  "transfer.notPortly": "Ez a fájl nem Portly beállításfájl."
 }

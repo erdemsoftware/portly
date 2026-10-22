@@ -411,5 +411,17 @@
   "pkgcat.runtime": "Runtimes",
   "pkgcat.dev": "Ontwikkeltools",
   "pkgcat.share": "Delen",
-  "main.chooseServices": "Services kiezen"
+  "main.chooseServices": "Services kiezen",
+  "pkg.onSystem": "Op Windows geïnstalleerd: Portly gebruikt het, geen download nodig",
+  "pkg.inUse": "In gebruik: {0}",
+  "share.confirm": "{0} op internet delen?\n\nEen gratis Cloudflare quick tunnel geeft de site een willekeurig openbaar adres (https://...trycloudflare.com). Iedereen met de link kan deze site openen; geen account of routerinstellingen nodig.\n\n- Alleen deze site wordt gedeeld. Je andere sites, de database en de tools (phpMyAdmin, Adminer) blijven privé.\n- Het loopt tot je het delen stopt of Portly sluit.\n- De eerste keer wordt het programma cloudflared (ongeveer 55 MB) gedownload.\n\nDoorgaan?",
+  "transfer.export": "Instellingen exporteren",
+  "transfer.import": "Instellingen importeren",
+  "transfer.exported": "Opgeslagen: {0}\n\nBevat: instellingen, site-opties, je sjablonen en de lijst met geïnstalleerde pakketten. Projecten en databases zitten er niet in: kopieer de projectmap en gebruik \"{1}\". Om veiligheidsredenen worden het MySQL-rootwachtwoord en de lokale certificaatsleutel niet geëxporteerd.",
+  "transfer.importConfirm": "De huidige instellingen vervangen door die in dit bestand? Projecten en databases blijven ongewijzigd.",
+  "transfer.imported": "Instellingen geïmporteerd. Taal en thema worden toegepast wanneer Portly opnieuw wordt geopend.",
+  "transfer.docRootKept": "De oude projectmap bestaat niet op deze computer; de huidige blijft: {0}",
+  "transfer.manual": "Op de oude computer handmatig toegevoegd, voeg deze opnieuw toe: {0}",
+  "transfer.missing": "{0} pakketten die op de oude computer geïnstalleerd waren, ontbreken hier. Het venster Pakketten opent met deze geselecteerd: klik op \"{1}\".",
+  "transfer.notPortly": "Dit bestand is geen Portly-instellingenbestand."
 }

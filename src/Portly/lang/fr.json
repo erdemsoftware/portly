@@ -411,5 +411,17 @@
   "pkgcat.runtime": "Environnements d'exécution",
   "pkgcat.dev": "Outils de développement",
   "pkgcat.share": "Partage",
-  "main.chooseServices": "Choisir les services"
+  "main.chooseServices": "Choisir les services",
+  "pkg.onSystem": "Installé sur Windows : Portly l'utilise, aucun téléchargement nécessaire",
+  "pkg.inUse": "Utilisé : {0}",
+  "share.confirm": "Partager {0} sur Internet ?\n\nUn tunnel rapide Cloudflare gratuit donne au site une adresse publique aléatoire (https://...trycloudflare.com). Toute personne ayant le lien peut ouvrir ce site ; aucun compte ni réglage de box n'est nécessaire.\n\n- Seul ce site est partagé. Vos autres sites, la base de données et les outils (phpMyAdmin, Adminer) restent privés.\n- Il reste actif jusqu'à l'arrêt du partage ou la fermeture de Portly.\n- La première fois, le programme cloudflared (environ 55 Mo) est téléchargé.\n\nContinuer ?",
+  "transfer.export": "Exporter les paramètres",
+  "transfer.import": "Importer les paramètres",
+  "transfer.exported": "Enregistré : {0}\n\nContenu : paramètres, options des sites, vos modèles et la liste des paquets installés. Les projets et bases de données n'y sont pas : copiez le dossier des projets et utilisez \"{1}\". Par sécurité, le mot de passe root MySQL et la clé du certificat local ne sont pas exportés.",
+  "transfer.importConfirm": "Remplacer les paramètres actuels par ceux de ce fichier ? Les projets et bases de données ne sont pas modifiés.",
+  "transfer.imported": "Paramètres importés. La langue et le thème s'appliquent à la prochaine ouverture de Portly.",
+  "transfer.docRootKept": "L'ancien dossier des projets n'existe pas sur cet ordinateur, le dossier actuel est conservé : {0}",
+  "transfer.manual": "Ajoutés à la main sur l'ancien ordinateur, à ajouter de nouveau : {0}",
+  "transfer.missing": "{0} paquets installés sur l'ancien ordinateur manquent ici. La fenêtre Paquets s'ouvre avec eux sélectionnés : cliquez sur \"{1}\".",
+  "transfer.notPortly": "Ce fichier n'est pas un fichier de paramètres Portly."
 }

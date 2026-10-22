@@ -411,5 +411,17 @@
   "pkgcat.runtime": "Runtimes",
   "pkgcat.dev": "Developer tools",
   "pkgcat.share": "Sharing",
-  "main.chooseServices": "Choose services"
+  "main.chooseServices": "Choose services",
+  "pkg.onSystem": "Installed on Windows: Portly uses it, no download needed",
+  "pkg.inUse": "In use: {0}",
+  "share.confirm": "Share {0} on the internet?\n\nA free Cloudflare quick tunnel gives the site a random public address (https://...trycloudflare.com). Anyone with the link can open this site; no account and no router settings are needed.\n\n- Only this site is shared. Your other sites, the database and the tools (phpMyAdmin, Adminer) stay private.\n- It runs until you stop sharing or close Portly.\n- The first time, the cloudflared program (about 55 MB) is downloaded.\n\nContinue?",
+  "transfer.export": "Export settings",
+  "transfer.import": "Import settings",
+  "transfer.exported": "Saved: {0}\n\nInside: settings, per-site options, your templates and the list of installed packages. Projects and databases are not inside: copy the projects folder and use \"{1}\". For security the MySQL root password and the local certificate key are not exported.",
+  "transfer.importConfirm": "Replace the current settings with the ones in this file? Projects and databases are not touched.",
+  "transfer.imported": "Settings imported. Language and theme changes apply when Portly is opened again.",
+  "transfer.docRootKept": "The old projects folder does not exist on this computer, so the current one is kept: {0}",
+  "transfer.manual": "Added by hand on the old computer, add these again: {0}",
+  "transfer.missing": "{0} packages that were installed on the old computer are missing here. The Packages window opens with them selected: click \"{1}\".",
+  "transfer.notPortly": "This file is not a Portly settings file."
 }

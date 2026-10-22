@@ -747,6 +747,8 @@ namespace Portly.UI
         async void ShareSite(Site site)
         {
             if (ServiceManager.Web.State != ServiceState.Running) { Ui.Error(this, I18n.T("main.webNotRunning")); return; }
+            // the site becomes public: say exactly what happens before anything is downloaded or opened
+            if (!Ui.Confirm(this, I18n.T("share.confirm", site.Host))) return;
             try
             {
                 var url = await Share.StartAsync(site, s => SafeInvoke(() => SetStatus(s)));
@@ -1196,22 +1198,32 @@ namespace Portly.UI
             if (Ui.Confirm(this, I18n.T("ssl.ask"))) TrustCa();
         }
 
-        void OpenSettings()
+        async void OpenSettings()
         {
             ShowFromTray();
             var docRoot = Settings.Current.DocumentRoot;
+            SettingsTransfer.ImportResult imported;
             using (var f = new SettingsForm())
             {
                 if (f.ShowDialog(this) != DialogResult.OK) return;
+                imported = f.Imported;
             }
             if (docRoot != Settings.Current.DocumentRoot) WatchDocRoot();
             RebuildTheme();
+            if (imported == null) return;
+            var msg = I18n.T("transfer.imported");
+            if (imported.DocumentRootKept) msg += "\n\n" + I18n.T("transfer.docRootKept", Settings.Current.DocumentRoot);
+            if (imported.Manual.Count > 0) msg += "\n\n" + I18n.T("transfer.manual", string.Join(", ", imported.Manual));
+            if (imported.Missing.Count > 0) msg += "\n\n" + I18n.T("transfer.missing", imported.Missing.Count, I18n.T("pkg.installSelected"));
+            Ui.Info(this, msg);
+            if (imported.Missing.Count > 0) OpenPackages(null, false, imported.Missing);
+            await ServiceManager.ReloadWebAsync();
         }
 
-        void OpenPackages(string type, bool firstRun = false)
+        void OpenPackages(string type, bool firstRun = false, IEnumerable<PackageEntry> preselect = null)
         {
             ShowFromTray();
-            using (var f = new PackagesForm(type, firstRun)) f.ShowDialog(this);
+            using (var f = new PackagesForm(type, firstRun, preselect)) f.ShowDialog(this);
             RefreshVersions();
             UpdateBanner();
             CheckVcRuntime(false);
