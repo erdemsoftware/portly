@@ -334,7 +334,7 @@ namespace Portly.SmokeTest
                 var demoSite = Sites.Scan().First(x => x.Name == "demo");
                 var publicUrl = await Share.StartAsync(demoSite, t => Console.WriteLine("    | " + t));
                 string page = "";
-                for (int i = 0; i < 12 && !page.Contains("DEMO-OK"); i++) { await Task.Delay(5000); page = Get(publicUrl, null); }
+                for (int i = 0; i < 24 && !page.Contains("DEMO-OK"); i++) { await Task.Delay(5000); page = Get(publicUrl, null); }
                 Check("site shared on the internet", page.Contains("DEMO-OK"), publicUrl);
                 Share.Stop(demoSite);
                 var wpSite = Sites.Scan().FirstOrDefault(x => x.Name == "wpdemo");
@@ -342,7 +342,7 @@ namespace Portly.SmokeTest
                 {
                     var wpUrl = await Share.StartAsync(wpSite, t => { });
                     string wpPage = "";
-                    for (int i = 0; i < 12 && !wpPage.Contains("trycloudflare"); i++) { await Task.Delay(5000); wpPage = Get(wpUrl + "/", null); }
+                    for (int i = 0; i < 24 && !wpPage.Contains("trycloudflare"); i++) { await Task.Delay(5000); wpPage = Get(wpUrl + "/", null); }
                     Check("shared WordPress keeps the public address (no redirect to .localhost)", wpPage.Contains(new Uri(wpUrl).Host), wpUrl + " " + (wpPage.Length > 100 ? wpPage.Substring(0, 100) : wpPage));
                     Share.Stop(wpSite);
                 }

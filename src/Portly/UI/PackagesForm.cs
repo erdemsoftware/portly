@@ -25,7 +25,7 @@ namespace Portly.UI
             public string SystemExe;     // installed on Windows outside Portly (VS Code, Git ...): used as is
         }
 
-        static readonly string[] FirstRunTypes = { "apache", "php", "mysql", "phpmyadmin", "composer", "redis", "mailpit", "mailhog" };
+        static readonly string[] FirstRunTypes = { "apache", "php", "mysql", "phpmyadmin", "composer", "mailpit", "mailhog" };
 
         readonly bool _firstRun;
         ComboBox _filter;

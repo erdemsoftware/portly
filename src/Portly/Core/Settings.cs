@@ -113,7 +113,7 @@ namespace Portly.Core
         /// <summary>Is the service part of "Start all"?</summary>
         public bool IsEnabled(string service)
         {
-            bool def = service == "web" || service == "mysql" || service == "redis";
+            bool def = service == "web" || service == "mysql";
             // a service the user removed from the main window is never started by "Start all"
             return _ini.GetBool("enabled", service, def) && _ini.GetBool("shown", service, true);
         }

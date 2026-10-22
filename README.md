@@ -47,6 +47,7 @@ Portly; Apache ya da Nginx, PHP, MySQL ya da MariaDB, PostgreSQL, MongoDB, Redis
 |---|---|---|---|
 | `Portly-x.y.z-win10.zip` | 10 / 11 (64 bit) | **Var**: uygulama + paket kataloğu | En güncel: PHP 8.5, MySQL 8.4 LTS / 26.x, Apache 2.4.69, Node 24 LTS... |
 | `Portly-x.y.z-win7.zip` (Legacy) | 7 SP1 / 8 / 8.1 (64 bit) | **Yok** (sabit katalog) | Win7'de çalışan son sürümler: PHP 8.2, MySQL 5.7, Apache 2.4 VS16, Node 13 |
+| macOS / Linux | — | — | **Yakında.** Ayar dosyası (Ayarlar > dışa aktar) şimdiden platformdan bağımsız; geçişte ayarlarınız ve paket listeniz taşınabilecek. Desteklemek isterseniz GitHub'da yıldız verin ve bağış yapın. |
 
 Legacy sürüm için .NET Framework 4.8 gerekir (Windows 10/11'de zaten yüklüdür).
 
@@ -98,6 +99,7 @@ Portly runs Apache or Nginx, PHP, MySQL or MariaDB, PostgreSQL, MongoDB, Redis, 
 - **One-click WordPress** (installed with WP-CLI, admin user ready) and templates for Laravel, Symfony, CodeIgniter, CakePHP, Drupal, Vue, React, Svelte, Nuxt, Next.js, Angular and Astro. Git, VS Code, Python, Go, Bun and Deno as optional packages.
 - **Problem prevention**: checks for OneDrive folders, non-ASCII paths, long paths, a second PHP or PHPRC; forgotten root password reset, InnoDB recovery mode, optional Defender exclusion, warning when antivirus blocks the hosts file.
 - **Two editions**: Windows 10/11 (updates, latest packages) and Legacy for Windows 7 SP1 / 8 / 8.1 (frozen, compatible packages).
+- **macOS and Linux: coming soon.** The settings export is already platform-neutral, so your settings and package list will move over. Star the repo or donate to help it happen.
 - 31 languages (right-to-left for Arabic, Persian, Urdu), plain JSON files, contributions welcome.
 
 **Quick start:** download a release, unzip to a folder without spaces (e.g. `C:\Portly`), run `Portly.exe`, install the recommended packages, click **Start all**, create `www\shop` and open `https://shop.portly`.
