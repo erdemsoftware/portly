@@ -43,6 +43,9 @@ namespace Portly.Packages
         public static string VcRedistUrl = "https://aka.ms/vc14/vc_redist.x64.exe";
         public static int VcRedistMinor = 50;
         public static string Updated = "";
+        /// <summary>Xdebug build to download for PHP 8.x, and the last one for PHP 7.4.</summary>
+        public static string XdebugVersion = "3.5.3";
+        public static string Xdebug74 = "3.1.6";
         public static event Action Changed;
 
         static string CacheFile { get { return Path.Combine(Paths.Cache, "packages.json"); } }
@@ -131,6 +134,8 @@ namespace Portly.Packages
             Updated = root.Str("updated");
             var vc = root.Obj("vcredist");
             if (vc != null) { VcRedistUrl = vc.Str("url", VcRedistUrl); VcRedistMinor = vc.Int("minor", VcRedistMinor); }
+            var xd = root.Obj("xdebug");
+            if (xd != null) { XdebugVersion = xd.Str("version", XdebugVersion); Xdebug74 = xd.Str("php74", Xdebug74); }
             var donate = root.Str("donateUrl");
             if (donate.StartsWith("https://")) AppInfo.DonateUrl = donate;
         }

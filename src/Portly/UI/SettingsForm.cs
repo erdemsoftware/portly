@@ -6,6 +6,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Portly.Core;
+using Portly.Packages;
 using Portly.Services;
 using Portly.Tools;
 
@@ -13,7 +14,8 @@ namespace Portly.UI
 {
     public class SettingsForm : Form
     {
-        ComboBox _lang, _terminal, _theme;
+        ComboBox _lang, _terminal, _theme, _mailTool, _backup;
+        NumericUpDown _backupKeep;
         TextBox _docRoot, _tld;
         CheckBox _autoVhosts, _ssl, _runAtStartup, _startMin, _startServices, _closeToTray, _addToPath, _checkUpdates, _allowLan;
         RadioButton _apache, _nginx;
@@ -88,6 +90,14 @@ namespace Portly.UI
             web.Controls.Add(_apache);
             web.Controls.Add(_nginx);
             AddRow(g2, I18n.T("settings.webServer"), web);
+            _mailTool = new ThemedCombo { Width = Ui.S(200) };
+            foreach (var tool in MailpitService.Tools)
+            {
+                var installed = PackageTypes.Installed(tool).Count > 0;
+                _mailTool.Items.Add(new Item(PackageTypes.Get(tool).Name + (installed ? "" : "  (" + I18n.T("svc.notInstalled") + ")"), tool));
+            }
+            _mailTool.SelectedItem = _mailTool.Items.Cast<Item>().First(i => i.Value == s.MailTool);
+            AddRow(g2, I18n.T("settings.mailTool"), _mailTool);
             _http = Port(s.HttpPort); AddRow(g2, I18n.T("settings.httpPort"), _http);
             _https = Port(s.HttpsPort); AddRow(g2, I18n.T("settings.httpsPort"), _https);
             _mysql = Port(s.MysqlPort); AddRow(g2, I18n.T("settings.mysqlPort"), _mysql);
@@ -101,6 +111,18 @@ namespace Portly.UI
             _allowLan = Check(I18n.T("settings.allowLan"), s.AllowLan, g2);
             AddRow(g2, "", Hint(I18n.T("settings.allowLanHint")));
             Section(stack, I18n.T("settings.services"), g2);
+
+            // ---------------- databases ----------------
+            var g3 = Grid();
+            _backup = new ThemedCombo { Width = Ui.S(220) };
+            foreach (var h in new[] { 0, 24, 12, 6 })
+                _backup.Items.Add(new Item(h == 0 ? I18n.T("settings.backupOff") : I18n.T("settings.backupEvery", h), h.ToString()));
+            _backup.SelectedItem = _backup.Items.Cast<Item>().FirstOrDefault(i => i.Value == s.AutoBackupHours.ToString()) ?? _backup.Items[0];
+            AddRow(g3, I18n.T("settings.autoBackup"), _backup);
+            _backupKeep = new NumericUpDown { Minimum = 1, Maximum = 100, Value = Math.Max(1, Math.Min(100, s.AutoBackupKeep)), Width = Ui.S(90) };
+            AddRow(g3, I18n.T("settings.backupKeep"), _backupKeep);
+            AddRow(g3, "", Hint(I18n.T("settings.backupHint")));
+            Section(stack, "MySQL", g3);
 
             scroll.Controls.Add(stack);
 
@@ -194,7 +216,9 @@ namespace Portly.UI
                 || (int)_mailSmtp.Value != s.MailpitSmtpPort || (int)_mysql.Value != s.MysqlPort;
             bool mysqlRestart = (int)_mysql.Value != s.MysqlPort || _allowLan.Checked != s.AllowLan;
             bool redisRestart = (int)_redis.Value != s.RedisPort || _allowLan.Checked != s.AllowLan;
-            bool mailRestart = (int)_mailWeb.Value != s.MailpitWebPort || (int)_mailSmtp.Value != s.MailpitSmtpPort;
+            var mailTool = ((Item)_mailTool.SelectedItem).Value;
+            bool mailRestart = (int)_mailWeb.Value != s.MailpitWebPort || (int)_mailSmtp.Value != s.MailpitSmtpPort || mailTool != s.MailTool;
+            bool mailWasActive = ServiceManager.Mailpit.IsActive;
             var lang = ((Item)_lang.SelectedItem).Value;
             var theme = ((Item)_theme.SelectedItem).Value;
 
@@ -222,6 +246,9 @@ namespace Portly.UI
             s.PhpBasePort = (int)_phpPort.Value;
             s.PhpChildren = (int)_phpChildren.Value;
             s.AllowLan = _allowLan.Checked;
+            s.MailTool = mailTool;
+            s.AutoBackupHours = int.Parse(((Item)_backup.SelectedItem).Value);
+            s.AutoBackupKeep = (int)_backupKeep.Value;
             s.Save();
 
             I18n.Load(lang);
@@ -234,7 +261,11 @@ namespace Portly.UI
                 if (webChanged) await ServiceManager.SwitchWebServerAsync(_nginx.Checked ? "nginx" : "apache");
                 if (mysqlRestart && ServiceManager.MySql.IsActive) await ServiceManager.MySql.RestartAsync();
                 if (redisRestart && ServiceManager.Redis.IsActive) await ServiceManager.Redis.RestartAsync();
-                if (mailRestart && ServiceManager.Mailpit.IsActive) await ServiceManager.Mailpit.RestartAsync();
+                if (mailRestart && mailWasActive)
+                {
+                    await ServiceManager.Mailpit.StopAsync();
+                    await ServiceManager.Mailpit.StartAsync();
+                }
                 if (webReload && !webChanged) await ServiceManager.ReloadWebAsync();
                 else if (!webChanged) ServiceManager.RefreshSites();
             });

@@ -24,7 +24,7 @@ namespace Portly.UI
             public bool Installed;
         }
 
-        static readonly string[] FirstRunTypes = { "apache", "php", "mysql", "adminer", "composer", "mailpit" };
+        static readonly string[] FirstRunTypes = { "apache", "php", "mysql", "adminer", "composer", "mailpit", "mailhog" };
 
         readonly bool _firstRun;
         ComboBox _filter;
@@ -292,7 +292,9 @@ namespace Portly.UI
                 case "php": return ServiceManager.Php.IsActive;
                 case "mysql": return ServiceManager.MySql.IsActive;
                 case "redis": return ServiceManager.Redis.IsActive;
-                case "mailpit": return ServiceManager.Mailpit.IsActive;
+                case "mailpit":
+                case "mailhog":
+                case "smtp4dev": return ServiceManager.Mailpit.IsActive && Settings.Current.MailTool == type;
                 default: return false;
             }
         }

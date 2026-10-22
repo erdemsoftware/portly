@@ -122,13 +122,24 @@ namespace Portly.Services
             Directory.CreateDirectory(data);
             var conf = Path.Combine(Paths.Etc, "redis", "redis.conf");
             var v = Templates.CommonVars();
+            // Redis 7/8 Windows builds are Cygwin / MSYS2 programs: they only understand /cygdrive/e/... paths
+            bool posix = File.Exists(Path.Combine(dir, "msys-2.0.dll")) || File.Exists(Path.Combine(dir, "cygwin1.dll"));
+            Func<string, string> pathFor = x => posix ? Posix(x) : Paths.Fwd(x);
             v["REDIS_PORT"] = port.ToString();
-            v["REDIS_DATA"] = Paths.Fwd(data);
+            v["REDIS_DATA"] = pathFor(data);
+            v["LOGS"] = pathFor(Paths.Logs);
             Templates.WriteIfChanged(conf, Templates.Render("redis.conf.tpl", v));
             if (!EnsurePortFree(port)) return;
-            _p = Launch(Path.Combine(dir, "redis-server.exe"), "\"" + conf + "\"", dir, null, "redis-console", OnExit);
+            _p = Launch(Path.Combine(dir, "redis-server.exe"), "\"" + pathFor(conf) + "\"", dir, null, "redis-console", OnExit);
             if (await WaitForPort(port, _p, 10000)) { SetState(ServiceState.Running); Log.Info(I18n.T("log.started", "Redis " + VersionLabel)); }
             else SetState(ServiceState.Error, _p.HasExited ? ExitReason(_p) : I18n.T("err.timeout"));
+        }
+
+        /// <summary>E:\www\x -> /cygdrive/e/www/x</summary>
+        static string Posix(string path)
+        {
+            var full = Path.GetFullPath(path);
+            return "/cygdrive/" + char.ToLowerInvariant(full[0]) + Paths.Fwd(full.Substring(2));
         }
 
         void OnExit(Process p)
@@ -149,35 +160,67 @@ namespace Portly.Services
         }
     }
 
+    /// <summary>
+    /// Mail catcher: Mailpit, MailHog or smtp4dev (Settings > Mail catcher). PHP talks SMTP to it,
+    /// so switching the tool needs no PHP change. Id stays "mailpit" for settings compatibility.
+    /// </summary>
     public class MailpitService : Service
     {
         Process _p;
+        string _runningTool;
+        public static readonly string[] Tools = { "mailpit", "mailhog", "smtp4dev" };
+
         public override string Id { get { return "mailpit"; } }
-        public override string Title { get { return "Mailpit"; } }
-        public override string PackageType { get { return "mailpit"; } }
+        public override string Title { get { return PackageTypes.Get(PackageType).Name; } }
+        public override string PackageType { get { return Settings.Current.MailTool; } }
         public override string PortText { get { var s = Settings.Current; return s.MailpitWebPort + ", " + s.MailpitSmtpPort; } }
+        string LogName { get { return _runningTool ?? PackageType; } }
 
         public override async Task StartAsync()
         {
-            var dir = PackageTypes.ActiveDir("mailpit");
-            if (dir == null) { SetState(ServiceState.Error, I18n.T("err.notInstalled", "Mailpit")); return; }
+            var tool = PackageType;
+            var dir = PackageTypes.ActiveDir(tool);
+            if (dir == null) { SetState(ServiceState.Error, I18n.T("err.notInstalled", Title)); return; }
             if (_p != null && !_p.HasExited) { SetState(ServiceState.Running); return; }
             StopRequested = false;
             SetState(ServiceState.Starting);
             var s = Settings.Current;
             if (!EnsurePortFree(s.MailpitWebPort) || !EnsurePortFree(s.MailpitSmtpPort)) return;
-            var data = Path.Combine(Paths.Data, "mailpit");
+            var data = Path.Combine(Paths.Data, tool);
             Directory.CreateDirectory(data);
-            var args = "--listen 127.0.0.1:" + s.MailpitWebPort + " --smtp 127.0.0.1:" + s.MailpitSmtpPort + " --database \"" + Path.Combine(data, "mailpit.db") + "\"";
-            _p = Launch(Path.Combine(dir, "mailpit.exe"), args, dir, null, "mailpit", OnExit);
-            if (await WaitForPort(s.MailpitWebPort, _p, 10000)) { SetState(ServiceState.Running); Log.Info(I18n.T("log.started", "Mailpit " + VersionLabel)); }
-            else SetState(ServiceState.Error, _p.HasExited ? ExitReason(_p) : I18n.T("err.timeout"));
+            string exe, args;
+            switch (tool)
+            {
+                case "mailhog":
+                    exe = Path.Combine(dir, "MailHog.exe");
+                    args = "-api-bind-addr 127.0.0.1:" + s.MailpitWebPort + " -ui-bind-addr 127.0.0.1:" + s.MailpitWebPort + " -smtp-bind-addr 127.0.0.1:" + s.MailpitSmtpPort;
+                    break;
+                case "smtp4dev":
+                    exe = Path.Combine(dir, "Rnwood.Smtp4dev.exe");
+                    // local only, no IMAP / POP3 ports, everything stored in data\smtp4dev
+                    args = "--urls=http://127.0.0.1:" + s.MailpitWebPort + " --smtpport=" + s.MailpitSmtpPort +
+                           " --allowremoteconnections- --imapport=\"\" --pop3port=\"\" --nousersettings" +
+                           " --baseappdatapath=\"" + data + "\" --db=\"" + Path.Combine(data, "database.db") + "\"";
+                    break;
+                default:
+                    exe = Path.Combine(dir, "mailpit.exe");
+                    args = "--listen 127.0.0.1:" + s.MailpitWebPort + " --smtp 127.0.0.1:" + s.MailpitSmtpPort + " --database \"" + Path.Combine(data, "mailpit.db") + "\"";
+                    break;
+            }
+            _runningTool = tool;
+            _p = Launch(exe, args, dir, null, tool, OnExit);
+            if (await WaitForPort(s.MailpitWebPort, _p, 30000) && await WaitForPort(s.MailpitSmtpPort, _p, 10000))
+            {
+                SetState(ServiceState.Running);
+                Log.Info(I18n.T("log.started", Title + " " + VersionLabel));
+            }
+            else SetState(ServiceState.Error, _p.HasExited ? ExitReason(_p) + " " + I18n.T("err.seeLog", tool + ".log") : I18n.T("err.timeout"));
         }
 
         void OnExit(Process p)
         {
             if (p != _p || StopRequested) return;
-            SetState(ServiceState.Error, ExitReason(p) + " " + I18n.T("err.seeLog", "mailpit.log"));
+            SetState(ServiceState.Error, ExitReason(p) + " " + I18n.T("err.seeLog", LogName + ".log"));
         }
 
         public override async Task StopAsync()
@@ -188,6 +231,7 @@ namespace Portly.Services
             SetState(ServiceState.Stopping);
             await Task.Run(() => StopProcess(p, false, 0));
             _p = null;
+            _runningTool = null;
             SetState(ServiceState.Stopped);
         }
     }

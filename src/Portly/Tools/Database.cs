@@ -83,12 +83,42 @@ namespace Portly.Tools
         }
 
         /// <summary>Dump all databases to backup\mysql. Returns the file, or throws with the error.</summary>
-        public static string BackupAll()
+        public static string BackupAll() { return BackupAll(""); }
+
+        /// <summary>
+        /// Automatic backup (Settings > MySQL): runs when the interval has passed and MySQL is running.
+        /// Only "auto-*.sql" files are rotated; manual backups are never deleted. Returns the file or null.
+        /// </summary>
+        public static string AutoBackupIfDue()
+        {
+            var s = Settings.Current;
+            if (s.AutoBackupHours <= 0 || ServiceManager.MySql.State != ServiceState.Running) return null;
+            if (System.Threading.Interlocked.Exchange(ref _autoRunning, 1) == 1) return null;
+            try { return AutoBackupNow(s); }
+            finally { _autoRunning = 0; }
+        }
+
+        static int _autoRunning;
+
+        static string AutoBackupNow(Settings s)
+        {
+            DateTime last;
+            if (DateTime.TryParse(s.LastAutoBackup, out last) && last > DateTime.Now.AddHours(-s.AutoBackupHours)) return null;
+            var file = BackupAll("auto-");
+            s.LastAutoBackup = DateTime.Now.ToString("yyyy-MM-dd HH:mm");
+            s.Save();
+            var dir = Path.GetDirectoryName(file);
+            foreach (var old in new DirectoryInfo(dir).GetFiles("auto-*.sql").OrderByDescending(f => f.LastWriteTime).Skip(s.AutoBackupKeep))
+                try { old.Delete(); } catch { }
+            return file;
+        }
+
+        public static string BackupAll(string prefix)
         {
             if (ServiceManager.MySql.State != ServiceState.Running) throw new Exception(I18n.T("err.mysqlNotRunning"));
             var dir = Path.Combine(Paths.Backup, "mysql");
             Directory.CreateDirectory(dir);
-            var file = Path.Combine(dir, "mysql-" + PackageTypes.Branch(PackageTypes.ActiveFolder("mysql")) + "-" + DateTime.Now.ToString("yyyy-MM-dd_HHmmss") + ".sql");
+            var file = Path.Combine(dir, prefix + "mysql-" + PackageTypes.Branch(PackageTypes.ActiveFolder("mysql")) + "-" + DateTime.Now.ToString("yyyy-MM-dd_HHmmss") + ".sql");
             var r = Client("mysqldump.exe", "--all-databases --routines --events --triggers --single-transaction --default-character-set=utf8mb4 --result-file=\"" + file + "\"", null, 3600000);
             if (!r.Ok || !File.Exists(file)) throw new Exception(Clean(r));
             Log.Info(I18n.T("log.backup", file));

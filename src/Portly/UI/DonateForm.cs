@@ -1,3 +1,4 @@
+using System;
 using System.Drawing;
 using System.Windows.Forms;
 using Portly.Core;
@@ -39,6 +40,9 @@ namespace Portly.UI
                 t.Controls.Add(none);
                 t.Controls.Add(Ui.Link("GitHub", () => WinUtil.Open(AppInfo.GitHubUrl)));
             }
+            // the list scrolls when there are many methods
+            var list = new FlowLayoutPanel { FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoScroll = true, Width = Ui.S(530), Margin = Padding.Empty };
+            int listHeight = 0;
             foreach (var m in methods)
             {
                 var method = m;
@@ -66,7 +70,13 @@ namespace Portly.UI
                 action.Size = new Size(Ui.S(110), Ui.S(34));
                 action.Location = new Point(card.Width - Ui.S(126), Ui.S(16));
                 card.Controls.Add(action);
-                t.Controls.Add(card);
+                list.Controls.Add(card);
+                listHeight += card.Height + card.Margin.Vertical;
+            }
+            if (methods.Count > 0)
+            {
+                list.Height = Math.Min(listHeight + Ui.S(4), Ui.S(470));
+                t.Controls.Add(list);
             }
 
             var close = Ui.Button(I18n.T("common.close"), (s, e) => Close());

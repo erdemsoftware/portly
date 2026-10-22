@@ -68,6 +68,16 @@ namespace Portly.Core
         // ---------- services ----------
         /// <summary>"apache" or "nginx".</summary>
         public string WebServer { get { var v = _ini.Get("services", "WebServer", "apache").ToLowerInvariant(); return v == "nginx" ? "nginx" : "apache"; } set { _ini.Set("services", "WebServer", value); } }
+        /// <summary>Mail catcher: "mailpit", "mailhog" or "smtp4dev".</summary>
+        public string MailTool
+        {
+            get { var v = _ini.Get("services", "MailTool", AppInfo.IsLegacy ? "mailhog" : "mailpit").ToLowerInvariant(); return v == "mailhog" || v == "smtp4dev" ? v : "mailpit"; }
+            set { _ini.Set("services", "MailTool", value); }
+        }
+        /// <summary>Automatic database backup interval in hours (0 = off, the default).</summary>
+        public int AutoBackupHours { get { return _ini.GetInt("mysql", "AutoBackupHours", 0); } set { _ini.Set("mysql", "AutoBackupHours", value); } }
+        public int AutoBackupKeep { get { return Math.Max(1, _ini.GetInt("mysql", "AutoBackupKeep", 7)); } set { _ini.Set("mysql", "AutoBackupKeep", value); } }
+        public string LastAutoBackup { get { return _ini.Get("mysql", "LastAutoBackup", ""); } set { _ini.Set("mysql", "LastAutoBackup", value); } }
         public bool AllowLan { get { return _ini.GetBool("services", "AllowLan", false); } set { _ini.Set("services", "AllowLan", value); } }
         public int HttpPort { get { return _ini.GetInt("services", "HttpPort", 80); } set { _ini.Set("services", "HttpPort", value); } }
         public int HttpsPort { get { return _ini.GetInt("services", "HttpsPort", 443); } set { _ini.Set("services", "HttpsPort", value); } }

@@ -113,10 +113,13 @@ namespace Portly.SmokeTest
             // a group folder: clientscme -> acme.clients.localhost
             Directory.CreateDirectory(Path.Combine(www, "clients", "acme"));
             File.WriteAllText(Path.Combine(www, "clients", "acme", "index.php"), "<?php echo 'ACME-OK';");
+            Directory.CreateDirectory(Path.Combine(www, "cakeapp", "webroot"));
+            File.WriteAllText(Path.Combine(www, "cakeapp", "webroot", "index.php"), "<?php echo 'CAKE';");
             var sites = Sites.Scan();
+            Check("CakePHP-style webroot folder detected", sites.First(x => x.Name == "cakeapp").DocRoot.EndsWith("webroot"));
             Check("group folder detected", sites.Any(x => x.Name == "clients" && x.IsGroup) && sites.Any(x => x.Host == "acme.clients.localhost" && x.Valid),
                 string.Join(", ", sites.Where(x => x.Group != "" || x.IsGroup).Select(x => x.Host)));
-            Check("sites scanned", sites.Count(x => x.Valid && x.Group == "" && !x.IsGroup) == 2, string.Join(", ", sites.Select(x => x.Name + (x.Valid ? "" : "(invalid)"))));
+            Check("sites scanned", sites.Count(x => x.Valid && x.Group == "" && !x.IsGroup) == 3, string.Join(", ", sites.Select(x => x.Name + (x.Valid ? "" : "(invalid)"))));
             Check("Laravel-style public folder detected", sites.First(x => x.Name == "legacyapp").DocRoot.EndsWith("public"));
             var php84 = PackageTypes.Installed("php").First(f => PackageTypes.Branch(f) == "8.4");
             Sites.SetPhp("legacyapp", php84);
@@ -143,9 +146,99 @@ namespace Portly.SmokeTest
             try { var f = Database.BackupAll(); Check("backup all databases", new FileInfo(f).Length > 1000, f); }
             catch (Exception ex) { Check("backup all databases", false, ex.Message); }
 
+            // ---------- automatic backup: rotation keeps only the newest N auto-*.sql ----------
+            s.AutoBackupHours = 1; s.AutoBackupKeep = 1; s.LastAutoBackup = ""; s.Save();
+            var auto1 = Database.AutoBackupIfDue();
+            s.LastAutoBackup = ""; s.Save();
+            System.Threading.Thread.Sleep(1100);
+            var auto2 = Database.AutoBackupIfDue();
+            var autoFiles = Directory.GetFiles(Path.Combine(Paths.Backup, "mysql"), "auto-*.sql");
+            Check("automatic backup + rotation", auto1 != null && auto2 != null && autoFiles.Length == 1 && Database.AutoBackupIfDue() == null, autoFiles.Length + " auto file(s)");
+            s.AutoBackupHours = 0; s.Save();
+
+            // ---------- Xdebug toggle on PHP 8.4 ----------
+            var php84Dir = Path.Combine(Paths.BinOf("php"), php84);
+            try
+            {
+                await Xdebug.EnableAsync(php84Dir);
+                var mods = ProcessUtil.Run(Path.Combine(php84Dir, "php.exe"), "-m", php84Dir, null, 30000);
+                Check("Xdebug enabled (php -m)", Xdebug.IsEnabled(php84Dir) && mods.Output.Contains("Xdebug"), Xdebug.DownloadUrl(php84));
+                Xdebug.Disable(php84Dir);
+                mods = ProcessUtil.Run(Path.Combine(php84Dir, "php.exe"), "-m", php84Dir, null, 30000);
+                Check("Xdebug disabled again", !Xdebug.IsEnabled(php84Dir) && !mods.Output.Contains("Xdebug"));
+            }
+            catch (Exception ex) { Check("Xdebug enabled (php -m)", false, ex.Message); }
+
+            // ---------- import from Laragon (read only): the smallest database ----------
+            var laragon = Importer.Detect().FirstOrDefault(x => x.Kind == "laragon" && x.MysqlBin != null);
+            if (laragon != null)
+            {
+                try
+                {
+                    var dbs = await Importer.ListDatabasesAsync(laragon, "", t => Console.WriteLine("    | " + t));
+                    var small = dbs.OrderBy(d => d.Bytes).FirstOrDefault(d => d.Bytes > 0);
+                    Check("Laragon detected and databases listed", dbs.Count > 0, laragon.Name + ": " + dbs.Count + " dbs, MySQL " + laragon.MysqlVersion);
+                    if (small != null)
+                    {
+                        var msg = await Importer.ImportDatabasesAsync(laragon, "", new List<string> { small.Name }, t => Console.WriteLine("    | " + t), CancellationToken.None);
+                        Check("Laragon database imported (" + small.Name + ", " + small.Bytes / 1024 + " KB)", Database.ListDatabases().Contains(small.Name), msg);
+                    }
+                }
+                catch (Exception ex) { Check("Laragon import", false, ex.Message); }
+            }
+            else Console.WriteLine("  (skip Laragon import: not installed)");
+
             // ---------- mail caught by Mailpit ----------
             var mails = Get("http://127.0.0.1:" + s.MailpitWebPort + "/api/v1/messages", null);
             Check("Mailpit caught PHP mail()", mails.Contains("Portly smoke"));
+
+            // ---------- other mail catchers: MailHog, smtp4dev (SMTP in, HTTP API out) ----------
+            foreach (var tool in new[] { "mailhog", "smtp4dev" })
+            {
+                try
+                {
+                    var entry = Catalog.Recommended(tool);
+                    await Installer.InstallAsync(entry, null, CancellationToken.None);
+                    await ServiceManager.Mailpit.StopAsync();
+                    s.MailTool = tool; s.Save();
+                    await ServiceManager.Mailpit.StartAsync();
+                    var started = ServiceManager.Mailpit.State == ServiceState.Running;
+                    using (var smtp = new System.Net.Mail.SmtpClient("127.0.0.1", s.MailpitSmtpPort))
+                        smtp.Send("portly@localhost", "test@example.com", "Portly " + tool, "hello");
+                    await Task.Delay(1500);
+                    var api = tool == "mailhog" ? "/api/v2/messages" : "/api/messages";
+                    var got = Get("http://127.0.0.1:" + s.MailpitWebPort + api, null);
+                    Check(tool + " catches mail", started && got.Contains("Portly " + tool), started ? got.Substring(0, Math.Min(80, got.Length)) : ServiceManager.Mailpit.LastError);
+                }
+                catch (Exception ex) { Check(tool + " catches mail", false, ex.Message); }
+            }
+            await ServiceManager.Mailpit.StopAsync();
+            s.MailTool = "mailpit"; s.Save();
+            await ServiceManager.Mailpit.StartAsync();
+
+            // ---------- Redis 8 (redis-windows build) ----------
+            try
+            {
+                var r8 = Catalog.Recommended("redis");
+                await Installer.InstallAsync(r8, null, CancellationToken.None);
+                await ServiceManager.Redis.StopAsync();
+                s.SetVersion("redis", r8.Folder); s.Save();
+                await ServiceManager.Redis.StartAsync();
+                Check("Redis " + r8.Version + " runs", ServiceManager.Redis.State == ServiceState.Running, ServiceManager.Redis.LastError ?? "");
+            }
+            catch (Exception ex) { Check("Redis 8 runs", false, ex.Message); }
+
+            // ---------- share on the internet (Cloudflare quick tunnel) ----------
+            try
+            {
+                var demoSite = Sites.Scan().First(x => x.Name == "demo");
+                var publicUrl = await Share.StartAsync(demoSite, t => Console.WriteLine("    | " + t));
+                string page = "";
+                for (int i = 0; i < 12 && !page.Contains("DEMO-OK"); i++) { await Task.Delay(5000); page = Get(publicUrl, null); }
+                Check("site shared on the internet", page.Contains("DEMO-OK"), publicUrl);
+                Share.Stop(demoSite);
+            }
+            catch (Exception ex) { Check("site shared on the internet", false, ex.Message); }
 
             // ---------- switch to Nginx ----------
             await ServiceManager.SwitchWebServerAsync("nginx");

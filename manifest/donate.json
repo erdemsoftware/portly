@@ -1,13 +1,16 @@
 {
   "comment": "Donation methods shown in Portly (Menu > Donate). Empty url/value entries are hidden. The Windows 10/11 edition downloads this file from GitHub, so it can be changed without a new release.",
   "methods": [
-    { "kind": "link", "name": "GitHub Sponsors", "url": "", "note": { "en": "Card, worldwide, monthly or one-time", "tr": "Kredi kartı, tüm dünya, aylık ya da tek seferlik" } },
-    { "kind": "link", "name": "Patreon", "url": "", "note": { "en": "Card / PayPal, worldwide", "tr": "Kredi kartı / PayPal, tüm dünya" } },
-    { "kind": "link", "name": "Buy Me a Coffee", "url": "", "note": { "en": "Card, worldwide, one-time", "tr": "Kredi kartı, tüm dünya, tek seferlik" } },
-    { "kind": "link", "name": "Kredi kartı (Türkiye)", "url": "", "note": { "en": "Turkish cards (iyzico / Shopier / PayTR link)", "tr": "Türk kredi/banka kartları (iyzico / Shopier / PayTR linki)" } },
-    { "kind": "copy", "name": "IBAN (TRY)", "value": "", "note": { "en": "Bank transfer in Turkey", "tr": "Türkiye'den havale / EFT" } },
-    { "kind": "copy", "name": "USDT (TRC20)", "value": "", "note": { "en": "Low fee", "tr": "Düşük işlem ücreti" } },
+    { "kind": "link", "name": "Buy Me a Coffee", "url": "https://buymeacoffee.com/erdemsoftware", "note": { "en": "Card, worldwide, one-time or monthly", "tr": "Kredi kartı, tüm dünya, tek seferlik ya da aylık" } },
+    { "kind": "link", "name": "GitHub Sponsors", "url": "", "note": { "en": "Card, worldwide", "tr": "Kredi kartı, tüm dünya" } },
+    { "kind": "link", "name": "Kredi kartı (Türkiye)", "url": "", "note": { "en": "Turkish cards (Shopier / iyzico link)", "tr": "Türk kredi/banka kartları (Shopier / iyzico linki)" } },
+    { "kind": "copy", "name": "Binance Pay ID", "value": "", "note": { "en": "Binance app > Pay > Send, no fee", "tr": "Binance uygulaması > Pay > Gönder, ücretsiz" } },
+    { "kind": "copy", "name": "USDT · TRC-20 (Tron)", "value": "TWPzXu77aJFc2YUUBA3CCe5tw6D79xPakm", "note": { "en": "Send only USDT on the Tron (TRC-20) network", "tr": "Yalnızca Tron (TRC-20) ağında USDT gönderin" } },
+    { "kind": "copy", "name": "USDT · BEP-20 (BNB Smart Chain)", "value": "0xdc4ed272b9f0d1f9f5a4b167e3eb3ecfcf3e89f3", "note": { "en": "Send only on BNB Smart Chain (BEP-20)", "tr": "Yalnızca BNB Smart Chain (BEP-20) ağından gönderin" } },
+    { "kind": "copy", "name": "USDT · Polygon", "value": "0xdc4ed272b9f0d1f9f5a4b167e3eb3ecfcf3e89f3", "note": { "en": "Send only on the Polygon network", "tr": "Yalnızca Polygon ağından gönderin" } },
+    { "kind": "copy", "name": "USDT · Solana", "value": "6KDxtHHqrktY63zgPD5EzzkktAp9m2QzTeRVpARd3G5C", "note": { "en": "Send only on the Solana network", "tr": "Yalnızca Solana ağından gönderin" } },
+    { "kind": "copy", "name": "ETH · USDT ERC-20 (Ethereum)", "value": "0xdc4ed272b9f0d1f9f5a4b167e3eb3ecfcf3e89f3", "note": { "en": "Ethereum network (higher fee)", "tr": "Ethereum ağı (işlem ücreti daha yüksek)" } },
     { "kind": "copy", "name": "Bitcoin (BTC)", "value": "", "note": { "en": "", "tr": "" } },
-    { "kind": "copy", "name": "Ethereum / USDT (ERC20)", "value": "", "note": { "en": "", "tr": "" } }
+    { "kind": "copy", "name": "IBAN (TRY)", "value": "", "note": { "en": "Bank transfer in Turkey", "tr": "Türkiye'den havale / EFT" } }
   ]
 }

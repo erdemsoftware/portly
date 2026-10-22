@@ -30,6 +30,10 @@ Portly; Apache ya da Nginx, PHP, MySQL, Node.js, Redis, Mailpit, Composer ve Adm
 | Çökme güvenliği | — | Portly kapanırsa servisler Windows tarafından kapatılır (job object) |
 | Port çakışması | Hata mesajı | Portu tutan program ve yolu gösterilir; **tek tıkla boş porta geç** ya da o programı kapat; artık süreçler kendiliğinden temizlenir |
 | Arayüz | Klasik | Kenar çubuklu modern arayüz, **açık/koyu tema** (Windows'u izler) |
+| Geçiş | — | **Laragon ve XAMPP'tan** projeleri ve veritabanlarını tek tıkla aktarma |
+| Paylaşım | ngrok (hesap gerekir) | **Cloudflare hızlı tüneli**, hesapsız ve ücretsiz |
+| Posta | Mailpit | **Mailpit, MailHog ya da smtp4dev** |
+| Diğer | — | Tek tıkla Xdebug, otomatik veritabanı yedeği, Symfony / CodeIgniter / CakePHP / Drupal şablonları |
 | Dil | 34 dil (txt) | JSON, **31 dil** (Arapça, Farsça, Urduca sağdan sola), GitHub'dan katkıya açık |
 | Windows 7 / 8 / 8.1 | Belirsiz | **Ayrı Legacy sürümü** |
 
@@ -85,6 +89,7 @@ Portly runs Apache or Nginx, PHP, MySQL, Node.js, Redis, Mailpit, Composer and A
 - Crash safe: if Portly dies, Windows closes all services (job object).
 - Port conflicts are checked before every start: see which program holds the port, switch to a free port in one click, or close that program. Leftover Portly services are cleaned up automatically.
 - Modern sidebar UI with light / dark theme that follows Windows.
+- One-click import from Laragon and XAMPP (projects and databases), share a site on the internet through a free Cloudflare quick tunnel, choice of Mailpit / MailHog / smtp4dev, one-click Xdebug, optional automatic database backups, Symfony / CodeIgniter / CakePHP / Drupal templates.
 - **Two editions**: Windows 10/11 (updates, latest packages) and Legacy for Windows 7 SP1 / 8 / 8.1 (frozen, compatible packages).
 - 31 languages (right-to-left for Arabic, Persian, Urdu), plain JSON files, contributions welcome.
 
@@ -115,7 +120,7 @@ Portly is free and will stay free: no ads, no paid tiers, no tracking. If it sav
 Portly ücretsizdir ve öyle kalacak. İşinizi kolaylaştırdıysa geliştirmeye destek olabilirsiniz.
 
 <!-- Bağış bağlantılarınızı buraya ekleyin / add your donation links here (GitHub Sponsors, Buy Me a Coffee, IBAN ...) -->
-- GitHub Sponsors: *coming soon*
+Kart / card: **[Buy Me a Coffee](https://buymeacoffee.com/erdemsoftware)** · Kripto / crypto (USDT TRC-20, BEP-20, Polygon, Solana, ETH): in the app, Menu > Donate.
 
 ---
 

@@ -16,7 +16,7 @@ namespace Portly.Core
         public const string ManifestBase = "https://raw.githubusercontent.com/" + Repo + "/main/manifest/";
 
         /// <summary>Donation page. Can be changed remotely through manifest/app.json ("donateUrl").</summary>
-        public static string DonateUrl = GitHubUrl + "#donate";
+        public static string DonateUrl = "https://buymeacoffee.com/erdemsoftware";
 
 #if LEGACY
         public static readonly bool IsLegacy = true;

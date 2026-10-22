@@ -256,6 +256,8 @@ namespace Portly.UI
                 case "mysql": return new BrandTile { Text = "My", Color = ColorTranslator.FromHtml("#00758F") };
                 case "redis": return new BrandTile { Text = "R", Color = ColorTranslator.FromHtml("#DC382D") };
                 case "mailpit": return new BrandTile { Text = "M", Color = ColorTranslator.FromHtml("#0EA5E9") };
+                case "mailhog": return new BrandTile { Text = "MH", Color = ColorTranslator.FromHtml("#8B5CF6") };
+                case "smtp4dev": return new BrandTile { Text = "S4", Color = ColorTranslator.FromHtml("#0F766E") };
                 default: return new BrandTile { Text = "?", Color = Color.SlateGray };
             }
         }

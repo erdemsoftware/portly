@@ -59,7 +59,7 @@ namespace Portly.Config
         static readonly string[] ProjectMarkers =
         {
             "index.php", "index.html", "index.htm", "composer.json", "package.json", "artisan", "wp-config.php", "wp-config-sample.php",
-            @"public\index.php", @"public\index.html", @"web\index.php", @"public_html\index.php",
+            @"public\index.php", @"public\index.html", @"web\index.php", @"webroot\index.php", @"public_html\index.php",
         };
 
         public static bool IsValidName(string name) { return name != null && NameRx.IsMatch(name); }
@@ -134,10 +134,18 @@ namespace Portly.Config
             var customRoot = ini.Get(name, "root", "");
             if (customRoot != "" && !customRoot.Contains("..") && Directory.Exists(Path.Combine(dir, customRoot)))
                 site.DocRoot = Path.Combine(dir, customRoot);
-            else if (File.Exists(Path.Combine(dir, "public", "index.php")) || File.Exists(Path.Combine(dir, "public", "index.html")))
-                site.DocRoot = Path.Combine(dir, "public");
             else
+            {
+                // front-controller folders: public (Laravel, Symfony, CodeIgniter), web (Drupal, Yii), webroot (CakePHP)
                 site.DocRoot = dir;
+                if (!File.Exists(Path.Combine(dir, "index.php")) && !File.Exists(Path.Combine(dir, "index.html")))
+                    foreach (var sub in new[] { "public", "web", "webroot", "public_html" })
+                        if (File.Exists(Path.Combine(dir, sub, "index.php")) || File.Exists(Path.Combine(dir, sub, "index.html")))
+                        {
+                            site.DocRoot = Path.Combine(dir, sub);
+                            break;
+                        }
+            }
 
             site.PhpOverride = ini.Get(name, "php", "");
             if (ini.GetBool(name, "disabled", false)) { site.Valid = false; site.Problem = I18n.T("sites.disabled"); }

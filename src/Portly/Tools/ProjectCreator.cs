@@ -17,7 +17,17 @@ namespace Portly.Tools
     /// <summary>Quick project: Blank, WordPress (in the UI language) or Laravel.</summary>
     public static class ProjectCreator
     {
-        public static readonly string[] Templates = { "blank", "wordpress", "laravel" };
+        public static readonly string[] Templates = { "blank", "wordpress", "laravel", "symfony", "codeigniter", "cakephp", "drupal" };
+
+        /// <summary>Composer based templates: display name and the command run in a terminal ({0} = folder name).</summary>
+        public static readonly Dictionary<string, Tuple<string, string>> ComposerTemplates = new Dictionary<string, Tuple<string, string>>
+        {
+            { "laravel", Tuple.Create("Laravel", "composer create-project laravel/laravel \"{0}\"") },
+            { "symfony", Tuple.Create("Symfony", "composer create-project symfony/skeleton \"{0}\" && cd \"{0}\" && composer config extra.symfony.allow-contrib true && composer require symfony/apache-pack -n") },
+            { "codeigniter", Tuple.Create("CodeIgniter 4", "composer create-project codeigniter4/appstarter \"{0}\"") },
+            { "cakephp", Tuple.Create("CakePHP", "composer create-project --prefer-dist cakephp/app \"{0}\" -n") },
+            { "drupal", Tuple.Create("Drupal", "composer create-project drupal/recommended-project \"{0}\"") },
+        };
 
         public static string ValidateName(string name)
         {
@@ -37,7 +47,7 @@ namespace Portly.Tools
             Directory.CreateDirectory(root);
             var dir = Path.Combine(root, name);
             string dbMsg = "";
-            if (createDb && template != "laravel")
+            if (createDb && template == "wordpress" || createDb && template == "blank")
             {
                 var dbErr = Database.CreateDatabase(DbNameFor(name));
                 dbMsg = dbErr == null ? "\n" + I18n.T("project.dbCreated", DbNameFor(name)) : "\n" + I18n.T("project.dbFailed", dbErr);
@@ -49,10 +59,19 @@ namespace Portly.Tools
                     await CreateWordPress(dir, name, status, ct);
                     break;
                 case "laravel":
+                case "symfony":
+                case "codeigniter":
+                case "cakephp":
+                case "drupal":
                     if (PackageTypes.ActiveDir("php") == null || PackageTypes.ActiveDir("composer") == null)
                         throw new Exception(I18n.T("err.needComposer"));
-                    Terminal.Run(root, "composer create-project laravel/laravel \"" + name + "\" && echo. && echo " + I18n.T("project.laravelDone"));
-                    return I18n.T("project.laravelStarted");
+                    if (createDb)
+                    {
+                        var dbErr2 = Database.CreateDatabase(DbNameFor(name));
+                        dbMsg = dbErr2 == null ? "\n" + I18n.T("project.dbCreated", DbNameFor(name)) : "";
+                    }
+                    Terminal.Run(root, string.Format(ComposerTemplates[template].Item2, name) + " && echo. && echo " + I18n.T("project.laravelDone"));
+                    return I18n.T("project.composerStarted", ComposerTemplates[template].Item1) + dbMsg;
                 default:
                     Directory.CreateDirectory(dir);
                     File.WriteAllText(Path.Combine(dir, "index.php"),

@@ -11,7 +11,7 @@ namespace Portly.UI
     public class NewProjectForm : Form
     {
         readonly TextBox _name;
-        readonly RadioButton _blank, _wordpress, _laravel;
+        readonly ThemedCombo _template;
         readonly CheckBox _db, _open;
         readonly Label _status, _url;
         readonly Button _create, _cancel;
@@ -41,18 +41,18 @@ namespace Portly.UI
             _name.TextChanged += (s, e) => UpdateUrl();
 
             t.Controls.Add(Ui.Label(I18n.T("project.template"), Ui.Bold));
-            _blank = new RadioButton { Text = I18n.T("project.blank"), AutoSize = true, Checked = true };
-            _wordpress = new RadioButton { Text = I18n.T("project.wordpress"), AutoSize = true };
-            _laravel = new RadioButton { Text = I18n.T("project.laravel"), AutoSize = true };
-            t.Controls.Add(_blank);
-            t.Controls.Add(_wordpress);
-            t.Controls.Add(_laravel);
+            _template = new ThemedCombo { Width = Ui.S(360), Margin = Ui.P(0, 2, 0, 2) };
+            _template.Items.Add(new Item(I18n.T("project.blank"), "blank"));
+            _template.Items.Add(new Item(I18n.T("project.wordpress"), "wordpress"));
+            foreach (var kv in ProjectCreator.ComposerTemplates)
+                _template.Items.Add(new Item(kv.Value.Item1 + "  ·  " + I18n.T("project.viaComposer"), kv.Key));
+            _template.SelectedIndex = 0;
+            t.Controls.Add(_template);
 
             _db = new CheckBox { Text = I18n.T("project.createDb"), AutoSize = true, Checked = true, Margin = Ui.P(0, 10, 0, 0) };
             _open = new CheckBox { Text = I18n.T("project.openAfter"), AutoSize = true, Checked = true };
             t.Controls.Add(_db);
             t.Controls.Add(_open);
-            _laravel.CheckedChanged += (s, e) => _db.Enabled = !_laravel.Checked;
 
             _status = new Label { AutoSize = true, ForeColor = Ui.Muted, MaximumSize = new Size(Ui.S(360), 0), Margin = Ui.P(0, 10, 0, 0) };
             t.Controls.Add(_status);
@@ -81,8 +81,8 @@ namespace Portly.UI
             var name = _name.Text.Trim();
             var err = ProjectCreator.ValidateName(name);
             if (err != null) { Ui.Error(this, err); return; }
-            var template = _wordpress.Checked ? "wordpress" : _laravel.Checked ? "laravel" : "blank";
-            if (_db.Checked && template != "laravel" && ServiceManager.MySql.State != ServiceState.Running)
+            var template = ((Item)_template.SelectedItem).Value;
+            if (_db.Checked && ServiceManager.MySql.State != ServiceState.Running)
             {
                 if (!Ui.Confirm(this, I18n.T("project.mysqlOff"))) return;
                 _db.Checked = false;

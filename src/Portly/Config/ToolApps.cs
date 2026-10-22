@@ -37,8 +37,8 @@ namespace Portly.Config
             var s = Settings.Current;
             var tools = new List<object>();
             foreach (var t in WebTools()) tools.Add(new Dictionary<string, object> { { "name", PackageTypes.Get(t.Item1).Name }, { "url", "/" + t.Item1 + "/" } });
-            if (PackageTypes.ActiveDir("mailpit") != null)
-                tools.Add(new Dictionary<string, object> { { "name", "Mailpit" }, { "url", "http://127.0.0.1:" + s.MailpitWebPort + "/" } });
+            if (PackageTypes.ActiveDir(s.MailTool) != null)
+                tools.Add(new Dictionary<string, object> { { "name", PackageTypes.Get(s.MailTool).Name }, { "url", "http://127.0.0.1:" + s.MailpitWebPort + "/" } });
 
             var data = new Dictionary<string, object>
             {

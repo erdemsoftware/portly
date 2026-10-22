@@ -284,7 +284,7 @@ namespace Portly.UI
             var row = new Row { Svc = svc };
             var card = new Card { Height = Ui.S(72), Anchor = AnchorStyles.Left | AnchorStyles.Right, Margin = Ui.P(0, 0, 0, 10), Radius = 12 };
             row.Card = card;
-            row.Tile = BrandTile.For(svc.Id == "web" ? svc.PackageType : svc.Id);
+            row.Tile = BrandTile.For(svc.Id == "web" || svc.Id == "mailpit" ? svc.PackageType : svc.Id);
             row.Tile.Location = new Point(Ui.S(18), Ui.S(16));
             row.Name = Ui.Label(svc.Title, Ui.Subtitle);
             row.Name.Location = new Point(Ui.S(72), Ui.S(13));
@@ -344,7 +344,7 @@ namespace Portly.UI
                 cm.Items.Add(auto);
             }
             cm.Items.Add(I18n.T("svc.getVersions"), null, (s, e) => OpenPackages(svc.PackageType));
-            var log = svc.Id == "web" ? Settings.Current.WebServer + "-error.log" : svc.Id == "mysql" ? "mysql-error.log" : svc.Id == "redis" ? "redis.log" : svc.Id == "mailpit" ? "mailpit.log" : "php_errors.log";
+            var log = svc.Id == "web" ? Settings.Current.WebServer + "-error.log" : svc.Id == "mysql" ? "mysql-error.log" : svc.Id == "redis" ? "redis.log" : svc.Id == "mailpit" ? Settings.Current.MailTool + ".log" : "php_errors.log";
             cm.Items.Add(I18n.T("svc.openLog"), null, (s, e) => WinUtil.Edit(Path.Combine(Paths.Logs, log)));
         }
 
@@ -399,7 +399,9 @@ namespace Portly.UI
                 case "adminer":
                 case "phpmyadmin":
                 case "mailpit":
-                    if (type == "mailpit" && ServiceManager.Mailpit.IsActive) await ServiceManager.Mailpit.RestartAsync();
+                case "mailhog":
+                case "smtp4dev":
+                    if (type == Settings.Current.MailTool && ServiceManager.Mailpit.IsActive) await ServiceManager.Mailpit.RestartAsync();
                     await ServiceManager.ReloadWebAsync();
                     break;
                 case "mysql":
@@ -580,6 +582,14 @@ namespace Portly.UI
             var badges = new List<Control> { php };
             if (site.IsGroup)
                 badges.Add(new Pill { Text = I18n.T("sites.group"), Color = p.Accent, Dot = false });
+            var shared = Share.UrlOf(site);
+            if (shared != null)
+            {
+                var sp = new Pill { Text = I18n.T("share.badge"), Color = ColorTranslator.FromHtml("#F38020"), Cursor = Cursors.Hand };
+                sp.Click += (o, e) => WinUtil.Open(shared);
+                new ToolTip().SetToolTip(sp, shared);
+                badges.Add(sp);
+            }
             if (site.Valid && Settings.Current.Ssl)
             {
                 bool trusted = _caTrusted;
@@ -641,6 +651,15 @@ namespace Portly.UI
             }
             items.Add(php);
             items.Add(I18n.T("sites.createDb"), null, (s, e) => CreateDatabase(ProjectCreator.DbNameFor(site.Name)));
+            if (site.Valid && Share.IsAvailable)
+            {
+                if (Share.UrlOf(site) == null) items.Add(I18n.T("share.start"), null, (s, e) => ShareSite(site));
+                else
+                {
+                    items.Add(I18n.T("share.copy"), null, (s, e) => { try { Clipboard.SetText(Share.UrlOf(site)); } catch { } });
+                    items.Add(I18n.T("share.stop"), null, (s, e) => { Share.Stop(site); FillSites(); });
+                }
+            }
             items.Add(new ToolStripSeparator());
             items.Add(I18n.T("sites.delete"), null, async (s, e) =>
             {
@@ -649,6 +668,19 @@ namespace Portly.UI
                 catch (Exception ex) { Ui.Error(this, ex.Message); return; }
                 await ServiceManager.ReloadWebAsync();
             });
+        }
+
+        async void ShareSite(Site site)
+        {
+            if (ServiceManager.Web.State != ServiceState.Running) { Ui.Error(this, I18n.T("main.webNotRunning")); return; }
+            try
+            {
+                var url = await Share.StartAsync(site, s => SafeInvoke(() => SetStatus(s)));
+                try { Clipboard.SetText(url); } catch { }
+                FillSites();
+                Ui.Info(this, I18n.T("share.ready", url));
+            }
+            catch (Exception ex) { Ui.Error(this, ex.Message); }
         }
 
         void OpenSite(Site site, bool https)
@@ -808,6 +840,19 @@ namespace Portly.UI
                     ext.DropDownItems.Add(mi);
                 }
                 php.DropDownItems.Add(ext);
+                var xdebugOn = Xdebug.IsEnabled(phpDir);
+                var xd = new ToolStripMenuItem("Xdebug") { Checked = xdebugOn };
+                xd.Click += async (s2, e2) =>
+                {
+                    try
+                    {
+                        if (xdebugOn) Xdebug.Disable(phpDir);
+                        else { SetStatus(I18n.T("log.downloading", "Xdebug")); await Xdebug.EnableAsync(phpDir); }
+                        await ServiceManager.ReloadWebAsync();
+                    }
+                    catch (Exception ex) { Ui.Error(this, "Xdebug: " + ex.Message); }
+                };
+                php.DropDownItems.Add(xd);
                 php.DropDownItems.Add(I18n.T("php.errorLog"), null, (s, e) => WinUtil.Edit(Path.Combine(Paths.Logs, "php_errors.log")));
             }
             else php.DropDownItems.Add(I18n.T("svc.getVersions"), null, (s, e) => OpenPackages("php"));
@@ -829,6 +874,7 @@ namespace Portly.UI
 
             var tools = new ToolStripMenuItem(I18n.T("menu.tools"));
             tools.DropDownItems.Add(I18n.T("main.terminal"), null, (s, e) => Terminal.Open());
+            tools.DropDownItems.Add(I18n.T("import.menu"), null, (s, e) => OpenImport(true));
             tools.DropDownItems.Add(I18n.T("port.checkNow"), null, async (s, e) => await FixPorts(ServiceManager.Rows.Where(x => x.Id != "php")));
             tools.DropDownItems.Add(I18n.T("tools.hosts"), null, (s, e) => WinUtil.RunElevated("notepad.exe", "\"" + HostsFile.FilePath + "\"", false));
             tools.DropDownItems.Add(I18n.T("tools.root"), null, (s, e) => WinUtil.OpenFolder(Paths.Root));
@@ -942,7 +988,7 @@ namespace Portly.UI
 
         void OpenMailpit()
         {
-            if (PackageTypes.ActiveDir("mailpit") == null) { OpenPackages("mailpit"); return; }
+            if (PackageTypes.ActiveDir(Settings.Current.MailTool) == null) { OpenPackages(Settings.Current.MailTool); return; }
             if (!ServiceManager.Mailpit.IsActive) SetStatus(I18n.T("main.mailNotRunning"));
             WinUtil.Open("http://127.0.0.1:" + Settings.Current.MailpitWebPort + "/");
         }
@@ -1235,8 +1281,17 @@ namespace Portly.UI
                 s.FirstRunDone = true;
                 s.Save();
                 OpenPackages(null, true);
+                OpenImport(false);
             }
             else CheckVcRuntime(true);
+
+            // automatic database backup (off by default): checked every 10 minutes
+            var backupTimer = new System.Windows.Forms.Timer { Interval = 10 * 60 * 1000 };
+            backupTimer.Tick += (o, e) => Task.Run(() =>
+            {
+                try { Database.AutoBackupIfDue(); } catch (Exception ex) { Log.Warn("Auto backup: " + ex.Message); }
+            });
+            backupTimer.Start();
 
             var checks = BackgroundChecks(false, false);
             if (_startServices || s.StartServicesOnLaunch) await ToggleAll();
@@ -1272,6 +1327,24 @@ namespace Portly.UI
                 Application.Exit();
             }
             catch (Exception ex) { Ui.Error(this, ex.Message); }
+        }
+
+        /// <summary>Laragon / XAMPP import. quiet = only open when something was found (first start).</summary>
+        async void OpenImport(bool interactive)
+        {
+            var sources = await Task.Run(() => Importer.Detect());
+            if (sources.Count == 0)
+            {
+                if (interactive) Ui.Info(this, I18n.T("import.none"));
+                return;
+            }
+            if (!interactive && !Ui.Confirm(this, I18n.T("import.offer", string.Join(", ", sources.Select(x => x.Name))))) return;
+            ShowFromTray();
+            using (var f = new ImportForm(sources))
+            {
+                f.ShowDialog(this);
+                if (f.ProjectsChanged) { WatchDocRoot(); await ServiceManager.ReloadWebAsync(); RebuildTheme(); }
+            }
         }
 
         void ShowDonate()
@@ -1321,6 +1394,7 @@ namespace Portly.UI
             if (_exiting) return;
             _exiting = true;
             SystemEvents.UserPreferenceChanged -= OnSystemThemeChanged;
+            Share.StopAll();
             SetStatus(I18n.T("main.stopping"));
             Enabled = false;
             await Task.WhenAny(ServiceManager.StopAllAsync(), Task.Delay(30000));
