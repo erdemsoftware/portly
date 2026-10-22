@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -25,7 +26,7 @@ namespace Portly.Tools
             return null;
         }
 
-        public static string DbNameFor(string project) { return project.Replace('-', '_').ToLowerInvariant(); }
+        public static string DbNameFor(string project) { return project.Replace('-', '_').Replace('/', '_').ToLowerInvariant(); }
 
         /// <summary>Returns a message for the user (what was done / what to do next).</summary>
         public static async Task<string> CreateAsync(string name, string template, bool createDb, Action<string> status, CancellationToken ct)
@@ -64,22 +65,26 @@ namespace Portly.Tools
             return I18n.T("project.created", name) + dbMsg;
         }
 
-        static string WordPressUrl()
+        static readonly Dictionary<string, string> WpLocales = new Dictionary<string, string>
         {
-            switch (I18n.Code)
+            { "tr", "tr:tr_TR" }, { "de", "de:de_DE" }, { "es", "es:es_ES" }, { "fr", "fr:fr_FR" }, { "it", "it:it_IT" },
+            { "ru", "ru:ru_RU" }, { "pt-BR", "br:pt_BR" }, { "zh-CN", "cn:zh_CN" }, { "ja", "ja:ja" }, { "az", "az:az" },
+            { "ar", "ar:ar" }, { "fa", "fa:fa_IR" }, { "ur", "ur:ur" }, { "hi", "hi:hi_IN" }, { "bn", "bn:bn_BD" },
+            { "id", "id:id_ID" }, { "ms", "ms:ms_MY" }, { "vi", "vi:vi" }, { "th", "th:th" }, { "ko", "ko:ko_KR" },
+            { "pl", "pl:pl_PL" }, { "nl", "nl:nl_NL" }, { "uk", "uk:uk" }, { "cs", "cs:cs_CZ" }, { "ro", "ro:ro_RO" },
+            { "hu", "hu:hu_HU" }, { "el", "el:el" }, { "sv", "sv:sv_SE" }, { "bg", "bg:bg_BG" }, { "uz", "uz:uz_UZ" },
+        };
+
+        /// <summary>WordPress in the UI language (falls back to English when that build does not exist).</summary>
+        static IEnumerable<string> WordPressUrls()
+        {
+            string v;
+            if (WpLocales.TryGetValue(I18n.Code, out v))
             {
-                case "tr": return "https://tr.wordpress.org/latest-tr_TR.zip";
-                case "de": return "https://de.wordpress.org/latest-de_DE.zip";
-                case "es": return "https://es.wordpress.org/latest-es_ES.zip";
-                case "fr": return "https://fr.wordpress.org/latest-fr_FR.zip";
-                case "it": return "https://it.wordpress.org/latest-it_IT.zip";
-                case "ru": return "https://ru.wordpress.org/latest-ru_RU.zip";
-                case "pt-BR": return "https://br.wordpress.org/latest-pt_BR.zip";
-                case "zh-CN": return "https://cn.wordpress.org/latest-zh_CN.zip";
-                case "ja": return "https://ja.wordpress.org/latest-ja.zip";
-                case "az": return "https://az.wordpress.org/latest-az.zip";
-                default: return "https://wordpress.org/latest.zip";
+                var parts = v.Split(':');
+                yield return "https://" + parts[0] + ".wordpress.org/latest-" + parts[1] + ".zip";
             }
+            yield return "https://wordpress.org/latest.zip";
         }
 
         static async Task CreateWordPress(string dir, string name, Action<string> status, CancellationToken ct)
@@ -88,7 +93,19 @@ namespace Portly.Tools
             var fresh = File.Exists(zip) && File.GetLastWriteTime(zip) > DateTime.Now.AddDays(-7);
             if (!fresh)
             {
-                await Net.DownloadFileAsync(WordPressUrl(), zip, (p, b) => status(I18n.T("project.downloading", "WordPress", p < 0 ? (b / 1048576) + " MB" : p + "%")), ct);
+                Exception last = null;
+                foreach (var url in WordPressUrls())
+                {
+                    try
+                    {
+                        await Net.DownloadFileAsync(url, zip, (p, b) => status(I18n.T("project.downloading", "WordPress", p < 0 ? (b / 1048576) + " MB" : p + "%")), ct);
+                        last = null;
+                        break;
+                    }
+                    catch (OperationCanceledException) { throw; }
+                    catch (Exception ex) { last = ex; Log.Warn(url + " -> " + ex.Message); }
+                }
+                if (last != null) throw last;
             }
             status(I18n.T("project.extracting"));
             var tmp = Path.Combine(Paths.Tmp, "extract", "wp-" + Guid.NewGuid().ToString("N").Substring(0, 6));

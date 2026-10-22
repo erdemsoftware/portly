@@ -241,8 +241,8 @@ namespace Portly.UI
                 if (Circle) g.FillEllipse(b, r);
                 else Glyphs.FillRound(g, b, r, Ui.S(10));
             }
-            using (var sf = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center })
-                g.DrawString(Text, Font, Brushes.White, r, sf);
+            TextRenderer.DrawText(g, Text, Font, new Rectangle(0, 0, Width, Height), Color.White,
+                TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.SingleLine | TextFormatFlags.NoPadding);
         }
 
         /// <summary>Known service colors.</summary>
@@ -315,7 +315,9 @@ namespace Portly.UI
             using (var g = Graphics.FromHwnd(Handle))
             {
                 int aw = SystemInformation.VerticalScrollBarWidth;
-                var arrow = new Rectangle(Width - aw - 1, 1, aw, Height - 2);
+                // right-to-left windows put the drop-down button on the left
+                bool rtl = RightToLeft == RightToLeft.Yes;
+                var arrow = rtl ? new Rectangle(1, 1, aw, Height - 2) : new Rectangle(Width - aw - 1, 1, aw, Height - 2);
                 using (var b = new SolidBrush(p.Input)) g.FillRectangle(b, arrow);
                 g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
                 float cx = arrow.X + arrow.Width / 2f, cy = Height / 2f, d = Ui.S(4);

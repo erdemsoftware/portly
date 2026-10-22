@@ -16,6 +16,8 @@ namespace Portly.Core
         static Dictionary<string, string> _fallback = new Dictionary<string, string>();
         static Dictionary<string, string> _current = new Dictionary<string, string>();
         public static string Code { get; private set; }
+        /// <summary>Right-to-left language (Arabic, Persian, Urdu ...): "_meta": { "rtl": true }.</summary>
+        public static bool IsRtl { get; private set; }
 
         public class LangInfo
         {
@@ -32,6 +34,13 @@ namespace Portly.Core
             Code = code;
             _current = code == "en" ? _fallback : Read(code);
             if (_current.Count == 0) { Code = "en"; _current = _fallback; }
+            IsRtl = false;
+            try
+            {
+                var file = Path.Combine(Paths.Lang, Code + ".json");
+                if (File.Exists(file)) IsRtl = Json.ParseObject(File.ReadAllText(file, Encoding.UTF8)).Obj("_meta").Bool("rtl");
+            }
+            catch { }
         }
 
         /// <summary>Pick the Windows display language when a matching file exists.</summary>

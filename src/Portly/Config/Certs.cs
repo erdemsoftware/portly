@@ -159,12 +159,19 @@ namespace Portly.Config
             return false;
         }
 
-        /// <summary>Adds the CA to the user's trusted roots. Windows shows its own confirmation dialog.</summary>
+        /// <summary>
+        /// Trust the Portly CA for every browser on this computer: one administrator prompt (UAC) puts it into the
+        /// machine's trusted roots. If the prompt is refused, it falls back to the current user's store
+        /// (Windows then shows its own confirmation).
+        /// </summary>
         public static bool TrustCa()
         {
             try
             {
-                var ca = EnsureCa();
+                EnsureCa();
+                var code = WinUtil.RunElevated(Paths.Exe, "--trust-ca \"" + CaCrt + "\"");
+                if (code == 0 && IsCaTrusted()) { Log.Info(I18n.T("log.caTrusted")); return true; }
+                var ca = new X509Certificate2(Encoding.ASCII.GetBytes(File.ReadAllText(CaCrt)));
                 using (var store = new X509Store(StoreName.Root, StoreLocation.CurrentUser))
                 {
                     store.Open(OpenFlags.ReadWrite);
@@ -174,6 +181,23 @@ namespace Portly.Config
                 return IsCaTrusted();
             }
             catch (Exception ex) { Log.Warn("Trust CA: " + ex.Message); return false; }
+        }
+
+        /// <summary>Runs in the elevated helper ("Portly.exe --trust-ca file"). Only accepts the Portly CA.</summary>
+        public static int TrustCaElevated(string file)
+        {
+            try
+            {
+                var ca = new X509Certificate2(Encoding.ASCII.GetBytes(File.ReadAllText(file)));
+                if (!ca.Subject.Contains("Portly Local CA") || ca.Subject != ca.Issuer) return 3;
+                using (var store = new X509Store(StoreName.Root, StoreLocation.LocalMachine))
+                {
+                    store.Open(OpenFlags.ReadWrite);
+                    store.Add(ca);
+                }
+                return 0;
+            }
+            catch { return 2; }
         }
 
         public static void RegenerateSiteCertificates()

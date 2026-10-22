@@ -28,6 +28,7 @@ namespace Portly.UI
             public ComboBox Version;
             public ToggleSwitch Toggle;
             public ModernButton Get;
+            public bool ShowGet;   // Control.Visible is false while the page is hidden, so keep our own flag
         }
 
         readonly bool _startHidden;
@@ -104,6 +105,7 @@ namespace Portly.UI
         {
             BackColor = Ui.Bg;
             ForeColor = Ui.Text;
+            Ui.ApplyDirection(this);
             Theme.ApplyTitleBar(this);
             BuildUi();
         }
@@ -149,7 +151,7 @@ namespace Portly.UI
             _updateBtn.Size = new Size(Ui.S(198), Ui.S(38));
             _updateBtn.Visible = false;
             _updateBtn.Margin = Ui.P(0, 0, 0, 8);
-            var donate = NavButton(I18n.T("main.donate"), "heart", (s, e) => WinUtil.Open(AppInfo.DonateUrl));
+            var donate = NavButton(I18n.T("main.donate"), "heart", (s, e) => ShowDonate());
             donate.CustomColor = Ui.Heart;
             var ver = Ui.Label("v" + AppInfo.VersionText + " · " + (AppInfo.IsLegacy ? "Windows 7/8" : "Windows 10/11"), Ui.Small, Ui.Muted);
             ver.Margin = Ui.P(12, 6, 0, 0);
@@ -302,6 +304,8 @@ namespace Portly.UI
             row.Get = Ui.Button(I18n.T("svc.install"), (s, e) => OpenPackages(svc.PackageType), true, "update");
             row.Get.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             row.Get.MinimumSize = new Size(0, Ui.S(30));
+            row.Get.AutoSize = false;
+            row.Get.Size = row.Get.GetPreferredSize(Size.Empty);
 
             var cm = new ContextMenuStrip();
             StyleMenu(cm);
@@ -322,7 +326,7 @@ namespace Portly.UI
             row.Toggle.Location = new Point(right - row.Toggle.Width, top);
             row.Get.Location = new Point(right - row.Get.Width, top - Ui.S(3));
             // keep the status pills of all cards in one column (PHP has no switch)
-            int edge = (row.Get.Visible ? row.Get.Left : row.Toggle.Left) - Ui.S(14);
+            int edge = (row.ShowGet ? row.Get.Left : row.Toggle.Left) - Ui.S(14);
             row.Status.Location = new Point(edge - row.Status.Width, top + 1);
             row.Version.Location = new Point(row.Status.Left - Ui.S(12) - row.Version.Width, top - Ui.S(1));
             row.Error.Width = Math.Max(Ui.S(100), w - Ui.S(73) - Ui.S(90));
@@ -447,6 +451,7 @@ namespace Portly.UI
             row.Toggle.Checked = svc.State == ServiceState.Running || svc.State == ServiceState.Starting;
             row.Toggle.Busy = svc.State == ServiceState.Starting || svc.State == ServiceState.Stopping;
             row.Toggle.Visible = installed && svc.Id != "php";
+            row.ShowGet = !installed;
             row.Get.Visible = !installed;
 
             var version = PackageTypes.Label(PackageTypes.ActiveFolder(svc.PackageType));
@@ -509,9 +514,12 @@ namespace Portly.UI
             return page;
         }
 
+        bool _caTrusted;
+
         void FillSites()
         {
             if (_siteFlow == null) return;
+            _caTrusted = Certs.IsCaTrusted();
             var s = Settings.Current;
             var sites = ServiceManager.CurrentSites;
             _sitesSub.Text = I18n.T("sites.count", sites.Count(x => x.Valid), s.DocumentRoot, s.Tld);
@@ -543,7 +551,7 @@ namespace Portly.UI
             if (!site.Valid) card.BorderColor = Color.FromArgb(140, p.Red);
             var avatar = BrandTile.Avatar(site.Name);
             avatar.Location = new Point(Ui.S(16), Ui.S(16));
-            var name = Ui.Label(site.Name, Ui.Subtitle);
+            var name = Ui.Label(site.Group != "" ? site.Group + " / " + site.ShortName : site.Name, Ui.Subtitle);
             name.AutoSize = false;
             name.AutoEllipsis = true;
             name.Size = new Size(Ui.S(190), Ui.S(24));
@@ -569,6 +577,27 @@ namespace Portly.UI
             var php = new Pill { Text = "PHP " + PackageTypes.Label(site.PhpFolder) + (site.PhpOverride != "" ? " •" : ""), Color = ColorTranslator.FromHtml("#777BB4"), Dot = false };
             php.Location = new Point(Ui.S(64), Ui.S(70));
             php.Visible = site.Valid;
+            var badges = new List<Control> { php };
+            if (site.IsGroup)
+                badges.Add(new Pill { Text = I18n.T("sites.group"), Color = p.Accent, Dot = false });
+            if (site.Valid && Settings.Current.Ssl)
+            {
+                bool trusted = _caTrusted;
+                var lockPill = new Pill { Text = trusted ? "HTTPS" : "HTTPS !", Color = trusted ? p.Green : p.Orange, Cursor = trusted ? Cursors.Default : Cursors.Hand };
+                if (!trusted)
+                {
+                    lockPill.Click += (o, e) => { TrustCa(); FillSites(); };
+                    new ToolTip().SetToolTip(lockPill, I18n.T("sites.httpsUntrusted") + " - " + I18n.T("ssl.trust"));
+                }
+                badges.Add(lockPill);
+            }
+            int bx = Ui.S(64);
+            foreach (var b in badges.Where(x => x.Visible || x != php))
+            {
+                b.Location = new Point(bx, Ui.S(70));
+                bx += b.Width + Ui.S(6);
+                if (b != php) card.Controls.Add(b);
+            }
             var moreBtn = new ModernButton { Glyph = "more", Kind = ButtonKind.Ghost, AutoSize = false, Size = Ui.S(32, 32), Location = new Point(Ui.S(256), Ui.S(10)), AccessibleName = I18n.T("sites.more") };
             var cm = new ContextMenuStrip();
             StyleMenu(cm);
@@ -813,7 +842,7 @@ namespace Portly.UI
                 items.Add(I18n.T("menu.checkUpdates"), null, async (s, e) => await BackgroundChecks(true, true));
             items.Add(I18n.T("menu.about"), null, (s, e) => { ShowFromTray(); using (var f = new AboutForm()) f.ShowDialog(this); });
             var don = new ToolStripMenuItem("♥ " + I18n.T("main.donate"));
-            don.Click += (s, e) => WinUtil.Open(AppInfo.DonateUrl);
+            don.Click += (s, e) => ShowDonate();
             items.Add(don);
             don.ForeColor = Ui.Heart;
             items.Add(new ToolStripSeparator());
@@ -1101,6 +1130,7 @@ namespace Portly.UI
         {
             await Certs.RefreshBundleAsync();
             if (!AppInfo.UpdatesSupported) return;
+            await Donate.RefreshAsync();
             var s = Settings.Current;
             if (!force)
             {
@@ -1134,18 +1164,38 @@ namespace Portly.UI
                 if (_watcher != null) { _watcher.EnableRaisingEvents = false; _watcher.Dispose(); _watcher = null; }
                 var root = Settings.Current.DocumentRoot;
                 Directory.CreateDirectory(root);
-                _watcher = new FileSystemWatcher(root) { IncludeSubdirectories = false, NotifyFilter = NotifyFilters.DirectoryName };
-                FileSystemEventHandler h = (s, e) => SafeInvoke(() => { _debounce.Stop(); _debounce.Start(); });
+                // two levels deep (group folders), but only folder changes and project marker files count:
+                // saving a file inside a project never restarts the web server
+                _watcher = new FileSystemWatcher(root) { IncludeSubdirectories = true, NotifyFilter = NotifyFilters.DirectoryName | NotifyFilters.FileName, InternalBufferSize = 32768 };
+                Action<string, bool> consider = (fullPath, isDir) =>
+                {
+                    var rel = fullPath.Length > root.Length ? fullPath.Substring(root.Length).Trim('\\') : "";
+                    int depth = rel.Split('\\').Length;
+                    var file = Path.GetFileName(fullPath).ToLowerInvariant();
+                    bool marker = file == "index.php" || file == "index.html" || file == "index.htm" || file == "composer.json" || file == "package.json" || file == "wp-config.php" || file == "public";
+                    if ((isDir && depth <= 2) || (marker && depth <= 3))
+                        SafeInvoke(() => { _debounce.Stop(); _debounce.Start(); });
+                };
+                FileSystemEventHandler h = (s, e) => consider(e.FullPath, Directory.Exists(e.FullPath) || e.ChangeType == WatcherChangeTypes.Deleted && !Path.HasExtension(e.FullPath));
                 _watcher.Created += h;
                 _watcher.Deleted += h;
-                _watcher.Renamed += (s, e) => SafeInvoke(() => { _debounce.Stop(); _debounce.Start(); });
+                _watcher.Renamed += (s, e) => { consider(e.FullPath, Directory.Exists(e.FullPath)); consider(e.OldFullPath, Directory.Exists(e.FullPath)); };
                 _watcher.EnableRaisingEvents = true;
             }
             catch (Exception ex) { Log.Warn("Watcher: " + ex.Message); }
         }
 
+        static string SitesKey(IEnumerable<Site> sites)
+        {
+            return string.Join("|", sites.Select(x => x.Host + ">" + x.DocRoot + ">" + x.Valid + ">" + x.IsGroup));
+        }
+
         async Task OnDocRootChanged()
         {
+            // nothing that matters for the web server changed (e.g. a file inside a project)
+            var before = SitesKey(ServiceManager.CurrentSites);
+            var now = await Task.Run(() => SitesKey(Sites.Scan()));
+            if (before == now) return;
             if (Settings.Current.AutoVhosts && ServiceManager.Web.State == ServiceState.Running)
             {
                 Log.Info(I18n.T("log.sitesChanged"));
@@ -1173,6 +1223,11 @@ namespace Portly.UI
                 if (AppInfo.IsLegacy && OsInfo.IsWin10OrLater) Ui.Info(this, I18n.T("os.useModern"));
             }
             if (Paths.HasSpaceInRoot) Log.Warn(I18n.T("warn.spaceInPath"));
+            if (RunningFromTemp() && Ui.Confirm(this, I18n.T("warn.runningFromTemp")))
+            {
+                MoveToCPortly();
+                return;
+            }
 
             bool nothingInstalled = PackageTypes.All.All(t => PackageTypes.Installed(t.Id).Count == 0);
             if (nothingInstalled && !s.FirstRunDone)
@@ -1186,6 +1241,43 @@ namespace Portly.UI
             var checks = BackgroundChecks(false, false);
             if (_startServices || s.StartServicesOnLaunch) await ToggleAll();
             await checks;
+        }
+
+        /// <summary>Started from inside a zip (WinRAR / Explorer extract to %TEMP%): everything installed would be lost.</summary>
+        static bool RunningFromTemp()
+        {
+            var temp = Path.GetTempPath().TrimEnd('\\');
+            return Paths.Root.StartsWith(temp + "\\", StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>Copy the program files to C:\Portly and start from there.</summary>
+        void MoveToCPortly()
+        {
+            var target = Path.Combine(Path.GetPathRoot(Environment.SystemDirectory) ?? @"C:\", "Portly");
+            try
+            {
+                Directory.CreateDirectory(target);
+                foreach (var f in new[] { "Portly.exe", "Portly.exe.config", "LICENSE.txt", "README.txt" })
+                    if (File.Exists(Path.Combine(Paths.Root, f))) File.Copy(Path.Combine(Paths.Root, f), Path.Combine(target, f), true);
+                foreach (var d in new[] { "lang", "templates" })
+                    foreach (var f in Directory.GetFiles(Path.Combine(Paths.Root, d), "*", SearchOption.AllDirectories))
+                    {
+                        var dest = Path.Combine(target, f.Substring(Paths.Root.Length + 1));
+                        Directory.CreateDirectory(Path.GetDirectoryName(dest));
+                        File.Copy(f, dest, true);
+                    }
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(Path.Combine(target, "Portly.exe")) { WorkingDirectory = target });
+                _exiting = true;
+                _tray.Visible = false;
+                Application.Exit();
+            }
+            catch (Exception ex) { Ui.Error(this, ex.Message); }
+        }
+
+        void ShowDonate()
+        {
+            ShowFromTray();
+            using (var f = new DonateForm()) f.ShowDialog(this);
         }
 
         void ShowFromTray()

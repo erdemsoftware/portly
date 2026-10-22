@@ -87,6 +87,8 @@ namespace Portly.Config
                     var sv = Merge(v, new Dictionary<string, string>
                     {
                         { "HOST", site.Host },
+                        // a group folder must not swallow the addresses of the projects inside it
+                        { "ALIAS", site.IsGroup ? "" : "ServerAlias *." + site.Host },
                         { "SITE_ROOT", Paths.Fwd(site.DocRoot) },
                         { "PHP_HANDLER", site.PhpFolder == "" ? "" : ApachePhp(phpPort(site.PhpFolder)) },
                     });
@@ -153,6 +155,7 @@ namespace Portly.Config
                     var sv = Merge(v, new Dictionary<string, string>
                     {
                         { "HOST", site.Host },
+                        { "SERVER_NAMES", site.IsGroup ? site.Host : site.Host + " *." + site.Host },
                         { "SITE_ROOT", Paths.Fwd(site.DocRoot) },
                         { "LISTEN_HTTPS", siteSsl ? "listen " + ip + s.HttpsPort + " ssl;" : "" },
                         { "SSL_CERT", siteSsl ? NginxCert(certs[site.Host]) : "" },

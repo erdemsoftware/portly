@@ -30,7 +30,7 @@ namespace Portly.Core
             get
             {
                 var v = _ini.Get("general", "DocumentRoot", "");
-                if (string.IsNullOrWhiteSpace(v)) return Paths.Www;
+                if (string.IsNullOrWhiteSpace(v)) return DefaultDocumentRoot;
                 if (!Path.IsPathRooted(v)) v = Path.GetFullPath(Path.Combine(Paths.Root, v));
                 return v.TrimEnd('\\', '/');
             }
@@ -43,7 +43,12 @@ namespace Portly.Core
             }
         }
 
-        public string Tld { get { return _ini.Get("general", "Tld", "test").Trim('.').ToLowerInvariant(); } set { _ini.Set("general", "Tld", value.Trim('.').ToLowerInvariant()); } }
+        /// <summary>Projects live in the www folder next to Portly.exe (C:\Portly\www with the installer).</summary>
+        public static string DefaultDocumentRoot { get { return Paths.Www; } }
+
+        /// <summary>Domain ending: shop -> shop.portly</summary>
+        public const string DefaultTld = "portly";
+        public string Tld { get { return _ini.Get("general", "Tld", DefaultTld).Trim('.').ToLowerInvariant(); } set { _ini.Set("general", "Tld", value.Trim('.').ToLowerInvariant()); } }
         public bool AutoVhosts { get { return _ini.GetBool("general", "AutoVirtualHosts", true); } set { _ini.Set("general", "AutoVirtualHosts", value); } }
         public bool Ssl { get { return _ini.GetBool("general", "Ssl", true); } set { _ini.Set("general", "Ssl", value); } }
         public bool RunAtStartup { get { return _ini.GetBool("general", "RunAtStartup", false); } set { _ini.Set("general", "RunAtStartup", value); } }

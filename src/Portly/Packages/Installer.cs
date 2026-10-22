@@ -86,6 +86,70 @@ namespace Portly.Packages
             Report(progress, "done", 100, 0);
         }
 
+        /// <summary>
+        /// Manual install of a version that is not in the catalog: a .zip, an extracted folder, or a single file
+        /// (composer.phar, adminer.php). The result lands in bin\&lt;type&gt;\&lt;name&gt; like any other version.
+        /// Returns the folder name.
+        /// </summary>
+        public static string InstallLocal(string type, string source)
+        {
+            var t = PackageTypes.Get(type);
+            string name, root, tmp = null;
+            bool isDir = Directory.Exists(source);
+            if (!isDir && !File.Exists(source)) throw new FileNotFoundException(source);
+
+            if (isDir)
+            {
+                root = FindRoot(source, type == "apache" ? "Apache24" : "");
+                name = Path.GetFileName(source.TrimEnd('\\', '/'));
+            }
+            else if (source.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+            {
+                tmp = Path.Combine(Paths.Tmp, "extract", Guid.NewGuid().ToString("N").Substring(0, 8));
+                ExtractZip(source, tmp, p => { }, CancellationToken.None);
+                root = FindRoot(tmp, type == "apache" ? "Apache24" : "");
+                name = Path.GetFileNameWithoutExtension(source);
+            }
+            else
+            {
+                // single-file tools: composer.phar, adminer-x.y.php ...
+                name = Path.GetFileNameWithoutExtension(source);
+                if (type == "composer" && !name.StartsWith("composer", StringComparison.OrdinalIgnoreCase)) name = "composer-" + name;
+                tmp = Path.Combine(Paths.Tmp, "extract", Guid.NewGuid().ToString("N").Substring(0, 8));
+                Directory.CreateDirectory(tmp);
+                File.Copy(source, Path.Combine(tmp, t.DetectFile));
+                root = tmp;
+            }
+
+            if (t.DetectFile != "" && !File.Exists(Path.Combine(root, t.DetectFile)))
+            {
+                if (tmp != null) TryDeleteDir(tmp);
+                throw new Exception(I18n.T("err.manualInvalid", t.Name, t.DetectFile));
+            }
+            foreach (var c in Path.GetInvalidFileNameChars()) name = name.Replace(c, '-');
+            var target = Path.Combine(Paths.BinOf(type), name);
+            if (Directory.Exists(target))
+            {
+                if (tmp != null) TryDeleteDir(tmp);
+                throw new Exception(I18n.T("err.manualExists", name));
+            }
+            Directory.CreateDirectory(Paths.BinOf(type));
+            if (tmp != null) { Directory.Move(root, target); TryDeleteDir(tmp); }
+            else CopyDir(root, target);
+
+            PostInstall(new PackageEntry { Type = type, Folder = name, Version = PackageTypes.Label(name) }, null);
+            if (Settings.Current.GetVersion(type) == "") { Settings.Current.SetVersion(type, name); Settings.Current.Save(); }
+            Log.Info(I18n.T("log.installed", t.Name + " " + PackageTypes.Label(name)));
+            return name;
+        }
+
+        static void CopyDir(string from, string to)
+        {
+            Directory.CreateDirectory(to);
+            foreach (var f in Directory.GetFiles(from)) File.Copy(f, Path.Combine(to, Path.GetFileName(f)));
+            foreach (var d in Directory.GetDirectories(from)) CopyDir(d, Path.Combine(to, Path.GetFileName(d)));
+        }
+
         static System.Collections.Generic.IEnumerable<string> CandidateUrls(PackageEntry e)
         {
             yield return e.Url;

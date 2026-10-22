@@ -167,8 +167,16 @@ namespace Portly.UI
             f.BackColor = Bg;
             f.ForeColor = Text;
             f.Icon = AppIcon;
+            ApplyDirection(f);
             f.HandleCreated += (s, e) => Theme.ApplyTitleBar(f);
             f.Load += (s, e) => StyleTree(f);
+        }
+
+        /// <summary>Arabic, Persian, Urdu: mirror the whole window (layout, text alignment, icons).</summary>
+        public static void ApplyDirection(Form f)
+        {
+            f.RightToLeft = I18n.IsRtl ? RightToLeft.Yes : RightToLeft.No;
+            f.RightToLeftLayout = I18n.IsRtl;
         }
 
         /// <summary>Give native inputs theme colors (TextBox, ComboBox, ListView, NumericUpDown ...).</summary>

@@ -1,0 +1,13 @@
+{
+  "comment": "Donation methods shown in Portly (Menu > Donate). Empty url/value entries are hidden. The Windows 10/11 edition downloads this file from GitHub, so it can be changed without a new release.",
+  "methods": [
+    { "kind": "link", "name": "GitHub Sponsors", "url": "", "note": { "en": "Card, worldwide, monthly or one-time", "tr": "Kredi kartı, tüm dünya, aylık ya da tek seferlik" } },
+    { "kind": "link", "name": "Patreon", "url": "", "note": { "en": "Card / PayPal, worldwide", "tr": "Kredi kartı / PayPal, tüm dünya" } },
+    { "kind": "link", "name": "Buy Me a Coffee", "url": "", "note": { "en": "Card, worldwide, one-time", "tr": "Kredi kartı, tüm dünya, tek seferlik" } },
+    { "kind": "link", "name": "Kredi kartı (Türkiye)", "url": "", "note": { "en": "Turkish cards (iyzico / Shopier / PayTR link)", "tr": "Türk kredi/banka kartları (iyzico / Shopier / PayTR linki)" } },
+    { "kind": "copy", "name": "IBAN (TRY)", "value": "", "note": { "en": "Bank transfer in Turkey", "tr": "Türkiye'den havale / EFT" } },
+    { "kind": "copy", "name": "USDT (TRC20)", "value": "", "note": { "en": "Low fee", "tr": "Düşük işlem ücreti" } },
+    { "kind": "copy", "name": "Bitcoin (BTC)", "value": "", "note": { "en": "", "tr": "" } },
+    { "kind": "copy", "name": "Ethereum / USDT (ERC20)", "value": "", "note": { "en": "", "tr": "" } }
+  ]
+}

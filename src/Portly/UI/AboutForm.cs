@@ -6,6 +6,8 @@ namespace Portly.UI
 {
     public class AboutForm : Form
     {
+        void ShowDonate() { using (var f = new DonateForm()) f.ShowDialog(this); }
+
         public AboutForm()
         {
             Ui.Apply(this);
@@ -50,7 +52,7 @@ namespace Portly.UI
             var dText = Ui.Label(I18n.T("about.donateText"));
             dText.MaximumSize = new Size(Ui.S(410), 0);
             donateFlow.Controls.Add(dText);
-            var dBtn = Ui.Button(I18n.T("main.donate"), (s, e) => WinUtil.Open(AppInfo.DonateUrl), true, "heart");
+            var dBtn = Ui.Button(I18n.T("main.donate"), (s, e) => ShowDonate(), true, "heart");
             dBtn.CustomColor = Ui.Heart;
             dBtn.Margin = Ui.P(0, 8, 0, 0);
             donateFlow.Controls.Add(dBtn);

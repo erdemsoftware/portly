@@ -3,7 +3,7 @@
 
 <VirtualHost *:{{HTTP_PORT}}>
     ServerName {{HOST}}
-    ServerAlias *.{{HOST}}
+    {{ALIAS}}
     DocumentRoot "{{SITE_ROOT}}"
     <Directory "{{SITE_ROOT}}">
         Options Indexes FollowSymLinks

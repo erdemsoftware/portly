@@ -53,6 +53,7 @@
     <EmbeddedResource Include="..\..\manifest\packages.json" LogicalName="catalog.modern.json" />
     <EmbeddedResource Include="..\..\manifest\packages-legacy.json" LogicalName="catalog.legacy.json" />
     <EmbeddedResource Include="..\..\assets\portly.ico" LogicalName="portly.ico" />
+    <EmbeddedResource Include="..\..\manifest\donate.json" LogicalName="donate.json" />
   </ItemGroup>
 
 </Project>

@@ -50,6 +50,7 @@ namespace Portly.SmokeTest
             s.HttpPort = 8781; s.HttpsPort = 8744; s.MysqlPort = 3377; s.RedisPort = 6377;
             s.MailpitWebPort = 8727; s.MailpitSmtpPort = 1727; s.PhpBasePort = 9277;
             s.Tld = "localhost"; s.Ssl = true; s.AutoVhosts = true; s.WebServer = "apache";
+            s.DocumentRoot = Path.Combine(Paths.Root, "www");
             s.Save();
             I18n.Load("tr");
             Log.Written += l => Console.WriteLine("    | " + l);
@@ -109,8 +110,13 @@ namespace Portly.SmokeTest
             Directory.CreateDirectory(Path.Combine(www, "legacyapp", "public"));
             File.WriteAllText(Path.Combine(www, "legacyapp", "public", "index.php"), "<?php echo 'LEGACY php=' . PHP_VERSION;");
             Directory.CreateDirectory(Path.Combine(www, "Özel Proje"));
+            // a group folder: clientscme -> acme.clients.localhost
+            Directory.CreateDirectory(Path.Combine(www, "clients", "acme"));
+            File.WriteAllText(Path.Combine(www, "clients", "acme", "index.php"), "<?php echo 'ACME-OK';");
             var sites = Sites.Scan();
-            Check("sites scanned", sites.Count(x => x.Valid) == 2, string.Join(", ", sites.Select(x => x.Name + (x.Valid ? "" : "(invalid)"))));
+            Check("group folder detected", sites.Any(x => x.Name == "clients" && x.IsGroup) && sites.Any(x => x.Host == "acme.clients.localhost" && x.Valid),
+                string.Join(", ", sites.Where(x => x.Group != "" || x.IsGroup).Select(x => x.Host)));
+            Check("sites scanned", sites.Count(x => x.Valid && x.Group == "" && !x.IsGroup) == 2, string.Join(", ", sites.Select(x => x.Name + (x.Valid ? "" : "(invalid)"))));
             Check("Laravel-style public folder detected", sites.First(x => x.Name == "legacyapp").DocRoot.EndsWith("public"));
             var php84 = PackageTypes.Installed("php").First(f => PackageTypes.Branch(f) == "8.4");
             Sites.SetPhp("legacyapp", php84);
@@ -201,6 +207,8 @@ namespace Portly.SmokeTest
             Check(server + ": http demo site + PHP " + php.Version, demo.Contains("DEMO-OK php=" + php.Version), demo);
             Check(server + ": PHP -> MySQL", demo.Contains("db=" + PackageTypes.Label(PackageTypes.ActiveFolder("mysql")).Split('.')[0]), demo);
             Check(server + ": upload_progress off at runtime", System.Text.RegularExpressions.Regex.IsMatch(demo, "upload_progress=0?$"), demo);
+            var acme = Get("https://127.0.0.1:" + s.HttpsPort + "/", "acme.clients.localhost");
+            Check(server + ": project inside a group folder (acme.clients)", acme.Contains("ACME-OK"), acme.Length > 80 ? acme.Substring(0, 80) : acme);
             var legacy = Get("http://127.0.0.1:" + s.HttpPort + "/", "legacyapp.localhost");
             Check(server + ": per-site PHP version (" + PackageTypes.Label(php84) + ")", legacy.Contains("LEGACY php=" + PackageTypes.Label(php84)), legacy);
             var https = Get("https://127.0.0.1:" + s.HttpsPort + "/", "demo.localhost");
@@ -219,6 +227,7 @@ namespace Portly.SmokeTest
             {
                 var req = (HttpWebRequest)WebRequest.Create(url);
                 if (host != null) req.Host = host;
+                req.KeepAlive = false; // one connection per request, like a browser per site (avoids 421 on reuse)
                 req.Timeout = 30000;
                 req.ServerCertificateValidationCallback = (o, cert, chain, errors) =>
                 {

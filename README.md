@@ -30,7 +30,7 @@ Portly; Apache ya da Nginx, PHP, MySQL, Node.js, Redis, Mailpit, Composer ve Adm
 | Çökme güvenliği | — | Portly kapanırsa servisler Windows tarafından kapatılır (job object) |
 | Port çakışması | Hata mesajı | Portu tutan program ve yolu gösterilir; **tek tıkla boş porta geç** ya da o programı kapat; artık süreçler kendiliğinden temizlenir |
 | Arayüz | Klasik | Kenar çubuklu modern arayüz, **açık/koyu tema** (Windows'u izler) |
-| Dil | 34 dil (txt) | JSON, **10 dil**, GitHub'dan katkıya açık |
+| Dil | 34 dil (txt) | JSON, **31 dil** (Arapça, Farsça, Urduca sağdan sola), GitHub'dan katkıya açık |
 | Windows 7 / 8 / 8.1 | Belirsiz | **Ayrı Legacy sürümü** |
 
 ### Sürümler
@@ -47,7 +47,9 @@ Legacy sürüm için .NET Framework 4.8 gerekir (Windows 10/11'de zaten yüklüd
 1. [Sürümler](https://github.com/erdemsoftware/portly/releases) sayfasından zip'i indirin ve `C:\Portly` gibi **boşluksuz** bir klasöre açın.
 2. `Portly.exe`'yi çalıştırın. İlk açılışta önerilen paketler seçili gelir, **Seçilenleri kur**'a tıklayın.
 3. **Hepsini başlat**'a tıklayın.
-4. `www` klasöründe bir klasör açın: `www\magaza` otomatik olarak `https://magaza.test` olur. Laravel gibi `public` klasörü olan projeler kendiliğinden doğru köke bağlanır.
+4. `www` klasöründe bir klasör açın: `www\magaza` otomatik olarak `https://magaza.portly` olur. Laravel gibi `public` klasörü olan projeler kendiliğinden doğru köke bağlanır.
+
+Gruplar, elle sürüm ekleme ve HTTPS için: [docs/04-kullanim.md](docs/04-kullanim.md).
 
 `http://localhost` adresinde tüm siteleri, Adminer'ı, Mailpit'i ve `phpinfo()`'yu gösteren bir pano açılır.
 
@@ -78,15 +80,15 @@ Portly runs Apache or Nginx, PHP, MySQL, Node.js, Redis, Mailpit, Composer and A
 - One-click **self update** (SHA-256 verified) and a **remotely updated package catalog**; new PHP releases show up automatically from windows.php.net.
 - **Per-site PHP version**: every PHP version runs as its own FastCGI pool.
 - **HTTPS without warnings**: a local root CA is trusted once, every site gets its own certificate.
-- Every folder in your projects folder becomes `https://name.test`; Laravel-style `public` folders are detected.
+- Every folder in your projects folder becomes `https://name.portly`; Laravel-style `public` folders are detected.
 - Listens on **127.0.0.1 only** by default, PHP hardened (`session.upload_progress`, `allow_url_include` off).
 - Crash safe: if Portly dies, Windows closes all services (job object).
 - Port conflicts are checked before every start: see which program holds the port, switch to a free port in one click, or close that program. Leftover Portly services are cleaned up automatically.
 - Modern sidebar UI with light / dark theme that follows Windows.
 - **Two editions**: Windows 10/11 (updates, latest packages) and Legacy for Windows 7 SP1 / 8 / 8.1 (frozen, compatible packages).
-- 10 languages, plain JSON files, contributions welcome.
+- 31 languages (right-to-left for Arabic, Persian, Urdu), plain JSON files, contributions welcome.
 
-**Quick start:** download a release, unzip to a folder without spaces (e.g. `C:\Portly`), run `Portly.exe`, install the recommended packages, click **Start all**, create `www\shop` and open `https://shop.test`.
+**Quick start:** download a release, unzip to a folder without spaces (e.g. `C:\Portly`), run `Portly.exe`, install the recommended packages, click **Start all**, create `www\shop` and open `https://shop.portly`.
 
 ### Build from source
 

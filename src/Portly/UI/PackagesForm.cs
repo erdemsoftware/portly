@@ -98,7 +98,9 @@ namespace Portly.UI
             _remove = Ui.Button(I18n.T("pkg.remove"), (s, e) => RemoveSelected());
             _activate = Ui.Button(I18n.T("pkg.activate"), async (s, e) => await ActivateSelected());
             _close = Ui.Button(I18n.T("common.close"), (s, e) => { if (_busy) { if (_cts != null) _cts.Cancel(); } else Close(); });
-            buttons.Controls.AddRange(new Control[] { _install, _activate, _remove, _close });
+            var manual = Ui.Button(I18n.T("pkg.addManual"), (s, e) => AddManual(), false, "plus");
+            var folder = Ui.Button(I18n.T("pkg.openBin"), (s, e) => WinUtil.OpenFolder(Paths.Bin), false, "folder");
+            buttons.Controls.AddRange(new Control[] { _install, _activate, _remove, manual, folder, _close });
             bottom.Controls.Add(buttons);
             bottom.Controls.Add(_status);
             bottom.Controls.Add(_progress);
@@ -119,6 +121,9 @@ namespace Portly.UI
             var checkedKeys = new HashSet<string>(_list.CheckedItems.Cast<ListViewItem>().Select(i => i.Name));
             _list.BeginUpdate();
             _list.Items.Clear();
+            _list.Groups.Clear();
+            // one titled group per package type: Apache / Nginx / PHP / MySQL ...
+            foreach (var t in PackageTypes.All) _list.Groups.Add(new ListViewGroup(t.Id, t.Name));
             var rows = new List<PkgRow>();
             foreach (var t in PackageTypes.All)
             {
@@ -143,7 +148,7 @@ namespace Portly.UI
                     if (r.Update != null) status += " - " + I18n.T("pkg.updateTo", r.Update.Version);
                 }
                 else status = "";
-                var it = new ListViewItem(new[] { name, version, note, status }) { Tag = r, Name = r.Type + "/" + r.Folder };
+                var it = new ListViewItem(new[] { name, version, note, status }) { Tag = r, Name = r.Type + "/" + r.Folder, Group = _list.Groups[r.Type] };
                 if (r.Installed) it.ForeColor = r.Update != null ? Color.FromArgb(180, 83, 9) : Ui.Green;
                 if (checkedKeys.Contains(it.Name)) it.Checked = true;
                 _list.Items.Add(it);
@@ -292,6 +297,40 @@ namespace Portly.UI
             }
         }
 
+        /// <summary>Add a version that is not in the catalog: pick a .zip (or an already extracted folder).</summary>
+        async void AddManual()
+        {
+            if (_busy) return;
+            var type = ((Item)_filter.SelectedItem).Value;
+            if (type == "")
+            {
+                using (var pick = new ManualPackageForm()) { if (pick.ShowDialog(this) != DialogResult.OK) return; type = pick.Type; }
+            }
+            string source = null;
+            using (var dlg = new OpenFileDialog { Title = I18n.T("pkg.manualPick", PackageTypes.Get(type).Name), Filter = "Zip (*.zip)|*.zip|" + I18n.T("pkg.manualAnyFile") + " (*.*)|*.*" })
+            {
+                if (dlg.ShowDialog(this) == DialogResult.OK) source = dlg.FileName;
+            }
+            if (source == null)
+            {
+                using (var fb = new FolderBrowserDialog { Description = I18n.T("pkg.manualFolder", PackageTypes.Get(type).Name) })
+                    if (fb.ShowDialog(this) == DialogResult.OK) source = fb.SelectedPath;
+            }
+            if (source == null) return;
+            _busy = true; UpdateButtons();
+            _progress.Visible = true; _progress.Style = ProgressBarStyle.Marquee;
+            _status.Text = I18n.T("pkg.stage.extract") + "...";
+            try
+            {
+                var folder = await Task.Run(() => Installer.InstallLocal(type, source));
+                _status.Text = I18n.T("log.installed", PackageTypes.Get(type).Name + " " + PackageTypes.Label(folder));
+            }
+            catch (Exception ex) { Ui.Error(this, ex.Message); _status.Text = ""; }
+            _progress.Visible = false;
+            _busy = false;
+            Fill();
+        }
+
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
             if (_busy)
@@ -301,6 +340,46 @@ namespace Portly.UI
                 return;
             }
             base.OnFormClosing(e);
+        }
+    }
+
+    /// <summary>Asks which kind of package is being added manually.</summary>
+    public class ManualPackageForm : Form
+    {
+        readonly ThemedCombo _type;
+        public string Type { get { return ((Item)_type.SelectedItem).Value; } }
+
+        public ManualPackageForm()
+        {
+            Ui.Apply(this);
+            Text = I18n.T("pkg.addManual");
+            FormBorderStyle = FormBorderStyle.FixedDialog;
+            MaximizeBox = MinimizeBox = false;
+            ShowInTaskbar = false;
+            StartPosition = FormStartPosition.CenterParent;
+            AutoSize = true;
+            AutoSizeMode = AutoSizeMode.GrowAndShrink;
+            Padding = Ui.P(18);
+            var t = new TableLayoutPanel { AutoSize = true, ColumnCount = 1, Dock = DockStyle.Fill };
+            var help = Ui.Label(I18n.T("pkg.manualHelp"), Ui.Font, Ui.Muted);
+            help.MaximumSize = new Size(Ui.S(420), 0);
+            t.Controls.Add(help);
+            _type = new ThemedCombo { Width = Ui.S(220), Margin = Ui.P(0, 10, 0, 0) };
+            foreach (var pt in PackageTypes.All) _type.Items.Add(new Item(pt.Name, pt.Id));
+            _type.SelectedIndex = 0;
+            t.Controls.Add(_type);
+            var buttons = new FlowLayoutPanel { AutoSize = true, FlowDirection = FlowDirection.RightToLeft, Dock = DockStyle.Fill, Margin = Ui.P(0, 14, 0, 0) };
+            var cancel = Ui.Button(I18n.T("common.cancel"), null);
+            cancel.DialogResult = DialogResult.Cancel;
+            cancel.Margin = Padding.Empty;
+            var ok = Ui.Button(I18n.T("common.ok"), null, true);
+            ok.DialogResult = DialogResult.OK;
+            buttons.Controls.Add(cancel);
+            buttons.Controls.Add(ok);
+            t.Controls.Add(buttons);
+            Controls.Add(t);
+            AcceptButton = ok;
+            CancelButton = cancel;
         }
     }
 }

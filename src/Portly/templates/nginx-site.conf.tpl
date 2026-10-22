@@ -4,7 +4,7 @@
 server {
     listen {{LISTEN_HTTP}};
     {{LISTEN_HTTPS}}
-    server_name {{HOST}} *.{{HOST}};
+    server_name {{SERVER_NAMES}};
     root "{{SITE_ROOT}}";
     index index.php index.html index.htm;
     {{SSL_CERT}}

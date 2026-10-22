@@ -54,10 +54,10 @@ Windows'a özgü üç ayrıntı, testlerle bulundu:
 
 ## Siteler, hosts, HTTPS
 
-- Proje klasöründeki her geçerli klasör (`a-z 0-9 - _`) bir sitedir: `ad.test`. `public\index.php` varsa kök `public` olur.
+- Proje klasöründeki her geçerli klasör (`a-z 0-9 - _`) bir sitedir: `ad.portly`. `public\index.php` varsa kök `public` olur.
 - Geçersiz adlar (boşluk, Türkçe harf) sessizce atlanmaz; Siteler listesinde kırmızı ve açıklamalı görünür.
 - hosts dosyasında yalnızca `# >>> Portly >>>` bloğu yönetilir. Yazma izni yoksa Portly kendini `--hosts-apply` ile yönetici olarak çalıştırır; yardımcı yalnızca `127.0.0.1 <geçerli-ad>` satırlarını kabul eder. Alan adı sonu `localhost` seçilirse hosts dosyasına hiç dokunulmaz.
-- HTTPS: `usr\ssl\portly-ca.*` yerel kök otoritedir (20 yıl). Kullanıcı bir kez güvenilir yapar. Her siteye 825 günlük, `ad` ve `*.ad` için ayrı sertifika üretilir. Aynı otorite PHP'nin `cacert.pem` paketine eklenir, böylece PHP de `https://*.test` adreslerini doğrulayabilir.
+- HTTPS: `usr\ssl\portly-ca.*` yerel kök otoritedir (20 yıl). Kullanıcı bir kez güvenilir yapar. Her siteye 825 günlük, `ad` ve `*.ad` için ayrı sertifika üretilir. Aynı otorite PHP'nin `cacert.pem` paketine eklenir, böylece PHP de `https://*.portly` adreslerini doğrulayabilir.
 
 ## Port çakışmaları
 
