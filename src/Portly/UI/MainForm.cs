@@ -110,6 +110,32 @@ namespace Portly.UI
             BuildUi();
         }
 
+        /// <summary>Moved to a monitor with another scale (per-monitor V2): rebuild at the new DPI so everything stays sharp.</summary>
+        protected override void OnDpiChanged(DpiChangedEventArgs e)
+        {
+            e.Cancel = true; // WinForms would only stretch the old controls; we rebuild instead
+            Bounds = e.SuggestedRectangle;
+            ApplyDpi(e.DeviceDpiNew);
+            base.OnDpiChanged(e);
+        }
+
+        protected override void OnHandleCreated(EventArgs e)
+        {
+            base.OnHandleCreated(e);
+            // opened on a monitor whose scale differs from the primary one
+            if (DeviceDpi != Ui.Dpi) BeginInvoke((Action)(() => ApplyDpi(DeviceDpi)));
+        }
+
+        public void ApplyDpi(int dpi)
+        {
+            if (!Ui.SetDpi(dpi)) return;
+            Font = Ui.Font;
+            MinimumSize = Ui.S(900, 600);
+            var old = Controls.Cast<Control>().ToList();
+            BuildUi();
+            foreach (var c in old) c.Dispose();
+        }
+
         // =====================================================================
         // Layout
         // =====================================================================

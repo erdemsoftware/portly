@@ -3,6 +3,7 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Text;
 using System.Windows.Forms;
+using Portly.Core;
 
 namespace Portly.UI
 {
@@ -32,6 +33,39 @@ namespace Portly.UI
             UseVisualStyleBackColor = false;
             BackColor = Color.Transparent;
             TextChanged += (s, e) => { AccessibleName = Text; if (AutoSize) PerformLayout(); };
+        }
+
+        /// <summary>
+        /// UI Automation sees a real Button with the Invoke pattern (screen readers can press it), also for
+        /// glyph-only buttons and the selected navigation item.
+        /// </summary>
+        protected override AccessibleObject CreateAccessibilityInstance() { return new ModernButtonAccessible(this); }
+
+        class ModernButtonAccessible : ButtonBaseAccessibleObject
+        {
+            readonly ModernButton _b;
+            public ModernButtonAccessible(ModernButton b) : base(b) { _b = b; }
+            public override AccessibleRole Role { get { return AccessibleRole.PushButton; } }
+            public override string Name
+            {
+                get
+                {
+                    if (!string.IsNullOrEmpty(_b.AccessibleName)) return _b.AccessibleName;
+                    return string.IsNullOrEmpty(_b.Text) ? _b.Glyph : _b.Text.Replace("&", "");
+                }
+                set { base.Name = value; }
+            }
+            public override string DefaultAction { get { return _b.AccessibleDefaultActionDescription ?? I18n.T("a11y.press"); } }
+            public override AccessibleStates State
+            {
+                get
+                {
+                    var s = base.State;
+                    if (_b.Active) s |= AccessibleStates.Selected;
+                    return s;
+                }
+            }
+            public override void DoDefaultAction() { if (_b.Enabled && _b.Visible) _b.PerformClick(); }
         }
 
         protected override void OnMouseEnter(EventArgs e) { _hover = true; Invalidate(); base.OnMouseEnter(e); }
@@ -95,7 +129,13 @@ namespace Portly.UI
             using (var b = new SolidBrush(fill)) Glyphs.FillRound(g, b, rect, Ui.S(Radius));
             if (border != Color.Empty) using (var pen = new Pen(border)) Glyphs.DrawRound(g, pen, rect, Ui.S(Radius));
             if (Focused && ShowFocusCues)
-                using (var pen = new Pen(p.Accent, Math.Max(1, Ui.S(2)))) Glyphs.DrawRound(g, pen, new RectangleF(1.5f, 1.5f, Width - 3.5f, Height - 3.5f), Ui.S(Radius));
+            {
+                // the ring must stand out on every fill: accent on light fills, a white inner ring on accent / red
+                bool strongFill = _kind == ButtonKind.Primary || _kind == ButtonKind.Danger;
+                float w = Math.Max(1, Ui.S(2)), inset = strongFill ? w + 1.5f : 1.5f;
+                using (var pen = new Pen(strongFill ? Color.White : p.Accent, w))
+                    Glyphs.DrawRound(g, pen, new RectangleF(inset, inset, Width - inset * 2 - 1, Height - inset * 2 - 1), Math.Max(2, Ui.S(Radius) - (int)inset + 1));
+            }
 
             var glyphColor = _kind == ButtonKind.Tile ? (CustomColor ?? p.Accent) : fore;
             if (_kind == ButtonKind.Tile)
@@ -126,6 +166,28 @@ namespace Portly.UI
         {
             SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw | ControlStyles.UserPaint, true);
             BackColor = Theme.Current.Card;
+            AccessibleRole = AccessibleRole.Grouping;
+        }
+
+        /// <summary>A card is a named group for screen readers: its name is the first label inside (e.g. "Apache").</summary>
+        protected override AccessibleObject CreateAccessibilityInstance() { return new CardAccessible(this); }
+
+        class CardAccessible : ControlAccessibleObject
+        {
+            readonly Card _c;
+            public CardAccessible(Card c) : base(c) { _c = c; }
+            public override AccessibleRole Role { get { return AccessibleRole.Grouping; } }
+            public override string Name
+            {
+                get
+                {
+                    if (!string.IsNullOrEmpty(_c.AccessibleName)) return _c.AccessibleName;
+                    foreach (Control child in _c.Controls)
+                        if (child is Label && !(child is LinkLabel) && !string.IsNullOrEmpty(child.Text)) return child.Text;
+                    return base.Name;
+                }
+                set { base.Name = value; }
+            }
         }
 
         protected override void OnPaintBackground(PaintEventArgs e)
@@ -154,6 +216,28 @@ namespace Portly.UI
             Size = Ui.S(44, 24);
             Cursor = Cursors.Hand;
             Text = "";
+            AccessibleRole = AccessibleRole.CheckButton;
+        }
+
+        /// <summary>UI Automation: CheckBox with the Toggle pattern; Toggle() runs the owner's Click (start / stop).</summary>
+        protected override AccessibleObject CreateAccessibilityInstance() { return new ToggleAccessible(this); }
+
+        class ToggleAccessible : CheckBoxAccessibleObject
+        {
+            readonly ToggleSwitch _t;
+            public ToggleAccessible(ToggleSwitch t) : base(t) { _t = t; }
+            public override AccessibleRole Role { get { return AccessibleRole.CheckButton; } }
+            public override string Description { get { return _t.AccessibleDescription ?? (_t.Busy ? I18n.T("a11y.busy") : null); } }
+            public override string DefaultAction { get { return I18n.T("a11y.toggle"); } }
+            public override AccessibleStates State
+            {
+                get
+                {
+                    var s = base.State;
+                    if (_t.Busy) s |= AccessibleStates.Busy;
+                    return s;
+                }
+            }
         }
 
         protected override void OnCheckedChanged(EventArgs e) { Invalidate(); base.OnCheckedChanged(e); }
@@ -171,7 +255,7 @@ namespace Portly.UI
             float d = track.Height - Ui.S(6);
             float kx = Checked ? track.Right - d - Ui.S(3) : track.X + Ui.S(3);
             using (var b = new SolidBrush(Color.White)) g.FillEllipse(b, kx, track.Y + Ui.S(3), d, d);
-            if (Focused && ShowFocusCues) using (var pen = new Pen(p.Accent, 2)) Glyphs.DrawRound(g, pen, track, track.Height / 2);
+            if (Focused && ShowFocusCues) using (var pen = new Pen(p.Accent, Math.Max(2, Ui.S(2)))) Glyphs.DrawRound(g, pen, track, track.Height / 2);
         }
     }
 
@@ -187,7 +271,20 @@ namespace Portly.UI
             SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.SupportsTransparentBackColor, true);
             Font = Ui.Small;
             Height = Ui.S(22);
-            TextChanged += (s, e) => FitWidth();
+            TabStop = false;
+            AccessibleRole = AccessibleRole.StaticText;
+            TextChanged += (s, e) => { FitWidth(); AccessibilityNotifyClients(AccessibleEvents.NameChange, -1); };
+        }
+
+        /// <summary>Read as text ("Running"), not as an empty pane.</summary>
+        protected override AccessibleObject CreateAccessibilityInstance() { return new TextAccessible(this); }
+
+        internal class TextAccessible : ControlAccessibleObject
+        {
+            readonly Control _c;
+            public TextAccessible(Control c) : base(c) { _c = c; }
+            public override AccessibleRole Role { get { return _c.AccessibleRole == AccessibleRole.Default ? AccessibleRole.StaticText : _c.AccessibleRole; } }
+            public override string Name { get { return string.IsNullOrEmpty(_c.AccessibleName) ? _c.Text : _c.AccessibleName; } set { base.Name = value; } }
         }
 
         void FitWidth()
@@ -226,8 +323,12 @@ namespace Portly.UI
         {
             SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.SupportsTransparentBackColor, true);
             Size = Ui.S(40, 40);
-            Font = new Font("Segoe UI", 10f, FontStyle.Bold);
+            Font = Ui.ScaledFont("Segoe UI", 10f, FontStyle.Bold);
+            TabStop = false;
+            AccessibleRole = AccessibleRole.Graphic;
         }
+
+        protected override AccessibleObject CreateAccessibilityInstance() { return new Pill.TextAccessible(this); }
 
         protected override void OnPaint(PaintEventArgs e)
         {
@@ -252,7 +353,7 @@ namespace Portly.UI
             {
                 case "apache": return new BrandTile { Text = "A", Color = ColorTranslator.FromHtml("#D22128") };
                 case "nginx": return new BrandTile { Text = "N", Color = ColorTranslator.FromHtml("#009639") };
-                case "php": return new BrandTile { Text = "php", Color = ColorTranslator.FromHtml("#777BB4"), Font = new Font("Segoe UI", 8.5f, FontStyle.Bold) };
+                case "php": return new BrandTile { Text = "php", Color = ColorTranslator.FromHtml("#777BB4"), Font = Ui.ScaledFont("Segoe UI", 8.5f, FontStyle.Bold) };
                 case "mysql": return new BrandTile { Text = "My", Color = ColorTranslator.FromHtml("#00758F") };
                 case "redis": return new BrandTile { Text = "R", Color = ColorTranslator.FromHtml("#DC382D") };
                 case "mailpit": return new BrandTile { Text = "M", Color = ColorTranslator.FromHtml("#0EA5E9") };
