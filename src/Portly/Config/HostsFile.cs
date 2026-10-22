@@ -66,15 +66,29 @@ namespace Portly.Config
             var wanted = Compose(current, block);
             if (wanted == current) return true;
 
-            if (TryWrite(wanted)) { Log.Info(I18n.T("log.hostsUpdated")); return true; }
+            if (TryWrite(wanted)) return Verify(block);
 
             var tmp = Path.Combine(Paths.Tmp, "hosts-block.txt");
             File.WriteAllText(tmp, block, Encoding.ASCII);
             var code = WinUtil.RunElevated(Paths.Exe, "--hosts-apply \"" + tmp + "\"");
             try { File.Delete(tmp); } catch { }
-            if (code == 0) { Log.Info(I18n.T("log.hostsUpdated")); return true; }
+            if (code == 0) return Verify(block);
             Log.Warn(code == -2 ? I18n.T("log.hostsCancelled") : I18n.T("log.hostsFailed", code));
             return false;
+        }
+
+        /// <summary>
+        /// Read the file back: antivirus (Defender "HostsFileHijack") or another tool may undo the change silently.
+        /// Then flush the DNS cache so browsers see the new names at once.
+        /// </summary>
+        static bool Verify(string block)
+        {
+            System.Threading.Thread.Sleep(300);
+            bool ok = Current().Contains(block.Trim());
+            try { ProcessUtil.Run("ipconfig.exe", "/flushdns", null, null, 15000); } catch { }
+            if (ok) { Log.Info(I18n.T("log.hostsUpdated")); return true; }
+            Log.Warn(I18n.T("hosts.blocked", FilePath));
+            return true; // do not ask for UAC again in this session; the warning explains what to do
         }
 
         static bool TryWrite(string content)

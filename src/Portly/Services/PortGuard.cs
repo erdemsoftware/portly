@@ -31,6 +31,9 @@ namespace Portly.Services
             { "RedisPort", new[] { 6380, 6381, 6382 } },
             { "MailpitWebPort", new[] { 8026, 8027, 8126 } },
             { "MailpitSmtpPort", new[] { 1026, 1027, 2525 } },
+            { "PostgresPort", new[] { 5433, 5434, 5435 } },
+            { "MongoPort", new[] { 27018, 27019, 27020 } },
+            { "MemcachedPort", new[] { 11212, 11213, 11214 } },
         };
 
         static int Get(string key) { return Settings.Current.Raw.GetInt("services", key, 0); }
@@ -48,6 +51,9 @@ namespace Portly.Services
                     break;
                 case "mysql": list.Add(Tuple.Create("MysqlPort", "MySQL", st.MysqlPort)); break;
                 case "redis": list.Add(Tuple.Create("RedisPort", "Redis", st.RedisPort)); break;
+                case "postgresql": list.Add(Tuple.Create("PostgresPort", "PostgreSQL", st.PostgresPort)); break;
+                case "mongodb": list.Add(Tuple.Create("MongoPort", "MongoDB", st.MongoPort)); break;
+                case "memcached": list.Add(Tuple.Create("MemcachedPort", "Memcached", st.MemcachedPort)); break;
                 case "mailpit":
                     list.Add(Tuple.Create("MailpitWebPort", "Mailpit web", st.MailpitWebPort));
                     list.Add(Tuple.Create("MailpitSmtpPort", "Mailpit SMTP", st.MailpitSmtpPort));
@@ -59,12 +65,21 @@ namespace Portly.Services
         public static List<PortConflict> Check(IEnumerable<Service> services)
         {
             var conflicts = new List<PortConflict>();
-            var used = new HashSet<int>(new[] { "HttpPort", "HttpsPort", "MysqlPort", "RedisPort", "MailpitWebPort", "MailpitSmtpPort" }.Select(Get));
+            var used = new HashSet<int>(new[] { "HttpPort", "HttpsPort", "MysqlPort", "RedisPort", "MailpitWebPort", "MailpitSmtpPort", "PostgresPort", "MongoPort", "MemcachedPort" }.Select(k => Get(k) == 0 ? -1 : Get(k)));
             foreach (var s in services)
             {
                 if (s.IsActive || !s.IsInstalled) continue;
                 foreach (var need in Needs(s))
                 {
+                    if (ProcessUtil.IsPortExcluded(need.Item3))
+                    {
+                        // reserved by Hyper-V / WSL / Docker: nobody to close, only another port helps
+                        var ex = new PortConflict { Service = s, Key = need.Item1, Label = need.Item2, Port = need.Item3, Owner = new PortOwnerInfo { Pid = 4, Name = "Hyper-V / WSL" } };
+                        ex.Suggested = ProcessUtil.FreePort(Alternatives[need.Item1], used);
+                        if (ex.Suggested > 0) used.Add(ex.Suggested);
+                        conflicts.Add(ex);
+                        continue;
+                    }
                     if (!ProcessUtil.IsPortInUse(need.Item3)) continue;
                     var owner = ProcessUtil.PortOwnerInfo(need.Item3);
                     if (owner != null && owner.IsOurs)

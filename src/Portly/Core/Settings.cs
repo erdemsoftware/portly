@@ -70,6 +70,17 @@ namespace Portly.Core
         // ---------- services ----------
         /// <summary>"apache" or "nginx".</summary>
         public string WebServer { get { var v = _ini.Get("services", "WebServer", "apache").ToLowerInvariant(); return v == "nginx" ? "nginx" : "apache"; } set { _ini.Set("services", "WebServer", value); } }
+        /// <summary>Relaxed sql_mode for old applications (no STRICT_TRANS_TABLES / ONLY_FULL_GROUP_BY).</summary>
+        public bool LegacySqlMode { get { return _ini.GetBool("mysql", "LegacySqlMode", false); } set { _ini.Set("mysql", "LegacySqlMode", value); } }
+        /// <summary>Database engine: "mysql" or "mariadb".</summary>
+        public string DbEngine
+        {
+            get { return _ini.Get("services", "DbEngine", "mysql").ToLowerInvariant() == "mariadb" ? "mariadb" : "mysql"; }
+            set { _ini.Set("services", "DbEngine", value); }
+        }
+        public int PostgresPort { get { return _ini.GetInt("services", "PostgresPort", 5432); } set { _ini.Set("services", "PostgresPort", value); } }
+        public int MongoPort { get { return _ini.GetInt("services", "MongoPort", 27017); } set { _ini.Set("services", "MongoPort", value); } }
+        public int MemcachedPort { get { return _ini.GetInt("services", "MemcachedPort", 11211); } set { _ini.Set("services", "MemcachedPort", value); } }
         /// <summary>Mail catcher: "mailpit", "mailhog" or "smtp4dev".</summary>
         public string MailTool
         {
@@ -89,6 +100,8 @@ namespace Portly.Core
         public int MailpitSmtpPort { get { return _ini.GetInt("services", "MailpitSmtpPort", 1025); } set { _ini.Set("services", "MailpitSmtpPort", value); } }
         /// <summary>First FastCGI port for PHP. Every installed PHP version gets its own port from here.</summary>
         public int PhpBasePort { get { return _ini.GetInt("services", "PhpBasePort", 9100); } set { _ini.Set("services", "PhpBasePort", value); } }
+        /// <summary>Requests a PHP worker serves before the parent replaces it (keeps memory leaks in check).</summary>
+        public int PhpMaxRequests { get { return Math.Max(1, _ini.GetInt("services", "PhpMaxRequests", 1000)); } set { _ini.Set("services", "PhpMaxRequests", value); } }
         public int PhpChildren { get { return _ini.GetInt("services", "PhpChildren", 6); } set { _ini.Set("services", "PhpChildren", value); } }
 
         /// <summary>Is the service part of "Start all"?</summary>

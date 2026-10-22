@@ -15,6 +15,11 @@ namespace Portly.Services
         public static readonly MySqlService MySql = new MySqlService();
         public static readonly RedisService Redis = new RedisService();
         public static readonly MailpitService Mailpit = new MailpitService();
+        public static readonly PostgresService Postgres = new PostgresService();
+        public static readonly MongoService Mongo = new MongoService();
+        public static readonly MemcachedService Memcached = new MemcachedService();
+
+        static Service[] AllServices { get { return new Service[] { Php, Apache, Nginx, MySql, Postgres, Mongo, Redis, Memcached, Mailpit }; } }
 
         public static event Action<Service> Changed;
         public static event Action SitesChanged;
@@ -23,18 +28,18 @@ namespace Portly.Services
 
         static ServiceManager()
         {
-            foreach (var s in new Service[] { Php, Apache, Nginx, MySql, Redis, Mailpit })
+            foreach (var s in AllServices)
                 s.Changed += x => { var h = Changed; if (h != null) h(x); };
         }
 
         public static Service Web { get { return Settings.Current.WebServer == "nginx" ? (Service)Nginx : Apache; } }
 
         /// <summary>Rows shown in the main window.</summary>
-        public static List<Service> Rows { get { return new List<Service> { Web, Php, MySql, Redis, Mailpit }; } }
+        public static List<Service> Rows { get { return new List<Service> { Web, Php, MySql, Postgres, Mongo, Redis, Memcached, Mailpit }; } }
 
         public static bool AnyActive
         {
-            get { return new Service[] { Php, Apache, Nginx, MySql, Redis, Mailpit }.Any(s => s.State != ServiceState.Stopped && s.State != ServiceState.Error); }
+            get { return AllServices.Any(s => s.State != ServiceState.Stopped && s.State != ServiceState.Error); }
         }
 
         public static List<Site> RefreshSites()
@@ -111,12 +116,16 @@ namespace Portly.Services
             if (s.IsEnabled("mysql")) tasks.Add(MySql.StartAsync());
             if (s.IsEnabled("redis")) tasks.Add(Redis.StartAsync());
             if (s.IsEnabled("mailpit")) tasks.Add(Mailpit.StartAsync());
+            if (s.IsEnabled("postgresql")) tasks.Add(Postgres.StartAsync());
+            if (s.IsEnabled("mongodb")) tasks.Add(Mongo.StartAsync());
+            if (s.IsEnabled("memcached")) tasks.Add(Memcached.StartAsync());
             return Task.WhenAll(tasks);
         }
 
         public static Task StopAllAsync()
         {
-            return Task.WhenAll(StopWebAsync(), Nginx.StopAsync(), Apache.StopAsync(), MySql.StopAsync(), Redis.StopAsync(), Mailpit.StopAsync());
+            return Task.WhenAll(StopWebAsync(), Nginx.StopAsync(), Apache.StopAsync(), MySql.StopAsync(), Redis.StopAsync(), Mailpit.StopAsync(),
+                Postgres.StopAsync(), Mongo.StopAsync(), Memcached.StopAsync());
         }
 
         public static async Task SwitchWebServerAsync(string server)

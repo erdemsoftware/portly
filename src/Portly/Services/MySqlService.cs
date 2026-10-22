@@ -17,18 +17,20 @@ namespace Portly.Services
     {
         Process _p;
         public override string Id { get { return "mysql"; } }
-        public override string Title { get { return "MySQL"; } }
-        public override string PackageType { get { return "mysql"; } }
+        /// <summary>MySQL or MariaDB (Settings > Services > Database engine).</summary>
+        public override string Title { get { return PackageTypes.Get(PackageType).Name; } }
+        public override string PackageType { get { return Settings.Current.DbEngine; } }
+        public static bool IsMariaDb { get { return Settings.Current.DbEngine == "mariadb"; } }
         public override string PortText { get { return Settings.Current.MysqlPort.ToString(); } }
 
         public static string ConfFile { get { return Path.Combine(Paths.Etc, "mysql", "my.ini"); } }
 
         public static string DataDirFor(string folder)
         {
-            return Path.Combine(Paths.Data, "mysql-" + PackageTypes.Branch(folder));
+            return Path.Combine(Paths.Data, Settings.Current.DbEngine + "-" + PackageTypes.Branch(folder));
         }
 
-        public static string BinDir { get { var d = PackageTypes.ActiveDir("mysql"); return d == null ? null : Path.Combine(d, "bin"); } }
+        public static string BinDir { get { var d = PackageTypes.ActiveDir(Settings.Current.DbEngine); return d == null ? null : Path.Combine(d, "bin"); } }
 
         void WriteConfig(string dir, string data)
         {
@@ -36,19 +38,25 @@ namespace Portly.Services
             v["MYSQL_DIR"] = Paths.Fwd(dir);
             v["MYSQL_DATA"] = Paths.Fwd(data);
             v["MYSQL_PORT"] = Settings.Current.MysqlPort.ToString();
+            // "localhost" resolves to ::1 first; MySQL 8.0.13+ and MariaDB 10.11+ accept several addresses
+            var ver = PackageTypes.ParseVersion(dir);
+            bool multi = IsMariaDb ? ver >= new Version(10, 11) : ver >= new Version(8, 0, 13);
+            if (!Settings.Current.AllowLan && multi && Net.LoopbackV6) v["BIND"] = "127.0.0.1,::1";
+            v["SQL_MODE"] = Settings.Current.LegacySqlMode ? "sql_mode=NO_ENGINE_SUBSTITUTION" : "";
             // MySQL 8+: the X protocol would open port 33060 on all interfaces; not needed locally
-            v["MYSQL_EXTRA"] = PackageTypes.ParseVersion(dir).Major >= 8 ? "mysqlx=OFF" : "";
+            v["MYSQL_EXTRA"] = !IsMariaDb && PackageTypes.ParseVersion(dir).Major >= 8 ? "mysqlx=OFF" : "";
             Templates.WriteIfChanged(ConfFile, Templates.Render("mysql.ini.tpl", v));
         }
 
         public override async Task StartAsync()
         {
-            var folder = PackageTypes.ActiveFolder("mysql");
-            if (folder == "") { SetState(ServiceState.Error, I18n.T("err.notInstalled", "MySQL")); return; }
+            var engine = PackageType;
+            var folder = PackageTypes.ActiveFolder(engine);
+            if (folder == "") { SetState(ServiceState.Error, I18n.T("err.notInstalled", Title)); return; }
             if (_p != null && !_p.HasExited) { SetState(ServiceState.Running); return; }
             StopRequested = false;
             SetState(ServiceState.Starting);
-            var dir = Path.Combine(Paths.BinOf("mysql"), folder);
+            var dir = Path.Combine(Paths.BinOf(engine), folder);
             var data = DataDirFor(folder);
             var mysqld = Path.Combine(dir, "bin", "mysqld.exe");
             var port = Settings.Current.MysqlPort;
@@ -60,7 +68,10 @@ namespace Portly.Services
                 {
                     Log.Info(I18n.T("log.mysqlInit", data));
                     try { if (Directory.Exists(data)) Directory.Delete(data); } catch { }
-                    var r = ProcessUtil.Run(mysqld, "--defaults-file=\"" + ConfFile + "\" --initialize-insecure --console", Path.Combine(dir, "bin"), null, 300000);
+                    // MySQL: --initialize-insecure; MariaDB: its own mysql_install_db tool (root without password)
+                    var r = engine == "mariadb"
+                        ? ProcessUtil.Run(Path.Combine(dir, "bin", "mysql_install_db.exe"), "--datadir=\"" + data + "\"", Path.Combine(dir, "bin"), null, 300000)
+                        : ProcessUtil.Run(mysqld, "--defaults-file=\"" + ConfFile + "\" --initialize-insecure --console", Path.Combine(dir, "bin"), null, 300000);
                     if (!Directory.Exists(data) || !Directory.EnumerateFileSystemEntries(data).Any())
                         return I18n.T("err.mysqlInit") + "\n" + ApacheService.LastLines(r.Output, 6);
                 }
@@ -69,13 +80,60 @@ namespace Portly.Services
             if (error != null) { SetState(ServiceState.Error, error); return; }
             if (!EnsurePortFree(port)) return;
 
-            _p = Launch(mysqld, "--defaults-file=\"" + ConfFile + "\"", Path.Combine(dir, "bin"), null, "mysql-console", OnExit);
+            _p = Launch(mysqld, "--defaults-file=\"" + ConfFile + "\"" + (_extraArgs != null ? " " + _extraArgs : ""), Path.Combine(dir, "bin"), null, "mysql-console", OnExit);
             if (await WaitForPort(port, _p, 60000))
             {
                 SetState(ServiceState.Running);
-                Log.Info(I18n.T("log.started", "MySQL " + VersionLabel));
+                Log.Info(I18n.T("log.started", Title + " " + VersionLabel));
             }
-            else SetState(ServiceState.Error, _p.HasExited ? ExitReason(_p) + " " + I18n.T("err.seeLog", "mysql-error.log") : I18n.T("err.timeout"));
+            else SetState(ServiceState.Error, (_p.HasExited ? ExitReason(_p) + " " + I18n.T("err.seeLog", "mysql-error.log") : I18n.T("err.timeout")) + RecoveryHint());
+        }
+
+        string _extraArgs;
+
+        /// <summary>After a crash / power loss InnoDB or Aria may refuse to start: point the user to recovery mode.</summary>
+        static string RecoveryHint()
+        {
+            try
+            {
+                var log = Path.Combine(Paths.Logs, "mysql-error.log");
+                if (!File.Exists(log)) return "";
+                var tail = string.Join("\n", File.ReadAllLines(log).Reverse().Take(60));
+                foreach (var word in new[] { "corrupt", "Corrupt", "crash recovery", "init function returned error", "Aria recovery failed", "Database page corruption", "redo log", "ib_logfile" })
+                    if (tail.Contains(word)) return "\n" + I18n.T("err.mysqlRecover");
+            }
+            catch { }
+            return "";
+        }
+
+        async Task StartWithArgsAsync(string extra)
+        {
+            _extraArgs = extra;
+            try { await StartAsync(); }
+            finally { _extraArgs = null; }
+        }
+
+        /// <summary>Forgotten root password: restart once with --init-file that clears it.</summary>
+        public async Task<string> ResetRootPasswordAsync()
+        {
+            await StopAsync();
+            var f = Path.Combine(Paths.Tmp, "reset-root.sql");
+            File.WriteAllText(f, "ALTER USER 'root'@'localhost' IDENTIFIED BY '';\nFLUSH PRIVILEGES;\n");
+            try { await StartWithArgsAsync("--init-file=\"" + Paths.Fwd(f) + "\""); }
+            finally { try { File.Delete(f); } catch { } }
+            if (State != ServiceState.Running) return LastError ?? I18n.T("err.timeout");
+            Settings.Current.MysqlRootPassword = "";
+            Settings.Current.Save();
+            Log.Info(I18n.T("log.rootPassword"));
+            return null;
+        }
+
+        /// <summary>Start with innodb_force_recovery=1 so the data can be backed up after a crash.</summary>
+        public async Task StartRecoveryAsync()
+        {
+            await StopAsync();
+            Log.Warn(I18n.T("db.recoveryStarted"));
+            await StartWithArgsAsync("--innodb-force-recovery=1");
         }
 
         void OnExit(Process p)
@@ -93,8 +151,12 @@ namespace Portly.Services
             await Task.Run(() =>
             {
                 // clean shutdown keeps InnoDB fast to start next time
-                Tools.Database.Admin("shutdown", 20000);
-                if (!p.WaitForExit(30000)) StopProcess(p, false, 0);
+                var r = Tools.Database.Admin("shutdown", 20000);
+                // a wrong root password makes "shutdown" fail at once: do not wait the full 30 s then
+                if (!p.WaitForExit(r.Ok ? 30000 : 3000)) StopProcess(p, false, 0);
+                p.WaitForExit(10000);
+                // the next start (reset root, recovery, engine switch) needs the port really free
+                for (int i = 0; i < 50 && ProcessUtil.IsPortInUse(Settings.Current.MysqlPort); i++) System.Threading.Thread.Sleep(200);
             });
             _p = null;
             SetState(ServiceState.Stopped);

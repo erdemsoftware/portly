@@ -3,67 +3,738 @@
   "edition": "modern",
   "updated": "2026-10-23",
   "comment": "Portly package catalog for Windows 10/11. Served from GitHub (main branch) and embedded in Portly.exe as a fallback. PHP versions are also refreshed live from windows.php.net/downloads/releases/releases.json.",
-  "vcredist": { "url": "https://aka.ms/vc14/vc_redist.x64.exe", "minor": 50 },
-  "xdebug": { "version": "3.5.3", "php74": "3.1.6" },
+  "vcredist": {
+    "url": "https://aka.ms/vc14/vc_redist.x64.exe",
+    "minor": 50
+  },
+  "xdebug": {
+    "version": "3.5.3",
+    "php74": "3.1.6"
+  },
   "packages": [
-    { "type": "apache", "version": "2.4.69", "folder": "httpd-2.4.69-261002-Win64-VS18", "url": "https://www.apachelounge.com/download/VS18/binaries/httpd-2.4.69-261002-Win64-VS18.zip", "subdir": "Apache24", "vc": 50, "recommended": true, "minOs": "10.0" },
-    { "type": "apache", "version": "2.4.66", "folder": "httpd-2.4.66-260223-Win64-VS18", "url": "https://www.apachelounge.com/download/VS18/binaries/httpd-2.4.66-260223-Win64-VS18.zip", "subdir": "Apache24", "vc": 50, "minOs": "10.0" },
-    { "type": "apache", "version": "2.4.65", "folder": "httpd-2.4.65-250724-Win64-VS17", "url": "https://www.apachelounge.com/download/VS17/binaries/httpd-2.4.65-250724-Win64-VS17.zip", "subdir": "Apache24", "vc": 30, "minOs": "10.0" },
-    { "type": "apache", "version": "2.4.57", "folder": "httpd-2.4.57-win64-VS16", "url": "https://www.apachelounge.com/download/VS16/binaries/httpd-2.4.57-win64-VS16.zip", "subdir": "Apache24", "vc": 20, "tag": "old", "minOs": "10.0" },
-
-    { "type": "nginx", "version": "1.30.6", "folder": "nginx-1.30.6", "url": "https://nginx.org/download/nginx-1.30.6.zip", "tag": "stable", "recommended": true, "minOs": "10.0" },
-    { "type": "nginx", "version": "1.31.8", "folder": "nginx-1.31.8", "url": "https://nginx.org/download/nginx-1.31.8.zip", "tag": "mainline", "minOs": "10.0" },
-    { "type": "nginx", "version": "1.28.3", "folder": "nginx-1.28.3", "url": "https://nginx.org/download/nginx-1.28.3.zip", "minOs": "10.0" },
-    { "type": "nginx", "version": "1.26.3", "folder": "nginx-1.26.3", "url": "https://nginx.org/download/nginx-1.26.3.zip", "minOs": "10.0" },
-    { "type": "nginx", "version": "1.24.0", "folder": "nginx-1.24.0", "url": "https://nginx.org/download/nginx-1.24.0.zip", "minOs": "10.0" },
-    { "type": "nginx", "version": "1.22.1", "folder": "nginx-1.22.1", "url": "https://nginx.org/download/nginx-1.22.1.zip", "tag": "old", "minOs": "10.0" },
-
-    { "type": "php", "version": "8.5.12", "folder": "php-8.5.12-nts-Win32-vs17-x64", "url": "https://windows.php.net/downloads/releases/php-8.5.12-nts-Win32-vs17-x64.zip", "sha256": "2ab242af38d76bdf417cde5ec048b1bcd76a5a40f39a3d15d5f046f38571c477", "vc": 30, "recommended": true, "minOs": "10.0" },
-    { "type": "php", "version": "8.4.27", "folder": "php-8.4.27-nts-Win32-vs17-x64", "url": "https://windows.php.net/downloads/releases/php-8.4.27-nts-Win32-vs17-x64.zip", "sha256": "93bd8a815a52156606fb906d0573437908c61f96e2cc52c03a51e36a41bf5236", "vc": 30, "minOs": "10.0" },
-    { "type": "php", "version": "8.3.36", "folder": "php-8.3.36-nts-Win32-vs16-x64", "url": "https://windows.php.net/downloads/releases/php-8.3.36-nts-Win32-vs16-x64.zip", "sha256": "3c9242622c7402b47c38d2ec2ed779cef3a290fd6f2bde6c35f9c482699e7900", "vc": 20, "minOs": "10.0" },
-    { "type": "php", "version": "8.2.35", "folder": "php-8.2.35-nts-Win32-vs16-x64", "url": "https://windows.php.net/downloads/releases/php-8.2.35-nts-Win32-vs16-x64.zip", "sha256": "798ffa4b9ce22a820d57048e9695df7245bf917ed067917f256942a10918a8cc", "vc": 20, "minOs": "10.0" },
-    { "type": "php", "version": "8.1.34", "folder": "php-8.1.34-nts-Win32-vs16-x64", "url": "https://windows.php.net/downloads/releases/php-8.1.34-nts-Win32-vs16-x64.zip", "sha256": "9cfe246cb144076c16f5913a3ef88a474c3dd7e60f0f0c8bb95faf68674016cc", "vc": 20, "tag": "EOL", "minOs": "10.0" },
-    { "type": "php", "version": "8.0.30", "folder": "php-8.0.30-nts-Win32-vs16-x64", "url": "https://windows.php.net/downloads/releases/archives/php-8.0.30-nts-Win32-vs16-x64.zip", "sha256": "dfb70498ffa2c617f2f655a155564697e3c9cca41709938fd1a5997d1d5b0785", "vc": 20, "tag": "EOL", "minOs": "10.0" },
-    { "type": "php", "version": "7.4.33", "folder": "php-7.4.33-nts-Win32-vc15-x64", "url": "https://windows.php.net/downloads/releases/archives/php-7.4.33-nts-Win32-vc15-x64.zip", "sha256": "14ae3250d4447c8ccfc4c45a70d90adfbcd61e728d85f0be56a7ddf8f9c8aace", "vc": 10, "tag": "EOL", "note": "old projects only", "minOs": "10.0" },
-
-    { "type": "mysql", "version": "8.4.11", "folder": "mysql-8.4.11-winx64", "url": "https://cdn.mysql.com/Downloads/MySQL-8.4/mysql-8.4.11-winx64.zip", "tag": "LTS", "vc": 20, "recommended": true, "minOs": "10.0" },
-    { "type": "mysql", "version": "26.7.0", "folder": "mysql-26.7.0-winx64", "url": "https://cdn.mysql.com/Downloads/MySQL-26.7/mysql-26.7.0-winx64.zip", "tag": "newest", "vc": 30, "minOs": "10.0" },
-    { "type": "mysql", "version": "9.7.4", "folder": "mysql-9.7.4-winx64", "url": "https://cdn.mysql.com/Downloads/MySQL-9.7/mysql-9.7.4-winx64.zip", "vc": 30, "minOs": "10.0" },
-    { "type": "mysql", "version": "8.4.10", "folder": "mysql-8.4.10-winx64", "url": "https://cdn.mysql.com/Downloads/MySQL-8.4/mysql-8.4.10-winx64.zip", "tag": "LTS", "vc": 20, "minOs": "10.0" },
-    { "type": "mysql", "version": "8.0.44", "folder": "mysql-8.0.44-winx64", "url": "https://cdn.mysql.com/Downloads/MySQL-8.0/mysql-8.0.44-winx64.zip", "vc": 20, "minOs": "10.0" },
-    { "type": "mysql", "version": "5.7.44", "folder": "mysql-5.7.44-winx64", "url": "https://cdn.mysql.com/archives/mysql-5.7/mysql-5.7.44-winx64.zip", "tag": "EOL", "note": "old projects only", "minOs": "10.0" },
-
-    { "type": "nodejs", "version": "24.22.1", "folder": "node-v24.22.1-win-x64", "url": "https://nodejs.org/dist/v24.22.1/node-v24.22.1-win-x64.zip", "tag": "LTS", "recommended": true, "minOs": "10.0" },
-    { "type": "nodejs", "version": "26.12.1", "folder": "node-v26.12.1-win-x64", "url": "https://nodejs.org/dist/v26.12.1/node-v26.12.1-win-x64.zip", "tag": "current", "minOs": "10.0" },
-    { "type": "nodejs", "version": "22.23.4", "folder": "node-v22.23.4-win-x64", "url": "https://nodejs.org/dist/v22.23.4/node-v22.23.4-win-x64.zip", "tag": "LTS", "minOs": "10.0" },
-    { "type": "nodejs", "version": "20.20.2", "folder": "node-v20.20.2-win-x64", "url": "https://nodejs.org/dist/v20.20.2/node-v20.20.2-win-x64.zip", "tag": "LTS", "minOs": "10.0" },
-    { "type": "nodejs", "version": "18.20.8", "folder": "node-v18.20.8-win-x64", "url": "https://nodejs.org/dist/v18.20.8/node-v18.20.8-win-x64.zip", "tag": "EOL", "minOs": "10.0" },
-
-    { "type": "redis", "version": "8.10.2", "folder": "redis-8.10.2", "url": "https://github.com/redis-windows/redis-windows/releases/download/8.10.2/Redis-8.10.2-Windows-x64-msys2.zip", "recommended": true, "note": "redis-windows build", "minOs": "10.0" },
-    { "type": "redis", "version": "8.8.3", "folder": "redis-8.8.3", "url": "https://github.com/redis-windows/redis-windows/releases/download/8.8.3/Redis-8.8.3-Windows-x64-msys2.zip", "minOs": "10.0" },
-    { "type": "redis", "version": "8.4.7", "folder": "redis-8.4.7", "url": "https://github.com/redis-windows/redis-windows/releases/download/8.4.7/Redis-8.4.7-Windows-x64-msys2.zip", "minOs": "10.0" },
-    { "type": "redis", "version": "8.2.10", "folder": "redis-8.2.10", "url": "https://github.com/redis-windows/redis-windows/releases/download/8.2.10/Redis-8.2.10-Windows-x64-msys2.zip", "minOs": "10.0" },
-    { "type": "redis", "version": "5.0.14.1", "folder": "redis-5.0.14.1", "url": "https://github.com/tporadowski/redis/releases/download/v5.0.14.1/Redis-x64-5.0.14.1.zip", "note": "classic Windows port", "minOs": "10.0" },
-    { "type": "redis", "version": "4.0.14.2", "folder": "redis-4.0.14.2", "url": "https://github.com/tporadowski/redis/releases/download/v4.0.14.2/Redis-x64-4.0.14.2.zip", "tag": "old", "minOs": "10.0" },
-
-    { "type": "mailpit", "version": "1.31.6", "folder": "mailpit-1.31.6", "url": "https://github.com/axllent/mailpit/releases/download/v1.31.6/mailpit-windows-amd64.zip", "note": "catches every mail sent by PHP", "recommended": true, "minOs": "10.0" },
-    { "type": "mailpit", "version": "1.31.5", "folder": "mailpit-1.31.5", "url": "https://github.com/axllent/mailpit/releases/download/v1.31.5/mailpit-windows-amd64.zip", "minOs": "10.0" },
-    { "type": "mailpit", "version": "1.30.0", "folder": "mailpit-1.30.0", "url": "https://github.com/axllent/mailpit/releases/download/v1.30.0/mailpit-windows-amd64.zip", "minOs": "10.0" },
-    { "type": "mailhog", "version": "1.0.1", "folder": "mailhog-1.0.1", "url": "https://github.com/mailhog/MailHog/releases/download/v1.0.1/MailHog_windows_amd64.exe", "kind": "file", "fileName": "MailHog.exe", "note": "classic, very small", "minOs": "6.1" },
-    { "type": "smtp4dev", "version": "3.15.0", "folder": "smtp4dev-3.15.0", "url": "https://github.com/rnwood/smtp4dev/releases/download/3.15.0/Rnwood.Smtp4dev-win-x64-3.15.0.zip", "note": "rich web UI, relay rules", "minOs": "10.0" },
-
-    { "type": "composer", "version": "2 (latest)", "folder": "composer-2", "url": "https://getcomposer.org/download/latest-stable/composer.phar", "kind": "file", "fileName": "composer.phar", "recommended": true, "minOs": "10.0" },
-    { "type": "composer", "version": "2.2 LTS", "folder": "composer-2.2", "url": "https://getcomposer.org/download/latest-2.2.x/composer.phar", "kind": "file", "fileName": "composer.phar", "note": "for PHP 5.3 - 7.1 projects", "minOs": "10.0" },
-
-    { "type": "adminer", "version": "6.1.2", "folder": "adminer-6.1.2", "url": "https://github.com/vrana/adminer/releases/download/v6.1.2/adminer-6.1.2.php", "kind": "file", "fileName": "index.php", "note": "http://localhost/adminer", "recommended": true, "minOs": "10.0" },
-    { "type": "adminer", "version": "6.0.2", "folder": "adminer-6.0.2", "url": "https://github.com/vrana/adminer/releases/download/v6.0.2/adminer-6.0.2.php", "kind": "file", "fileName": "index.php", "minOs": "10.0" },
-    { "type": "adminer", "version": "5.4.1", "folder": "adminer-5.4.1", "url": "https://github.com/vrana/adminer/releases/download/v5.4.1/adminer-5.4.1.php", "kind": "file", "fileName": "index.php", "minOs": "10.0" },
-    { "type": "adminer", "version": "4.8.1", "folder": "adminer-4.8.1", "url": "https://github.com/vrana/adminer/releases/download/v4.8.1/adminer-4.8.1.php", "kind": "file", "fileName": "index.php", "note": "PHP 5 - 8.2", "minOs": "10.0" },
-
-    { "type": "phpmyadmin", "version": "5.2.3", "folder": "phpMyAdmin-5.2.3", "url": "https://files.phpmyadmin.net/phpMyAdmin/5.2.3/phpMyAdmin-5.2.3-all-languages.zip", "note": "http://localhost/phpmyadmin", "recommended": true, "minOs": "10.0" },
-    { "type": "phpmyadmin", "version": "5.2.2", "folder": "phpMyAdmin-5.2.2", "url": "https://files.phpmyadmin.net/phpMyAdmin/5.2.2/phpMyAdmin-5.2.2-all-languages.zip", "minOs": "10.0" },
-    { "type": "phpmyadmin", "version": "4.9.11", "folder": "phpMyAdmin-4.9.11", "url": "https://files.phpmyadmin.net/phpMyAdmin/4.9.11/phpMyAdmin-4.9.11-all-languages.zip", "note": "PHP 5.5 - 7.4", "minOs": "10.0" },
-
-    { "type": "cloudflared", "version": "2026.10.3", "folder": "cloudflared-2026.10.3", "url": "https://github.com/cloudflare/cloudflared/releases/download/2026.10.3/cloudflared-windows-amd64.exe", "kind": "file", "fileName": "cloudflared.exe", "note": "share a site on the internet", "recommended": true, "minOs": "10.0" }
+    {
+      "type": "apache",
+      "version": "2.4.69",
+      "folder": "httpd-2.4.69-261002-Win64-VS18",
+      "url": "https://www.apachelounge.com/download/VS18/binaries/httpd-2.4.69-261002-Win64-VS18.zip",
+      "subdir": "Apache24",
+      "vc": 50,
+      "recommended": true,
+      "minOs": "10.0"
+    },
+    {
+      "type": "apache",
+      "version": "2.4.66",
+      "folder": "httpd-2.4.66-260223-Win64-VS18",
+      "url": "https://www.apachelounge.com/download/VS18/binaries/httpd-2.4.66-260223-Win64-VS18.zip",
+      "subdir": "Apache24",
+      "vc": 50,
+      "minOs": "10.0"
+    },
+    {
+      "type": "apache",
+      "version": "2.4.65",
+      "folder": "httpd-2.4.65-250724-Win64-VS17",
+      "url": "https://www.apachelounge.com/download/VS17/binaries/httpd-2.4.65-250724-Win64-VS17.zip",
+      "subdir": "Apache24",
+      "vc": 30,
+      "minOs": "10.0"
+    },
+    {
+      "type": "apache",
+      "version": "2.4.57",
+      "folder": "httpd-2.4.57-win64-VS16",
+      "url": "https://www.apachelounge.com/download/VS16/binaries/httpd-2.4.57-win64-VS16.zip",
+      "subdir": "Apache24",
+      "vc": 20,
+      "tag": "old",
+      "minOs": "10.0"
+    },
+    {
+      "type": "nginx",
+      "version": "1.30.6",
+      "folder": "nginx-1.30.6",
+      "url": "https://nginx.org/download/nginx-1.30.6.zip",
+      "tag": "stable",
+      "recommended": true,
+      "minOs": "10.0"
+    },
+    {
+      "type": "nginx",
+      "version": "1.31.8",
+      "folder": "nginx-1.31.8",
+      "url": "https://nginx.org/download/nginx-1.31.8.zip",
+      "tag": "mainline",
+      "minOs": "10.0"
+    },
+    {
+      "type": "nginx",
+      "version": "1.28.3",
+      "folder": "nginx-1.28.3",
+      "url": "https://nginx.org/download/nginx-1.28.3.zip",
+      "minOs": "10.0"
+    },
+    {
+      "type": "nginx",
+      "version": "1.26.3",
+      "folder": "nginx-1.26.3",
+      "url": "https://nginx.org/download/nginx-1.26.3.zip",
+      "minOs": "10.0"
+    },
+    {
+      "type": "nginx",
+      "version": "1.24.0",
+      "folder": "nginx-1.24.0",
+      "url": "https://nginx.org/download/nginx-1.24.0.zip",
+      "minOs": "10.0"
+    },
+    {
+      "type": "nginx",
+      "version": "1.22.1",
+      "folder": "nginx-1.22.1",
+      "url": "https://nginx.org/download/nginx-1.22.1.zip",
+      "tag": "old",
+      "minOs": "10.0"
+    },
+    {
+      "type": "php",
+      "version": "8.5.12",
+      "folder": "php-8.5.12-nts-Win32-vs17-x64",
+      "url": "https://windows.php.net/downloads/releases/php-8.5.12-nts-Win32-vs17-x64.zip",
+      "sha256": "2ab242af38d76bdf417cde5ec048b1bcd76a5a40f39a3d15d5f046f38571c477",
+      "vc": 30,
+      "recommended": true,
+      "minOs": "10.0"
+    },
+    {
+      "type": "php",
+      "version": "8.4.27",
+      "folder": "php-8.4.27-nts-Win32-vs17-x64",
+      "url": "https://windows.php.net/downloads/releases/php-8.4.27-nts-Win32-vs17-x64.zip",
+      "sha256": "93bd8a815a52156606fb906d0573437908c61f96e2cc52c03a51e36a41bf5236",
+      "vc": 30,
+      "minOs": "10.0"
+    },
+    {
+      "type": "php",
+      "version": "8.3.36",
+      "folder": "php-8.3.36-nts-Win32-vs16-x64",
+      "url": "https://windows.php.net/downloads/releases/php-8.3.36-nts-Win32-vs16-x64.zip",
+      "sha256": "3c9242622c7402b47c38d2ec2ed779cef3a290fd6f2bde6c35f9c482699e7900",
+      "vc": 20,
+      "minOs": "10.0"
+    },
+    {
+      "type": "php",
+      "version": "8.2.35",
+      "folder": "php-8.2.35-nts-Win32-vs16-x64",
+      "url": "https://windows.php.net/downloads/releases/php-8.2.35-nts-Win32-vs16-x64.zip",
+      "sha256": "798ffa4b9ce22a820d57048e9695df7245bf917ed067917f256942a10918a8cc",
+      "vc": 20,
+      "minOs": "10.0"
+    },
+    {
+      "type": "php",
+      "version": "8.1.34",
+      "folder": "php-8.1.34-nts-Win32-vs16-x64",
+      "url": "https://windows.php.net/downloads/releases/php-8.1.34-nts-Win32-vs16-x64.zip",
+      "sha256": "9cfe246cb144076c16f5913a3ef88a474c3dd7e60f0f0c8bb95faf68674016cc",
+      "vc": 20,
+      "tag": "EOL",
+      "minOs": "10.0"
+    },
+    {
+      "type": "php",
+      "version": "8.0.30",
+      "folder": "php-8.0.30-nts-Win32-vs16-x64",
+      "url": "https://windows.php.net/downloads/releases/archives/php-8.0.30-nts-Win32-vs16-x64.zip",
+      "sha256": "dfb70498ffa2c617f2f655a155564697e3c9cca41709938fd1a5997d1d5b0785",
+      "vc": 20,
+      "tag": "EOL",
+      "minOs": "10.0"
+    },
+    {
+      "type": "php",
+      "version": "7.4.33",
+      "folder": "php-7.4.33-nts-Win32-vc15-x64",
+      "url": "https://windows.php.net/downloads/releases/archives/php-7.4.33-nts-Win32-vc15-x64.zip",
+      "sha256": "14ae3250d4447c8ccfc4c45a70d90adfbcd61e728d85f0be56a7ddf8f9c8aace",
+      "vc": 10,
+      "tag": "EOL",
+      "note": "old projects only",
+      "minOs": "10.0"
+    },
+    {
+      "type": "mysql",
+      "version": "8.4.11",
+      "folder": "mysql-8.4.11-winx64",
+      "url": "https://cdn.mysql.com/Downloads/MySQL-8.4/mysql-8.4.11-winx64.zip",
+      "tag": "LTS",
+      "vc": 20,
+      "recommended": true,
+      "minOs": "10.0"
+    },
+    {
+      "type": "mysql",
+      "version": "26.7.0",
+      "folder": "mysql-26.7.0-winx64",
+      "url": "https://cdn.mysql.com/Downloads/MySQL-26.7/mysql-26.7.0-winx64.zip",
+      "tag": "newest",
+      "vc": 30,
+      "minOs": "10.0"
+    },
+    {
+      "type": "mysql",
+      "version": "9.7.4",
+      "folder": "mysql-9.7.4-winx64",
+      "url": "https://cdn.mysql.com/Downloads/MySQL-9.7/mysql-9.7.4-winx64.zip",
+      "vc": 30,
+      "minOs": "10.0"
+    },
+    {
+      "type": "mysql",
+      "version": "8.4.10",
+      "folder": "mysql-8.4.10-winx64",
+      "url": "https://cdn.mysql.com/Downloads/MySQL-8.4/mysql-8.4.10-winx64.zip",
+      "tag": "LTS",
+      "vc": 20,
+      "minOs": "10.0"
+    },
+    {
+      "type": "mysql",
+      "version": "8.0.44",
+      "folder": "mysql-8.0.44-winx64",
+      "url": "https://cdn.mysql.com/Downloads/MySQL-8.0/mysql-8.0.44-winx64.zip",
+      "vc": 20,
+      "minOs": "10.0"
+    },
+    {
+      "type": "mysql",
+      "version": "5.7.44",
+      "folder": "mysql-5.7.44-winx64",
+      "url": "https://cdn.mysql.com/archives/mysql-5.7/mysql-5.7.44-winx64.zip",
+      "tag": "EOL",
+      "note": "old projects only",
+      "minOs": "10.0"
+    },
+    {
+      "type": "nodejs",
+      "version": "24.22.1",
+      "folder": "node-v24.22.1-win-x64",
+      "url": "https://nodejs.org/dist/v24.22.1/node-v24.22.1-win-x64.zip",
+      "tag": "LTS",
+      "recommended": true,
+      "minOs": "10.0"
+    },
+    {
+      "type": "nodejs",
+      "version": "26.12.1",
+      "folder": "node-v26.12.1-win-x64",
+      "url": "https://nodejs.org/dist/v26.12.1/node-v26.12.1-win-x64.zip",
+      "tag": "current",
+      "minOs": "10.0"
+    },
+    {
+      "type": "nodejs",
+      "version": "22.23.4",
+      "folder": "node-v22.23.4-win-x64",
+      "url": "https://nodejs.org/dist/v22.23.4/node-v22.23.4-win-x64.zip",
+      "tag": "LTS",
+      "minOs": "10.0"
+    },
+    {
+      "type": "nodejs",
+      "version": "20.20.2",
+      "folder": "node-v20.20.2-win-x64",
+      "url": "https://nodejs.org/dist/v20.20.2/node-v20.20.2-win-x64.zip",
+      "tag": "LTS",
+      "minOs": "10.0"
+    },
+    {
+      "type": "nodejs",
+      "version": "18.20.8",
+      "folder": "node-v18.20.8-win-x64",
+      "url": "https://nodejs.org/dist/v18.20.8/node-v18.20.8-win-x64.zip",
+      "tag": "EOL",
+      "minOs": "10.0"
+    },
+    {
+      "type": "redis",
+      "version": "8.10.2",
+      "folder": "redis-8.10.2",
+      "url": "https://github.com/redis-windows/redis-windows/releases/download/8.10.2/Redis-8.10.2-Windows-x64-msys2.zip",
+      "recommended": true,
+      "note": "redis-windows build",
+      "minOs": "10.0"
+    },
+    {
+      "type": "redis",
+      "version": "8.8.3",
+      "folder": "redis-8.8.3",
+      "url": "https://github.com/redis-windows/redis-windows/releases/download/8.8.3/Redis-8.8.3-Windows-x64-msys2.zip",
+      "minOs": "10.0"
+    },
+    {
+      "type": "redis",
+      "version": "8.4.7",
+      "folder": "redis-8.4.7",
+      "url": "https://github.com/redis-windows/redis-windows/releases/download/8.4.7/Redis-8.4.7-Windows-x64-msys2.zip",
+      "minOs": "10.0"
+    },
+    {
+      "type": "redis",
+      "version": "8.2.10",
+      "folder": "redis-8.2.10",
+      "url": "https://github.com/redis-windows/redis-windows/releases/download/8.2.10/Redis-8.2.10-Windows-x64-msys2.zip",
+      "minOs": "10.0"
+    },
+    {
+      "type": "redis",
+      "version": "5.0.14.1",
+      "folder": "redis-5.0.14.1",
+      "url": "https://github.com/tporadowski/redis/releases/download/v5.0.14.1/Redis-x64-5.0.14.1.zip",
+      "note": "classic Windows port",
+      "minOs": "10.0"
+    },
+    {
+      "type": "redis",
+      "version": "4.0.14.2",
+      "folder": "redis-4.0.14.2",
+      "url": "https://github.com/tporadowski/redis/releases/download/v4.0.14.2/Redis-x64-4.0.14.2.zip",
+      "tag": "old",
+      "minOs": "10.0"
+    },
+    {
+      "type": "mailpit",
+      "version": "1.31.6",
+      "folder": "mailpit-1.31.6",
+      "url": "https://github.com/axllent/mailpit/releases/download/v1.31.6/mailpit-windows-amd64.zip",
+      "note": "catches every mail sent by PHP",
+      "recommended": true,
+      "minOs": "10.0"
+    },
+    {
+      "type": "mailpit",
+      "version": "1.31.5",
+      "folder": "mailpit-1.31.5",
+      "url": "https://github.com/axllent/mailpit/releases/download/v1.31.5/mailpit-windows-amd64.zip",
+      "minOs": "10.0"
+    },
+    {
+      "type": "mailpit",
+      "version": "1.30.0",
+      "folder": "mailpit-1.30.0",
+      "url": "https://github.com/axllent/mailpit/releases/download/v1.30.0/mailpit-windows-amd64.zip",
+      "minOs": "10.0"
+    },
+    {
+      "type": "mailhog",
+      "version": "1.0.1",
+      "folder": "mailhog-1.0.1",
+      "url": "https://github.com/mailhog/MailHog/releases/download/v1.0.1/MailHog_windows_amd64.exe",
+      "kind": "file",
+      "fileName": "MailHog.exe",
+      "note": "classic, very small",
+      "minOs": "6.1"
+    },
+    {
+      "type": "smtp4dev",
+      "version": "3.15.0",
+      "folder": "smtp4dev-3.15.0",
+      "url": "https://github.com/rnwood/smtp4dev/releases/download/3.15.0/Rnwood.Smtp4dev-win-x64-3.15.0.zip",
+      "note": "rich web UI, relay rules",
+      "minOs": "10.0"
+    },
+    {
+      "type": "composer",
+      "version": "2 (latest)",
+      "folder": "composer-2",
+      "url": "https://getcomposer.org/download/latest-stable/composer.phar",
+      "kind": "file",
+      "fileName": "composer.phar",
+      "recommended": true,
+      "minOs": "10.0"
+    },
+    {
+      "type": "composer",
+      "version": "2.2 LTS",
+      "folder": "composer-2.2",
+      "url": "https://getcomposer.org/download/latest-2.2.x/composer.phar",
+      "kind": "file",
+      "fileName": "composer.phar",
+      "note": "for PHP 5.3 - 7.1 projects",
+      "minOs": "10.0"
+    },
+    {
+      "type": "adminer",
+      "version": "6.1.2",
+      "folder": "adminer-6.1.2",
+      "url": "https://github.com/vrana/adminer/releases/download/v6.1.2/adminer-6.1.2.php",
+      "kind": "file",
+      "fileName": "index.php",
+      "note": "http://localhost/adminer",
+      "recommended": true,
+      "minOs": "10.0"
+    },
+    {
+      "type": "adminer",
+      "version": "6.0.2",
+      "folder": "adminer-6.0.2",
+      "url": "https://github.com/vrana/adminer/releases/download/v6.0.2/adminer-6.0.2.php",
+      "kind": "file",
+      "fileName": "index.php",
+      "minOs": "10.0"
+    },
+    {
+      "type": "adminer",
+      "version": "5.4.1",
+      "folder": "adminer-5.4.1",
+      "url": "https://github.com/vrana/adminer/releases/download/v5.4.1/adminer-5.4.1.php",
+      "kind": "file",
+      "fileName": "index.php",
+      "minOs": "10.0"
+    },
+    {
+      "type": "adminer",
+      "version": "4.8.1",
+      "folder": "adminer-4.8.1",
+      "url": "https://github.com/vrana/adminer/releases/download/v4.8.1/adminer-4.8.1.php",
+      "kind": "file",
+      "fileName": "index.php",
+      "note": "PHP 5 - 8.2",
+      "minOs": "10.0"
+    },
+    {
+      "type": "phpmyadmin",
+      "version": "5.2.3",
+      "folder": "phpMyAdmin-5.2.3",
+      "url": "https://files.phpmyadmin.net/phpMyAdmin/5.2.3/phpMyAdmin-5.2.3-all-languages.zip",
+      "note": "http://localhost/phpmyadmin",
+      "recommended": true,
+      "minOs": "10.0"
+    },
+    {
+      "type": "phpmyadmin",
+      "version": "5.2.2",
+      "folder": "phpMyAdmin-5.2.2",
+      "url": "https://files.phpmyadmin.net/phpMyAdmin/5.2.2/phpMyAdmin-5.2.2-all-languages.zip",
+      "minOs": "10.0"
+    },
+    {
+      "type": "phpmyadmin",
+      "version": "4.9.11",
+      "folder": "phpMyAdmin-4.9.11",
+      "url": "https://files.phpmyadmin.net/phpMyAdmin/4.9.11/phpMyAdmin-4.9.11-all-languages.zip",
+      "note": "PHP 5.5 - 7.4",
+      "minOs": "10.0"
+    },
+    {
+      "type": "cloudflared",
+      "version": "2026.10.3",
+      "folder": "cloudflared-2026.10.3",
+      "url": "https://github.com/cloudflare/cloudflared/releases/download/2026.10.3/cloudflared-windows-amd64.exe",
+      "kind": "file",
+      "fileName": "cloudflared.exe",
+      "note": "share a site on the internet",
+      "recommended": true,
+      "minOs": "10.0"
+    },
+    {
+      "type": "mariadb",
+      "version": "12.3.3",
+      "folder": "mariadb-12.3.3-winx64",
+      "url": "https://downloads.mariadb.org/rest-api/mariadb/12.3.3/mariadb-12.3.3-winx64.zip",
+      "sha256": "4b5706b47148b47c8f36963c8352d1ddee37a1287b4690428f631a74b09b85a0",
+      "tag": "newest",
+      "recommended": false,
+      "minOs": "10.0"
+    },
+    {
+      "type": "mariadb",
+      "version": "11.8.9",
+      "folder": "mariadb-11.8.9-winx64",
+      "url": "https://downloads.mariadb.org/rest-api/mariadb/11.8.9/mariadb-11.8.9-winx64.zip",
+      "sha256": "830c46727d9278eae212ae3eca44eeb9e71b2a68704e95f344a64fba7b1963f5",
+      "tag": "LTS",
+      "recommended": true,
+      "minOs": "10.0"
+    },
+    {
+      "type": "mariadb",
+      "version": "11.4.13",
+      "folder": "mariadb-11.4.13-winx64",
+      "url": "https://downloads.mariadb.org/rest-api/mariadb/11.4.13/mariadb-11.4.13-winx64.zip",
+      "sha256": "d62986d433eeebfde218560b276103831604a61e929e87f1a17f5aebd80257e2",
+      "tag": "LTS",
+      "recommended": false,
+      "minOs": "10.0"
+    },
+    {
+      "type": "mariadb",
+      "version": "10.11.19",
+      "folder": "mariadb-10.11.19-winx64",
+      "url": "https://downloads.mariadb.org/rest-api/mariadb/10.11.19/mariadb-10.11.19-winx64.zip",
+      "sha256": "398ea30e5036010bbebe01d2b1804280424dcc2626e36d8e95155c04d25a0490",
+      "tag": "LTS",
+      "recommended": false,
+      "minOs": "10.0"
+    },
+    {
+      "type": "mariadb",
+      "version": "10.6.28",
+      "folder": "mariadb-10.6.28-winx64",
+      "url": "https://downloads.mariadb.org/rest-api/mariadb/10.6.28/mariadb-10.6.28-winx64.zip",
+      "sha256": "a4e5cd01587d1662728f0cf0d8bb3d1aaedc6861b272cec18f504ab4ba8b2f72",
+      "tag": "LTS",
+      "recommended": false,
+      "minOs": "10.0"
+    },
+    {
+      "type": "postgresql",
+      "version": "18.6",
+      "folder": "postgresql-18.6",
+      "url": "https://get.enterprisedb.com/postgresql/postgresql-18.6-1-windows-x64-binaries.zip",
+      "note": "includes pgAdmin 4",
+      "recommended": true,
+      "minOs": "10.0"
+    },
+    {
+      "type": "postgresql",
+      "version": "17.11",
+      "folder": "postgresql-17.11",
+      "url": "https://get.enterprisedb.com/postgresql/postgresql-17.11-1-windows-x64-binaries.zip",
+      "note": "includes pgAdmin 4",
+      "recommended": false,
+      "minOs": "10.0"
+    },
+    {
+      "type": "postgresql",
+      "version": "16.15",
+      "folder": "postgresql-16.15",
+      "url": "https://get.enterprisedb.com/postgresql/postgresql-16.15-1-windows-x64-binaries.zip",
+      "note": "includes pgAdmin 4",
+      "recommended": false,
+      "minOs": "10.0"
+    },
+    {
+      "type": "postgresql",
+      "version": "15.19",
+      "folder": "postgresql-15.19",
+      "url": "https://get.enterprisedb.com/postgresql/postgresql-15.19-1-windows-x64-binaries.zip",
+      "note": "includes pgAdmin 4",
+      "recommended": false,
+      "minOs": "10.0"
+    },
+    {
+      "type": "postgresql",
+      "version": "14.24",
+      "folder": "postgresql-14.24",
+      "url": "https://get.enterprisedb.com/postgresql/postgresql-14.24-1-windows-x64-binaries.zip",
+      "note": "includes pgAdmin 4",
+      "recommended": false,
+      "minOs": "10.0"
+    },
+    {
+      "type": "mongodb",
+      "version": "9.0.4",
+      "folder": "mongodb-9.0.4",
+      "url": "https://fastdl.mongodb.org/windows/mongodb-windows-x86_64-9.0.4.zip",
+      "recommended": false,
+      "minOs": "10.0"
+    },
+    {
+      "type": "mongodb",
+      "version": "8.2.12",
+      "folder": "mongodb-8.2.12",
+      "url": "https://fastdl.mongodb.org/windows/mongodb-windows-x86_64-8.2.12.zip",
+      "recommended": false,
+      "minOs": "10.0"
+    },
+    {
+      "type": "mongodb",
+      "version": "8.0.34",
+      "folder": "mongodb-8.0.34",
+      "url": "https://fastdl.mongodb.org/windows/mongodb-windows-x86_64-8.0.34.zip",
+      "tag": "LTS",
+      "recommended": true,
+      "minOs": "10.0"
+    },
+    {
+      "type": "mongodb",
+      "version": "7.0.28",
+      "folder": "mongodb-7.0.28",
+      "url": "https://fastdl.mongodb.org/windows/mongodb-windows-x86_64-7.0.28.zip",
+      "tag": "LTS",
+      "recommended": false,
+      "minOs": "10.0"
+    },
+    {
+      "type": "memcached",
+      "version": "1.6.8",
+      "folder": "memcached-1.6.8",
+      "url": "https://github.com/jefyt/memcached-windows/releases/download/1.6.8_mingw/memcached-1.6.8-win64-mingw.zip",
+      "recommended": true,
+      "minOs": "10.0"
+    },
+    {
+      "type": "memcached",
+      "version": "1.6.7",
+      "folder": "memcached-1.6.7",
+      "url": "https://github.com/jefyt/memcached-windows/releases/download/1.6.7_mingw/memcached-1.6.7-win64-mingw.zip",
+      "minOs": "10.0"
+    },
+    {
+      "type": "heidisql",
+      "version": "12.21",
+      "folder": "heidisql-12.21",
+      "url": "https://github.com/HeidiSQL/HeidiSQL/releases/download/v12.21/HeidiSQL_12.21_64_Portable.zip",
+      "note": "MySQL, MariaDB, PostgreSQL, SQLite",
+      "recommended": true,
+      "minOs": "10.0"
+    },
+    {
+      "type": "heidisql",
+      "version": "12.20",
+      "folder": "heidisql-12.20",
+      "url": "https://github.com/HeidiSQL/HeidiSQL/releases/download/v12.20/HeidiSQL_12.20_64_Portable.zip",
+      "minOs": "10.0"
+    },
+    {
+      "type": "dbeaver",
+      "version": "26.2.3",
+      "folder": "dbeaver-26.2.3",
+      "url": "https://github.com/dbeaver/dbeaver/releases/download/26.2.3/dbeaver-ce-26.2.3-windows-x86_64.zip",
+      "note": "all databases, Java included",
+      "recommended": true,
+      "minOs": "10.0"
+    },
+    {
+      "type": "dbeaver",
+      "version": "26.2.2",
+      "folder": "dbeaver-26.2.2",
+      "url": "https://github.com/dbeaver/dbeaver/releases/download/26.2.2/dbeaver-ce-26.2.2-windows-x86_64.zip",
+      "minOs": "10.0"
+    },
+    {
+      "type": "beekeeper",
+      "version": "6.1.6",
+      "folder": "beekeeper-6.1.6",
+      "url": "https://github.com/beekeeper-studio/beekeeper-studio/releases/download/v6.1.6/Beekeeper-Studio-6.1.6-portable.exe",
+      "kind": "file",
+      "fileName": "Beekeeper-Studio.exe",
+      "recommended": true,
+      "minOs": "10.0"
+    },
+    {
+      "type": "dbgate",
+      "version": "7.3.2",
+      "folder": "dbgate-7.3.2",
+      "url": "https://github.com/dbgate/dbgate/releases/download/v7.3.2/dbgate-7.3.2-win_x64.zip",
+      "recommended": true,
+      "minOs": "10.0"
+    },
+    {
+      "type": "git",
+      "version": "2.56.0.2",
+      "folder": "git-2.56.0.2",
+      "url": "https://github.com/git-for-windows/git/releases/download/v2.56.0.windows.2/PortableGit-2.56.0.2-64-bit.7z.exe",
+      "kind": "sfx",
+      "note": "Git + Git Bash",
+      "recommended": true,
+      "minOs": "10.0"
+    },
+    {
+      "type": "vscode",
+      "version": "latest",
+      "folder": "vscode",
+      "url": "https://update.code.visualstudio.com/latest/win32-x64-archive/stable",
+      "note": "portable",
+      "recommended": true,
+      "minOs": "10.0"
+    },
+    {
+      "type": "notepadpp",
+      "version": "8.9.8.1",
+      "folder": "notepadpp-8.9.8.1",
+      "url": "https://github.com/notepad-plus-plus/notepad-plus-plus/releases/download/v8.9.8.1/npp.8.9.8.1.portable.x64.zip",
+      "recommended": true,
+      "minOs": "10.0"
+    },
+    {
+      "type": "python",
+      "version": "3.14.9",
+      "folder": "python-3.14.9",
+      "url": "https://www.python.org/ftp/python/3.14.9/python-3.14.9-embed-amd64.zip",
+      "note": "embeddable",
+      "recommended": true,
+      "minOs": "10.0"
+    },
+    {
+      "type": "python",
+      "version": "3.13.17",
+      "folder": "python-3.13.17",
+      "url": "https://www.python.org/ftp/python/3.13.17/python-3.13.17-embed-amd64.zip",
+      "note": "embeddable",
+      "minOs": "10.0"
+    },
+    {
+      "type": "go",
+      "version": "1.27.3",
+      "folder": "go-1.27.3",
+      "url": "https://go.dev/dl/go1.27.3.windows-amd64.zip",
+      "recommended": true,
+      "minOs": "10.0"
+    },
+    {
+      "type": "go",
+      "version": "1.26.10",
+      "folder": "go-1.26.10",
+      "url": "https://go.dev/dl/go1.26.10.windows-amd64.zip",
+      "minOs": "10.0"
+    },
+    {
+      "type": "bun",
+      "version": "1.4.4",
+      "folder": "bun-1.4.4",
+      "url": "https://github.com/oven-sh/bun/releases/download/bun-v1.4.4/bun-windows-x64.zip",
+      "recommended": true,
+      "minOs": "10.0"
+    },
+    {
+      "type": "deno",
+      "version": "2.9.8",
+      "folder": "deno-2.9.8",
+      "url": "https://github.com/denoland/deno/releases/download/v2.9.8/deno-x86_64-pc-windows-msvc.zip",
+      "recommended": true,
+      "minOs": "10.0"
+    },
+    {
+      "type": "wpcli",
+      "version": "latest",
+      "folder": "wp-cli",
+      "url": "https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar",
+      "kind": "file",
+      "fileName": "wp-cli.phar",
+      "note": "used for one-click WordPress",
+      "recommended": true,
+      "minOs": "10.0"
+    },
+    {
+      "type": "sqlite",
+      "version": "3.54.1",
+      "folder": "sqlite-3.54.1",
+      "url": "https://www.sqlite.org/2026/sqlite-tools-win-x64-3540100.zip",
+      "note": "sqlite3 command line",
+      "recommended": true,
+      "minOs": "10.0"
+    },
+    {
+      "type": "sqlitebrowser",
+      "version": "3.13.1",
+      "folder": "sqlitebrowser-3.13.1",
+      "url": "https://github.com/sqlitebrowser/sqlitebrowser/releases/download/v3.13.1/DB.Browser.for.SQLite-v3.13.1-win64.zip",
+      "recommended": true,
+      "minOs": "10.0"
+    }
   ]
 }

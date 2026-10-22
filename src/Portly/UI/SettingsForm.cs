@@ -14,9 +14,11 @@ namespace Portly.UI
 {
     public class SettingsForm : Form
     {
-        ComboBox _lang, _terminal, _theme, _mailTool, _backup;
+        ComboBox _lang, _terminal, _theme, _mailTool, _backup, _dbEngine;
+        NumericUpDown _pgPort, _mongoPort, _memPort;
         NumericUpDown _backupKeep;
         TextBox _docRoot, _tld;
+        CheckBox _legacySql;
         CheckBox _autoVhosts, _ssl, _runAtStartup, _startMin, _startServices, _closeToTray, _addToPath, _checkUpdates, _allowLan;
         RadioButton _apache, _nginx;
         NumericUpDown _http, _https, _mysql, _redis, _mailWeb, _mailSmtp, _phpPort, _phpChildren;
@@ -90,6 +92,11 @@ namespace Portly.UI
             web.Controls.Add(_apache);
             web.Controls.Add(_nginx);
             AddRow(g2, I18n.T("settings.webServer"), web);
+            _dbEngine = new ThemedCombo { Width = Ui.S(200) };
+            foreach (var en in new[] { "mysql", "mariadb" })
+                _dbEngine.Items.Add(new Item(PackageTypes.Get(en).Name + (PackageTypes.Installed(en).Count > 0 ? "" : "  (" + I18n.T("svc.notInstalled") + ")"), en));
+            _dbEngine.SelectedItem = _dbEngine.Items.Cast<Item>().First(i => i.Value == s.DbEngine);
+            AddRow(g2, I18n.T("settings.dbEngine"), _dbEngine);
             _mailTool = new ThemedCombo { Width = Ui.S(200) };
             foreach (var tool in MailpitService.Tools)
             {
@@ -102,6 +109,9 @@ namespace Portly.UI
             _https = Port(s.HttpsPort); AddRow(g2, I18n.T("settings.httpsPort"), _https);
             _mysql = Port(s.MysqlPort); AddRow(g2, I18n.T("settings.mysqlPort"), _mysql);
             _redis = Port(s.RedisPort); AddRow(g2, I18n.T("settings.redisPort"), _redis);
+            _pgPort = Port(s.PostgresPort); AddRow(g2, "PostgreSQL port", _pgPort);
+            _mongoPort = Port(s.MongoPort); AddRow(g2, "MongoDB port", _mongoPort);
+            _memPort = Port(s.MemcachedPort); AddRow(g2, "Memcached port", _memPort);
             _mailWeb = Port(s.MailpitWebPort); AddRow(g2, I18n.T("settings.mailWebPort"), _mailWeb);
             _mailSmtp = Port(s.MailpitSmtpPort); AddRow(g2, I18n.T("settings.mailSmtpPort"), _mailSmtp);
             _phpPort = Port(s.PhpBasePort); AddRow(g2, I18n.T("settings.phpPort"), _phpPort);
@@ -122,6 +132,7 @@ namespace Portly.UI
             _backupKeep = new NumericUpDown { Minimum = 1, Maximum = 100, Value = Math.Max(1, Math.Min(100, s.AutoBackupKeep)), Width = Ui.S(90) };
             AddRow(g3, I18n.T("settings.backupKeep"), _backupKeep);
             AddRow(g3, "", Hint(I18n.T("settings.backupHint")));
+            _legacySql = Check(I18n.T("settings.legacySql"), s.LegacySqlMode, g3);
             Section(stack, "MySQL", g3);
 
             scroll.Controls.Add(stack);
@@ -203,7 +214,7 @@ namespace Portly.UI
                 Directory.CreateDirectory(root);
             }
             catch { Ui.Error(this, I18n.T("settings.badRoot")); return; }
-            var ports = new[] { _http.Value, _https.Value, _mysql.Value, _redis.Value, _mailWeb.Value, _mailSmtp.Value };
+            var ports = new[] { _http.Value, _https.Value, _mysql.Value, _redis.Value, _mailWeb.Value, _mailSmtp.Value, _pgPort.Value, _mongoPort.Value, _memPort.Value };
             if (ports.Distinct().Count() != ports.Length) { Ui.Error(this, I18n.T("settings.duplicatePorts")); return; }
             // the PHP FastCGI range must not overlap the other ports
             var phpLow = (int)_phpPort.Value;
@@ -214,7 +225,12 @@ namespace Portly.UI
                 || (int)_http.Value != s.HttpPort || (int)_https.Value != s.HttpsPort || _allowLan.Checked != s.AllowLan
                 || (int)_phpPort.Value != s.PhpBasePort || (int)_phpChildren.Value != s.PhpChildren
                 || (int)_mailSmtp.Value != s.MailpitSmtpPort || (int)_mysql.Value != s.MysqlPort;
-            bool mysqlRestart = (int)_mysql.Value != s.MysqlPort || _allowLan.Checked != s.AllowLan;
+            var dbEngine = ((Item)_dbEngine.SelectedItem).Value;
+            bool mysqlRestart = (int)_mysql.Value != s.MysqlPort || _allowLan.Checked != s.AllowLan || dbEngine != s.DbEngine;
+            bool mysqlWasActive = ServiceManager.MySql.IsActive;
+            bool pgRestart = (int)_pgPort.Value != s.PostgresPort || _allowLan.Checked != s.AllowLan;
+            bool mongoRestart = (int)_mongoPort.Value != s.MongoPort || _allowLan.Checked != s.AllowLan;
+            bool memRestart = (int)_memPort.Value != s.MemcachedPort || _allowLan.Checked != s.AllowLan;
             bool redisRestart = (int)_redis.Value != s.RedisPort || _allowLan.Checked != s.AllowLan;
             var mailTool = ((Item)_mailTool.SelectedItem).Value;
             bool mailRestart = (int)_mailWeb.Value != s.MailpitWebPort || (int)_mailSmtp.Value != s.MailpitSmtpPort || mailTool != s.MailTool;
@@ -245,8 +261,19 @@ namespace Portly.UI
             s.MailpitSmtpPort = (int)_mailSmtp.Value;
             s.PhpBasePort = (int)_phpPort.Value;
             s.PhpChildren = (int)_phpChildren.Value;
+            bool lanChanged = s.AllowLan != _allowLan.Checked;
+            bool sqlModeChanged = s.LegacySqlMode != _legacySql.Checked;
+            s.LegacySqlMode = _legacySql.Checked;
             s.AllowLan = _allowLan.Checked;
+            if (sqlModeChanged) mysqlRestart = true;
+            // LAN access needs an inbound firewall rule for the web ports (removed again when switched off)
+            if (lanChanged && Ui.Confirm(this, I18n.T(_allowLan.Checked ? "settings.firewallAdd" : "settings.firewallRemove")))
+                HealthCheck.SetFirewallRule(_allowLan.Checked);
+            if (!mysqlWasActive) s.DbEngine = dbEngine;
             s.MailTool = mailTool;
+            s.PostgresPort = (int)_pgPort.Value;
+            s.MongoPort = (int)_mongoPort.Value;
+            s.MemcachedPort = (int)_memPort.Value;
             s.AutoBackupHours = int.Parse(((Item)_backup.SelectedItem).Value);
             s.AutoBackupKeep = (int)_backupKeep.Value;
             s.Save();
@@ -259,7 +286,16 @@ namespace Portly.UI
             Task.Run(async () =>
             {
                 if (webChanged) await ServiceManager.SwitchWebServerAsync(_nginx.Checked ? "nginx" : "apache");
-                if (mysqlRestart && ServiceManager.MySql.IsActive) await ServiceManager.MySql.RestartAsync();
+                if (mysqlRestart && mysqlWasActive)
+                {
+                    await ServiceManager.MySql.StopAsync();   // stops the engine that is running now
+                    Settings.Current.DbEngine = dbEngine;
+                    Settings.Current.Save();
+                    await ServiceManager.MySql.StartAsync();
+                }
+                if (pgRestart && ServiceManager.Postgres.IsActive) await ServiceManager.Postgres.RestartAsync();
+                if (mongoRestart && ServiceManager.Mongo.IsActive) await ServiceManager.Mongo.RestartAsync();
+                if (memRestart && ServiceManager.Memcached.IsActive) await ServiceManager.Memcached.RestartAsync();
                 if (redisRestart && ServiceManager.Redis.IsActive) await ServiceManager.Redis.RestartAsync();
                 if (mailRestart && mailWasActive)
                 {

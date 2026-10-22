@@ -4,6 +4,7 @@
 server {
     listen {{LISTEN_HTTP}};
     {{LISTEN_HTTPS}}
+    {{LISTEN_V6}}
     server_name {{SERVER_NAMES}};
     root "{{SITE_ROOT}}";
     index index.php index.html index.htm;

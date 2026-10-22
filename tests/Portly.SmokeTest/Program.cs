@@ -51,6 +51,9 @@ namespace Portly.SmokeTest
             s.MailpitWebPort = 8727; s.MailpitSmtpPort = 1727; s.PhpBasePort = 9277;
             s.Tld = "localhost"; s.Ssl = true; s.AutoVhosts = true; s.WebServer = "apache";
             s.DocumentRoot = Path.Combine(Paths.Root, "www");
+            s.PostgresPort = 5477; s.MongoPort = 27077; s.MemcachedPort = 11277;
+            s.DbEngine = "mysql"; s.MailTool = "mailpit";
+            s.PhpMaxRequests = 5; s.PhpChildren = 2;
             s.Save();
             I18n.Load("tr");
             Log.Written += l => Console.WriteLine("    | " + l);
@@ -119,10 +122,14 @@ namespace Portly.SmokeTest
             Check("CakePHP-style webroot folder detected", sites.First(x => x.Name == "cakeapp").DocRoot.EndsWith("webroot"));
             Check("group folder detected", sites.Any(x => x.Name == "clients" && x.IsGroup) && sites.Any(x => x.Host == "acme.clients.localhost" && x.Valid),
                 string.Join(", ", sites.Where(x => x.Group != "" || x.IsGroup).Select(x => x.Host)));
-            Check("sites scanned", sites.Count(x => x.Valid && x.Group == "" && !x.IsGroup) == 3, string.Join(", ", sites.Select(x => x.Name + (x.Valid ? "" : "(invalid)"))));
+            Check("sites scanned", sites.Count(x => x.Valid && x.Group == "" && !x.IsGroup && x.Name != "wpdemo") == 3, string.Join(", ", sites.Select(x => x.Name + (x.Valid ? "" : "(invalid)"))));
             Check("Laravel-style public folder detected", sites.First(x => x.Name == "legacyapp").DocRoot.EndsWith("public"));
             var php84 = PackageTypes.Installed("php").First(f => PackageTypes.Branch(f) == "8.4");
             Sites.SetPhp("legacyapp", php84);
+
+            // older test php.ini files predate pgsql in the default extension list
+            PhpConfig.ToggleExtension(phpDir, "pdo_pgsql", true);
+            PhpConfig.ToggleExtension(phpDir, "pgsql", true);
 
             // ---------- port guard: occupy the FastCGI port of the default PHP, it must move to a free one ----------
             var phpBlocker = new System.Net.Sockets.TcpListener(IPAddress.Loopback, ServiceManager.Php.PortFor(php.Folder));
@@ -136,9 +143,21 @@ namespace Portly.SmokeTest
             foreach (var svc in new Service[] { ServiceManager.Apache, ServiceManager.Php, ServiceManager.MySql, ServiceManager.Redis, ServiceManager.Mailpit })
                 Check(svc.Title + " running", svc.State == ServiceState.Running, svc.LastError ?? "");
 
+            // a run that stopped half-way may have left a root password behind: reset it first
+            if (!Database.Sql("SELECT 1;").Ok)
+            {
+                var resetErr = await ServiceManager.MySql.ResetRootPasswordAsync();
+                Console.WriteLine("    leftover root password reset: " + (resetErr ?? "ok"));
+            }
+
             Check("PHP moved to a free FastCGI port when its port was taken", ServiceManager.Php.PortFor(php.Folder) != ((IPEndPoint)phpBlocker.LocalEndpoint).Port, "port " + ServiceManager.Php.PortFor(php.Folder));
             await WebChecks("Apache", php, php84);
             phpBlocker.Stop();
+
+            // ---------- PHP workers are recycled after PhpMaxRequests (5): 40 requests must all succeed ----------
+            int okCount = 0;
+            for (int i = 0; i < 40; i++) if (Get("http://127.0.0.1:" + s.HttpPort + "/", "legacyapp.localhost").Contains("LEGACY")) okCount++;
+            Check("PHP worker recycling without errors (40 requests, recycle every 5)", okCount == 40, okCount + "/40");
 
             // ---------- database tools ----------
             Check("create database", Database.CreateDatabase("smoke_db") == null);
@@ -228,6 +247,86 @@ namespace Portly.SmokeTest
             }
             catch (Exception ex) { Check("Redis 8 runs", false, ex.Message); }
 
+            // ---------- forgotten root password ----------
+            try
+            {
+                Database.Sql("ALTER USER 'root'@'localhost' IDENTIFIED BY 'Gizli-123';");
+                s.MysqlRootPassword = "wrong"; s.Save();
+                var before = Database.Sql("SELECT 1;");
+                var err = await ServiceManager.MySql.ResetRootPasswordAsync();
+                var after = Database.Sql("SELECT 1;");
+                Check("reset forgotten root password", !before.Ok && err == null && after.Ok, err ?? "");
+            }
+            catch (Exception ex) { Check("reset forgotten root password", false, ex.Message); }
+
+            // ---------- MariaDB as the database engine ----------
+            try
+            {
+                var maria = Catalog.Recommended("mariadb");
+                await Installer.InstallAsync(maria, null, CancellationToken.None);
+                await ServiceManager.MySql.StopAsync();
+                s.DbEngine = "mariadb"; s.Save();
+                await ServiceManager.MySql.StartAsync();
+                Check("MariaDB " + maria.Version + " runs", ServiceManager.MySql.State == ServiceState.Running, ServiceManager.MySql.LastError ?? "");
+                Check("MariaDB: create database", Database.CreateDatabase("maria_db") == null && Database.ListDatabases().Contains("maria_db"));
+                await ServiceManager.MySql.StopAsync();
+            }
+            catch (Exception ex) { Check("MariaDB runs", false, ex.Message); }
+            s.DbEngine = "mysql"; s.Save();
+            await ServiceManager.MySql.StartAsync();
+
+            // ---------- PostgreSQL, MongoDB, Memcached ----------
+            foreach (var pair in new[] { Tuple.Create("postgresql", (Service)ServiceManager.Postgres), Tuple.Create("mongodb", (Service)ServiceManager.Mongo), Tuple.Create("memcached", (Service)ServiceManager.Memcached) })
+            {
+                try
+                {
+                    var entry = Catalog.Recommended(pair.Item1);
+                    await Installer.InstallAsync(entry, null, CancellationToken.None);
+                    await pair.Item2.StartAsync();
+                    Check(entry.TypeName + " " + entry.Version + " runs", pair.Item2.State == ServiceState.Running, pair.Item2.LastError ?? "");
+                }
+                catch (Exception ex) { Check(pair.Item1 + " runs", false, ex.Message); }
+            }
+            try
+            {
+                var pgBin = Path.Combine(PackageTypes.ActiveDir("postgresql"), "bin");
+                var q = ProcessUtil.Run(Path.Combine(pgBin, "psql.exe"), "-h 127.0.0.1 -p " + s.PostgresPort + " -U postgres -t -c \"select 40+2\"", pgBin, null, 30000);
+                Check("PostgreSQL answers SQL", q.Output.Contains("42"), q.Output.Trim());
+                var pg = Get("http://127.0.0.1:" + s.HttpPort + "/", "demo.localhost");
+                File.WriteAllText(Path.Combine(www, "demo", "pg.php"), "<?php $c = new PDO('pgsql:host=127.0.0.1;port=" + s.PostgresPort + ";dbname=postgres', 'postgres', ''); echo 'PG=' . $c->query('select 7*6')->fetchColumn();");
+                var pgPage = Get("http://127.0.0.1:" + s.HttpPort + "/pg.php", "demo.localhost");
+                Check("PHP -> PostgreSQL (pdo_pgsql)", pgPage.Contains("PG=42"), pgPage.Length > 120 ? pgPage.Substring(0, 120) : pgPage);
+            }
+            catch (Exception ex) { Check("PostgreSQL answers SQL", false, ex.Message); }
+            await ServiceManager.Postgres.StopAsync();
+            await ServiceManager.Mongo.StopAsync();
+            await ServiceManager.Memcached.StopAsync();
+
+            // ---------- one-click WordPress (download, database, wp-config, admin account) ----------
+            try
+            {
+                if (Directory.Exists(Path.Combine(www, "wpdemo"))) Directory.Delete(Path.Combine(www, "wpdemo"), true);
+                var msg = await ProjectCreator.CreateAsync("wpdemo", "wordpress", true, true, t => Console.WriteLine("    | " + t), CancellationToken.None);
+                await ServiceManager.ReloadWebAsync();
+                var login = Get("https://127.0.0.1:" + s.HttpsPort + "/wp-login.php", "wpdemo.localhost");
+                Check("WordPress installed in one click", msg.Contains("admin") && login.Contains("user_login"), msg.Replace("\n", " | ") + " || login: " + (login.Length > 200 ? login.Substring(0, 200) : login));
+            }
+            catch (Exception ex) { Check("WordPress installed in one click", false, ex.Message); }
+
+            // ---------- tools: Git (self-extracting), HeidiSQL, SQLite, Bun, Deno ----------
+            foreach (var tool in new[] { "git", "heidisql", "sqlite", "bun", "deno" })
+            {
+                try
+                {
+                    var entry = Catalog.Recommended(tool);
+                    await Installer.InstallAsync(entry, null, CancellationToken.None);
+                    Check("install " + entry.TypeName + " " + entry.Version, PackageTypes.ActiveDir(tool) != null);
+                }
+                catch (Exception ex) { Check("install " + tool, false, ex.Message); }
+            }
+            var gitV = ProcessUtil.Run(Path.Combine(PackageTypes.ActiveDir("git") ?? Paths.Root, "cmd", "git.exe"), "--version", null, null, 20000);
+            Check("git runs", gitV.Output.Contains("git version"), gitV.Output);
+
             // ---------- share on the internet (Cloudflare quick tunnel) ----------
             try
             {
@@ -237,6 +336,15 @@ namespace Portly.SmokeTest
                 for (int i = 0; i < 12 && !page.Contains("DEMO-OK"); i++) { await Task.Delay(5000); page = Get(publicUrl, null); }
                 Check("site shared on the internet", page.Contains("DEMO-OK"), publicUrl);
                 Share.Stop(demoSite);
+                var wpSite = Sites.Scan().FirstOrDefault(x => x.Name == "wpdemo");
+                if (wpSite != null)
+                {
+                    var wpUrl = await Share.StartAsync(wpSite, t => { });
+                    string wpPage = "";
+                    for (int i = 0; i < 12 && !wpPage.Contains("trycloudflare"); i++) { await Task.Delay(5000); wpPage = Get(wpUrl + "/", null); }
+                    Check("shared WordPress keeps the public address (no redirect to .localhost)", wpPage.Contains(new Uri(wpUrl).Host), wpUrl + " " + (wpPage.Length > 100 ? wpPage.Substring(0, 100) : wpPage));
+                    Share.Stop(wpSite);
+                }
             }
             catch (Exception ex) { Check("site shared on the internet", false, ex.Message); }
 
@@ -322,6 +430,7 @@ namespace Portly.SmokeTest
             {
                 var req = (HttpWebRequest)WebRequest.Create(url);
                 if (host != null) req.Host = host;
+                req.Proxy = null; // never send local test traffic to a system proxy
                 req.KeepAlive = false; // one connection per request, like a browser per site (avoids 421 on reuse)
                 req.Timeout = 30000;
                 req.ServerCertificateValidationCallback = (o, cert, chain, errors) =>

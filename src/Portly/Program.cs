@@ -45,6 +45,8 @@ namespace Portly
             AppDomain.CurrentDomain.UnhandledException += (s, e) => Crash(e.ExceptionObject as Exception);
 
             Net.Init();
+            // be asked early at Windows shutdown (before most apps) so databases get time to close cleanly
+            try { SetProcessShutdownParameters(0x3FF, 0); } catch { }
             Paths.EnsureAll();
             Settings.Load();
             I18n.Load(Settings.Current.Language);
@@ -71,6 +73,9 @@ namespace Portly
             GC.KeepAlive(_mutex);
             return 0;
         }
+
+        [System.Runtime.InteropServices.DllImport("kernel32.dll")]
+        static extern bool SetProcessShutdownParameters(uint level, uint flags);
 
         static void Crash(Exception ex)
         {

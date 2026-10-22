@@ -112,6 +112,25 @@ namespace Portly.Core
             catch { return false; }
         }
 
+        static bool? _v6;
+        /// <summary>Can we bind to [::1]? (false when IPv6 is disabled; then we only listen on 127.0.0.1)</summary>
+        public static bool LoopbackV6
+        {
+            get
+            {
+                if (_v6.HasValue) return _v6.Value;
+                try
+                {
+                    var l = new System.Net.Sockets.TcpListener(IPAddress.IPv6Loopback, 0);
+                    l.Start();
+                    l.Stop();
+                    _v6 = true;
+                }
+                catch { _v6 = false; }
+                return _v6.Value;
+            }
+        }
+
         public static string Sha256(string file)
         {
             using (var s = File.OpenRead(file))

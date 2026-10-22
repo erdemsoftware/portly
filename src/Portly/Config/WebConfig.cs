@@ -62,6 +62,9 @@ namespace Portly.Config
             v["DASHBOARD"] = Paths.Fwd(ToolApps.DashboardDir);
             string ip = s.AllowLan ? "" : "127.0.0.1:";
             v["LISTEN"] = "Listen " + ip + s.HttpPort + (ssl ? "\r\nListen " + ip + s.HttpsPort : "");
+            // apps that connect to "localhost" try ::1 first: answer there too instead of a slow fallback
+            if (!s.AllowLan && Net.LoopbackV6)
+                v["LISTEN"] += "\r\nListen [::1]:" + s.HttpPort + (ssl ? "\r\nListen [::1]:" + s.HttpsPort : "");
             v["PHP_HANDLER"] = defaultPhp == "" ? "# PHP is not installed" : ApachePhp(phpPort(defaultPhp));
             v["DEFAULT_SSL"] = ssl ? Templates.Render("apache-default-ssl.conf.tpl", Merge(v, new Dictionary<string, string>
             {
@@ -128,6 +131,8 @@ namespace Portly.Config
             string ip = s.AllowLan ? "" : "127.0.0.1:";
             v["LISTEN_HTTP"] = ip + s.HttpPort;
             v["LISTEN_HTTPS"] = ssl ? "listen " + ip + s.HttpsPort + " ssl default_server;" : "";
+            bool v6 = !s.AllowLan && Net.LoopbackV6;
+            v["LISTEN_V6"] = v6 ? "listen [::1]:" + s.HttpPort + " default_server;" + (ssl ? " listen [::1]:" + s.HttpsPort + " ssl default_server;" : "") : "";
             v["SSL_CERT"] = ssl ? NginxCert(certs["localhost"]) : "";
             v["PHP_LOCATION"] = defaultPhp == "" ? "" : NginxPhp(nginxDir, phpPort(defaultPhp));
             Templates.WriteIfChanged(NginxConf, Templates.Render("nginx.conf.tpl", v));
@@ -158,6 +163,7 @@ namespace Portly.Config
                         { "SERVER_NAMES", site.IsGroup ? site.Host : site.Host + " *." + site.Host },
                         { "SITE_ROOT", Paths.Fwd(site.DocRoot) },
                         { "LISTEN_HTTPS", siteSsl ? "listen " + ip + s.HttpsPort + " ssl;" : "" },
+                        { "LISTEN_V6", v6 ? "listen [::1]:" + s.HttpPort + ";" + (siteSsl ? " listen [::1]:" + s.HttpsPort + " ssl;" : "") : "" },
                         { "SSL_CERT", siteSsl ? NginxCert(certs[site.Host]) : "" },
                         { "PHP_LOCATION", site.PhpFolder == "" ? "" : NginxPhp(nginxDir, phpPort(site.PhpFolder)) },
                     });

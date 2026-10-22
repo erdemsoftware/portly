@@ -63,6 +63,18 @@ namespace Portly.Packages
                 Directory.CreateDirectory(target);
                 File.Copy(download, Path.Combine(target, fileName), true);
             }
+            else if (e.Kind == "sfx")
+            {
+                // 7-Zip self-extracting archive (PortableGit): "-y -o<dir>" extracts silently
+                Report(progress, "extract", -1, 0);
+                var extract = Path.Combine(Paths.Tmp, "extract", Guid.NewGuid().ToString("N").Substring(0, 8));
+                Directory.CreateDirectory(extract);
+                var r = await Task.Run(() => ProcessUtil.Run(download, "-y -o\"" + extract + "\"", Path.GetDirectoryName(download), null, 15 * 60 * 1000), ct);
+                var root = FindRoot(extract, e.Subdir);
+                if (!r.Ok && !Directory.EnumerateFileSystemEntries(root).Any()) throw new Exception(r.Output);
+                MoveDir(root, target);
+                TryDeleteDir(extract);
+            }
             else
             {
                 Report(progress, "extract", 0, 0);
@@ -248,6 +260,18 @@ namespace Portly.Packages
                     break;
                 case "composer":
                     File.WriteAllText(Path.Combine(dir, "composer.bat"), "@echo off\r\nphp \"%~dp0composer.phar\" %*\r\n");
+                    break;
+                case "wpcli":
+                    File.WriteAllText(Path.Combine(dir, "wp.bat"), "@echo off\r\nphp \"%~dp0wp-cli.phar\" %*\r\n");
+                    break;
+                case "heidisql":
+                    // settings next to the exe instead of the registry (portable mode)
+                    File.WriteAllText(Path.Combine(dir, "portable.lock"), "");
+                    break;
+                case "git":
+                    // PortableGit finishes its setup on first start; run it once now, hidden
+                    if (File.Exists(Path.Combine(dir, "post-install.bat")))
+                        ProcessUtil.Run(Path.Combine(dir, "git-bash.exe"), "--no-needs-console --hide --no-cd --command=post-install.bat", dir, null, 120000);
                     break;
                 case "phpmyadmin":
                     ToolApps.ConfigurePhpMyAdmin(dir);

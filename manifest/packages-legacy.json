@@ -146,6 +146,32 @@
       "note": "http://localhost/phpmyadmin",
       "minOs": "6.1",
       "recommended": true
+    },
+    {
+      "type": "memcached",
+      "version": "1.6.8",
+      "folder": "memcached-1.6.8",
+      "url": "https://github.com/jefyt/memcached-windows/releases/download/1.6.8_mingw/memcached-1.6.8-win64-mingw.zip",
+      "recommended": true,
+      "minOs": "6.1"
+    },
+    {
+      "type": "memcached",
+      "version": "1.6.7",
+      "folder": "memcached-1.6.7",
+      "url": "https://github.com/jefyt/memcached-windows/releases/download/1.6.7_mingw/memcached-1.6.7-win64-mingw.zip",
+      "minOs": "6.1"
+    },
+    {
+      "type": "wpcli",
+      "version": "latest",
+      "folder": "wp-cli",
+      "url": "https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar",
+      "kind": "file",
+      "fileName": "wp-cli.phar",
+      "note": "used for one-click WordPress",
+      "recommended": true,
+      "minOs": "6.1"
     }
   ],
   "xdebug": {

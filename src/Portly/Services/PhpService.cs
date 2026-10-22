@@ -80,12 +80,12 @@ namespace Portly.Services
             if (!File.Exists(exe)) return I18n.T("err.notInstalled", "php-cgi.exe");
             try { PhpConfig.Ensure(dir); } catch (Exception ex) { Log.Warn("php.ini: " + ex.Message); }
             int port = PreferredPort(folder);
-            if (ProcessUtil.IsPortInUse(port))
+            if (ProcessUtil.IsPortInUse(port) || ProcessUtil.IsPortExcluded(port))
             {
                 // PHP ports are internal: close our own leftover, otherwise just take another free port
                 var owner = ProcessUtil.PortOwnerInfo(port);
                 if (owner != null && owner.IsOurs) { ProcessUtil.KillTree(owner.Pid); await Task.Delay(500); }
-                if (ProcessUtil.IsPortInUse(port))
+                if (ProcessUtil.IsPortInUse(port) || ProcessUtil.IsPortExcluded(port))
                 {
                     var taken = new HashSet<int>();
                     lock (Sync) foreach (var f in _procs.Keys) taken.Add(PortFor(f));
@@ -99,7 +99,7 @@ namespace Portly.Services
             lock (Sync) { if (port == PreferredPort(folder)) _assigned.Remove(folder); else _assigned[folder] = port; }
             var env = new Dictionary<string, string>
             {
-                { "PHP_FCGI_MAX_REQUESTS", "0" },
+                { "PHP_FCGI_MAX_REQUESTS", Settings.Current.PhpMaxRequests.ToString() }, // workers are recycled by the parent
                 { "PHP_FCGI_CHILDREN", Math.Max(1, Settings.Current.PhpChildren).ToString() },
                 { "PHPRC", dir },
                 { "PATH", dir + ";" + Environment.GetEnvironmentVariable("PATH") },

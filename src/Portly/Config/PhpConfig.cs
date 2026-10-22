@@ -19,7 +19,7 @@ namespace Portly.Config
         static readonly string[] Extensions =
         {
             "bz2", "curl", "fileinfo", "gd", "gd2", "gettext", "intl", "mbstring", "exif", "mysqli",
-            "openssl", "pdo_mysql", "pdo_sqlite", "sodium", "sqlite3", "soap", "sockets", "xsl", "zip"
+            "openssl", "pdo_mysql", "pdo_pgsql", "pdo_sqlite", "pgsql", "sodium", "sqlite3", "soap", "sockets", "xsl", "zip"
         };
 
         public static string IniPath(string phpDir) { return Path.Combine(phpDir, "php.ini"); }

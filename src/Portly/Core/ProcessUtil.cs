@@ -124,6 +124,35 @@ namespace Portly.Core
         }
 
         // ---------------- ports ----------------
+        static List<Tuple<int, int>> _excluded;
+        static DateTime _excludedAt;
+
+        /// <summary>
+        /// Port ranges Windows reserves for Hyper-V / WSL / Docker / WinNAT ("netsh int ipv4 show excludedportrange").
+        /// Nothing listens there, but binding fails with "access forbidden" (OS 10013). Cached for a minute.
+        /// </summary>
+        public static List<Tuple<int, int>> ExcludedRanges()
+        {
+            if (_excluded != null && _excludedAt > DateTime.Now.AddMinutes(-1)) return _excluded;
+            var list = new List<Tuple<int, int>>();
+            try
+            {
+                var r = Run("netsh.exe", "int ipv4 show excludedportrange protocol=tcp", null, null, 10000);
+                foreach (var line in r.Output.Split('\n'))
+                {
+                    var parts = line.Trim().Split(new[] { ' ', '\t', '*' }, StringSplitOptions.RemoveEmptyEntries);
+                    int a, b;
+                    if (parts.Length >= 2 && int.TryParse(parts[0], out a) && int.TryParse(parts[1], out b) && b >= a) list.Add(Tuple.Create(a, b));
+                }
+            }
+            catch { }
+            _excluded = list;
+            _excludedAt = DateTime.Now;
+            return list;
+        }
+
+        public static bool IsPortExcluded(int port) { return ExcludedRanges().Any(r => port >= r.Item1 && port <= r.Item2); }
+
         public static bool IsPortInUse(int port)
         {
             try
@@ -187,9 +216,9 @@ namespace Portly.Core
         public static int FreePort(IEnumerable<int> candidates, ICollection<int> exclude)
         {
             foreach (var p in candidates)
-                if (p > 0 && p < 65536 && !exclude.Contains(p) && !IsPortInUse(p)) return p;
+                if (p > 0 && p < 65536 && !exclude.Contains(p) && !IsPortInUse(p) && !IsPortExcluded(p)) return p;
             for (int p = 20000; p < 21000; p++)
-                if (!exclude.Contains(p) && !IsPortInUse(p)) return p;
+                if (!exclude.Contains(p) && !IsPortInUse(p) && !IsPortExcluded(p)) return p;
             return 0;
         }
 

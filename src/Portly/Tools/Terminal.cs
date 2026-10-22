@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using Portly.Config;
 using Portly.Core;
 using Portly.Packages;
 
@@ -11,7 +12,7 @@ namespace Portly.Tools
     /// <summary>Command prompt / PowerShell with php, mysql, composer, node ... of the active versions on PATH.</summary>
     public static class Terminal
     {
-        static readonly string[] Types = { "php", "composer", "mysql", "nodejs", "apache", "nginx", "redis" };
+        static readonly string[] Types = { "php", "composer", "wpcli", "mysql", "mariadb", "postgresql", "mongodb", "nodejs", "bun", "deno", "python", "go", "git", "sqlite", "vscode", "apache", "nginx", "redis" };
 
         public static List<string> PathDirs()
         {
@@ -38,6 +39,14 @@ namespace Portly.Tools
             var path = string.Join(";", PathDirs()) + ";" + Environment.GetEnvironmentVariable("PATH");
             psi.EnvironmentVariables["PATH"] = path;
             psi.EnvironmentVariables["PORTLY_ROOT"] = Paths.Root;
+            // let Node, Python, curl and Git trust https://*.portly (Mozilla roots + Portly CA)
+            if (File.Exists(Certs.BundleFile))
+            {
+                psi.EnvironmentVariables["REQUESTS_CA_BUNDLE"] = Certs.BundleFile;
+                psi.EnvironmentVariables["CURL_CA_BUNDLE"] = Certs.BundleFile;
+                psi.EnvironmentVariables["GIT_SSL_CAINFO"] = Certs.BundleFile;
+            }
+            if (File.Exists(Certs.CaCertPath)) psi.EnvironmentVariables["NODE_EXTRA_CA_CERTS"] = Certs.CaCertPath;
             return psi;
         }
 

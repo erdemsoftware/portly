@@ -13,7 +13,7 @@
 
 ## Türkçe
 
-Portly; Apache ya da Nginx, PHP, MySQL, Node.js, Redis, Mailpit, Composer ve Adminer'ı tek bir klasörde çalıştırır. Kurulum gerekmez, Windows servisi eklemez, kayıt defterini kirletmez. Klasörü bir USB belleğe kopyalasanız bile çalışır.
+Portly; Apache ya da Nginx, PHP, MySQL ya da MariaDB, PostgreSQL, MongoDB, Redis, Memcached, Node.js, Mailpit, Composer, Adminer ve phpMyAdmin'i tek bir klasörde çalıştırır. Kurulum gerekmez, Windows servisi eklemez, kayıt defterini kirletmez. Klasörü bir USB belleğe kopyalasanız bile çalışır.
 
 ### Neden Portly?
 
@@ -33,7 +33,11 @@ Portly; Apache ya da Nginx, PHP, MySQL, Node.js, Redis, Mailpit, Composer ve Adm
 | Geçiş | — | **Laragon, XAMPP, WampServer, AMPPS, UwAmp, Uniform Server, Open Server, EasyPHP, MAMP**'tan projeleri ve veritabanlarını tek tıkla aktarma (Herd ve Local'dan projeler) |
 | Paylaşım | ngrok (hesap gerekir) | **Cloudflare hızlı tüneli**, hesapsız ve ücretsiz |
 | Posta | Mailpit | **Mailpit, MailHog ya da smtp4dev** |
-| Diğer | — | Tek tıkla Xdebug, otomatik veritabanı yedeği, Symfony / CodeIgniter / CakePHP / Drupal şablonları |
+| Veritabanları | MySQL | **MySQL ya da MariaDB, PostgreSQL, MongoDB, SQLite**; Redis ve Memcached |
+| Veritabanı araçları | HeidiSQL | **phpMyAdmin, Adminer, HeidiSQL, DBeaver, Beekeeper Studio, DbGate, DB Browser for SQLite**, pgAdmin algılanır |
+| WordPress | Elle kurulum | **Tek tıkla kurulu WordPress** (WP-CLI ile; yönetici kullanıcısı ve şifresi hazır) |
+| Sorun önleme | — | OneDrive, Türkçe karakterli yol, uzun yol, başka PHP / PHPRC denetimi; root şifresi sıfırlama, kurtarma modu, Defender istisnası, hosts engeli uyarısı |
+| Diğer | — | Tek tıkla Xdebug, otomatik veritabanı yedeği; Laravel, Symfony, CodeIgniter, CakePHP, Drupal, Vue, React, Svelte, Nuxt, Next.js, Angular, Astro şablonları; Git, VS Code, Python, Go, Bun, Deno |
 | Dil | 34 dil (txt) | JSON, **31 dil** (Arapça, Farsça, Urduca sağdan sola), GitHub'dan katkıya açık |
 | Windows 7 / 8 / 8.1 | Belirsiz | **Ayrı Legacy sürümü** |
 
@@ -77,7 +81,7 @@ Bir yapılandırma şablonunu değiştirmek için `templates\` içindeki dosyay�
 
 ## English
 
-Portly runs Apache or Nginx, PHP, MySQL, Node.js, Redis, Mailpit, Composer and Adminer from a single folder. No installer, no Windows services, no registry clutter. It even works from a USB stick.
+Portly runs Apache or Nginx, PHP, MySQL or MariaDB, PostgreSQL, MongoDB, Redis, Memcached, Node.js, Mailpit, Composer, Adminer and phpMyAdmin from a single folder. No installer, no Windows services, no registry clutter. It even works from a USB stick.
 
 **Highlights**
 
@@ -89,7 +93,10 @@ Portly runs Apache or Nginx, PHP, MySQL, Node.js, Redis, Mailpit, Composer and A
 - Crash safe: if Portly dies, Windows closes all services (job object).
 - Port conflicts are checked before every start: see which program holds the port, switch to a free port in one click, or close that program. Leftover Portly services are cleaned up automatically.
 - Modern sidebar UI with light / dark theme that follows Windows.
-- One-click import from Laragon, XAMPP, WampServer, AMPPS, UwAmp, Uniform Server, Open Server, EasyPHP and MAMP (projects and databases; projects from Laravel Herd and Local), share a site on the internet through a free Cloudflare quick tunnel, choice of Mailpit / MailHog / smtp4dev, one-click Xdebug, optional automatic database backups, Symfony / CodeIgniter / CakePHP / Drupal templates.
+- One-click import from Laragon, XAMPP, WampServer, AMPPS, UwAmp, Uniform Server, Open Server, EasyPHP and MAMP (projects and databases; projects from Laravel Herd and Local), share a site on the internet through a free Cloudflare quick tunnel, choice of Mailpit / MailHog / smtp4dev, one-click Xdebug, optional automatic database backups.
+- **Databases and tools**: MySQL or MariaDB, PostgreSQL, MongoDB, SQLite, Redis, Memcached; phpMyAdmin, Adminer, HeidiSQL, DBeaver, Beekeeper Studio, DbGate and DB Browser for SQLite one click away.
+- **One-click WordPress** (installed with WP-CLI, admin user ready) and templates for Laravel, Symfony, CodeIgniter, CakePHP, Drupal, Vue, React, Svelte, Nuxt, Next.js, Angular and Astro. Git, VS Code, Python, Go, Bun and Deno as optional packages.
+- **Problem prevention**: checks for OneDrive folders, non-ASCII paths, long paths, a second PHP or PHPRC; forgotten root password reset, InnoDB recovery mode, optional Defender exclusion, warning when antivirus blocks the hosts file.
 - **Two editions**: Windows 10/11 (updates, latest packages) and Legacy for Windows 7 SP1 / 8 / 8.1 (frozen, compatible packages).
 - 31 languages (right-to-left for Arabic, Persian, Urdu), plain JSON files, contributions welcome.
 
@@ -124,4 +131,4 @@ Kart / card: **[Buy Me a Coffee](https://buymeacoffee.com/erdemsoftware)** · Kr
 
 ---
 
-<sub>Apache, PHP, MySQL, Nginx, Node.js, Redis, Mailpit, Composer, Adminer and phpMyAdmin are downloaded from their official sources and are the property of their respective owners. Portly is not affiliated with Laragon.</sub>
+<sub>Apache, PHP, MySQL, MariaDB, PostgreSQL, MongoDB, Nginx, Node.js, Redis, Memcached, Mailpit, Composer, Adminer, phpMyAdmin and the other tools are downloaded from their official sources and are the property of their respective owners. Portly is not affiliated with Laragon.</sub>

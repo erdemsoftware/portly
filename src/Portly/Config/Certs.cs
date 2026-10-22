@@ -18,7 +18,28 @@ namespace Portly.Config
     public static class Certs
     {
         static string CaCrt { get { return Path.Combine(Paths.UserSsl, "portly-ca.crt"); } }
-        static string CaKey { get { return Path.Combine(Paths.UserSsl, "portly-ca.key"); } }
+        /// <summary>CA private key, encrypted with Windows DPAPI for the current user (useless on another PC / account).</summary>
+        static string CaKey { get { return Path.Combine(Paths.UserSsl, "portly-ca.key.dpapi"); } }
+        /// <summary>Plain-text key written by Portly 1.0 builds; migrated to CaKey on first use.</summary>
+        static string CaKeyPlain { get { return Path.Combine(Paths.UserSsl, "portly-ca.key"); } }
+
+        static void SaveCaKey(byte[] pkcs8)
+        {
+            var blob = ProtectedData.Protect(pkcs8, Encoding.ASCII.GetBytes("Portly CA"), DataProtectionScope.CurrentUser);
+            File.WriteAllText(CaKey, Convert.ToBase64String(blob));
+        }
+
+        static byte[] LoadCaKey()
+        {
+            if (!File.Exists(CaKey) && File.Exists(CaKeyPlain))
+            {
+                SaveCaKey(FromPem(File.ReadAllText(CaKeyPlain)));
+                File.Delete(CaKeyPlain);
+            }
+            return ProtectedData.Unprotect(Convert.FromBase64String(File.ReadAllText(CaKey)), Encoding.ASCII.GetBytes("Portly CA"), DataProtectionScope.CurrentUser);
+        }
+
+        static bool HasCaKey { get { return File.Exists(CaKey) || File.Exists(CaKeyPlain); } }
         public static string SitesDir { get { return Path.Combine(Paths.Ssl, "sites"); } }
         /// <summary>CA bundle for PHP curl/openssl: Mozilla roots + Portly CA (so PHP can call https://*.test too).</summary>
         public static string BundleFile { get { return Path.Combine(Paths.Ssl, "cacert.pem"); } }
@@ -31,11 +52,13 @@ namespace Portly.Config
         {
             lock (Sync)
             {
-                if (File.Exists(CaCrt) && File.Exists(CaKey))
+                if (File.Exists(CaCrt) && HasCaKey)
                 {
                     try
                     {
                         var cert = new X509Certificate2(Encoding.ASCII.GetBytes(File.ReadAllText(CaCrt)));
+                        // the key must still be readable (DPAPI fails after moving Portly to another PC or user)
+                        LoadCaKey();
                         if (cert.NotAfter > DateTime.Now.AddDays(30)) return cert;
                     }
                     catch (Exception ex) { Log.Warn("CA unreadable, creating a new one: " + ex.Message); }
@@ -47,9 +70,10 @@ namespace Portly.Config
                     req.CertificateExtensions.Add(new X509BasicConstraintsExtension(true, true, 0, true));
                     req.CertificateExtensions.Add(new X509KeyUsageExtension(X509KeyUsageFlags.KeyCertSign | X509KeyUsageFlags.CrlSign | X509KeyUsageFlags.DigitalSignature, true));
                     req.CertificateExtensions.Add(new X509SubjectKeyIdentifierExtension(req.PublicKey, false));
-                    var ca = req.CreateSelfSigned(DateTimeOffset.Now.AddDays(-1), DateTimeOffset.Now.AddYears(20));
+                    var ca = req.CreateSelfSigned(DateTimeOffset.Now.AddDays(-1), DateTimeOffset.Now.AddYears(10));
                     File.WriteAllText(CaCrt, Pem("CERTIFICATE", ca.RawData));
-                    File.WriteAllText(CaKey, Pem("PRIVATE KEY", rsa.Key.Export(CngKeyBlobFormat.Pkcs8PrivateBlob)));
+                    SaveCaKey(rsa.Key.Export(CngKeyBlobFormat.Pkcs8PrivateBlob));
+                    try { if (File.Exists(CaKeyPlain)) File.Delete(CaKeyPlain); } catch { }
                     Log.Info(I18n.T("log.caCreated"));
                     // old site certificates were signed by another authority
                     try { if (Directory.Exists(SitesDir)) Directory.Delete(SitesDir, true); } catch { }
@@ -69,7 +93,7 @@ namespace Portly.Config
         /// <summary>Signer for site certificates. (CopyWithPrivateKey does not work with in-memory CNG keys on .NET Framework.)</summary>
         static RSACng CaKeyRsa()
         {
-            var der = FromPem(File.ReadAllText(CaKey));
+            var der = LoadCaKey();
             return new RSACng(CngKey.Import(der, CngKeyBlobFormat.Pkcs8PrivateBlob));
         }
 

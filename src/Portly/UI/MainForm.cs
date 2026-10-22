@@ -266,6 +266,7 @@ namespace Portly.UI
             tiles.Controls.Add(Tile(I18n.T("main.mail"), "mail", (s, e) => OpenMailpit()));
             tiles.Controls.Add(Tile(I18n.T("main.terminal"), "terminal", (s, e) => Terminal.Open()));
             tiles.Controls.Add(Tile(I18n.T("main.root"), "folder", (s, e) => WinUtil.OpenFolder(Settings.Current.DocumentRoot)));
+            tiles.Controls.Add(Tile("WordPress", "globe", (s, e) => NewProject("wordpress")));
             tiles.Controls.Add(Tile(I18n.T("main.newProject"), "plus", (s, e) => NewProject()));
 
             page.Controls.Add(tiles);
@@ -287,7 +288,7 @@ namespace Portly.UI
             var row = new Row { Svc = svc };
             var card = new Card { Height = Ui.S(72), Anchor = AnchorStyles.Left | AnchorStyles.Right, Margin = Ui.P(0, 0, 0, 10), Radius = 12 };
             row.Card = card;
-            row.Tile = BrandTile.For(svc.Id == "web" || svc.Id == "mailpit" ? svc.PackageType : svc.Id);
+            row.Tile = BrandTile.For(svc.Id == "web" || svc.Id == "mailpit" || svc.Id == "mysql" ? svc.PackageType : svc.Id);
             row.Tile.Location = new Point(Ui.S(18), Ui.S(16));
             row.Name = Ui.Label(svc.Title, Ui.Subtitle);
             row.Name.Location = new Point(Ui.S(72), Ui.S(13));
@@ -347,7 +348,7 @@ namespace Portly.UI
                 cm.Items.Add(auto);
             }
             cm.Items.Add(I18n.T("svc.getVersions"), null, (s, e) => OpenPackages(svc.PackageType));
-            var log = svc.Id == "web" ? Settings.Current.WebServer + "-error.log" : svc.Id == "mysql" ? "mysql-error.log" : svc.Id == "redis" ? "redis.log" : svc.Id == "mailpit" ? Settings.Current.MailTool + ".log" : "php_errors.log";
+            var log = svc.Id == "web" ? Settings.Current.WebServer + "-error.log" : svc.Id == "mysql" ? "mysql-error.log" : svc.Id == "postgresql" ? "postgresql.log" : svc.Id == "mongodb" ? "mongodb.log" : svc.Id == "memcached" ? "memcached.log" : svc.Id == "redis" ? "redis.log" : svc.Id == "mailpit" ? Settings.Current.MailTool + ".log" : "php_errors.log";
             cm.Items.Add(I18n.T("svc.openLog"), null, (s, e) => WinUtil.Edit(Path.Combine(Paths.Logs, log)));
         }
 
@@ -408,7 +409,17 @@ namespace Portly.UI
                     await ServiceManager.ReloadWebAsync();
                     break;
                 case "mysql":
+                case "mariadb":
                     if (ServiceManager.MySql.IsActive) await ServiceManager.MySql.RestartAsync();
+                    break;
+                case "postgresql":
+                    if (ServiceManager.Postgres.IsActive) await ServiceManager.Postgres.RestartAsync();
+                    break;
+                case "mongodb":
+                    if (ServiceManager.Mongo.IsActive) await ServiceManager.Mongo.RestartAsync();
+                    break;
+                case "memcached":
+                    if (ServiceManager.Memcached.IsActive) await ServiceManager.Memcached.RestartAsync();
                     break;
                 case "redis":
                     if (ServiceManager.Redis.IsActive) await ServiceManager.Redis.RestartAsync();
@@ -482,10 +493,29 @@ namespace Portly.UI
             return head.Length > 0 ? text.Contains(head) : false;
         }
 
+        [System.Runtime.InteropServices.DllImport("user32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
+        static extern bool ShutdownBlockReasonCreate(IntPtr hWnd, string reason);
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        static extern bool ShutdownBlockReasonDestroy(IntPtr hWnd);
+        bool _shutdownBlocked;
+
+        /// <summary>While services run, Windows shows "Portly is closing services" at shutdown instead of killing MySQL mid-write.</summary>
+        void UpdateShutdownBlock(bool any)
+        {
+            if (!IsHandleCreated || !OsInfo.IsWin10OrLater && OsInfo.Number < 6.0) return;
+            try
+            {
+                if (any && !_shutdownBlocked) _shutdownBlocked = ShutdownBlockReasonCreate(Handle, I18n.T("main.stopping"));
+                else if (!any && _shutdownBlocked) { ShutdownBlockReasonDestroy(Handle); _shutdownBlocked = false; }
+            }
+            catch { }
+        }
+
         void UpdateGlobal()
         {
             if (_startAll == null) return;
             bool any = ServiceManager.AnyActive;
+            UpdateShutdownBlock(any);
             _startAll.Text = any ? I18n.T("main.stopAll") : I18n.T("main.startAll");
             _startAll.Glyph = any ? "stop" : "play";
             _startAll.Kind = any ? ButtonKind.Secondary : ButtonKind.Primary;
@@ -641,6 +671,12 @@ namespace Portly.UI
             }
             items.Add(I18n.T("sites.folder"), null, (s, e) => WinUtil.OpenFolder(site.Folder));
             items.Add(I18n.T("main.terminal"), null, (s, e) => Terminal.Open(site.Folder));
+            foreach (var ed in DesktopApps.Editors)
+            {
+                var editor = ed;
+                if (DesktopApps.IsInstalled(editor))
+                    items.Add(I18n.T("tools.openIn", PackageTypes.Get(editor).Name), null, (s, e) => DesktopApps.OpenInEditor(editor, site.Folder));
+            }
             var php = new ToolStripMenuItem(I18n.T("sites.phpVersion"));
             var def = new ToolStripMenuItem(I18n.T("sites.phpDefault", PackageTypes.Label(PackageTypes.ActiveFolder("php")))) { Checked = site.PhpOverride == "" };
             def.Click += async (s, e) => { Sites.SetPhp(site.Name, ""); await ServiceManager.ReloadWebAsync(); };
@@ -815,17 +851,25 @@ namespace Portly.UI
             sites.DropDownItems.Add(I18n.T("main.newProject"), null, (s, e) => NewProject());
             items.Add(sites);
 
-            var db = new ToolStripMenuItem("MySQL");
-            foreach (var t in new[] { "phpmyadmin", "adminer" })
-            {
-                var tool = t;
-                if (PackageTypes.ActiveDir(tool) == null) continue;
-                db.DropDownItems.Add(PackageTypes.Get(tool).Name, null, (s, e) => { var p2 = Settings.Current.HttpPort; WinUtil.Open("http://localhost" + (p2 == 80 ? "" : ":" + p2) + "/" + tool + "/"); });
-            }
-            if (db.DropDownItems.Count == 0) db.DropDownItems.Add(I18n.T("main.database"), null, (s, e) => OpenDatabaseTool());
+            var db = new ToolStripMenuItem(PackageTypes.Get(Settings.Current.DbEngine).Name);
+            var toolsMenu = new ToolStripMenuItem(I18n.T("main.database"));
+            BuildDatabaseToolItems(toolsMenu.DropDownItems);
+            db.DropDownItems.Add(toolsMenu);
             db.DropDownItems.Add(I18n.T("db.create"), null, (s, e) => CreateDatabase(""));
             db.DropDownItems.Add(I18n.T("db.backup"), null, async (s, e) => await BackupDatabases());
             db.DropDownItems.Add(I18n.T("db.password"), null, (s, e) => ChangeRootPassword());
+            db.DropDownItems.Add(I18n.T("db.resetRoot"), null, async (s, e) =>
+            {
+                if (!Ui.Confirm(this, I18n.T("db.resetRootConfirm"))) return;
+                var err = await ServiceManager.MySql.ResetRootPasswordAsync();
+                if (err != null) Ui.Error(this, err); else Ui.Info(this, I18n.T("db.resetRootDone"));
+            });
+            db.DropDownItems.Add(I18n.T("db.recovery"), null, async (s, e) =>
+            {
+                if (!Ui.Confirm(this, I18n.T("db.recoveryConfirm"))) return;
+                await ServiceManager.MySql.StartRecoveryAsync();
+                if (ServiceManager.MySql.State == ServiceState.Running) Ui.Info(this, I18n.T("db.recoveryRunning"));
+            });
             db.DropDownItems.Add(I18n.T("db.backupFolder"), null, (s, e) => WinUtil.OpenFolder(Path.Combine(Paths.Backup, "mysql")));
             db.DropDownItems.Add(I18n.T("db.config"), null, (s, e) => WinUtil.Edit(Templates.PathOf("mysql.ini.tpl")));
             items.Add(db);
@@ -884,7 +928,21 @@ namespace Portly.UI
             var tools = new ToolStripMenuItem(I18n.T("menu.tools"));
             tools.DropDownItems.Add(I18n.T("main.terminal"), null, (s, e) => Terminal.Open());
             tools.DropDownItems.Add(I18n.T("import.menu"), null, (s, e) => OpenImport(true));
+            foreach (var ed in DesktopApps.Editors)
+            {
+                var editor = ed;
+                if (DesktopApps.IsInstalled(editor))
+                    tools.DropDownItems.Add(I18n.T("tools.openIn", PackageTypes.Get(editor).Name), null, (s, e) => DesktopApps.OpenInEditor(editor, Settings.Current.DocumentRoot));
+            }
+            if (DesktopApps.GitBash != null) tools.DropDownItems.Add("Git Bash", null, (s, e) => DesktopApps.Start(DesktopApps.GitBash, "--cd=\"" + Settings.Current.DocumentRoot + "\""));
             tools.DropDownItems.Add(I18n.T("port.checkNow"), null, async (s, e) => await FixPorts(ServiceManager.Rows.Where(x => x.Id != "php")));
+            tools.DropDownItems.Add(I18n.T("health.menu"), null, async (s, e) => await ShowHealth(true));
+            tools.DropDownItems.Add(I18n.T("health.defender"), null, (s, e) =>
+            {
+                if (!Ui.Confirm(this, I18n.T("health.defenderConfirm", Paths.Root, Settings.Current.DocumentRoot))) return;
+                var code = HealthCheck.AddDefenderExclusion();
+                if (code == 0) Ui.Info(this, I18n.T("health.defenderDone"));
+            });
             tools.DropDownItems.Add(I18n.T("tools.hosts"), null, (s, e) => WinUtil.RunElevated("notepad.exe", "\"" + HostsFile.FilePath + "\"", false));
             tools.DropDownItems.Add(I18n.T("tools.root"), null, (s, e) => WinUtil.OpenFolder(Paths.Root));
             tools.DropDownItems.Add(I18n.T("tools.logs"), null, (s, e) => WinUtil.OpenFolder(Paths.Logs));
@@ -965,7 +1023,7 @@ namespace Portly.UI
                 if (ServiceManager.AnyActive) await ServiceManager.StopAllAsync();
                 else
                 {
-                    if (!PackageTypes.Installed("apache").Any() && !PackageTypes.Installed("nginx").Any() && !PackageTypes.Installed("mysql").Any())
+                    if (!PackageTypes.Installed("apache").Any() && !PackageTypes.Installed("nginx").Any() && !PackageTypes.Installed(Settings.Current.DbEngine).Any())
                     {
                         OpenPackages(null, true);
                         return;
@@ -1002,32 +1060,41 @@ namespace Portly.UI
             WinUtil.Open("http://127.0.0.1:" + Settings.Current.MailpitWebPort + "/");
         }
 
-        /// <summary>Adminer or phpMyAdmin; when both are installed, a small menu lets you pick.</summary>
+        /// <summary>All database tools: phpMyAdmin / Adminer (web), HeidiSQL, DBeaver, Beekeeper, DbGate, DB Browser, pgAdmin.</summary>
         void OpenDatabaseTool(Control anchor = null)
         {
-            var tools = new[] { "phpmyadmin", "adminer" }.Where(t => PackageTypes.ActiveDir(t) != null).ToList();
-            if (tools.Count == 0)
-            {
-                if (Ui.Confirm(this, I18n.T("db.noTool"))) OpenPackages("phpmyadmin");
-                return;
-            }
-            var port = Settings.Current.HttpPort;
-            Action<string> open = tool => WinUtil.Open("http://localhost" + (port == 80 ? "" : ":" + port) + "/" + tool + "/");
-            if (tools.Count == 1 || anchor == null) { open(tools[0]); return; }
             var m = new ContextMenuStrip();
             StyleMenu(m);
-            foreach (var t in tools)
-            {
-                var tool = t;
-                m.Items.Add(PackageTypes.Get(tool).Name + "   /" + tool, null, (s, e) => open(tool));
-            }
-            m.Show(anchor, new Point(0, anchor.Height));
+            BuildDatabaseToolItems(m.Items);
+            if (m.Items.Count == 1) { m.Items[0].PerformClick(); return; }
+            if (anchor != null) m.Show(anchor, new Point(0, anchor.Height));
+            else m.Show(Cursor.Position);
         }
 
-        void NewProject()
+        void BuildDatabaseToolItems(ToolStripItemCollection items)
+        {
+            var port = Settings.Current.HttpPort;
+            foreach (var t in new[] { "phpmyadmin", "adminer" })
+            {
+                var tool = t;
+                if (PackageTypes.ActiveDir(tool) == null) continue;
+                items.Add(PackageTypes.Get(tool).Name + "   (web)", null, (s, e) => WinUtil.Open("http://localhost" + (port == 80 ? "" : ":" + port) + "/" + tool + "/"));
+            }
+            foreach (var t in DesktopApps.DatabaseGuis)
+            {
+                var tool = t;
+                if (!DesktopApps.IsInstalled(tool)) continue;
+                items.Add(PackageTypes.Get(tool).Name, null, (s, e) => DesktopApps.OpenDatabaseGui(tool));
+            }
+            if (DesktopApps.PgAdmin != null) items.Add("pgAdmin 4", null, (s, e) => DesktopApps.Start(DesktopApps.PgAdmin));
+            if (items.Count > 0) items.Add(new ToolStripSeparator());
+            items.Add(I18n.T("db.moreTools"), null, (s, e) => OpenPackages("heidisql"));
+        }
+
+        void NewProject(string template = null)
         {
             ShowFromTray();
-            using (var f = new NewProjectForm())
+            using (var f = new NewProjectForm(template))
             {
                 if (f.ShowDialog(this) != DialogResult.OK) return;
                 var created = f.CreatedName;
@@ -1312,6 +1379,7 @@ namespace Portly.UI
             });
             backupTimer.Start();
 
+            await ShowHealth(false);
             var checks = BackgroundChecks(false, false);
             if (_startServices || s.StartServicesOnLaunch || startFromWelcome) await ToggleAll();
             await checks;
@@ -1384,6 +1452,28 @@ namespace Portly.UI
                 case WelcomeAction.StartAll: return true;
             }
             return false;
+        }
+
+        /// <summary>Environment problems (OneDrive, non-ASCII paths, long paths, other PHP ...). Each is shown once unless asked.</summary>
+        async Task ShowHealth(bool all)
+        {
+            List<HealthIssue> issues;
+            try { issues = await Task.Run(() => HealthCheck.Run()); } catch { return; }
+            foreach (var i in issues) Log.Warn(i.Text);
+            var ini = Settings.Current.Raw;
+            var shown = ini.Get("general", "HealthShown", "").Split('|').ToList();
+            var show = all ? issues : issues.Where(i => !shown.Contains(i.Key)).ToList();
+            if (show.Count == 0)
+            {
+                if (all) Ui.Info(this, I18n.T("health.ok"));
+                return;
+            }
+            if (!Visible) return;
+            Ui.Info(this, I18n.T("health.title") + "\n\n- " + string.Join("\n\n- ", show.Select(i => i.Text)));
+            foreach (var i in show.Where(x => x.Fix != null))
+                if (Ui.Confirm(this, i.Text + "\n\n" + i.FixLabel + "?")) i.Fix();
+            ini.Set("general", "HealthShown", string.Join("|", shown.Concat(show.Select(i => i.Key)).Distinct().Where(k => k != "")));
+            Settings.Current.Save();
         }
 
         void ShowDonate()

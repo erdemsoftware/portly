@@ -118,7 +118,7 @@ namespace Portly.Tools
             if (ServiceManager.MySql.State != ServiceState.Running) throw new Exception(I18n.T("err.mysqlNotRunning"));
             var dir = Path.Combine(Paths.Backup, "mysql");
             Directory.CreateDirectory(dir);
-            var file = Path.Combine(dir, prefix + "mysql-" + PackageTypes.Branch(PackageTypes.ActiveFolder("mysql")) + "-" + DateTime.Now.ToString("yyyy-MM-dd_HHmmss") + ".sql");
+            var file = Path.Combine(dir, prefix + Settings.Current.DbEngine + "-" + PackageTypes.Branch(PackageTypes.ActiveFolder(Settings.Current.DbEngine)) + "-" + DateTime.Now.ToString("yyyy-MM-dd_HHmmss") + ".sql");
             var r = Client("mysqldump.exe", "--all-databases --routines --events --triggers --single-transaction --default-character-set=utf8mb4 --result-file=\"" + file + "\"", null, 3600000);
             if (!r.Ok || !File.Exists(file)) throw new Exception(Clean(r));
             Log.Info(I18n.T("log.backup", file));

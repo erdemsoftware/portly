@@ -332,7 +332,8 @@ namespace Portly.Tools
                 if (ServiceManager.MySql.State != ServiceState.Running) throw new Exception(I18n.T("err.mysqlNotRunning"));
             }
             status(I18n.T("import.loading"));
-            var targetMajor = PackageTypes.ParseVersion(PackageTypes.ActiveFolder("mysql")).Major;
+            // MariaDB does not know MySQL 8 collations (utf8mb4_0900_*): treat it like MySQL 5.x for the rewrite
+            var targetMajor = Settings.Current.DbEngine == "mariadb" ? 5 : PackageTypes.ParseVersion(PackageTypes.ActiveFolder("mysql")).Major;
             var errors = await Task.Run(() => Load(dump, targetMajor), ct);
             try { File.Delete(dump); } catch { }
             Log.Info(I18n.T("import.dbDone", names.Count, errors));

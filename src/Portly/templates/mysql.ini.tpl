@@ -19,6 +19,7 @@ log-error="{{LOGS}}/mysql-error.log"
 secure-file-priv=""
 explicit_defaults_for_timestamp=1
 {{MYSQL_EXTRA}}
+{{SQL_MODE}}
 
 [mysqldump]
 quick

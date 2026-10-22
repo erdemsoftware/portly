@@ -26,6 +26,7 @@ http {
     server {
         listen {{LISTEN_HTTP}} default_server;
         {{LISTEN_HTTPS}}
+        {{LISTEN_V6}}
         server_name localhost;
         root "{{DASHBOARD}}";
         index index.php index.html;

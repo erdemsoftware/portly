@@ -290,7 +290,11 @@ namespace Portly.UI
                 case "apache": return ServiceManager.Apache.IsActive;
                 case "nginx": return ServiceManager.Nginx.IsActive;
                 case "php": return ServiceManager.Php.IsActive;
-                case "mysql": return ServiceManager.MySql.IsActive;
+                case "mysql":
+                case "mariadb": return ServiceManager.MySql.IsActive && Settings.Current.DbEngine == type;
+                case "postgresql": return ServiceManager.Postgres.IsActive;
+                case "mongodb": return ServiceManager.Mongo.IsActive;
+                case "memcached": return ServiceManager.Memcached.IsActive;
                 case "redis": return ServiceManager.Redis.IsActive;
                 case "mailpit":
                 case "mailhog":
