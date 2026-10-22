@@ -1,0 +1,58 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Portly is built in two editions from the same code:
+      Modern  (default)  -> Windows 10 / 11, receives updates (app + package catalog)
+      Legacy             -> Windows 7 / 8 / 8.1, frozen catalog, no updates
+    dotnet build -c Release                    (Modern)
+    dotnet build -c Release -p:Edition=Legacy  (Legacy)
+  -->
+  <PropertyGroup>
+    <Edition Condition="'$(Edition)' == ''">Modern</Edition>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AssemblyName>Portly</AssemblyName>
+    <RootNamespace>Portly</RootNamespace>
+    <ApplicationIcon>..\..\assets\portly.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <PlatformTarget>x64</PlatformTarget>
+    <Prefer32Bit>false</Prefer32Bit>
+    <Version>1.0.0</Version>
+    <Company>Erdem Software</Company>
+    <Product>Portly</Product>
+    <Authors>Erdem Software</Authors>
+    <Copyright>Copyright (c) 2026 Erdem Software. MIT License.</Copyright>
+    <Description>Portly - fast, portable, open-source local web development environment</Description>
+    <OutputPath>..\..\build\$(Edition)\</OutputPath>
+    <IntermediateOutputPath>obj\$(Edition)\</IntermediateOutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <DebugType>embedded</DebugType>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Edition)' == 'Legacy'">
+    <DefineConstants>$(DefineConstants);LEGACY</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="System.Web.Extensions" />
+    <Reference Include="System.Security" />
+    <Reference Include="System.IO.Compression" />
+    <Reference Include="System.IO.Compression.FileSystem" />
+    <Reference Include="Microsoft.VisualBasic" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="lang\*.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="templates\**\*" CopyToOutputDirectory="PreserveNewest" />
+    <EmbeddedResource Include="..\..\manifest\packages.json" LogicalName="catalog.modern.json" />
+    <EmbeddedResource Include="..\..\manifest\packages-legacy.json" LogicalName="catalog.legacy.json" />
+    <EmbeddedResource Include="..\..\assets\portly.ico" LogicalName="portly.ico" />
+  </ItemGroup>
+
+</Project>

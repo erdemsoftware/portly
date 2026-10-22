@@ -1,0 +1,11 @@
+# build output
+build/
+dist/
+obj/
+**/obj/
+*.user
+.vs/
+.vscode/
+
+# a Portly folder used for testing next to the sources
+portable/

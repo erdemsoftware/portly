@@ -1,0 +1,39 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Build both editions
+        shell: pwsh
+        run: ./build.ps1
+      - name: Check translations
+        shell: pwsh
+        run: |
+          $en = Get-Content src/Portly/lang/en.json -Raw -Encoding UTF8 | ConvertFrom-Json
+          $keys = $en.PSObject.Properties.Name
+          $bad = 0
+          foreach ($f in Get-ChildItem src/Portly/lang/*.json) {
+            $l = Get-Content $f -Raw -Encoding UTF8 | ConvertFrom-Json
+            foreach ($k in $keys) {
+              $v = $l.$k
+              if ($null -eq $v -or $v -isnot [string]) { continue }
+              $a = ([regex]::Matches($en.$k, '\{\d\}') | ForEach-Object Value | Sort-Object -Unique) -join ','
+              $b = ([regex]::Matches($v, '\{\d\}') | ForEach-Object Value | Sort-Object -Unique) -join ','
+              if ($a -ne $b) { Write-Host "$($f.Name): $k placeholders '$b' <> '$a'"; $bad++ }
+            }
+          }
+          if ($bad) { exit 1 }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: portly
+          path: dist/*

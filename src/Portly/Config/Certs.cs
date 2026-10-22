@@ -1,0 +1,243 @@
+using System;
+using System.IO;
+using System.Net;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
+using System.Text;
+using System.Threading.Tasks;
+using Portly.Core;
+
+namespace Portly.Config
+{
+    /// <summary>
+    /// Local HTTPS without warnings:
+    ///  1. A personal root authority "Portly Local CA" is created once (usr\ssl) and trusted once by the user.
+    ///  2. Every site gets its own certificate signed by that authority (etc\ssl\sites).
+    /// New sites never need a new trust step. Built only on .NET Framework 4.7.2+ APIs (works on Windows 7).
+    /// </summary>
+    public static class Certs
+    {
+        static string CaCrt { get { return Path.Combine(Paths.UserSsl, "portly-ca.crt"); } }
+        static string CaKey { get { return Path.Combine(Paths.UserSsl, "portly-ca.key"); } }
+        public static string SitesDir { get { return Path.Combine(Paths.Ssl, "sites"); } }
+        /// <summary>CA bundle for PHP curl/openssl: Mozilla roots + Portly CA (so PHP can call https://*.test too).</summary>
+        public static string BundleFile { get { return Path.Combine(Paths.Ssl, "cacert.pem"); } }
+        static string MozillaFile { get { return Path.Combine(Paths.Cache, "cacert-mozilla.pem"); } }
+        static readonly object Sync = new object();
+
+        public static string CaCertPath { get { return CaCrt; } }
+
+        public static X509Certificate2 EnsureCa()
+        {
+            lock (Sync)
+            {
+                if (File.Exists(CaCrt) && File.Exists(CaKey))
+                {
+                    try
+                    {
+                        var cert = new X509Certificate2(Encoding.ASCII.GetBytes(File.ReadAllText(CaCrt)));
+                        if (cert.NotAfter > DateTime.Now.AddDays(30)) return cert;
+                    }
+                    catch (Exception ex) { Log.Warn("CA unreadable, creating a new one: " + ex.Message); }
+                }
+                using (var rsa = NewRsa())
+                {
+                    var name = new X500DistinguishedName("CN=Portly Local CA (" + Environment.MachineName + "), O=Portly by Erdem Software, OU=Local development only");
+                    var req = new CertificateRequest(name, rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+                    req.CertificateExtensions.Add(new X509BasicConstraintsExtension(true, true, 0, true));
+                    req.CertificateExtensions.Add(new X509KeyUsageExtension(X509KeyUsageFlags.KeyCertSign | X509KeyUsageFlags.CrlSign | X509KeyUsageFlags.DigitalSignature, true));
+                    req.CertificateExtensions.Add(new X509SubjectKeyIdentifierExtension(req.PublicKey, false));
+                    var ca = req.CreateSelfSigned(DateTimeOffset.Now.AddDays(-1), DateTimeOffset.Now.AddYears(20));
+                    File.WriteAllText(CaCrt, Pem("CERTIFICATE", ca.RawData));
+                    File.WriteAllText(CaKey, Pem("PRIVATE KEY", rsa.Key.Export(CngKeyBlobFormat.Pkcs8PrivateBlob)));
+                    Log.Info(I18n.T("log.caCreated"));
+                    // old site certificates were signed by another authority
+                    try { if (Directory.Exists(SitesDir)) Directory.Delete(SitesDir, true); } catch { }
+                    WriteBundle();
+                    return new X509Certificate2(ca.RawData);
+                }
+            }
+        }
+
+        static RSACng NewRsa()
+        {
+            var p = new CngKeyCreationParameters { ExportPolicy = CngExportPolicies.AllowPlaintextExport, KeyUsage = CngKeyUsages.AllUsages };
+            p.Parameters.Add(new CngProperty("Length", BitConverter.GetBytes(2048), CngPropertyOptions.None));
+            return new RSACng(CngKey.Create(CngAlgorithm.Rsa, null, p));
+        }
+
+        /// <summary>Signer for site certificates. (CopyWithPrivateKey does not work with in-memory CNG keys on .NET Framework.)</summary>
+        static RSACng CaKeyRsa()
+        {
+            var der = FromPem(File.ReadAllText(CaKey));
+            return new RSACng(CngKey.Import(der, CngKeyBlobFormat.Pkcs8PrivateBlob));
+        }
+
+        /// <summary>authorityKeyIdentifier extension = SEQUENCE { [0] keyIdentifier } (helps chain building).</summary>
+        static X509Extension AuthorityKeyId(X509Certificate2 ca)
+        {
+            foreach (var ext in ca.Extensions)
+            {
+                var ski = ext as X509SubjectKeyIdentifierExtension;
+                if (ski == null) continue;
+                var hex = ski.SubjectKeyIdentifier;
+                var id = new byte[hex.Length / 2];
+                for (int i = 0; i < id.Length; i++) id[i] = Convert.ToByte(hex.Substring(i * 2, 2), 16);
+                var der = new byte[id.Length + 4];
+                der[0] = 0x30; der[1] = (byte)(id.Length + 2); der[2] = 0x80; der[3] = (byte)id.Length;
+                Buffer.BlockCopy(id, 0, der, 4, id.Length);
+                return new X509Extension("2.5.29.35", der, false);
+            }
+            return null;
+        }
+
+        /// <summary>Make sure host.crt / host.key exist and are valid. Returns (crt, key) paths.</summary>
+        public static Tuple<string, string> EnsureSite(string host)
+        {
+            lock (Sync)
+            {
+                Directory.CreateDirectory(SitesDir);
+                var crt = Path.Combine(SitesDir, host + ".crt");
+                var key = Path.Combine(SitesDir, host + ".key");
+                var ca = EnsureCa();
+                if (File.Exists(crt) && File.Exists(key))
+                {
+                    try
+                    {
+                        var existing = new X509Certificate2(Encoding.ASCII.GetBytes(FirstPem(File.ReadAllText(crt))));
+                        if (existing.NotAfter > DateTime.Now.AddDays(30) && existing.Issuer == ca.Subject) return Tuple.Create(crt, key);
+                    }
+                    catch { }
+                }
+                using (var caKey = CaKeyRsa())
+                using (var rsa = NewRsa())
+                {
+                    var req = new CertificateRequest(new X500DistinguishedName("CN=" + host + ", O=Portly"), rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+                    var san = new SubjectAlternativeNameBuilder();
+                    san.AddDnsName(host);
+                    san.AddDnsName("*." + host);
+                    if (host == "localhost") { san.AddIpAddress(IPAddress.Loopback); san.AddIpAddress(IPAddress.IPv6Loopback); }
+                    req.CertificateExtensions.Add(san.Build());
+                    req.CertificateExtensions.Add(new X509BasicConstraintsExtension(false, false, 0, true));
+                    req.CertificateExtensions.Add(new X509KeyUsageExtension(X509KeyUsageFlags.DigitalSignature | X509KeyUsageFlags.KeyEncipherment, true));
+                    req.CertificateExtensions.Add(new X509EnhancedKeyUsageExtension(new OidCollection { new Oid("1.3.6.1.5.5.7.3.1") }, false));
+                    req.CertificateExtensions.Add(new X509SubjectKeyIdentifierExtension(req.PublicKey, false));
+                    var aki = AuthorityKeyId(ca);
+                    if (aki != null) req.CertificateExtensions.Add(aki);
+                    var serial = new byte[16];
+                    using (var rng = RandomNumberGenerator.Create()) rng.GetBytes(serial);
+                    serial[0] &= 0x7f;
+                    // 825 days: the longest validity Apple / Chrome accept for leaf certificates
+                    var notAfter = DateTimeOffset.Now.AddDays(825);
+                    if (notAfter > ca.NotAfter) notAfter = ca.NotAfter.AddDays(-1);
+                    var signer = X509SignatureGenerator.CreateForRSA(caKey, RSASignaturePadding.Pkcs1);
+                    var cert = req.Create(ca.SubjectName, signer, DateTimeOffset.Now.AddDays(-1), notAfter, serial);
+                    File.WriteAllText(crt, Pem("CERTIFICATE", cert.RawData) + Pem("CERTIFICATE", ca.RawData));
+                    File.WriteAllText(key, Pem("PRIVATE KEY", rsa.Key.Export(CngKeyBlobFormat.Pkcs8PrivateBlob)));
+                }
+                return Tuple.Create(crt, key);
+            }
+        }
+
+        // ---------------- trust ----------------
+        public static bool IsCaTrusted()
+        {
+            if (!File.Exists(CaCrt)) return false;
+            try
+            {
+                var ca = new X509Certificate2(Encoding.ASCII.GetBytes(File.ReadAllText(CaCrt)));
+                foreach (var loc in new[] { StoreLocation.CurrentUser, StoreLocation.LocalMachine })
+                {
+                    using (var store = new X509Store(StoreName.Root, loc))
+                    {
+                        store.Open(OpenFlags.ReadOnly);
+                        if (store.Certificates.Find(X509FindType.FindByThumbprint, ca.Thumbprint, false).Count > 0) return true;
+                    }
+                }
+            }
+            catch { }
+            return false;
+        }
+
+        /// <summary>Adds the CA to the user's trusted roots. Windows shows its own confirmation dialog.</summary>
+        public static bool TrustCa()
+        {
+            try
+            {
+                var ca = EnsureCa();
+                using (var store = new X509Store(StoreName.Root, StoreLocation.CurrentUser))
+                {
+                    store.Open(OpenFlags.ReadWrite);
+                    store.Add(ca);
+                }
+                Log.Info(I18n.T("log.caTrusted"));
+                return IsCaTrusted();
+            }
+            catch (Exception ex) { Log.Warn("Trust CA: " + ex.Message); return false; }
+        }
+
+        public static void RegenerateSiteCertificates()
+        {
+            lock (Sync) { try { if (Directory.Exists(SitesDir)) Directory.Delete(SitesDir, true); } catch { } }
+        }
+
+        // ---------------- CA bundle for PHP ----------------
+        /// <summary>Download Mozilla's CA list (monthly) and rebuild the bundle.</summary>
+        public static async Task RefreshBundleAsync()
+        {
+            try
+            {
+                var fi = new FileInfo(MozillaFile);
+                if (!fi.Exists || fi.LastWriteTime < DateTime.Now.AddDays(-30) || fi.Length < 10000)
+                {
+                    var pem = await Net.GetStringAsync("https://curl.se/ca/cacert.pem", 30000);
+                    if (pem.Contains("BEGIN CERTIFICATE")) File.WriteAllText(MozillaFile, pem);
+                }
+            }
+            catch (Exception ex) { Log.Warn("CA bundle download failed: " + ex.Message); }
+            WriteBundle();
+        }
+
+        public static void WriteBundle()
+        {
+            try
+            {
+                var sb = new StringBuilder();
+                if (File.Exists(MozillaFile)) sb.Append(File.ReadAllText(MozillaFile)).Append("\n");
+                if (File.Exists(CaCrt)) sb.Append("Portly Local CA\n===============\n").Append(File.ReadAllText(CaCrt));
+                Templates.WriteIfChanged(BundleFile, sb.ToString());
+            }
+            catch (Exception ex) { Log.Warn("CA bundle: " + ex.Message); }
+        }
+
+        // ---------------- PEM helpers ----------------
+        static string Pem(string label, byte[] der)
+        {
+            var b64 = Convert.ToBase64String(der);
+            var sb = new StringBuilder();
+            sb.Append("-----BEGIN ").Append(label).Append("-----\n");
+            for (int i = 0; i < b64.Length; i += 64) sb.Append(b64.Substring(i, Math.Min(64, b64.Length - i))).Append('\n');
+            sb.Append("-----END ").Append(label).Append("-----\n");
+            return sb.ToString();
+        }
+
+        static string FirstPem(string text)
+        {
+            const string end = "-----END CERTIFICATE-----";
+            int i = text.IndexOf(end, StringComparison.Ordinal);
+            return i < 0 ? text : text.Substring(0, i + end.Length);
+        }
+
+        static byte[] FromPem(string pem)
+        {
+            var sb = new StringBuilder();
+            foreach (var line in pem.Split('\n'))
+            {
+                var l = line.Trim();
+                if (l.Length == 0 || l.StartsWith("-----")) continue;
+                sb.Append(l);
+            }
+            return Convert.FromBase64String(sb.ToString());
+        }
+    }
+}
