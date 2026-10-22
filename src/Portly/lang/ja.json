@@ -1,12 +1,14 @@
 {
-  "_meta": { "name": "日本語", "english": "Japanese", "authors": "Erdem Software" },
-
+  "_meta": {
+    "name": "日本語",
+    "english": "Japanese",
+    "authors": "Erdem Software"
+  },
   "common.ok": "OK",
   "common.cancel": "キャンセル",
   "common.close": "閉じる",
   "common.save": "保存",
   "common.show": "表示",
-
   "main.subtitle": "v{0} · {1} · Erdem Software",
   "main.ready": "準備完了",
   "main.menu": "メニュー",
@@ -23,11 +25,9 @@
   "main.stopping": "サービスを停止しています...",
   "main.webNotRunning": "Web サーバーが起動していません。先に「すべて起動」をクリックしてください。",
   "main.hint": "{0} 内の各フォルダーがサイトになります：E:\\...\\shop  ->  shop.{1}。新しいフォルダーは自動的に検出されます。",
-
   "nav.services": "サービス",
   "nav.sites": "サイト",
   "nav.log": "ログ",
-
   "col.service": "サービス",
   "col.version": "バージョン",
   "col.port": "ポート",
@@ -38,7 +38,6 @@
   "col.package": "パッケージ",
   "col.note": "メモ",
   "col.status": "状態",
-
   "svc.start": "起動",
   "svc.stop": "停止",
   "svc.starting": "起動中...",
@@ -47,7 +46,6 @@
   "svc.notInstalled": "未インストール",
   "svc.getVersions": "バージョンのダウンロード / 管理...",
   "svc.withWeb": "Web サーバーと一緒に起動します",
-
   "sites.open": "開く",
   "sites.openHttp": "開く (http)",
   "sites.openHttps": "開く (https)",
@@ -62,15 +60,12 @@
   "sites.delete": "プロジェクトを削除（ごみ箱へ）",
   "sites.deleteConfirm": "プロジェクト「{0}」をごみ箱に移動しますか？\n\n{1}\n\nデータベースは削除されません。",
   "sites.none": "サイトはまだありません",
-
   "tray.show": "Portly を表示",
   "tray.hint": "Portly はここで動作し続けます。メニューはアイコンを右クリックしてください。",
-
   "menu.tools": "ツール",
   "menu.checkUpdates": "更新を確認",
   "menu.about": "Portly について",
   "menu.exit": "終了",
-
   "db.create": "データベースを作成",
   "db.name": "データベース名（英字、数字、_）：",
   "db.created": "データベース「{0}」を作成しました。",
@@ -83,26 +78,21 @@
   "db.passwordChanged": "root パスワードを変更しました。Portly はお使いの Windows アカウント専用に暗号化して保存します。",
   "db.config": "MySQL テンプレートを編集 (my.ini)",
   "db.noTool": "データベースツールがインストールされていません。今すぐ Adminer をダウンロードしますか？（小さく高速な単一ファイル）",
-
   "php.extensions": "拡張機能",
   "php.errorLog": "PHP エラーログ",
-
   "web.configFolder": "設定フォルダーを開く",
   "web.errorLog": "エラーログ",
   "web.templates": "テンプレート（同梱）",
   "web.userTemplates": "マイテンプレート (usr\\templates)",
-
   "ssl.trust": "Portly 証明書を信頼する（警告なしの HTTPS）",
   "ssl.trusted": "Portly 証明書は信頼済みです",
   "ssl.regenerate": "サイト証明書を再作成",
   "ssl.folder": "証明書フォルダーを開く",
   "ssl.ask": "Portly は、ブラウザーの警告なしで HTTPS を使えるようにできます。\n\nそのために、独自のローカル証明機関（「Portly Local CA」）を信頼された証明書に追加します。これはこのコンピューター上でのみ作成され、ローカルサイトにのみ使用されます。\n\nWindows から確認を求められます。続行しますか？",
   "ssl.trustedDone": "完了しました。ブラウザーを開いていた場合は再起動してください。https://*.test のサイトが警告なしで開くようになります。",
-
   "tools.hosts": "hosts ファイルを編集（管理者）",
   "tools.root": "Portly フォルダーを開く",
   "tools.logs": "ログフォルダーを開く",
-
   "log.clear": "クリア",
   "log.folder": "ログフォルダーを開く",
   "log.welcome": "Portly {0} ({1}) - {2}",
@@ -131,7 +121,6 @@
   "log.updated": "Portly を {0} に更新しました",
   "log.extOn": "PHP 拡張機能 {0} を有効にしました",
   "log.extOff": "PHP 拡張機能 {0} を無効にしました",
-
   "err.portInUse": "ポート {0} は別のプログラムが使用しています：{1}。そのプログラム（Skype、IIS、XAMPP、別の Laragon など）を終了するか、設定でポートを変更してください。",
   "err.exited": "予期せず停止しました（終了コード {0}）。",
   "err.vcRuntime": "起動できませんでした：Microsoft Visual C++ ランタイムがないか、古すぎます。メニュー > パッケージを使用するか、Portly を再起動してインストールしてください。",
@@ -150,7 +139,6 @@
   "err.needComposer": "Laravel には PHP と Composer が必要です。先にパッケージからインストールしてください。",
   "err.updateManifest": "更新情報が無効です。しばらくしてからもう一度お試しください。",
   "err.unexpected": "Portly で予期しないエラーが発生しました。詳細は logs\\portly.log に書き込まれました。",
-
   "pkg.title": "パッケージ",
   "pkg.firstRunTitle": "Portly へようこそ",
   "pkg.firstRunIntro": "ようこそ！Portly の準備ができました。ダウンロードするものを選び（おすすめのセットは選択済みです）、「選択項目をインストール」をクリックしてください。すべて Portly フォルダー内にインストールされ、Windows には何も追加されません。",
@@ -180,7 +168,6 @@
   "pkg.stopFirst": "このバージョンは実行中です。先にサービスを停止してください。",
   "pkg.removeConfirm": "{0} を削除しますか？",
   "pkg.mysqlDataKept": "データベースは data フォルダーに残り、この MySQL 系列を再インストールすると再び使用されます。",
-
   "project.title": "新規プロジェクト",
   "project.name": "プロジェクト名",
   "project.urlHint": "アドレスは次のようになります：name.{0}",
@@ -199,7 +186,6 @@
   "project.laravelStarted": "ターミナルウィンドウで Laravel をインストールしています。完了すると、サイトが自動的に表示されます。",
   "project.laravelDone": "Laravel の準備ができました - このウィンドウは閉じてかまいません。",
   "project.mysqlOff": "MySQL が起動していないため、今はデータベースを作成できません。データベースなしでプロジェクトを作成しますか？",
-
   "settings.title": "設定",
   "settings.general": "全般",
   "settings.services": "サービスとポート",
@@ -234,7 +220,6 @@
   "settings.badTld": "ドメインの末尾：小文字の英字、数字、- を使用してください（例：test）。",
   "settings.badRoot": "プロジェクト用に既存のフォルダーを選択してください。",
   "settings.duplicatePorts": "2 つのサービスで同じポートは使用できません。",
-
   "update.banner": "Portly {0} の準備ができました - 更新",
   "update.packages": "{0} 件のパッケージ更新があります",
   "update.confirm": "Portly {1} を {0} に更新しますか？\nサービスが停止し、Portly が再起動します。プロジェクト、データベース、設定はそのまま残ります。",
@@ -242,22 +227,18 @@
   "update.failed": "更新に失敗しました：{0}",
   "update.none": "最新バージョン（{0}）をお使いです。",
   "update.checkFailed": "更新を確認できませんでした：{0}",
-
   "vc.ask": "Apache、PHP、MySQL には無料の Microsoft Visual C++ ランタイムが必要ですが、このコンピューターにはないか、古すぎます。\n\n今すぐダウンロードしてインストールしますか？（Windows から許可を求められます）",
   "vc.downloading": "Microsoft Visual C++ ランタイムをダウンロードしています...",
   "vc.done": "Visual C++ ランタイムのインストーラーが終了しました（コード {0}）",
-
   "os.useLegacy": "この Portly エディションは Windows 10 / 11 用ですが、お使いの OS は {0} です。\n\nリリースページから「Portly Legacy」をダウンロードしてください。お使いの Windows でまだ動作するパッケージのバージョンが含まれています。",
   "os.useModern": "新しい Windows で Windows 7 / 8 / 8.1 エディションを使用しています。Windows 10 / 11 エディションでは更新と新しいパッケージを利用できます - 切り替えをおすすめします。",
   "warn.spaceInPath": "Portly フォルダーのパスにスペースが含まれています。一部のツールで問題が起きることがあるため、C:\\Portly のようなパスをおすすめします。",
-
   "dash.title": "Portly",
   "dash.sites": "サイト",
   "dash.tools": "ツール",
   "dash.empty": "プロジェクトはまだありません。{0} にフォルダーを作成するか、Portly で「新規プロジェクト」をクリックしてください。",
   "dash.phpinfo": "PHP の設定",
   "dash.donate": "寄付",
-
   "about.title": "Portly について",
   "about.by": "Erdem Software",
   "about.description": "Portly は Windows 向けの高速でポータブルなローカル Web 開発環境です。Apache または Nginx、PHP、MySQL、Node.js、Redis などが数秒で使えるようになります。無料のオープンソースで、広告もトラッキングもありません。",
@@ -266,5 +247,48 @@
   "about.issue": "問題を報告",
   "about.donateText": "Portly は無料で、これからも無料です。お役に立てたなら、少額の寄付が開発を続ける支えになります。",
   "about.license": "MIT ライセンス · Copyright (c) 2026 Erdem Software",
-  "about.thirdParty": "Apache、PHP、MySQL、Nginx、Node.js およびその他のパッケージは各公式サイトからダウンロードされ、それぞれの所有者に帰属します。"
+  "about.thirdParty": "Apache、PHP、MySQL、Nginx、Node.js およびその他のパッケージは各公式サイトからダウンロードされ、それぞれの所有者に帰属します。",
+  "main.quickAccess": "クイックアクセス",
+  "main.mail": "メール",
+  "main.statusRunning": "{1} 個中 {0} 個のサービスが実行中です",
+  "main.allStopped": "すべてのサービスが停止しています",
+  "main.mailNotRunning": "Mailpit は実行されていません。「サービス」ページで開始してください。",
+  "svc.running": "実行中",
+  "svc.stopped": "停止",
+  "svc.error": "エラー",
+  "svc.fix": "解決",
+  "svc.includeInAll": "「すべて起動」に含める",
+  "svc.openLog": "ログを開く",
+  "svc.notInstalledHint": "まだインストールされていません。「ダウンロード」をクリックしてください。",
+  "svc.notInAll": "「すべて起動」に含まれません",
+  "sites.count": "{0} 件のサイト · {1} · *.{2}",
+  "sites.emptyTitle": "まだプロジェクトがありません",
+  "sites.more": "その他",
+  "settings.appearance": "外観",
+  "settings.theme": "テーマ",
+  "settings.themeSystem": "Windows と同じ",
+  "settings.themeLight": "ライト",
+  "settings.themeDark": "ダーク",
+  "settings.portHint": "Portly は起動前にすべてのポートを確認し、使用中の場合は空いているポートを提案します。",
+  "settings.phpPortOverlap": "PHP ポート {0}-{1} が他のポートと重なっています。別の PHP 開始ポートを選んでください。",
+  "update.short": "Portly {0} の準備ができました",
+  "port.title": "ポートが使用中です",
+  "port.intro": "Portly が必要とするポートを別のプログラムが使用しています。どうしますか？",
+  "port.row": "{0} にはポート {1} が必要です",
+  "port.usedBy": "使用中: {0}",
+  "port.system": "Windows 自体（IIS、Web Deploy、Skype などが使う HTTP サービス）です。ここからは終了できません。空いているポートを使ってください。",
+  "port.unknownProc": "不明なプログラム",
+  "port.suggest": "空きポート: {0}",
+  "port.noFree": "近くに空きポートが見つかりません。",
+  "port.useFree": "空きポートを使う",
+  "port.closeApps": "それらのプログラムを終了",
+  "port.closeConfirm": "{0} を終了しますか？そのプログラムの未保存の作業は失われる可能性があります。",
+  "port.changed": "ポートを変更しました: {0}",
+  "port.orphan": "ポート {0} に残っていた Portly のプロセスを終了しました: {1}",
+  "port.closing": "{0} を終了しています",
+  "port.stillUsed": "これらのポートはまだ使用中です:\n{0}",
+  "port.checking": "ポートを確認しています...",
+  "port.checkNow": "ポートを確認",
+  "port.allFree": "すべてのポートが空いています。",
+  "port.phpMoved": "PHP {0}: ポート {1} は使用中のため {2} を使います"
 }

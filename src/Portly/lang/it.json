@@ -1,12 +1,14 @@
 {
-  "_meta": { "name": "Italiano", "english": "Italian", "authors": "Erdem Software" },
-
+  "_meta": {
+    "name": "Italiano",
+    "english": "Italian",
+    "authors": "Erdem Software"
+  },
   "common.ok": "OK",
   "common.cancel": "Annulla",
   "common.close": "Chiudi",
   "common.save": "Salva",
   "common.show": "Mostra",
-
   "main.subtitle": "v{0} · {1} · di Erdem Software",
   "main.ready": "Pronto",
   "main.menu": "Menu",
@@ -23,11 +25,9 @@
   "main.stopping": "Arresto dei servizi...",
   "main.webNotRunning": "Il server web non è in esecuzione. Fai prima clic su \"Avvia tutto\".",
   "main.hint": "Ogni cartella in {0} diventa un sito: E:\\...\\negozio  ->  negozio.{1}. Le nuove cartelle vengono rilevate automaticamente.",
-
   "nav.services": "Servizi",
   "nav.sites": "Siti",
   "nav.log": "Log",
-
   "col.service": "SERVIZIO",
   "col.version": "VERSIONE",
   "col.port": "PORTA",
@@ -38,7 +38,6 @@
   "col.package": "Pacchetto",
   "col.note": "Nota",
   "col.status": "Stato",
-
   "svc.start": "Avvia",
   "svc.stop": "Ferma",
   "svc.starting": "Avvio...",
@@ -47,7 +46,6 @@
   "svc.notInstalled": "Non installato",
   "svc.getVersions": "Scarica / gestisci versioni...",
   "svc.withWeb": "si avvia con il server web",
-
   "sites.open": "Apri",
   "sites.openHttp": "Apri (http)",
   "sites.openHttps": "Apri (https)",
@@ -62,15 +60,12 @@
   "sites.delete": "Elimina progetto (Cestino)",
   "sites.deleteConfirm": "Spostare il progetto \"{0}\" nel Cestino?\n\n{1}\n\nIl suo database non viene eliminato.",
   "sites.none": "Ancora nessun sito",
-
   "tray.show": "Mostra Portly",
   "tray.hint": "Portly continua a funzionare qui. Clic destro sull'icona per il menu.",
-
   "menu.tools": "Strumenti",
   "menu.checkUpdates": "Controlla aggiornamenti",
   "menu.about": "Informazioni su Portly",
   "menu.exit": "Esci",
-
   "db.create": "Crea database",
   "db.name": "Nome del database (lettere, numeri, _):",
   "db.created": "Database \"{0}\" creato.",
@@ -83,26 +78,21 @@
   "db.passwordChanged": "La password di root è stata cambiata. Portly la conserva cifrata per il tuo account Windows.",
   "db.config": "Modifica modello MySQL (my.ini)",
   "db.noTool": "Nessuno strumento per database installato. Scaricare Adminer ora? (piccolo, veloce, un solo file)",
-
   "php.extensions": "Estensioni",
   "php.errorLog": "Log errori PHP",
-
   "web.configFolder": "Apri cartella di configurazione",
   "web.errorLog": "Log errori",
   "web.templates": "Modelli (inclusi)",
   "web.userTemplates": "I miei modelli (usr\\templates)",
-
   "ssl.trust": "Considera attendibile il certificato Portly (HTTPS senza avvisi)",
   "ssl.trusted": "Il certificato Portly è attendibile",
   "ssl.regenerate": "Ricrea i certificati dei siti",
   "ssl.folder": "Apri cartella dei certificati",
   "ssl.ask": "Portly può far funzionare HTTPS senza avvisi del browser.\n\nAggiunge una propria autorità di certificazione locale (\"Portly Local CA\") ai certificati attendibili. Viene creata solo su questo computer ed è usata solo per i tuoi siti locali.\n\nWindows ti chiederà di confermare. Continuare?",
   "ssl.trustedDone": "Fatto. Riavvia il browser se era aperto; i siti https://*.test si apriranno senza avvisi.",
-
   "tools.hosts": "Modifica file hosts (amministratore)",
   "tools.root": "Apri cartella di Portly",
   "tools.logs": "Apri cartella dei log",
-
   "log.clear": "Pulisci",
   "log.folder": "Apri cartella dei log",
   "log.welcome": "Portly {0} ({1}) su {2}",
@@ -131,7 +121,6 @@
   "log.updated": "Portly aggiornato a {0}",
   "log.extOn": "Estensione PHP {0} attivata",
   "log.extOff": "Estensione PHP {0} disattivata",
-
   "err.portInUse": "La porta {0} è usata da un altro programma: {1}. Chiudilo (Skype, IIS, XAMPP, un altro Laragon...) o cambia la porta nelle Impostazioni.",
   "err.exited": "si è fermato inaspettatamente (codice di uscita {0}).",
   "err.vcRuntime": "impossibile avviare: il runtime Microsoft Visual C++ manca o è troppo vecchio. Usa Menu > Pacchetti o riavvia Portly per installarlo.",
@@ -150,7 +139,6 @@
   "err.needComposer": "Laravel richiede PHP e Composer. Installali prima da Pacchetti.",
   "err.updateManifest": "Le informazioni di aggiornamento non sono valide. Riprova più tardi.",
   "err.unexpected": "Portly ha riscontrato un errore imprevisto. I dettagli sono stati scritti in logs\\portly.log.",
-
   "pkg.title": "Pacchetti",
   "pkg.firstRunTitle": "Benvenuto in Portly",
   "pkg.firstRunIntro": "Benvenuto! Portly è pronto. Scegli cosa scaricare (il set consigliato è già selezionato) e fai clic su \"Installa selezionati\". Tutto viene installato nella cartella di Portly; niente viene aggiunto a Windows.",
@@ -180,7 +168,6 @@
   "pkg.stopFirst": "Questa versione è in esecuzione. Ferma prima il servizio.",
   "pkg.removeConfirm": "Rimuovere {0}?",
   "pkg.mysqlDataKept": "I tuoi database restano nella cartella data e vengono riutilizzati quando questa linea di MySQL viene installata.",
-
   "project.title": "Nuovo progetto",
   "project.name": "Nome del progetto",
   "project.urlHint": "L'indirizzo sarà: nome.{0}",
@@ -199,7 +186,6 @@
   "project.laravelStarted": "Laravel viene installato nella finestra del terminale. Al termine, il sito appare automaticamente.",
   "project.laravelDone": "Laravel è pronto - puoi chiudere questa finestra.",
   "project.mysqlOff": "MySQL non è in esecuzione, quindi ora non è possibile creare il database. Creare il progetto senza database?",
-
   "settings.title": "Impostazioni",
   "settings.general": "Generale",
   "settings.services": "Servizi e porte",
@@ -234,7 +220,6 @@
   "settings.badTld": "Estensione del dominio: usa lettere minuscole, numeri e - (ad esempio test).",
   "settings.badRoot": "Scegli una cartella esistente per i tuoi progetti.",
   "settings.duplicatePorts": "Due servizi non possono usare la stessa porta.",
-
   "update.banner": "Portly {0} è pronto - aggiorna",
   "update.packages": "Aggiornamenti dei pacchetti disponibili: {0}",
   "update.confirm": "Aggiornare Portly {1} a {0}?\nI servizi vengono fermati e Portly si riavvia. Progetti, database e impostazioni vengono mantenuti.",
@@ -242,22 +227,18 @@
   "update.failed": "L'aggiornamento non è riuscito: {0}",
   "update.none": "Hai l'ultima versione ({0}).",
   "update.checkFailed": "Impossibile controllare gli aggiornamenti: {0}",
-
   "vc.ask": "Apache, PHP e MySQL richiedono il runtime gratuito Microsoft Visual C++, che manca o è troppo vecchio su questo computer.\n\nScaricarlo e installarlo ora? (Windows chiede l'autorizzazione)",
   "vc.downloading": "Download del runtime Microsoft Visual C++...",
   "vc.done": "Installazione del runtime Visual C++ terminata (codice {0})",
-
   "os.useLegacy": "Questa edizione di Portly è fatta per Windows 10 / 11 e tu stai usando {0}.\n\nScarica \"Portly Legacy\" dalla pagina delle release: contiene versioni dei pacchetti che funzionano ancora sul tuo Windows.",
   "os.useModern": "Stai usando l'edizione per Windows 7 / 8 / 8.1 su un Windows più recente. L'edizione per Windows 10 / 11 riceve aggiornamenti e pacchetti più nuovi - ti consigliamo di passare a quella.",
   "warn.spaceInPath": "La cartella di Portly contiene uno spazio. Alcuni strumenti hanno problemi con questo; è consigliato un percorso come C:\\Portly.",
-
   "dash.title": "Portly",
   "dash.sites": "Siti",
   "dash.tools": "Strumenti",
   "dash.empty": "Ancora nessun progetto. Crea una cartella in {0} o fai clic su \"Nuovo progetto\" in Portly.",
   "dash.phpinfo": "Configurazione PHP",
   "dash.donate": "Dona",
-
   "about.title": "Informazioni su Portly",
   "about.by": "di Erdem Software",
   "about.description": "Portly è un ambiente di sviluppo web locale veloce e portatile per Windows: Apache o Nginx, PHP, MySQL, Node.js, Redis e altro, pronto in pochi secondi. Gratuito e open source, senza pubblicità, senza tracciamento.",
@@ -266,5 +247,48 @@
   "about.issue": "Segnala un problema",
   "about.donateText": "Portly è gratuito e lo resterà. Se ti fa risparmiare tempo, una piccola donazione ci aiuta ad andare avanti.",
   "about.license": "Licenza MIT · Copyright (c) 2026 Erdem Software",
-  "about.thirdParty": "Apache, PHP, MySQL, Nginx, Node.js e gli altri pacchetti vengono scaricati dai loro siti ufficiali e appartengono ai rispettivi proprietari."
+  "about.thirdParty": "Apache, PHP, MySQL, Nginx, Node.js e gli altri pacchetti vengono scaricati dai loro siti ufficiali e appartengono ai rispettivi proprietari.",
+  "main.quickAccess": "Accesso rapido",
+  "main.mail": "Posta",
+  "main.statusRunning": "{0} servizi su {1} in esecuzione",
+  "main.allStopped": "Tutti i servizi sono fermi",
+  "main.mailNotRunning": "Mailpit non è in esecuzione. Avvialo dalla pagina Servizi.",
+  "svc.running": "In esecuzione",
+  "svc.stopped": "Fermo",
+  "svc.error": "Errore",
+  "svc.fix": "Risolvi",
+  "svc.includeInAll": "Includi in \"Avvia tutto\"",
+  "svc.openLog": "Apri log",
+  "svc.notInstalledHint": "Non ancora installato. Fai clic su \"Scarica\".",
+  "svc.notInAll": "non in \"Avvia tutto\"",
+  "sites.count": "{0} siti · {1} · *.{2}",
+  "sites.emptyTitle": "Ancora nessun progetto",
+  "sites.more": "Altro",
+  "settings.appearance": "Aspetto",
+  "settings.theme": "Tema",
+  "settings.themeSystem": "Come Windows",
+  "settings.themeLight": "Chiaro",
+  "settings.themeDark": "Scuro",
+  "settings.portHint": "Portly controlla ogni porta prima di avviare e ne propone una libera se è occupata.",
+  "settings.phpPortOverlap": "Le porte PHP {0}-{1} si sovrappongono a un'altra porta. Scegli un'altra prima porta PHP.",
+  "update.short": "Portly {0} è pronto",
+  "port.title": "Porta in uso",
+  "port.intro": "Un altro programma usa già una porta che serve a Portly. Come vuoi continuare?",
+  "port.row": "{0} richiede la porta {1}",
+  "port.usedBy": "Usata da: {0}",
+  "port.system": "Windows stesso (servizio HTTP usato da IIS, Web Deploy, Skype...). Non si può chiudere da qui; usa una porta libera.",
+  "port.unknownProc": "un programma sconosciuto",
+  "port.suggest": "Porta libera: {0}",
+  "port.noFree": "Nessuna porta libera trovata nelle vicinanze.",
+  "port.useFree": "Usa porte libere",
+  "port.closeApps": "Chiudi quei programmi",
+  "port.closeConfirm": "Chiudere {0}? Il lavoro non salvato in quel programma potrebbe andare perso.",
+  "port.changed": "Porte cambiate: {0}",
+  "port.orphan": "Chiuso un vecchio processo di Portly sulla porta {0}: {1}",
+  "port.closing": "Chiusura di {0}",
+  "port.stillUsed": "Queste porte sono ancora in uso:\n{0}",
+  "port.checking": "Controllo delle porte...",
+  "port.checkNow": "Controlla porte",
+  "port.allFree": "Tutte le porte sono libere.",
+  "port.phpMoved": "PHP {0}: la porta {1} è occupata, uso {2}"
 }

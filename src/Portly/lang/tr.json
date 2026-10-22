@@ -1,12 +1,14 @@
 {
-  "_meta": { "name": "Türkçe", "english": "Turkish", "authors": "Erdem Software" },
-
+  "_meta": {
+    "name": "Türkçe",
+    "english": "Turkish",
+    "authors": "Erdem Software"
+  },
   "common.ok": "Tamam",
   "common.cancel": "İptal",
   "common.close": "Kapat",
   "common.save": "Kaydet",
   "common.show": "Göster",
-
   "main.subtitle": "v{0} · {1} · Erdem Software",
   "main.ready": "Hazır",
   "main.menu": "Menü",
@@ -23,11 +25,9 @@
   "main.stopping": "Servisler durduruluyor...",
   "main.webNotRunning": "Web sunucusu çalışmıyor. Önce \"Hepsini başlat\"a tıklayın.",
   "main.hint": "{0} içindeki her klasör bir site olur: E:\\...\\magaza  ->  magaza.{1}. Yeni klasörler kendiliğinden algılanır.",
-
   "nav.services": "Servisler",
   "nav.sites": "Siteler",
   "nav.log": "Günlük",
-
   "col.service": "SERVİS",
   "col.version": "SÜRÜM",
   "col.port": "PORT",
@@ -38,7 +38,6 @@
   "col.package": "Paket",
   "col.note": "Not",
   "col.status": "Durum",
-
   "svc.start": "Başlat",
   "svc.stop": "Durdur",
   "svc.starting": "Başlıyor...",
@@ -47,7 +46,6 @@
   "svc.notInstalled": "Kurulu değil",
   "svc.getVersions": "Sürüm indir / yönet...",
   "svc.withWeb": "web sunucusuyla başlar",
-
   "sites.open": "Aç",
   "sites.openHttp": "Aç (http)",
   "sites.openHttps": "Aç (https)",
@@ -62,15 +60,12 @@
   "sites.delete": "Projeyi sil (Geri Dönüşüm Kutusu)",
   "sites.deleteConfirm": "\"{0}\" projesi Geri Dönüşüm Kutusuna taşınsın mı?\n\n{1}\n\nVeritabanı silinmez.",
   "sites.none": "Henüz site yok",
-
   "tray.show": "Portly'yi göster",
   "tray.hint": "Portly burada çalışmaya devam ediyor. Menü için simgeye sağ tıklayın.",
-
   "menu.tools": "Araçlar",
   "menu.checkUpdates": "Güncellemeleri denetle",
   "menu.about": "Portly hakkında",
   "menu.exit": "Çıkış",
-
   "db.create": "Veritabanı oluştur",
   "db.name": "Veritabanı adı (harf, rakam, _):",
   "db.created": "\"{0}\" veritabanı oluşturuldu.",
@@ -83,26 +78,21 @@
   "db.passwordChanged": "root şifresi değiştirildi. Portly şifreyi Windows hesabınıza özel şifreleyerek saklar.",
   "db.config": "MySQL şablonunu düzenle (my.ini)",
   "db.noTool": "Kurulu bir veritabanı aracı yok. Adminer şimdi indirilsin mi? (küçük, hızlı, tek dosya)",
-
   "php.extensions": "Eklentiler",
   "php.errorLog": "PHP hata günlüğü",
-
   "web.configFolder": "Yapılandırma klasörünü aç",
   "web.errorLog": "Hata günlüğü",
   "web.templates": "Şablonlar (hazır gelen)",
   "web.userTemplates": "Benim şablonlarım (usr\\templates)",
-
   "ssl.trust": "Portly sertifikasına güven (uyarısız HTTPS)",
   "ssl.trusted": "Portly sertifikası güvenilir",
   "ssl.regenerate": "Site sertifikalarını yeniden oluştur",
   "ssl.folder": "Sertifika klasörünü aç",
   "ssl.ask": "Portly, HTTPS'in tarayıcı uyarısı olmadan çalışmasını sağlayabilir.\n\nBunun için kendi yerel sertifika otoritesini (\"Portly Local CA\") güvenilir sertifikalarınıza ekler. Bu sertifika yalnızca bu bilgisayarda üretilir ve yalnızca yerel siteleriniz için kullanılır.\n\nWindows onay isteyecek. Devam edilsin mi?",
   "ssl.trustedDone": "Tamam. Tarayıcı açıksa yeniden başlatın; https://*.test siteleri uyarısız açılacak.",
-
   "tools.hosts": "hosts dosyasını düzenle (yönetici)",
   "tools.root": "Portly klasörünü aç",
   "tools.logs": "Günlük klasörünü aç",
-
   "log.clear": "Temizle",
   "log.folder": "Günlük klasörünü aç",
   "log.welcome": "Portly {0} ({1}) - {2}",
@@ -131,7 +121,6 @@
   "log.updated": "Portly {0} sürümüne güncellendi",
   "log.extOn": "PHP eklentisi {0} açıldı",
   "log.extOff": "PHP eklentisi {0} kapatıldı",
-
   "err.portInUse": "{0} portunu başka bir program kullanıyor: {1}. O programı kapatın (Skype, IIS, XAMPP, başka bir Laragon...) ya da Ayarlar'dan portu değiştirin.",
   "err.exited": "beklenmedik şekilde durdu (çıkış kodu {0}).",
   "err.vcRuntime": "başlatılamadı: Microsoft Visual C++ çalışma zamanı eksik ya da eski. Kurmak için Portly'yi yeniden başlatın ya da Menü > Paketler'i kullanın.",
@@ -150,7 +139,6 @@
   "err.needComposer": "Laravel için PHP ve Composer gerekli. Önce Paketler'den kurun.",
   "err.updateManifest": "Güncelleme bilgisi geçersiz. Lütfen daha sonra tekrar deneyin.",
   "err.unexpected": "Portly beklenmedik bir hatayla karşılaştı. Ayrıntılar logs\\portly.log dosyasına yazıldı.",
-
   "pkg.title": "Paketler",
   "pkg.firstRunTitle": "Portly'ye hoş geldiniz",
   "pkg.firstRunIntro": "Hoş geldiniz! Portly hazır. İndirilecekleri seçin (önerilenler zaten seçili) ve \"Seçilenleri kur\"a tıklayın. Her şey Portly klasörünün içine kurulur; Windows'a hiçbir şey eklenmez.",
@@ -180,7 +168,6 @@
   "pkg.stopFirst": "Bu sürüm çalışıyor. Önce servisi durdurun.",
   "pkg.removeConfirm": "{0} kaldırılsın mı?",
   "pkg.mysqlDataKept": "Veritabanlarınız data klasöründe kalır ve bu MySQL serisi yeniden kurulduğunda tekrar kullanılır.",
-
   "project.title": "Yeni proje",
   "project.name": "Proje adı",
   "project.urlHint": "Adres şöyle olacak: ad.{0}",
@@ -199,7 +186,6 @@
   "project.laravelStarted": "Laravel terminal penceresinde kuruluyor. Bitince site kendiliğinden görünür.",
   "project.laravelDone": "Laravel hazır - bu pencereyi kapatabilirsiniz.",
   "project.mysqlOff": "MySQL çalışmadığı için veritabanı şimdi oluşturulamıyor. Proje veritabanısız oluşturulsun mu?",
-
   "settings.title": "Ayarlar",
   "settings.general": "Genel",
   "settings.services": "Servisler ve portlar",
@@ -234,7 +220,6 @@
   "settings.badTld": "Alan adı sonu: küçük harf, rakam ve - kullanın (örneğin test).",
   "settings.badRoot": "Lütfen projeleriniz için var olan bir klasör seçin.",
   "settings.duplicatePorts": "İki servis aynı portu kullanamaz.",
-
   "update.banner": "Portly {0} hazır - güncelle",
   "update.packages": "{0} paket güncellemesi var",
   "update.confirm": "Portly {1} sürümünden {0} sürümüne güncellensin mi?\nServisler durdurulur ve Portly yeniden açılır. Projeleriniz, veritabanlarınız ve ayarlarınız korunur.",
@@ -242,22 +227,18 @@
   "update.failed": "Güncelleme başarısız: {0}",
   "update.none": "En güncel sürümü kullanıyorsunuz ({0}).",
   "update.checkFailed": "Güncellemeler denetlenemedi: {0}",
-
   "vc.ask": "Apache, PHP ve MySQL için ücretsiz Microsoft Visual C++ çalışma zamanı gerekiyor; bu bilgisayarda yok ya da eski.\n\nŞimdi indirilip kurulsun mu? (Windows izin isteyecek)",
   "vc.downloading": "Microsoft Visual C++ çalışma zamanı indiriliyor...",
   "vc.done": "Visual C++ çalışma zamanı kurulumu bitti (kod {0})",
-
   "os.useLegacy": "Bu Portly sürümü Windows 10 / 11 için hazırlandı, siz {0} kullanıyorsunuz.\n\nLütfen sürümler sayfasından \"Portly Legacy\"yi indirin: Windows'unuzda hâlâ çalışan paket sürümlerini içerir.",
   "os.useModern": "Windows 7 / 8 / 8.1 sürümünü daha yeni bir Windows'ta kullanıyorsunuz. Windows 10 / 11 sürümü güncelleme ve daha yeni paketler alır; ona geçmenizi öneririz.",
   "warn.spaceInPath": "Portly klasörünün yolunda boşluk var. Bazı araçlar bundan sorun çıkarır; C:\\Portly gibi bir yol önerilir.",
-
   "dash.title": "Portly",
   "dash.sites": "Siteler",
   "dash.tools": "Araçlar",
   "dash.empty": "Henüz proje yok. {0} içinde bir klasör oluşturun ya da Portly'de \"Yeni proje\"ye tıklayın.",
   "dash.phpinfo": "PHP yapılandırması",
   "dash.donate": "Bağış yap",
-
   "about.title": "Portly hakkında",
   "about.by": "Erdem Software",
   "about.description": "Portly, Windows için hızlı ve taşınabilir bir yerel web geliştirme ortamıdır: Apache ya da Nginx, PHP, MySQL, Node.js, Redis ve daha fazlası saniyeler içinde hazır. Ücretsiz ve açık kaynak; reklam yok, izleme yok.",
@@ -266,5 +247,48 @@
   "about.issue": "Sorun bildir",
   "about.donateText": "Portly ücretsizdir ve ücretsiz kalacak. İşinizi kolaylaştırdıysa küçük bir bağışla geliştirmeye devam etmemize destek olabilirsiniz.",
   "about.license": "MIT Lisansı · Telif hakkı (c) 2026 Erdem Software",
-  "about.thirdParty": "Apache, PHP, MySQL, Nginx, Node.js ve diğer paketler kendi resmi sitelerinden indirilir ve sahiplerine aittir."
+  "about.thirdParty": "Apache, PHP, MySQL, Nginx, Node.js ve diğer paketler kendi resmi sitelerinden indirilir ve sahiplerine aittir.",
+  "main.quickAccess": "Hızlı erişim",
+  "main.mail": "Posta",
+  "main.statusRunning": "{1} servisten {0} tanesi çalışıyor",
+  "main.allStopped": "Tüm servisler durdu",
+  "main.mailNotRunning": "Mailpit çalışmıyor. Servisler sayfasından başlatın.",
+  "svc.running": "Çalışıyor",
+  "svc.stopped": "Durdu",
+  "svc.error": "Hata",
+  "svc.fix": "Çöz",
+  "svc.includeInAll": "\"Hepsini başlat\"a dahil et",
+  "svc.openLog": "Günlüğü aç",
+  "svc.notInstalledHint": "Henüz kurulu değil. \"İndir\"e tıklayın.",
+  "svc.notInAll": "\"Hepsini başlat\"ta yok",
+  "sites.count": "{0} site · {1} · *.{2}",
+  "sites.emptyTitle": "Henüz proje yok",
+  "sites.more": "Diğer",
+  "settings.appearance": "Görünüm",
+  "settings.theme": "Tema",
+  "settings.themeSystem": "Windows ile aynı",
+  "settings.themeLight": "Açık",
+  "settings.themeDark": "Koyu",
+  "settings.portHint": "Portly başlatmadan önce her portu denetler; port doluysa boş bir port önerir.",
+  "settings.phpPortOverlap": "PHP portları {0}-{1} başka bir portla çakışıyor. Başka bir PHP ilk portu seçin.",
+  "update.short": "Portly {0} hazır",
+  "port.title": "Port kullanımda",
+  "port.intro": "Portly'nin ihtiyaç duyduğu bir portu başka bir program kullanıyor. Nasıl devam edilsin?",
+  "port.row": "{0} için port {1} gerekli",
+  "port.usedBy": "Kullanan: {0}",
+  "port.system": "Windows'un kendisi (IIS, Web Deploy, Skype gibi programların kullandığı HTTP hizmeti). Buradan kapatılamaz; boş bir port kullanın.",
+  "port.unknownProc": "bilinmeyen bir program",
+  "port.suggest": "Boş port: {0}",
+  "port.noFree": "Yakında boş port bulunamadı.",
+  "port.useFree": "Boş portları kullan",
+  "port.closeApps": "O programları kapat",
+  "port.closeConfirm": "{0} kapatılsın mı? O programdaki kaydedilmemiş işler kaybolabilir.",
+  "port.changed": "Portlar değişti: {0}",
+  "port.orphan": "{0} portunda kalmış eski bir Portly süreci kapatıldı: {1}",
+  "port.closing": "{0} kapatılıyor",
+  "port.stillUsed": "Bu portlar hâlâ kullanımda:\n{0}",
+  "port.checking": "Portlar denetleniyor...",
+  "port.checkNow": "Portları denetle",
+  "port.allFree": "Tüm portlar boş.",
+  "port.phpMoved": "PHP {0}: {1} portu dolu, {2} kullanılıyor"
 }

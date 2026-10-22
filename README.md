@@ -28,6 +28,8 @@ Portly; Apache ya da Nginx, PHP, MySQL, Node.js, Redis, Mailpit, Composer ve Adm
 | Ağ güvenliği | Tüm arayüzleri dinler | **Varsayılan 127.0.0.1** (güvenlik duvarı sorusu yok) |
 | PHP güvenlik ayarları | Varsayılan | `session.upload_progress` ve `allow_url_include` **kapalı** |
 | Çökme güvenliği | — | Portly kapanırsa servisler Windows tarafından kapatılır (job object) |
+| Port çakışması | Hata mesajı | Portu tutan program ve yolu gösterilir; **tek tıkla boş porta geç** ya da o programı kapat; artık süreçler kendiliğinden temizlenir |
+| Arayüz | Klasik | Kenar çubuklu modern arayüz, **açık/koyu tema** (Windows'u izler) |
 | Dil | 34 dil (txt) | JSON, **10 dil**, GitHub'dan katkıya açık |
 | Windows 7 / 8 / 8.1 | Belirsiz | **Ayrı Legacy sürümü** |
 
@@ -79,6 +81,8 @@ Portly runs Apache or Nginx, PHP, MySQL, Node.js, Redis, Mailpit, Composer and A
 - Every folder in your projects folder becomes `https://name.test`; Laravel-style `public` folders are detected.
 - Listens on **127.0.0.1 only** by default, PHP hardened (`session.upload_progress`, `allow_url_include` off).
 - Crash safe: if Portly dies, Windows closes all services (job object).
+- Port conflicts are checked before every start: see which program holds the port, switch to a free port in one click, or close that program. Leftover Portly services are cleaned up automatically.
+- Modern sidebar UI with light / dark theme that follows Windows.
 - **Two editions**: Windows 10/11 (updates, latest packages) and Legacy for Windows 7 SP1 / 8 / 8.1 (frozen, compatible packages).
 - 10 languages, plain JSON files, contributions welcome.
 

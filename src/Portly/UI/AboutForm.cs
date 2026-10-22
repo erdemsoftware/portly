@@ -16,8 +16,7 @@ namespace Portly.UI
             StartPosition = FormStartPosition.CenterParent;
             AutoSize = true;
             AutoSizeMode = AutoSizeMode.GrowAndShrink;
-            BackColor = Ui.Card;
-            Padding = Ui.P(20);
+            Padding = Ui.P(22);
 
             var t = new TableLayoutPanel { AutoSize = true, ColumnCount = 1, Dock = DockStyle.Fill };
             var head = new FlowLayoutPanel { AutoSize = true, WrapContents = false };
@@ -46,15 +45,13 @@ namespace Portly.UI
             links.Controls.Add(Ui.Link(I18n.T("about.issue"), () => WinUtil.Open(AppInfo.IssuesUrl)));
             t.Controls.Add(links);
 
-            var donateBox = new Panel { AutoSize = true, BackColor = Color.FromArgb(255, 241, 242), Padding = Ui.P(12), Margin = Ui.P(0, 4, 0, 10), MaximumSize = new Size(Ui.S(440), 0) };
+            var donateBox = new Card { AutoSize = true, BackColor = Color.FromArgb(Theme.IsDark ? 40 : 255, Theme.IsDark ? 24 : 241, Theme.IsDark ? 30 : 242), BorderColor = Color.FromArgb(90, Ui.Heart), Padding = Ui.P(14), Margin = Ui.P(0, 4, 0, 10), MaximumSize = new Size(Ui.S(440), 0) };
             var donateFlow = new FlowLayoutPanel { AutoSize = true, FlowDirection = FlowDirection.TopDown, WrapContents = false, BackColor = Color.Transparent };
             var dText = Ui.Label(I18n.T("about.donateText"));
             dText.MaximumSize = new Size(Ui.S(410), 0);
             donateFlow.Controls.Add(dText);
-            var dBtn = Ui.Button("♥ " + I18n.T("main.donate"), (s, e) => WinUtil.Open(AppInfo.DonateUrl), true);
-            dBtn.BackColor = Ui.Heart;
-            dBtn.FlatAppearance.BorderColor = Ui.Heart;
-            dBtn.FlatAppearance.MouseOverBackColor = Color.FromArgb(190, 18, 60);
+            var dBtn = Ui.Button(I18n.T("main.donate"), (s, e) => WinUtil.Open(AppInfo.DonateUrl), true, "heart");
+            dBtn.CustomColor = Ui.Heart;
             dBtn.Margin = Ui.P(0, 8, 0, 0);
             donateFlow.Controls.Add(dBtn);
             donateBox.Controls.Add(donateFlow);

@@ -47,6 +47,7 @@ namespace Portly
             Paths.EnsureAll();
             Settings.Load();
             I18n.Load(Settings.Current.Language);
+            Theme.Load(Settings.Current.Theme);
             Updater.CleanupOldFiles();
             Catalog.LoadLocal();
 

@@ -53,7 +53,7 @@ namespace Portly.UI
                 Text = firstRun ? I18n.T("pkg.firstRunIntro") : (AppInfo.IsLegacy ? I18n.T("pkg.legacyNote") : I18n.T("pkg.intro", Catalog.Updated)),
             };
             var bar = new FlowLayoutPanel { Dock = DockStyle.Top, AutoSize = true, WrapContents = false };
-            _filter = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Width = Ui.S(180), Margin = Ui.P(0, 3, 8, 0) };
+            _filter = new ThemedCombo { DropDownStyle = ComboBoxStyle.DropDownList, Width = Ui.S(180), Margin = Ui.P(0, 3, 8, 0) };
             _filter.Items.Add(new Item(I18n.T("pkg.all"), ""));
             foreach (var t in PackageTypes.All) _filter.Items.Add(new Item(t.Name, t.Id));
             _filter.SelectedItem = _filter.Items.Cast<Item>().FirstOrDefault(i => i.Value == (type ?? "")) ?? _filter.Items[0];
@@ -73,6 +73,18 @@ namespace Portly.UI
             _list.Columns.Add(I18n.T("col.version"), Ui.S(110));
             _list.Columns.Add(I18n.T("col.note"), Ui.S(250));
             _list.Columns.Add(I18n.T("col.status"), Ui.S(220));
+            // themed column headers (the native header stays light in dark mode)
+            _list.OwnerDraw = true;
+            _list.DrawItem += (s, e) => e.DrawDefault = true;
+            _list.DrawSubItem += (s, e) => e.DrawDefault = true;
+            _list.DrawColumnHeader += (s, e) =>
+            {
+                var p = Theme.Current;
+                using (var b = new SolidBrush(p.Card)) e.Graphics.FillRectangle(b, e.Bounds);
+                using (var pen = new Pen(p.Border)) e.Graphics.DrawLine(pen, e.Bounds.Left, e.Bounds.Bottom - 1, e.Bounds.Right, e.Bounds.Bottom - 1);
+                TextRenderer.DrawText(e.Graphics, e.Header.Text, Ui.Bold, new Rectangle(e.Bounds.X + Ui.S(6), e.Bounds.Y, e.Bounds.Width - Ui.S(6), e.Bounds.Height), p.Muted, TextFormatFlags.VerticalCenter | TextFormatFlags.SingleLine | TextFormatFlags.EndEllipsis);
+            };
+            if (Theme.IsDark) _list.BorderStyle = BorderStyle.None;
             _list.SelectedIndexChanged += (s, e) => UpdateButtons();
             _list.ItemChecked += (s, e) => UpdateButtons();
             var listHost = new Panel { Dock = DockStyle.Fill, Padding = Ui.P(14, 0, 14, 0), BackColor = Ui.Bg };

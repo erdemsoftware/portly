@@ -31,7 +31,16 @@ namespace Portly.Services
             }
         }
 
+        // ports actually used, when the preferred one was taken by another program
+        readonly Dictionary<string, int> _assigned = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+
         public int PortFor(string folder)
+        {
+            lock (Sync) { int a; if (_assigned.TryGetValue(folder, out a)) return a; }
+            return PreferredPort(folder);
+        }
+
+        int PreferredPort(string folder)
         {
             var installed = PackageTypes.Installed("php");
             installed.Sort(StringComparer.OrdinalIgnoreCase);
@@ -70,12 +79,24 @@ namespace Portly.Services
             var exe = Path.Combine(dir, "php-cgi.exe");
             if (!File.Exists(exe)) return I18n.T("err.notInstalled", "php-cgi.exe");
             try { PhpConfig.Ensure(dir); } catch (Exception ex) { Log.Warn("php.ini: " + ex.Message); }
-            int port = PortFor(folder);
+            int port = PreferredPort(folder);
             if (ProcessUtil.IsPortInUse(port))
             {
-                var owner = ProcessUtil.PortOwner(port);
-                return I18n.T("err.portInUse", port, owner == "" ? "?" : owner);
+                // PHP ports are internal: close our own leftover, otherwise just take another free port
+                var owner = ProcessUtil.PortOwnerInfo(port);
+                if (owner != null && owner.IsOurs) { ProcessUtil.KillTree(owner.Pid); await Task.Delay(500); }
+                if (ProcessUtil.IsPortInUse(port))
+                {
+                    var taken = new HashSet<int>();
+                    lock (Sync) foreach (var f in _procs.Keys) taken.Add(PortFor(f));
+                    var b = Settings.Current.PhpBasePort;
+                    var free = ProcessUtil.FreePort(Enumerable.Range(b + 20, 80), taken);
+                    if (free == 0) return I18n.T("err.portInUse", port, owner == null ? "?" : owner.ToString());
+                    Log.Info(I18n.T("port.phpMoved", PackageTypes.Label(folder), port, free));
+                    port = free;
+                }
             }
+            lock (Sync) { if (port == PreferredPort(folder)) _assigned.Remove(folder); else _assigned[folder] = port; }
             var env = new Dictionary<string, string>
             {
                 { "PHP_FCGI_MAX_REQUESTS", "0" },

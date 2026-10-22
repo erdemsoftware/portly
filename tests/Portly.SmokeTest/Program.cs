@@ -115,6 +115,10 @@ namespace Portly.SmokeTest
             var php84 = PackageTypes.Installed("php").First(f => PackageTypes.Branch(f) == "8.4");
             Sites.SetPhp("legacyapp", php84);
 
+            // ---------- port guard: occupy the FastCGI port of the default PHP, it must move to a free one ----------
+            var phpBlocker = new System.Net.Sockets.TcpListener(IPAddress.Loopback, ServiceManager.Php.PortFor(php.Folder));
+            phpBlocker.Start();
+
             // ---------- start ----------
             var sw2 = Stopwatch.StartNew();
             s.SetEnabled("redis", true); s.SetEnabled("mailpit", true); s.Save();
@@ -123,7 +127,9 @@ namespace Portly.SmokeTest
             foreach (var svc in new Service[] { ServiceManager.Apache, ServiceManager.Php, ServiceManager.MySql, ServiceManager.Redis, ServiceManager.Mailpit })
                 Check(svc.Title + " running", svc.State == ServiceState.Running, svc.LastError ?? "");
 
+            Check("PHP moved to a free FastCGI port when its port was taken", ServiceManager.Php.PortFor(php.Folder) != ((IPEndPoint)phpBlocker.LocalEndpoint).Port, "port " + ServiceManager.Php.PortFor(php.Folder));
             await WebChecks("Apache", php, php84);
+            phpBlocker.Stop();
 
             // ---------- database tools ----------
             Check("create database", Database.CreateDatabase("smoke_db") == null);
@@ -147,6 +153,28 @@ namespace Portly.SmokeTest
             await Task.Delay(1000);
             foreach (var port in new[] { s.HttpPort, s.HttpsPort, s.MysqlPort, s.RedisPort, s.MailpitWebPort, s.PhpBasePort })
                 Check("port " + port + " released", !ProcessUtil.IsPortInUse(port));
+
+            // ---------- port guard: a taken port is reported with its owner and a free suggestion ----------
+            var redisBlocker = new System.Net.Sockets.TcpListener(IPAddress.Loopback, s.RedisPort);
+            redisBlocker.Start();
+            var conflicts = PortGuard.Check(new Service[] { ServiceManager.Redis });
+            var me = Process.GetCurrentProcess().Id;
+            Check("port conflict detected with owner", conflicts.Count == 1 && conflicts[0].Owner.Pid == me, conflicts.Count == 1 ? conflicts[0].Owner + " " + conflicts[0].Owner.Path : "none");
+            Check("free port suggested", conflicts.Count == 1 && conflicts[0].Suggested > 0 && !ProcessUtil.IsPortInUse(conflicts[0].Suggested), conflicts.Count == 1 ? conflicts[0].Suggested.ToString() : "");
+            var oldRedis = s.RedisPort;
+            PortGuard.UseSuggestions(conflicts);
+            Check("suggested port applied to settings", Settings.Current.RedisPort == (conflicts.Count == 1 ? conflicts[0].Suggested : -1));
+            await ServiceManager.Redis.StartAsync();
+            Check("Redis starts on the new port", ServiceManager.Redis.State == ServiceState.Running, ServiceManager.Redis.PortText);
+            await ServiceManager.Redis.StopAsync();
+            redisBlocker.Stop();
+            s.RedisPort = oldRedis; s.Save();
+
+            // ---------- port guard: a leftover service from bin\ (e.g. after a crash) is closed silently ----------
+            var orphan = Process.Start(new ProcessStartInfo(Path.Combine(PackageTypes.ActiveDir("redis"), "redis-server.exe"), "--port " + s.RedisPort) { UseShellExecute = false, CreateNoWindow = true });
+            await Task.Delay(1500);
+            var orphanConflicts = PortGuard.Check(new Service[] { ServiceManager.Redis });
+            Check("leftover Portly service closed automatically", orphanConflicts.Count == 0 && orphan.WaitForExit(3000) && !ProcessUtil.IsPortInUse(s.RedisPort));
 
             // ---------- self update: apply the release zip from dist\ ----------
             var releaseZip = Directory.GetFiles(Path.Combine(Paths.Root, "..", "..", "dist"), "Portly-*-win10.zip").FirstOrDefault();

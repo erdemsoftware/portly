@@ -59,6 +59,26 @@ Windows'a özgü üç ayrıntı, testlerle bulundu:
 - hosts dosyasında yalnızca `# >>> Portly >>>` bloğu yönetilir. Yazma izni yoksa Portly kendini `--hosts-apply` ile yönetici olarak çalıştırır; yardımcı yalnızca `127.0.0.1 <geçerli-ad>` satırlarını kabul eder. Alan adı sonu `localhost` seçilirse hosts dosyasına hiç dokunulmaz.
 - HTTPS: `usr\ssl\portly-ca.*` yerel kök otoritedir (20 yıl). Kullanıcı bir kez güvenilir yapar. Her siteye 825 günlük, `ad` ve `*.ad` için ayrı sertifika üretilir. Aynı otorite PHP'nin `cacert.pem` paketine eklenir, böylece PHP de `https://*.test` adreslerini doğrulayabilir.
 
+## Port çakışmaları
+
+Başlatmadan önce `Services/PortGuard.cs` her servisin portlarını denetler:
+
+| Durum | Davranış |
+|---|---|
+| Portu `bin\` altındaki eski bir Portly servisi tutuyor (ör. çökme sonrası) | Sessizce kapatılır |
+| Başka bir program tutuyor (Laragon, XAMPP, IIS, Skype ...) | Pencerede program adı, PID ve yolu gösterilir. Seçenekler: **Boş portları kullan** (8080, 8443, 3307 ... arasından boş olanı bulup ayarlara yazar) ya da **O programları kapat** (onayla) |
+| Portu Windows'un kendisi tutuyor (PID 4, http.sys) | Kapatma seçeneği kapalıdır, boş port önerilir |
+| PHP'nin iç FastCGI portu dolu | Kullanıcıya sorulmadan aynı aralıkta boş bir port seçilir |
+
+Ayarlar penceresi aynı portun iki servise verilmesini ve PHP port aralığının (ilk port + 100) diğer portlarla çakışmasını engeller. Bir servis yine de port hatasıyla durursa kartında **Çöz** bağlantısı çıkar. Menü > Araçlar > Portları denetle aynı denetimi elle çalıştırır.
+
+## Arayüz
+
+- Sol kenar çubuğu (Servisler, Siteler, Günlük, Paketler, Ayarlar), servis başına marka renkli kartlar, başlat/durdur anahtarı, durum rozetleri, site kartları, renkli konsol günlüğü.
+- Açık / koyu tema; varsayılan Windows uygulama temasını izler ve Windows'ta tema değişince anında güncellenir. Windows 10 1809+ üzerinde başlık çubuğu da koyulaşır.
+- Tüm simgeler ve kontroller GDI+ ile çizilir (`UI/Glyphs.cs`, `UI/Controls.cs`). Simge yazı tipine ya da resim dosyasına ihtiyaç yoktur; Windows 7'de de aynı görünür.
+- Özel düğmeler gerçek Win32 BUTTON olarak kalır; klavye, ekran okuyucu ve erişilebilirlik adları çalışır.
+
 ## Ağ
 
 Varsayılan olarak her şey `127.0.0.1`'i dinler: güvenlik duvarı sorusu çıkmaz, ağdan erişilemez. Ayarlar'daki "Ağımdaki diğer cihazlar erişebilsin" seçeneği bunu açar. MySQL 8+ için X protokolü (33060) kapatılır.

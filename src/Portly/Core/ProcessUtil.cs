@@ -18,6 +18,25 @@ namespace Portly.Core
         public bool Ok { get { return ExitCode == 0 && !TimedOut; } }
     }
 
+    public class PortOwnerInfo
+    {
+        public int Pid;
+        public string Name = "?";
+        public string Path = "";
+        /// <summary>PID 4 = Windows itself (http.sys: IIS, Web Deploy, ...): cannot be closed.</summary>
+        public bool IsSystem { get { return Pid <= 4; } }
+        /// <summary>A leftover service of this Portly (a program from bin\, never Portly itself or anything else).</summary>
+        public bool IsOurs
+        {
+            get
+            {
+                return Path != "" && Pid != Process.GetCurrentProcess().Id
+                    && Path.StartsWith(Paths.Bin + "\\", StringComparison.OrdinalIgnoreCase);
+            }
+        }
+        public override string ToString() { return Name + " (PID " + Pid + ")"; }
+    }
+
     public static class ProcessUtil
     {
         /// <summary>Run a command hidden and wait for it. Output = stdout + stderr.</summary>
@@ -114,26 +133,64 @@ namespace Portly.Core
             catch { return false; }
         }
 
-        /// <summary>Which process listens on the port? Returns "name (PID n)" or "".</summary>
+/// <summary>Which process listens on the port? Returns "name (PID n)" or "".</summary>
         public static string PortOwner(int port)
+        {
+            var o = PortOwnerInfo(port);
+            return o == null ? "" : o.ToString();
+        }
+
+        /// <summary>Process listening on a TCP port (IPv4 or IPv6), or null.</summary>
+        public static PortOwnerInfo PortOwnerInfo(int port)
         {
             try
             {
                 var r = Run("netstat.exe", "-ano -p TCP", null, null, 15000);
-                foreach (var raw in r.Output.Split('\n'))
+                var r6 = Run("netstat.exe", "-ano -p TCPv6", null, null, 15000);
+                foreach (var raw in (r.Output + "\n" + r6.Output).Split('\n'))
                 {
                     var parts = raw.Split(new[] { ' ', '\t', '\r' }, StringSplitOptions.RemoveEmptyEntries);
                     if (parts.Length < 5 || !parts[3].Equals("LISTENING", StringComparison.OrdinalIgnoreCase)) continue;
                     if (!parts[1].EndsWith(":" + port)) continue;
                     int pid;
                     if (!int.TryParse(parts[4], out pid)) continue;
-                    string name = "?";
-                    try { using (var p = Process.GetProcessById(pid)) name = p.ProcessName + ".exe"; } catch { }
-                    return name + " (PID " + pid + ")";
+                    var info = new PortOwnerInfo { Pid = pid, Name = pid == 4 ? "System" : "?" };
+                    try { using (var p = Process.GetProcessById(pid)) info.Name = p.ProcessName + ".exe"; } catch { }
+                    info.Path = ProcessPath(pid);
+                    return info;
                 }
             }
             catch { }
-            return "";
+            return null;
+        }
+
+        [DllImport("kernel32.dll", SetLastError = true)] static extern IntPtr OpenProcess(uint access, bool inherit, int pid);
+        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)] static extern bool QueryFullProcessImageName(IntPtr h, int flags, StringBuilder name, ref int size);
+        [DllImport("kernel32.dll")] static extern bool CloseHandle(IntPtr h);
+
+        /// <summary>Full exe path of a process (works for most processes without admin rights).</summary>
+        public static string ProcessPath(int pid)
+        {
+            if (pid <= 4) return "";
+            IntPtr h = OpenProcess(0x1000 /* QUERY_LIMITED_INFORMATION */, false, pid);
+            if (h == IntPtr.Zero) return "";
+            try
+            {
+                var sb = new StringBuilder(1024);
+                int size = sb.Capacity;
+                return QueryFullProcessImageName(h, 0, sb, ref size) ? sb.ToString() : "";
+            }
+            finally { CloseHandle(h); }
+        }
+
+        /// <summary>First free TCP port from the candidates, skipping the excluded ones.</summary>
+        public static int FreePort(IEnumerable<int> candidates, ICollection<int> exclude)
+        {
+            foreach (var p in candidates)
+                if (p > 0 && p < 65536 && !exclude.Contains(p) && !IsPortInUse(p)) return p;
+            for (int p = 20000; p < 21000; p++)
+                if (!exclude.Contains(p) && !IsPortInUse(p)) return p;
+            return 0;
         }
 
         public static string Quote(string s) { return "\"" + s + "\""; }

@@ -1,34 +1,35 @@
 using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
-using System.IO;
 using System.Windows.Forms;
 using Portly.Core;
 
 namespace Portly.UI
 {
-    /// <summary>Shared look: colors, fonts, DPI scaling and small control factories.</summary>
+    /// <summary>Shared look: theme colors, fonts, DPI scaling and small control factories.</summary>
     public static class Ui
     {
-        public static readonly Color Accent = Color.FromArgb(37, 99, 235);
-        public static readonly Color AccentDark = Color.FromArgb(29, 78, 216);
-        public static readonly Color Bg = Color.FromArgb(245, 247, 251);
-        public static readonly Color Card = Color.White;
-        public static readonly Color Line = Color.FromArgb(228, 231, 236);
-        public static readonly Color Text = Color.FromArgb(28, 36, 51);
-        public static readonly Color Muted = Color.FromArgb(102, 112, 133);
-        public static readonly Color Green = Color.FromArgb(22, 163, 74);
-        public static readonly Color Orange = Color.FromArgb(245, 158, 11);
-        public static readonly Color Red = Color.FromArgb(220, 38, 38);
-        public static readonly Color Gray = Color.FromArgb(152, 162, 179);
-        public static readonly Color Heart = Color.FromArgb(225, 29, 72);
+        // colors come from the active theme (light / dark)
+        public static Color Accent { get { return Theme.Current.Accent; } }
+        public static Color AccentDark { get { return Theme.Current.AccentHover; } }
+        public static Color Bg { get { return Theme.Current.Bg; } }
+        public static Color Card { get { return Theme.Current.Card; } }
+        public static Color Line { get { return Theme.Current.Border; } }
+        public static Color Text { get { return Theme.Current.Text; } }
+        public static Color Muted { get { return Theme.Current.Muted; } }
+        public static Color Green { get { return Theme.Current.Green; } }
+        public static Color Orange { get { return Theme.Current.Orange; } }
+        public static Color Red { get { return Theme.Current.Red; } }
+        public static Color Gray { get { return Theme.Current.Gray; } }
+        public static Color Heart { get { return Theme.Current.Heart; } }
 
         public static readonly Font Font = new Font("Segoe UI", 9f);
-        public static readonly Font Bold = new Font("Segoe UI", 9f, FontStyle.Bold);
+        public static readonly Font Bold = new Font("Segoe UI Semibold", 9.5f);
         public static readonly Font Small = new Font("Segoe UI", 8.25f);
-        public static readonly Font Title = new Font("Segoe UI", 15f, FontStyle.Bold);
-        public static readonly Font Subtitle = new Font("Segoe UI", 10.5f, FontStyle.Bold);
-        public static readonly Font Mono = new Font("Consolas", 9f);
+        public static readonly Font Title = new Font("Segoe UI Semibold", 16f);
+        public static readonly Font Brand = new Font("Segoe UI Semibold", 14f);
+        public static readonly Font Subtitle = new Font("Segoe UI Semibold", 10.5f);
+        public static readonly Font Mono = new Font("Consolas", 9.5f);
 
         static float _scale = -1;
         public static float Scale
@@ -44,6 +45,21 @@ namespace Portly.UI
             }
         }
 
+        /// <summary>The first solid background color up the parent chain (for painting outside rounded corners).</summary>
+        public static Color BackOf(Control c)
+        {
+            for (var p = c; p != null; p = p.Parent)
+                if (p.BackColor.A == 255) return p.BackColor;
+            return Theme.Current.Bg;
+        }
+
+        /// <summary>Upper case in the UI language (Turkish i -> İ).</summary>
+        public static string Upper(string text)
+        {
+            try { return text.ToUpper(new System.Globalization.CultureInfo(I18n.Code)); }
+            catch { return text.ToUpperInvariant(); }
+        }
+
         public static int S(int px) { return (int)Math.Round(px * Scale); }
         public static Size S(int w, int h) { return new Size(S(w), S(h)); }
         public static Padding P(int all) { return new Padding(S(all)); }
@@ -56,10 +72,7 @@ namespace Portly.UI
             {
                 if (_icon == null)
                 {
-                    try
-                    {
-                        using (var s = typeof(Ui).Assembly.GetManifestResourceStream("portly.ico")) _icon = new Icon(s);
-                    }
+                    try { using (var s = typeof(Ui).Assembly.GetManifestResourceStream("portly.ico")) _icon = new Icon(s); }
                     catch { _icon = SystemIcons.Application; }
                 }
                 return _icon;
@@ -97,27 +110,21 @@ namespace Portly.UI
         [System.Runtime.InteropServices.DllImport("user32.dll")]
         static extern bool DestroyIcon(IntPtr handle);
 
-        public static Button Button(string text, EventHandler click, bool primary = false)
+        public static ModernButton Button(string text, EventHandler click, bool primary = false, string glyph = null)
         {
-            var b = new Button
+            var b = new ModernButton
             {
                 Text = text,
+                Kind = primary ? ButtonKind.Primary : ButtonKind.Secondary,
+                Glyph = glyph,
                 AutoSize = true,
                 AutoSizeMode = AutoSizeMode.GrowAndShrink,
-                FlatStyle = FlatStyle.Flat,
-                BackColor = primary ? Accent : Card,
-                ForeColor = primary ? Color.White : Text,
-                Padding = P(10, 4, 10, 4),
-                Margin = P(0, 0, 6, 0),
-                Cursor = Cursors.Hand,
-                UseVisualStyleBackColor = false,
-                MinimumSize = new Size(0, S(30)),
-                AccessibleRole = AccessibleRole.PushButton,
+                Padding = P(14, 6, 14, 6),
+                Margin = P(0, 0, 8, 0),
+                MinimumSize = new Size(0, S(34)),
+                Font = Font,
                 AccessibleName = text,
             };
-            b.TextChanged += (s, e) => b.AccessibleName = b.Text;
-            b.FlatAppearance.BorderColor = primary ? AccentDark : Line;
-            b.FlatAppearance.MouseOverBackColor = primary ? AccentDark : Color.FromArgb(238, 242, 255);
             if (click != null) b.Click += click;
             return b;
         }
@@ -143,6 +150,7 @@ namespace Portly.UI
                 AutoSize = true,
                 LinkColor = Accent,
                 ActiveLinkColor = AccentDark,
+                VisitedLinkColor = Accent,
                 LinkBehavior = LinkBehavior.HoverUnderline,
                 BackColor = Color.Transparent,
                 Margin = P(0, 4, 10, 4),
@@ -151,6 +159,7 @@ namespace Portly.UI
             return l;
         }
 
+        /// <summary>Theme a whole form: background, text, inputs, dark title bar.</summary>
         public static void Apply(Form f)
         {
             f.Font = Font;
@@ -158,6 +167,27 @@ namespace Portly.UI
             f.BackColor = Bg;
             f.ForeColor = Text;
             f.Icon = AppIcon;
+            f.HandleCreated += (s, e) => Theme.ApplyTitleBar(f);
+            f.Load += (s, e) => StyleTree(f);
+        }
+
+        /// <summary>Give native inputs theme colors (TextBox, ComboBox, ListView, NumericUpDown ...).</summary>
+        public static void StyleTree(Control root)
+        {
+            foreach (Control c in root.Controls)
+            {
+                if (c is TextBox || c is ComboBox || c is NumericUpDown || c is ListView || c is RichTextBox || c is ListBox)
+                {
+                    if (c.Tag as string != "console") { c.BackColor = Theme.Current.Input; c.ForeColor = Text; }
+                    var cb = c as ComboBox;
+                    if (cb != null && Theme.IsDark) cb.FlatStyle = FlatStyle.Flat;
+                    var tb = c as TextBox;
+                    if (tb != null && Theme.IsDark) tb.BorderStyle = BorderStyle.FixedSingle;
+                }
+                else if (c is CheckBox && !(c is ToggleSwitch) || c is RadioButton)
+                    c.ForeColor = Text;
+                StyleTree(c);
+            }
         }
 
         // ---------------- dialogs ----------------
@@ -178,10 +208,10 @@ namespace Portly.UI
                 f.StartPosition = FormStartPosition.CenterParent;
                 f.AutoSize = true;
                 f.AutoSizeMode = AutoSizeMode.GrowAndShrink;
-                f.Padding = P(14);
+                f.Padding = P(16);
                 var layout = new TableLayoutPanel { AutoSize = true, ColumnCount = 1, Dock = DockStyle.Fill };
                 layout.Controls.Add(Label(label));
-                var box = new TextBox { Text = value, Width = S(320), UseSystemPasswordChar = password, Margin = P(0, 2, 0, 8) };
+                var box = new TextBox { Text = value, Width = S(340), UseSystemPasswordChar = password, Margin = P(0, 2, 0, 8) };
                 layout.Controls.Add(box);
                 if (password)
                 {
@@ -189,11 +219,12 @@ namespace Portly.UI
                     show.CheckedChanged += (s, e) => box.UseSystemPasswordChar = !show.Checked;
                     layout.Controls.Add(show);
                 }
-                var buttons = new FlowLayoutPanel { AutoSize = true, FlowDirection = FlowDirection.RightToLeft, Dock = DockStyle.Fill, Margin = P(0, 8, 0, 0) };
+                var buttons = new FlowLayoutPanel { AutoSize = true, FlowDirection = FlowDirection.RightToLeft, Dock = DockStyle.Fill, Margin = P(0, 10, 0, 0) };
                 var cancel = Button(I18n.T("common.cancel"), null);
                 cancel.DialogResult = DialogResult.Cancel;
                 var ok = Button(I18n.T("common.ok"), null, true);
                 ok.DialogResult = DialogResult.OK;
+                ok.Margin = P(0, 0, 8, 0);
                 buttons.Controls.Add(cancel);
                 buttons.Controls.Add(ok);
                 layout.Controls.Add(buttons);
@@ -208,28 +239,6 @@ namespace Portly.UI
         {
             if (b < 1024 * 1024) return (b / 1024) + " KB";
             return (b / 1048576.0).ToString("0.0") + " MB";
-        }
-    }
-
-    /// <summary>Round status light.</summary>
-    public class StatusDot : Control
-    {
-        Color _color = Ui.Gray;
-        public Color DotColor { get { return _color; } set { _color = value; Invalidate(); } }
-
-        public StatusDot()
-        {
-            SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.UserPaint | ControlStyles.SupportsTransparentBackColor, true);
-            BackColor = Color.Transparent;
-            Size = Ui.S(14, 14);
-            Margin = Ui.P(0, 8, 6, 0);
-        }
-
-        protected override void OnPaint(PaintEventArgs e)
-        {
-            e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-            int d = Math.Min(Width, Height) - 2;
-            using (var b = new SolidBrush(_color)) e.Graphics.FillEllipse(b, 1, 1, d, d);
         }
     }
 

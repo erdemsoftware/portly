@@ -52,6 +52,8 @@ namespace Portly.Core
         public bool CloseToTray { get { return _ini.GetBool("general", "CloseToTray", true); } set { _ini.Set("general", "CloseToTray", value); } }
         public bool CheckUpdates { get { return _ini.GetBool("general", "CheckUpdates", true); } set { _ini.Set("general", "CheckUpdates", value); } }
         public bool AddToPath { get { return _ini.GetBool("general", "AddToPath", false); } set { _ini.Set("general", "AddToPath", value); } }
+        /// <summary>"system", "light" or "dark".</summary>
+        public string Theme { get { var v = _ini.Get("general", "Theme", "system"); return v == "light" || v == "dark" ? v : "system"; } set { _ini.Set("general", "Theme", value); } }
         public string Terminal { get { return _ini.Get("general", "Terminal", "cmd"); } set { _ini.Set("general", "Terminal", value); } }
         public bool FirstRunDone { get { return _ini.GetBool("general", "FirstRunDone", false); } set { _ini.Set("general", "FirstRunDone", value); } }
         public bool OsWarningShown { get { return _ini.GetBool("general", "OsWarningShown", false); } set { _ini.Set("general", "OsWarningShown", value); } }

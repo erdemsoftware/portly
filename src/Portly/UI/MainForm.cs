@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Microsoft.Win32;
 using Portly.Config;
 using Portly.Core;
 using Portly.Packages;
@@ -19,12 +20,14 @@ namespace Portly.UI
         class Row
         {
             public Service Svc;
-            public StatusDot Dot;
-            public Label Name;
+            public Card Card;
+            public BrandTile Tile;
+            public Label Name, Detail, Error;
+            public LinkLabel Fix;
+            public Pill Status;
             public ComboBox Version;
-            public Label Port;
-            public Button Action;
-            public CheckBox Auto;
+            public ToggleSwitch Toggle;
+            public ModernButton Get;
         }
 
         readonly bool _startHidden;
@@ -32,13 +35,13 @@ namespace Portly.UI
         bool _exiting, _trayHintShown, _busyAll;
         NotifyIcon _tray;
         ContextMenuStrip _menu;
-        Panel _pageServices, _pageSites, _pageLog;
-        Button _navServices, _navSites, _navLog, _banner, _startAll;
-        Label _status, _errors, _sitesInfo;
-        TableLayoutPanel _grid;
-        readonly Dictionary<Service, Row> _rows = new Dictionary<Service, Row>();
-        ListView _sites;
-        TextBox _log;
+        Panel _content, _pageServices, _pageSites, _pageLog;
+        ModernButton _navServices, _navSites, _navLog, _startAll, _updateBtn;
+        Label _status, _servicesSub, _sitesSub;
+        readonly List<Row> _rows = new List<Row>();
+        FlowLayoutPanel _siteFlow;
+        RichTextBox _log;
+        readonly List<string> _logLines = new List<string>();
         FileSystemWatcher _watcher;
         System.Windows.Forms.Timer _debounce;
         string _page = "services";
@@ -49,11 +52,11 @@ namespace Portly.UI
             _startServices = startServices;
             Ui.Apply(this);
             Text = "Portly";
-            Size = Ui.S(800, 540);
-            MinimumSize = Ui.S(700, 460);
+            Size = Ui.S(1020, 740);
+            MinimumSize = Ui.S(900, 600);
             StartPosition = FormStartPosition.CenterScreen;
 
-            _menu = new ContextMenuStrip { Font = Ui.Font };
+            _menu = new ContextMenuStrip();
             _menu.Opening += (s, e) => { BuildMenu(_menu.Items); e.Cancel = false; };
             _tray = new NotifyIcon { Icon = Ui.TrayIcon(null), Text = "Portly", Visible = true, ContextMenuStrip = _menu };
             _tray.MouseClick += (s, e) => { if (e.Button == MouseButtons.Left) ShowFromTray(); };
@@ -65,6 +68,7 @@ namespace Portly.UI
             ServiceManager.SitesChanged += () => SafeInvoke(FillSites);
             Log.Written += line => SafeInvoke(() => AppendLog(line));
             Catalog.Changed += () => SafeInvoke(UpdateBanner);
+            SystemEvents.UserPreferenceChanged += OnSystemThemeChanged;
 
             BuildUi();
             if (_startHidden) { WindowState = FormWindowState.Minimized; ShowInTaskbar = false; }
@@ -77,7 +81,6 @@ namespace Portly.UI
 
         protected override void SetVisibleCore(bool value)
         {
-            // start in the tray without flashing the window
             if (_startHidden && !IsHandleCreated) { CreateHandle(); value = false; }
             base.SetVisibleCore(value);
         }
@@ -88,6 +91,23 @@ namespace Portly.UI
             try { if (InvokeRequired) BeginInvoke(a); else a(); } catch { }
         }
 
+        void OnSystemThemeChanged(object sender, UserPreferenceChangedEventArgs e)
+        {
+            if (Settings.Current.Theme != "system") return;
+            var wasDark = Theme.IsDark;
+            Theme.Load("system");
+            if (wasDark != Theme.IsDark) SafeInvoke(RebuildTheme);
+        }
+
+        /// <summary>Re-create the window content with the current theme / language.</summary>
+        public void RebuildTheme()
+        {
+            BackColor = Ui.Bg;
+            ForeColor = Ui.Text;
+            Theme.ApplyTitleBar(this);
+            BuildUi();
+        }
+
         // =====================================================================
         // Layout
         // =====================================================================
@@ -96,85 +116,90 @@ namespace Portly.UI
             SuspendLayout();
             Controls.Clear();
             _rows.Clear();
+            BackColor = Ui.Bg;
+            StyleMenu(_menu);
 
-            // footer
-            var footer = new Panel { Dock = DockStyle.Bottom, Height = Ui.S(30), BackColor = Ui.Card, Padding = Ui.P(14, 0, 14, 0) };
-            _status = Ui.Label(I18n.T("main.ready"), Ui.Small, Ui.Muted);
-            _status.Dock = DockStyle.Left;
-            _status.AutoSize = false;
-            _status.Width = Ui.S(520);
-            _status.TextAlign = ContentAlignment.MiddleLeft;
-            _status.AutoEllipsis = true;
-            var donate = Ui.Link("♥ " + I18n.T("main.donate"), () => WinUtil.Open(AppInfo.DonateUrl));
-            donate.LinkColor = Ui.Heart;
-            donate.Dock = DockStyle.Right;
-            donate.AutoSize = true;
-            donate.Padding = Ui.P(0, 7, 0, 0);
-            footer.Controls.Add(_status);
-            footer.Controls.Add(donate);
-            Controls.Add(footer);
-            Controls.Add(new Panel { Dock = DockStyle.Bottom, Height = 1, BackColor = Ui.Line });
+            // ---------------- sidebar ----------------
+            var side = new Panel { Dock = DockStyle.Left, Width = Ui.S(224), BackColor = Theme.Current.Sidebar, Padding = Ui.P(12, 0, 12, 12) };
+            var logo = new PictureBox { Image = Ui.AppImage(Ui.S(36) > 40 ? 48 : 32), SizeMode = PictureBoxSizeMode.Zoom, Size = Ui.S(36, 36), Location = new Point(Ui.S(18), Ui.S(22)), BackColor = Color.Transparent };
+            var brand = Ui.Label("Portly", Ui.Brand);
+            brand.Location = new Point(Ui.S(62), Ui.S(18));
+            var edition = Ui.Label(AppInfo.IsLegacy ? "Legacy · Win 7/8" : "Erdem Software", Ui.Small, Ui.Muted);
+            edition.Location = new Point(Ui.S(64), Ui.S(44));
+            var logoArea = new Panel { Dock = DockStyle.Top, Height = Ui.S(84), BackColor = Color.Transparent };
+            logoArea.Controls.AddRange(new Control[] { logo, brand, edition });
 
-            // navigation
-            var nav = new Panel { Dock = DockStyle.Top, Height = Ui.S(46), BackColor = Ui.Bg, Padding = Ui.P(14, 8, 14, 4) };
-            var navFlow = new FlowLayoutPanel { Dock = DockStyle.Left, AutoSize = true, WrapContents = false, BackColor = Color.Transparent };
-            _navServices = NavButton(I18n.T("nav.services"), "services");
-            _navSites = NavButton(I18n.T("nav.sites"), "sites");
-            _navLog = NavButton(I18n.T("nav.log"), "log");
-            navFlow.Controls.AddRange(new Control[] { _navServices, _navSites, _navLog });
-            _banner = Ui.Button("", (s, e) => OnBannerClick());
-            _banner.Dock = DockStyle.Right;
-            _banner.BackColor = Color.FromArgb(254, 243, 199);
-            _banner.FlatAppearance.BorderColor = Ui.Orange;
-            _banner.Visible = false;
-            nav.Controls.Add(navFlow);
-            nav.Controls.Add(_banner);
-            Controls.Add(nav);
-            Controls.Add(new Panel { Dock = DockStyle.Top, Height = 1, BackColor = Ui.Line });
+            var nav = new FlowLayoutPanel { Dock = DockStyle.Top, AutoSize = true, FlowDirection = FlowDirection.TopDown, WrapContents = false, BackColor = Color.Transparent };
+            _navServices = NavButton(I18n.T("nav.services"), "services", (s, e) => ShowPage("services"));
+            _navSites = NavButton(I18n.T("nav.sites"), "globe", (s, e) => ShowPage("sites"));
+            _navLog = NavButton(I18n.T("nav.log"), "list", (s, e) => ShowPage("log"));
+            nav.Controls.Add(_navServices);
+            nav.Controls.Add(_navSites);
+            nav.Controls.Add(_navLog);
+            nav.Controls.Add(new Panel { Height = Ui.S(14), Width = Ui.S(10), BackColor = Color.Transparent });
+            nav.Controls.Add(NavButton(I18n.T("main.packages"), "box", (s, e) => OpenPackages(null)));
+            nav.Controls.Add(NavButton(I18n.T("main.settings"), "gear", (s, e) => OpenSettings()));
+            var more = NavButton(I18n.T("main.menu"), "more", null);
+            more.Click += (s, e) => { BuildMenu(_menu.Items); _menu.Show(more, new Point(more.Width, 0)); };
+            nav.Controls.Add(more);
 
-            // header
-            var header = new Panel { Dock = DockStyle.Top, Height = Ui.S(64), BackColor = Ui.Card };
-            var logo = new PictureBox { Image = Ui.AppImage(Ui.S(32) >= 48 ? 48 : 32), SizeMode = PictureBoxSizeMode.Zoom, Size = Ui.S(34, 34), Location = new Point(Ui.S(16), Ui.S(15)) };
-            var title = Ui.Label("Portly", Ui.Title);
-            title.Location = new Point(Ui.S(56), Ui.S(8));
-            var sub = Ui.Label(I18n.T("main.subtitle", AppInfo.VersionText, AppInfo.EditionName), Ui.Small, Ui.Muted);
-            sub.Location = new Point(Ui.S(58), Ui.S(38));
-            var right = new FlowLayoutPanel { Dock = DockStyle.Right, AutoSize = true, FlowDirection = FlowDirection.RightToLeft, WrapContents = false, Padding = Ui.P(0, 16, 10, 0), BackColor = Color.Transparent };
-            var menuBtn = Ui.Button(I18n.T("main.menu") + " ▾", null);
-            menuBtn.Click += (s, e) => { BuildMenu(_menu.Items); _menu.Show(menuBtn, new Point(0, menuBtn.Height)); };
-            right.Controls.Add(menuBtn);
-            right.Controls.Add(Ui.Button(I18n.T("main.settings"), (s, e) => OpenSettings()));
-            right.Controls.Add(Ui.Button(I18n.T("main.packages"), (s, e) => OpenPackages(null)));
-            header.Controls.Add(logo);
-            header.Controls.Add(title);
-            header.Controls.Add(sub);
-            header.Controls.Add(right);
-            Controls.Add(header);
+            var sideBottom = new FlowLayoutPanel { Dock = DockStyle.Bottom, AutoSize = true, FlowDirection = FlowDirection.TopDown, WrapContents = false, BackColor = Color.Transparent };
+            _updateBtn = Ui.Button("", (s, e) => OnBannerClick(), true, "update");
+            _updateBtn.AutoSize = false;
+            _updateBtn.Size = new Size(Ui.S(198), Ui.S(38));
+            _updateBtn.Visible = false;
+            _updateBtn.Margin = Ui.P(0, 0, 0, 8);
+            var donate = NavButton(I18n.T("main.donate"), "heart", (s, e) => WinUtil.Open(AppInfo.DonateUrl));
+            donate.CustomColor = Ui.Heart;
+            var ver = Ui.Label("v" + AppInfo.VersionText + " · " + (AppInfo.IsLegacy ? "Windows 7/8" : "Windows 10/11"), Ui.Small, Ui.Muted);
+            ver.Margin = Ui.P(12, 6, 0, 0);
+            sideBottom.Controls.Add(_updateBtn);
+            sideBottom.Controls.Add(donate);
+            sideBottom.Controls.Add(ver);
 
-            // pages
-            var content = new Panel { Dock = DockStyle.Fill, Padding = Ui.P(16, 12, 16, 12), BackColor = Ui.Bg };
+            side.Controls.Add(sideBottom);
+            side.Controls.Add(nav);
+            side.Controls.Add(logoArea);
+            nav.BringToFront();
+            Controls.Add(side);
+            Controls.Add(new Panel { Dock = DockStyle.Left, Width = 1, BackColor = Ui.Line });
+
+            // ---------------- content ----------------
+            _content = new Panel { Dock = DockStyle.Fill, BackColor = Ui.Bg, Padding = Ui.P(28, 22, 28, 10) };
+            _status = new Label { Dock = DockStyle.Bottom, Height = Ui.S(24), ForeColor = Ui.Muted, Font = Ui.Small, AutoEllipsis = true, TextAlign = ContentAlignment.MiddleLeft, Text = I18n.T("main.ready") };
             _pageServices = BuildServicesPage();
             _pageSites = BuildSitesPage();
             _pageLog = BuildLogPage();
-            content.Controls.Add(_pageServices);
-            content.Controls.Add(_pageSites);
-            content.Controls.Add(_pageLog);
-            Controls.Add(content);
-            content.BringToFront();
+            _content.Controls.Add(_pageServices);
+            _content.Controls.Add(_pageSites);
+            _content.Controls.Add(_pageLog);
+            _content.Controls.Add(_status);
+            Controls.Add(_content);
+            _content.BringToFront();
 
             ResumeLayout(true);
+            Ui.StyleTree(this);
             ShowPage(_page);
-            foreach (var r in _rows.Values) UpdateRow(r.Svc);
+            foreach (var r in _rows) UpdateRow(r.Svc);
             UpdateGlobal();
             FillSites();
             UpdateBanner();
         }
 
-        Button NavButton(string text, string page)
+        ModernButton NavButton(string text, string glyph, EventHandler click)
         {
-            var b = Ui.Button(text, (s, e) => ShowPage(page));
-            b.Tag = page;
-            b.Margin = Ui.P(0, 0, 4, 0);
+            var b = new ModernButton
+            {
+                Text = text,
+                Glyph = glyph,
+                Kind = ButtonKind.Nav,
+                AutoSize = false,
+                Size = new Size(Ui.S(198), Ui.S(40)),
+                Padding = Ui.P(14, 0, 8, 0),
+                Margin = Ui.P(0, 0, 0, 4),
+                Font = Ui.Font,
+            };
+            if (click != null) b.Click += click;
             return b;
         }
 
@@ -184,95 +209,139 @@ namespace Portly.UI
             _pageServices.Visible = page == "services";
             _pageSites.Visible = page == "sites";
             _pageLog.Visible = page == "log";
-            foreach (var b in new[] { _navServices, _navSites, _navLog })
-            {
-                bool on = (string)b.Tag == page;
-                b.BackColor = on ? Ui.Accent : Ui.Card;
-                b.ForeColor = on ? Color.White : Ui.Text;
-                b.FlatAppearance.BorderColor = on ? Ui.AccentDark : Ui.Line;
-                b.FlatAppearance.MouseOverBackColor = on ? Ui.AccentDark : Color.FromArgb(238, 242, 255);
-            }
+            _navServices.Active = page == "services";
+            _navSites.Active = page == "sites";
+            _navLog.Active = page == "log";
+            foreach (var b in new[] { _navServices, _navSites, _navLog }) b.Invalidate();
+        }
+
+        static Panel PageHeader(string title, out Label subtitle, params Control[] actions)
+        {
+            var h = new Panel { Dock = DockStyle.Top, Height = Ui.S(74), BackColor = Color.Transparent };
+            var t = Ui.Label(title, Ui.Title);
+            t.Location = new Point(0, 0);
+            subtitle = Ui.Label("", Ui.Font, Ui.Muted);
+            subtitle.Location = new Point(Ui.S(2), Ui.S(38));
+            subtitle.AutoSize = false;
+            subtitle.AutoEllipsis = true;
+            subtitle.Size = new Size(Ui.S(420), Ui.S(22));
+            subtitle.Anchor = AnchorStyles.Left | AnchorStyles.Top | AnchorStyles.Right;
+            var flow = new FlowLayoutPanel { Dock = DockStyle.Right, AutoSize = true, WrapContents = false, FlowDirection = FlowDirection.RightToLeft, BackColor = Color.Transparent, Padding = Ui.P(0, 6, 0, 0) };
+            foreach (var a in actions) { a.Margin = Ui.P(8, 0, 0, 0); flow.Controls.Add(a); }
+            h.Controls.Add(flow);
+            h.Controls.Add(t);
+            h.Controls.Add(subtitle);
+            return h;
         }
 
         // ---------------- services page ----------------
         Panel BuildServicesPage()
         {
-            var page = new Panel { Dock = DockStyle.Fill, BackColor = Ui.Bg };
+            var page = new Panel { Dock = DockStyle.Fill, BackColor = Ui.Bg, AutoScroll = true };
+            _startAll = Ui.Button(I18n.T("main.startAll"), async (s, e) => await ToggleAll(), true, "play");
+            _startAll.MinimumSize = new Size(Ui.S(170), Ui.S(40));
+            _startAll.Font = Ui.Bold;
+            var header = PageHeader(I18n.T("nav.services"), out _servicesSub, _startAll);
 
-            var actions = new FlowLayoutPanel { Dock = DockStyle.Bottom, AutoSize = true, WrapContents = true, Padding = Ui.P(0, 8, 0, 0) };
-            _startAll = Ui.Button(I18n.T("main.startAll"), async (s, e) => await ToggleAll(), true);
-            actions.Controls.Add(_startAll);
-            actions.Controls.Add(Ui.Button(I18n.T("main.web"), (s, e) => OpenLocalhost()));
-            actions.Controls.Add(Ui.Button(I18n.T("main.database"), (s, e) => OpenDatabaseTool()));
-            actions.Controls.Add(Ui.Button(I18n.T("main.terminal"), (s, e) => Terminal.Open()));
-            actions.Controls.Add(Ui.Button(I18n.T("main.root"), (s, e) => WinUtil.OpenFolder(Settings.Current.DocumentRoot)));
-            actions.Controls.Add(Ui.Button(I18n.T("main.newProject"), (s, e) => NewProject()));
-
-            var card = new Panel { Dock = DockStyle.Top, AutoSize = true, BackColor = Ui.Card, Padding = Ui.P(14, 10, 14, 10) };
-            _grid = new TableLayoutPanel { Dock = DockStyle.Top, AutoSize = true, ColumnCount = 6, BackColor = Ui.Card };
-            _grid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, Ui.S(22)));
-            _grid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, Ui.S(110)));
-            _grid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, Ui.S(150)));
-            _grid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, Ui.S(170)));
-            _grid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, Ui.S(100)));
-            _grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-            _grid.Controls.Add(new Label(), 0, 0);
-            _grid.Controls.Add(Ui.Label(I18n.T("col.service"), Ui.Small, Ui.Muted), 1, 0);
-            _grid.Controls.Add(Ui.Label(I18n.T("col.version"), Ui.Small, Ui.Muted), 2, 0);
-            _grid.Controls.Add(Ui.Label(I18n.T("col.port"), Ui.Small, Ui.Muted), 3, 0);
-            _grid.Controls.Add(new Label(), 4, 0);
-            _grid.Controls.Add(Ui.Label(I18n.T("col.auto"), Ui.Small, Ui.Muted), 5, 0);
-
-            int rowIndex = 1;
+            var list = new TableLayoutPanel { Dock = DockStyle.Top, AutoSize = true, ColumnCount = 1, BackColor = Color.Transparent };
+            list.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             foreach (var svc in ServiceManager.Rows)
             {
-                var row = new Row { Svc = svc };
-                row.Dot = new StatusDot();
-                row.Name = Ui.Label(svc.Title, Ui.Bold);
-                row.Name.Margin = Ui.P(0, 7, 6, 0);
-                row.Version = new ComboBox { AccessibleName = svc.Title + " " + I18n.T("col.version"), DropDownStyle = ComboBoxStyle.DropDownList, Width = Ui.S(140), DropDownWidth = Ui.S(260), Margin = Ui.P(0, 3, 6, 3), FlatStyle = FlatStyle.System };
-                FillVersions(row);
-                row.Version.SelectionChangeCommitted += async (s, e) => await OnVersionChanged(row);
-                row.Port = Ui.Label("", Ui.Font, Ui.Muted);
-                row.Port.Margin = Ui.P(0, 7, 6, 0);
-                row.Action = Ui.Button(I18n.T("svc.start"), async (s, e) => await OnRowAction(row));
-                row.Action.MinimumSize = new Size(Ui.S(90), Ui.S(28));
-                row.Action.Margin = Ui.P(0, 2, 6, 2);
-                row.Auto = new CheckBox { AutoSize = true, Margin = Ui.P(6, 7, 0, 0), Checked = Settings.Current.IsEnabled(svc.Id), AccessibleName = svc.Title + ": " + I18n.T("col.auto") };
-                row.Auto.CheckedChanged += (s, e) => { Settings.Current.SetEnabled(svc.Id, row.Auto.Checked); Settings.Current.Save(); };
-                if (svc.Id == "php")
-                {
-                    row.Action.Visible = false;
-                    row.Auto.Visible = false;
-                }
-                _grid.Controls.Add(row.Dot, 0, rowIndex);
-                _grid.Controls.Add(row.Name, 1, rowIndex);
-                _grid.Controls.Add(row.Version, 2, rowIndex);
-                _grid.Controls.Add(row.Port, 3, rowIndex);
-                _grid.Controls.Add(row.Action, 4, rowIndex);
-                _grid.Controls.Add(row.Auto, 5, rowIndex);
-                _rows[svc] = row;
-                rowIndex++;
+                var row = BuildServiceCard(svc);
+                list.Controls.Add(row.Card);
+                _rows.Add(row);
             }
-            card.Controls.Add(_grid);
 
-            _errors = new Label { Dock = DockStyle.Top, AutoSize = true, ForeColor = Ui.Red, Padding = Ui.P(2, 10, 2, 0), MaximumSize = new Size(Ui.S(740), 0) };
-            var hint = new Label
-            {
-                Dock = DockStyle.Top,
-                AutoSize = true,
-                ForeColor = Ui.Muted,
-                Font = Ui.Small,
-                Padding = Ui.P(2, 10, 2, 0),
-                MaximumSize = new Size(Ui.S(740), 0),
-                Text = I18n.T("main.hint", Settings.Current.DocumentRoot, Settings.Current.Tld),
-            };
+            var quickTitle = Ui.Label(Ui.Upper(I18n.T("main.quickAccess")), Ui.Small, Ui.Muted);
+            quickTitle.Dock = DockStyle.Top;
+            quickTitle.Padding = Ui.P(2, 18, 0, 8);
+            var tiles = new FlowLayoutPanel { Dock = DockStyle.Top, AutoSize = true, BackColor = Color.Transparent, Padding = Ui.P(0, 0, 0, 8) };
+            tiles.Controls.Add(Tile(I18n.T("main.web"), "globe", (s, e) => OpenLocalhost()));
+            tiles.Controls.Add(Tile(I18n.T("main.database"), "database", (s, e) => OpenDatabaseTool()));
+            tiles.Controls.Add(Tile(I18n.T("main.mail"), "mail", (s, e) => OpenMailpit()));
+            tiles.Controls.Add(Tile(I18n.T("main.terminal"), "terminal", (s, e) => Terminal.Open()));
+            tiles.Controls.Add(Tile(I18n.T("main.root"), "folder", (s, e) => WinUtil.OpenFolder(Settings.Current.DocumentRoot)));
+            tiles.Controls.Add(Tile(I18n.T("main.newProject"), "plus", (s, e) => NewProject()));
 
-            page.Controls.Add(actions);
-            page.Controls.Add(hint);
-            page.Controls.Add(_errors);
-            page.Controls.Add(card);
+            page.Controls.Add(tiles);
+            page.Controls.Add(quickTitle);
+            page.Controls.Add(list);
+            page.Controls.Add(header);
             return page;
+        }
+
+        ModernButton Tile(string text, string glyph, EventHandler click)
+        {
+            var b = new ModernButton { Text = text, Glyph = glyph, Kind = ButtonKind.Tile, AutoSize = true, Margin = Ui.P(0, 0, 10, 10), Font = Ui.Font, Radius = 12 };
+            b.Click += click;
+            return b;
+        }
+
+        Row BuildServiceCard(Service svc)
+        {
+            var row = new Row { Svc = svc };
+            var card = new Card { Height = Ui.S(72), Anchor = AnchorStyles.Left | AnchorStyles.Right, Margin = Ui.P(0, 0, 0, 10), Radius = 12 };
+            row.Card = card;
+            row.Tile = BrandTile.For(svc.Id == "web" ? svc.PackageType : svc.Id);
+            row.Tile.Location = new Point(Ui.S(18), Ui.S(16));
+            row.Name = Ui.Label(svc.Title, Ui.Subtitle);
+            row.Name.Location = new Point(Ui.S(72), Ui.S(13));
+            row.Detail = Ui.Label("", Ui.Font, Ui.Muted);
+            row.Detail.Location = new Point(Ui.S(73), Ui.S(39));
+            row.Error = new Label { ForeColor = Ui.Red, BackColor = Color.Transparent, AutoSize = false, AutoEllipsis = true, Location = new Point(Ui.S(73), Ui.S(68)), Height = Ui.S(36), Visible = false, Anchor = AnchorStyles.Left | AnchorStyles.Top | AnchorStyles.Right };
+            row.Fix = Ui.Link(I18n.T("svc.fix"), async () => await FixPorts(new[] { svc }));
+            row.Fix.Visible = false;
+            row.Fix.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+
+            row.Toggle = new ToggleSwitch { Anchor = AnchorStyles.Top | AnchorStyles.Right, AccessibleName = svc.Title };
+            row.Toggle.Click += async (s, e) => await OnToggle(row);
+            row.Status = new Pill { Anchor = AnchorStyles.Top | AnchorStyles.Right };
+            row.Version = new ThemedCombo { DropDownStyle = ComboBoxStyle.DropDownList, Width = Ui.S(130), DropDownWidth = Ui.S(280), Anchor = AnchorStyles.Top | AnchorStyles.Right, AccessibleName = svc.Title + " " + I18n.T("col.version") };
+            FillVersions(row);
+            row.Version.SelectionChangeCommitted += async (s, e) => await OnVersionChanged(row);
+            row.Get = Ui.Button(I18n.T("svc.install"), (s, e) => OpenPackages(svc.PackageType), true, "update");
+            row.Get.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            row.Get.MinimumSize = new Size(0, Ui.S(30));
+
+            var cm = new ContextMenuStrip();
+            StyleMenu(cm);
+            cm.Opening += (s, e) => BuildCardMenu(cm, row);
+            card.ContextMenuStrip = cm;
+            row.Name.ContextMenuStrip = cm;
+
+            card.Controls.AddRange(new Control[] { row.Tile, row.Name, row.Detail, row.Error, row.Fix, row.Toggle, row.Status, row.Version, row.Get });
+            card.Resize += (s, e) => LayoutCard(row);
+            card.Width = Ui.S(700);
+            LayoutCard(row);
+            return row;
+        }
+
+        void LayoutCard(Row row)
+        {
+            int w = row.Card.Width, right = w - Ui.S(18), top = Ui.S(23);
+            row.Toggle.Location = new Point(right - row.Toggle.Width, top);
+            row.Get.Location = new Point(right - row.Get.Width, top - Ui.S(3));
+            // keep the status pills of all cards in one column (PHP has no switch)
+            int edge = (row.Get.Visible ? row.Get.Left : row.Toggle.Left) - Ui.S(14);
+            row.Status.Location = new Point(edge - row.Status.Width, top + 1);
+            row.Version.Location = new Point(row.Status.Left - Ui.S(12) - row.Version.Width, top - Ui.S(1));
+            row.Error.Width = Math.Max(Ui.S(100), w - Ui.S(73) - Ui.S(90));
+            row.Fix.Location = new Point(w - Ui.S(18) - row.Fix.Width, Ui.S(68));
+        }
+
+        void BuildCardMenu(ContextMenuStrip cm, Row row)
+        {
+            cm.Items.Clear();
+            var svc = row.Svc;
+            if (svc.Id != "php")
+            {
+                var auto = new ToolStripMenuItem(I18n.T("svc.includeInAll")) { Checked = Settings.Current.IsEnabled(svc.Id) };
+                auto.Click += (s, e) => { Settings.Current.SetEnabled(svc.Id, !auto.Checked); Settings.Current.Save(); UpdateRow(svc); };
+                cm.Items.Add(auto);
+            }
+            cm.Items.Add(I18n.T("svc.getVersions"), null, (s, e) => OpenPackages(svc.PackageType));
+            var log = svc.Id == "web" ? Settings.Current.WebServer + "-error.log" : svc.Id == "mysql" ? "mysql-error.log" : svc.Id == "redis" ? "redis.log" : svc.Id == "mailpit" ? "mailpit.log" : "php_errors.log";
+            cm.Items.Add(I18n.T("svc.openLog"), null, (s, e) => WinUtil.Edit(Path.Combine(Paths.Logs, log)));
         }
 
         void FillVersions(Row row)
@@ -282,7 +351,7 @@ namespace Portly.UI
             var installed = PackageTypes.Installed(type);
             var active = PackageTypes.ActiveFolder(type);
             foreach (var f in installed) row.Version.Items.Add(new Item(PackageTypes.Label(f), f));
-            if (installed.Count == 0) row.Version.Items.Add(new Item(I18n.T("svc.notInstalled"), ""));
+            if (installed.Count == 0) row.Version.Items.Add(new Item("—", ""));
             row.Version.Items.Add(new Item(I18n.T("svc.getVersions"), "__get"));
             int idx = installed.FindIndex(f => string.Equals(f, active, StringComparison.OrdinalIgnoreCase));
             row.Version.SelectedIndex = Math.Max(0, idx);
@@ -291,7 +360,7 @@ namespace Portly.UI
 
         void RefreshVersions()
         {
-            foreach (var r in _rows.Values) { FillVersions(r); UpdateRow(r.Svc); }
+            foreach (var r in _rows) { FillVersions(r); UpdateRow(r.Svc); }
         }
 
         async Task OnVersionChanged(Row row)
@@ -311,6 +380,7 @@ namespace Portly.UI
             Settings.Current.Save();
             Log.Info(I18n.T("log.switched", PackageTypes.Get(type).Name, PackageTypes.Label(item.Value)));
             Terminal.ApplyUserPath();
+            UpdateRow(row.Svc);
             await ApplyVersionChange(type);
         }
 
@@ -337,50 +407,69 @@ namespace Portly.UI
             }
         }
 
-        async Task OnRowAction(Row row)
+        async Task OnToggle(Row row)
         {
             var svc = row.Svc;
             if (!svc.IsInstalled) { OpenPackages(svc.PackageType); return; }
-            row.Action.Enabled = false;
+            if (svc.State == ServiceState.Starting || svc.State == ServiceState.Stopping) return;
+            row.Toggle.Enabled = false;
             try
             {
                 if (svc.IsActive) await ServiceManager.StopAsync(svc);
                 else
                 {
+                    if (!await ResolvePorts(new[] { svc.Id == "php" ? ServiceManager.Web : svc })) return;
                     CheckVcRuntime(false);
                     await ServiceManager.StartAsync(svc);
                     if (svc.Id == "web" && svc.State == ServiceState.Running) AskTrustCa();
                 }
             }
-            finally { row.Action.Enabled = true; UpdateRow(svc); }
+            finally { row.Toggle.Enabled = true; UpdateRow(svc); UpdateGlobal(); }
         }
 
         void UpdateRow(Service svc)
         {
-            Row row;
-            if (!_rows.TryGetValue(svc, out row))
-            {
-                // the web row may be Apache or Nginx
-                if (svc.Id != "web") return;
-                row = _rows.Values.FirstOrDefault(r => r.Svc.Id == "web");
-                if (row == null || row.Svc != svc) return;
-            }
-            Color c;
+            var row = _rows.FirstOrDefault(r => r.Svc == svc);
+            if (row == null) return;
+            var p = Theme.Current;
+            bool installed = svc.IsInstalled;
+            string statusText; Color statusColor;
             switch (svc.State)
             {
-                case ServiceState.Running: c = Ui.Green; break;
-                case ServiceState.Starting:
-                case ServiceState.Stopping: c = Ui.Orange; break;
-                case ServiceState.Error: c = Ui.Red; break;
-                default: c = Ui.Gray; break;
+                case ServiceState.Running: statusText = I18n.T("svc.running"); statusColor = p.Green; break;
+                case ServiceState.Starting: statusText = I18n.T("svc.starting"); statusColor = p.Orange; break;
+                case ServiceState.Stopping: statusText = I18n.T("svc.stopping"); statusColor = p.Orange; break;
+                case ServiceState.Error: statusText = I18n.T("svc.error"); statusColor = p.Red; break;
+                default: statusText = installed ? I18n.T("svc.stopped") : I18n.T("svc.notInstalled"); statusColor = p.Gray; break;
             }
-            row.Dot.DotColor = c;
-            if (!svc.IsInstalled) row.Action.Text = I18n.T("svc.install");
-            else if (svc.State == ServiceState.Starting) row.Action.Text = I18n.T("svc.starting");
-            else if (svc.State == ServiceState.Stopping) row.Action.Text = I18n.T("svc.stopping");
-            else row.Action.Text = svc.IsActive ? I18n.T("svc.stop") : I18n.T("svc.start");
-            row.Port.Text = svc.Id == "php" ? (svc.IsActive ? svc.PortText : "") : svc.PortText;
-            if (svc.Id == "php") row.Port.Text = svc.IsActive ? svc.PortText : I18n.T("svc.withWeb");
+            row.Status.Text = statusText;
+            row.Status.Color = statusColor;
+            row.Toggle.Checked = svc.State == ServiceState.Running || svc.State == ServiceState.Starting;
+            row.Toggle.Busy = svc.State == ServiceState.Starting || svc.State == ServiceState.Stopping;
+            row.Toggle.Visible = installed && svc.Id != "php";
+            row.Get.Visible = !installed;
+
+            var version = PackageTypes.Label(PackageTypes.ActiveFolder(svc.PackageType));
+            string ports = svc.Id == "php" ? (svc.IsActive ? "127.0.0.1:" + svc.PortText : I18n.T("svc.withWeb")) : (Settings.Current.AllowLan ? "0.0.0.0:" : "127.0.0.1:") + svc.PortText;
+            var detail = installed ? svc.Title + " " + version + "  ·  " + ports : I18n.T("svc.notInstalledHint");
+            if (svc.Id != "php" && installed && !Settings.Current.IsEnabled(svc.Id)) detail += "  ·  " + I18n.T("svc.notInAll");
+            row.Detail.Text = detail;
+
+            bool err = svc.State == ServiceState.Error && !string.IsNullOrEmpty(svc.LastError);
+            row.Error.Text = err ? svc.LastError.Replace("\n", "  ") : "";
+            row.Error.Visible = err;
+            row.Fix.Visible = err && svc.LastError.Contains(":") && IsPortError(svc.LastError);
+            row.Card.Height = err ? Ui.S(104) : Ui.S(72);
+            row.Card.BorderColor = err ? Color.FromArgb(120, p.Red) : p.Border;
+            LayoutCard(row);
+        }
+
+        static bool IsPortError(string text)
+        {
+            // the port message is built from err.portInUse; compare its stable start
+            var probe = I18n.T("err.portInUse", "\u0001", "\u0002");
+            var head = probe.Substring(0, Math.Max(0, probe.IndexOf('\u0001')));
+            return head.Length > 0 ? text.Contains(head) : false;
         }
 
         void UpdateGlobal()
@@ -388,18 +477,20 @@ namespace Portly.UI
             if (_startAll == null) return;
             bool any = ServiceManager.AnyActive;
             _startAll.Text = any ? I18n.T("main.stopAll") : I18n.T("main.startAll");
-            var errs = ServiceManager.Rows.Concat(new Service[] { ServiceManager.Apache, ServiceManager.Nginx }).Distinct()
-                .Where(s => s.State == ServiceState.Error && !string.IsNullOrEmpty(s.LastError))
-                .Select(s => s.Title + ": " + s.LastError).ToList();
-            _errors.Text = string.Join("\n", errs);
-            _errors.Visible = errs.Count > 0;
+            _startAll.Glyph = any ? "stop" : "play";
+            _startAll.Kind = any ? ButtonKind.Secondary : ButtonKind.Primary;
+            _startAll.Invalidate();
+            var rows = ServiceManager.Rows.Where(s => s.Id != "php" && s.IsInstalled).ToList();
+            int running = rows.Count(s => s.State == ServiceState.Running);
+            _servicesSub.Text = running == 0 ? I18n.T("main.allStopped") : I18n.T("main.statusRunning", running, rows.Count);
+
             var web = ServiceManager.Web;
-            Color? dot = web.State == ServiceState.Running ? Ui.Green : web.State == ServiceState.Error ? Ui.Red : (Color?)null;
+            Color? dot = web.State == ServiceState.Running ? Theme.Light.Green : web.State == ServiceState.Error ? Theme.Light.Red : (Color?)null;
             var old = _tray.Icon;
             _tray.Icon = Ui.TrayIcon(dot);
             if (old != null) old.Dispose();
-            var running = ServiceManager.Rows.Where(s => s.State == ServiceState.Running).Select(s => s.Title).ToList();
-            var tip = "Portly" + (running.Count > 0 ? " - " + string.Join(", ", running) : "");
+            var names = ServiceManager.Rows.Where(s => s.State == ServiceState.Running).Select(s => s.Title).ToList();
+            var tip = "Portly" + (names.Count > 0 ? " - " + string.Join(", ", names) : "");
             _tray.Text = tip.Length > 63 ? tip.Substring(0, 63) : tip;
         }
 
@@ -407,62 +498,100 @@ namespace Portly.UI
         Panel BuildSitesPage()
         {
             var page = new Panel { Dock = DockStyle.Fill, BackColor = Ui.Bg };
-            var bar = new FlowLayoutPanel { Dock = DockStyle.Top, AutoSize = true, Padding = Ui.P(0, 0, 0, 6) };
-            bar.Controls.Add(Ui.Button(I18n.T("main.newProject"), (s, e) => NewProject(), true));
-            bar.Controls.Add(Ui.Button(I18n.T("sites.open"), (s, e) => { var x = SelectedSite(); if (x != null) OpenSite(x, Settings.Current.Ssl); }));
-            bar.Controls.Add(Ui.Button(I18n.T("sites.folder"), (s, e) => { var x = SelectedSite(); WinUtil.OpenFolder(x != null ? x.Folder : Settings.Current.DocumentRoot); }));
-            bar.Controls.Add(Ui.Button(I18n.T("main.terminal"), (s, e) => { var x = SelectedSite(); Terminal.Open(x != null ? x.Folder : null); }));
-            bar.Controls.Add(Ui.Button(I18n.T("sites.refresh"), async (s, e) => await ServiceManager.ReloadWebAsync()));
-
-            _sitesInfo = new Label { Dock = DockStyle.Top, AutoSize = true, ForeColor = Ui.Muted, Font = Ui.Small, Padding = Ui.P(2, 0, 2, 6) };
-
-            _sites = new ListView { Dock = DockStyle.Fill, View = View.Details, FullRowSelect = true, HideSelection = false, MultiSelect = false, BorderStyle = BorderStyle.FixedSingle };
-            _sites.Columns.Add(I18n.T("col.name"), Ui.S(150));
-            _sites.Columns.Add(I18n.T("col.address"), Ui.S(230));
-            _sites.Columns.Add("PHP", Ui.S(70));
-            _sites.Columns.Add(I18n.T("col.folder"), Ui.S(260));
-            _sites.DoubleClick += (s, e) => { var x = SelectedSite(); if (x != null) OpenSite(x, Settings.Current.Ssl); };
-            var cm = new ContextMenuStrip { Font = Ui.Font };
-            cm.Opening += (s, e) => { BuildSiteMenu(cm.Items); e.Cancel = SelectedSite() == null; };
-            _sites.ContextMenuStrip = cm;
-
-            page.Controls.Add(_sites);
-            page.Controls.Add(_sitesInfo);
-            page.Controls.Add(bar);
-            _sites.BringToFront();
+            var header = PageHeader(I18n.T("nav.sites"), out _sitesSub,
+                Ui.Button(I18n.T("main.newProject"), (s, e) => NewProject(), true, "plus"),
+                Ui.Button(I18n.T("sites.refresh"), async (s, e) => await ServiceManager.ReloadWebAsync(), false, "refresh"),
+                Ui.Button(I18n.T("sites.folder"), (s, e) => WinUtil.OpenFolder(Settings.Current.DocumentRoot), false, "folder"));
+            _siteFlow = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoScroll = true, BackColor = Ui.Bg, Padding = Ui.P(0, 4, 0, 0) };
+            page.Controls.Add(_siteFlow);
+            page.Controls.Add(header);
+            _siteFlow.BringToFront();
             return page;
-        }
-
-        Site SelectedSite()
-        {
-            if (_sites == null || _sites.SelectedItems.Count == 0) return null;
-            return _sites.SelectedItems[0].Tag as Site;
         }
 
         void FillSites()
         {
-            if (_sites == null) return;
+            if (_siteFlow == null) return;
             var s = Settings.Current;
-            _sitesInfo.Text = I18n.T("sites.info", s.DocumentRoot, s.Tld);
-            _sites.BeginUpdate();
-            _sites.Items.Clear();
-            foreach (var site in ServiceManager.CurrentSites)
+            var sites = ServiceManager.CurrentSites;
+            _sitesSub.Text = I18n.T("sites.count", sites.Count(x => x.Valid), s.DocumentRoot, s.Tld);
+            _siteFlow.SuspendLayout();
+            foreach (Control c in _siteFlow.Controls.Cast<Control>().ToList()) c.Dispose();
+            _siteFlow.Controls.Clear();
+            if (sites.Count == 0)
             {
-                var it = new ListViewItem(site.Name) { Tag = site };
-                it.SubItems.Add(site.Valid ? site.PreferredUrl : site.Problem);
-                it.SubItems.Add(PackageTypes.Label(site.PhpFolder) + (site.PhpOverride != "" ? " *" : ""));
-                it.SubItems.Add(site.DocRoot);
-                if (!site.Valid) it.ForeColor = Ui.Red;
-                _sites.Items.Add(it);
+                var empty = new Card { Size = Ui.S(600, 130), Radius = 12 };
+                var t = Ui.Label(I18n.T("sites.emptyTitle"), Ui.Subtitle);
+                t.Location = new Point(Ui.S(20), Ui.S(18));
+                var d = Ui.Label(I18n.T("dash.empty", s.DocumentRoot), Ui.Font, Ui.Muted);
+                d.MaximumSize = new Size(Ui.S(560), 0);
+                d.Location = new Point(Ui.S(20), Ui.S(46));
+                var b = Ui.Button(I18n.T("main.newProject"), (o, e) => NewProject(), true, "plus");
+                b.Location = new Point(Ui.S(20), Ui.S(82));
+                empty.Controls.AddRange(new Control[] { t, d, b });
+                _siteFlow.Controls.Add(empty);
             }
-            _sites.EndUpdate();
+            foreach (var site in sites) _siteFlow.Controls.Add(SiteCard(site));
+            _siteFlow.ResumeLayout(true);
+            Ui.StyleTree(_siteFlow);
         }
 
-        void BuildSiteMenu(ToolStripItemCollection items)
+        Control SiteCard(Site site)
+        {
+            var p = Theme.Current;
+            var card = new Card { Size = Ui.S(300, 104), Radius = 12, Margin = Ui.P(0, 0, 12, 12), Cursor = site.Valid ? Cursors.Hand : Cursors.Default };
+            if (!site.Valid) card.BorderColor = Color.FromArgb(140, p.Red);
+            var avatar = BrandTile.Avatar(site.Name);
+            avatar.Location = new Point(Ui.S(16), Ui.S(16));
+            var name = Ui.Label(site.Name, Ui.Subtitle);
+            name.AutoSize = false;
+            name.AutoEllipsis = true;
+            name.Size = new Size(Ui.S(190), Ui.S(24));
+            name.Location = new Point(Ui.S(64), Ui.S(14));
+            Control address;
+            if (site.Valid)
+            {
+                var link = Ui.Link(site.PreferredUrl, () => OpenSite(site, Settings.Current.Ssl));
+                link.AutoSize = false;
+                link.AutoEllipsis = true;
+                link.Size = new Size(Ui.S(220), Ui.S(20));
+                address = link;
+            }
+            else
+            {
+                var bad = Ui.Label(site.Problem, Ui.Small, p.Red);
+                bad.AutoSize = false;
+                bad.AutoEllipsis = true;
+                bad.Size = new Size(Ui.S(220), Ui.S(36));
+                address = bad;
+            }
+            address.Location = new Point(Ui.S(64), Ui.S(40));
+            var php = new Pill { Text = "PHP " + PackageTypes.Label(site.PhpFolder) + (site.PhpOverride != "" ? " •" : ""), Color = ColorTranslator.FromHtml("#777BB4"), Dot = false };
+            php.Location = new Point(Ui.S(64), Ui.S(70));
+            php.Visible = site.Valid;
+            var moreBtn = new ModernButton { Glyph = "more", Kind = ButtonKind.Ghost, AutoSize = false, Size = Ui.S(32, 32), Location = new Point(Ui.S(256), Ui.S(10)), AccessibleName = I18n.T("sites.more") };
+            var cm = new ContextMenuStrip();
+            StyleMenu(cm);
+            cm.Opening += (s, e) => BuildSiteMenu(cm.Items, site);
+            moreBtn.Click += (s, e) => cm.Show(moreBtn, new Point(0, moreBtn.Height));
+            card.ContextMenuStrip = cm;
+            card.Controls.AddRange(new Control[] { avatar, name, address, php, moreBtn });
+            if (site.Valid)
+            {
+                EventHandler open = (s, e) => OpenSite(site, Settings.Current.Ssl);
+                card.Click += open;
+                avatar.Click += open;
+                name.Click += open;
+            }
+            var tip = new ToolTip();
+            tip.SetToolTip(card, site.DocRoot);
+            tip.SetToolTip(name, site.DocRoot);
+            return card;
+        }
+
+        void BuildSiteMenu(ToolStripItemCollection items, Site site)
         {
             items.Clear();
-            var site = SelectedSite();
-            if (site == null) return;
             if (site.Valid)
             {
                 items.Add(I18n.T("sites.openHttp"), null, (s, e) => OpenSite(site, false));
@@ -504,30 +633,103 @@ namespace Portly.UI
         Panel BuildLogPage()
         {
             var page = new Panel { Dock = DockStyle.Fill, BackColor = Ui.Bg };
-            var bar = new FlowLayoutPanel { Dock = DockStyle.Top, AutoSize = true, Padding = Ui.P(0, 0, 0, 6) };
-            bar.Controls.Add(Ui.Button(I18n.T("log.clear"), (s, e) => _log.Clear()));
-            bar.Controls.Add(Ui.Button(I18n.T("log.folder"), (s, e) => WinUtil.OpenFolder(Paths.Logs)));
-            var oldText = _log != null ? _log.Text : "";
-            _log = new TextBox { Dock = DockStyle.Fill, Multiline = true, ReadOnly = true, ScrollBars = ScrollBars.Vertical, Font = Ui.Mono, BackColor = Ui.Card, Text = oldText, BorderStyle = BorderStyle.FixedSingle };
-            page.Controls.Add(_log);
-            page.Controls.Add(bar);
-            _log.BringToFront();
+            Label sub;
+            var header = PageHeader(I18n.T("nav.log"), out sub,
+                Ui.Button(I18n.T("log.clear"), (s, e) => { _logLines.Clear(); _log.Clear(); }),
+                Ui.Button(I18n.T("log.folder"), (s, e) => WinUtil.OpenFolder(Paths.Logs), false, "folder"));
+            sub.Text = Paths.Logs;
+            var p = Theme.Current;
+            var frame = new Card { Dock = DockStyle.Fill, BackColor = p.ConsoleBg, BorderColor = p.ConsoleBg, Padding = Ui.P(14, 12, 6, 12), Radius = 12 };
+            _log = new RichTextBox { Dock = DockStyle.Fill, ReadOnly = true, BorderStyle = BorderStyle.None, BackColor = p.ConsoleBg, ForeColor = p.ConsoleText, Font = Ui.Mono, Tag = "console", DetectUrls = false, ScrollBars = RichTextBoxScrollBars.Vertical };
+            frame.Controls.Add(_log);
+            page.Controls.Add(frame);
+            page.Controls.Add(header);
+            frame.BringToFront();
+            foreach (var l in _logLines) WriteLogLine(l);
             return page;
         }
 
         void AppendLog(string line)
         {
-            if (_log == null) return;
-            if (_log.TextLength > 200000) _log.Text = _log.Text.Substring(100000);
-            _log.AppendText(line + Environment.NewLine);
+            _logLines.Add(line);
+            if (_logLines.Count > 2000) _logLines.RemoveRange(0, 500);
+            WriteLogLine(line);
             SetStatus(line.Length > 10 ? line.Substring(10) : line);
+        }
+
+        void WriteLogLine(string line)
+        {
+            if (_log == null || _log.IsDisposed) return;
+            var p = Theme.Current;
+            var time = line.Length > 10 ? line.Substring(0, 10) : "";
+            var text = line.Length > 10 ? line.Substring(10) : line;
+            Color c = text.StartsWith("ERROR") ? Color.FromArgb(248, 113, 113) : text.StartsWith("WARN") ? Color.FromArgb(251, 191, 36) : p.ConsoleText;
+            _log.SelectionStart = _log.TextLength;
+            _log.SelectionColor = p.ConsoleMuted;
+            _log.AppendText(time);
+            _log.SelectionColor = c;
+            _log.AppendText(text + "\n");
+            _log.ScrollToCaret();
         }
 
         void SetStatus(string text) { if (_status != null) _status.Text = text; }
 
         // =====================================================================
-        // Menu (header button + tray)
+        // Menus
         // =====================================================================
+        class MenuColors : ProfessionalColorTable
+        {
+            public override Color ToolStripDropDownBackground { get { return Theme.Current.Card; } }
+            public override Color ImageMarginGradientBegin { get { return Theme.Current.Card; } }
+            public override Color ImageMarginGradientMiddle { get { return Theme.Current.Card; } }
+            public override Color ImageMarginGradientEnd { get { return Theme.Current.Card; } }
+            public override Color MenuBorder { get { return Theme.Current.Border; } }
+            public override Color MenuItemBorder { get { return Theme.Current.Hover; } }
+            public override Color MenuItemSelected { get { return Theme.Current.Hover; } }
+            public override Color MenuItemSelectedGradientBegin { get { return Theme.Current.Hover; } }
+            public override Color MenuItemSelectedGradientEnd { get { return Theme.Current.Hover; } }
+            public override Color SeparatorDark { get { return Theme.Current.Border; } }
+            public override Color SeparatorLight { get { return Theme.Current.Card; } }
+            public override Color CheckBackground { get { return Theme.Current.SidebarActive; } }
+            public override Color CheckSelectedBackground { get { return Theme.Current.SidebarActive; } }
+            public override Color CheckPressedBackground { get { return Theme.Current.SidebarActive; } }
+        }
+
+        class MenuRenderer : ToolStripProfessionalRenderer
+        {
+            public MenuRenderer() : base(new MenuColors()) { RoundedEdges = false; }
+            protected override void OnRenderArrow(ToolStripArrowRenderEventArgs e) { e.ArrowColor = Theme.Current.Text; base.OnRenderArrow(e); }
+            protected override void OnRenderItemCheck(ToolStripItemImageRenderEventArgs e)
+            {
+                var r = new RectangleF(e.ImageRectangle.X + 2, e.ImageRectangle.Y + 2, e.ImageRectangle.Width - 4, e.ImageRectangle.Height - 4);
+                e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                using (var b = new SolidBrush(Theme.Current.Accent)) Glyphs.FillRound(e.Graphics, b, r, 3);
+                using (var pen = new Pen(Color.White, 1.6f))
+                    e.Graphics.DrawLines(pen, new[] { new PointF(r.X + r.Width * .25f, r.Y + r.Height * .52f), new PointF(r.X + r.Width * .43f, r.Y + r.Height * .7f), new PointF(r.X + r.Width * .76f, r.Y + r.Height * .32f) });
+            }
+        }
+
+        static void StyleMenu(ContextMenuStrip m)
+        {
+            m.Renderer = new MenuRenderer();
+            m.BackColor = Theme.Current.Card;
+            m.ForeColor = Theme.Current.Text;
+            m.Font = Ui.Font;
+            m.ItemAdded += (s, e) => StyleItem(e.Item);
+        }
+
+        static void StyleItem(ToolStripItem item)
+        {
+            item.ForeColor = Theme.Current.Text;
+            item.Padding = new Padding(0, 2, 0, 2);
+            var mi = item as ToolStripMenuItem;
+            if (mi == null) return;
+            mi.DropDown.BackColor = Theme.Current.Card;
+            mi.DropDown.Renderer = new MenuRenderer();
+            mi.DropDown.ItemAdded += (s, e) => StyleItem(e.Item);
+            foreach (ToolStripItem sub in mi.DropDownItems) StyleItem(sub);
+        }
+
         void BuildMenu(ToolStripItemCollection items)
         {
             items.Clear();
@@ -590,13 +792,15 @@ namespace Portly.UI
             items.Add(web);
 
             var ssl = new ToolStripMenuItem("SSL / HTTPS");
-            ssl.DropDownItems.Add(new ToolStripMenuItem(Certs.IsCaTrusted() ? I18n.T("ssl.trusted") : I18n.T("ssl.trust"), null, (s, e) => TrustCa()) { Enabled = !Certs.IsCaTrusted() });
+            bool trusted = Certs.IsCaTrusted();
+            ssl.DropDownItems.Add(new ToolStripMenuItem(trusted ? I18n.T("ssl.trusted") : I18n.T("ssl.trust"), null, (s, e) => TrustCa()) { Enabled = !trusted });
             ssl.DropDownItems.Add(I18n.T("ssl.regenerate"), null, async (s, e) => { Certs.RegenerateSiteCertificates(); await ServiceManager.ReloadWebAsync(); });
             ssl.DropDownItems.Add(I18n.T("ssl.folder"), null, (s, e) => WinUtil.OpenFolder(Paths.UserSsl));
             items.Add(ssl);
 
             var tools = new ToolStripMenuItem(I18n.T("menu.tools"));
             tools.DropDownItems.Add(I18n.T("main.terminal"), null, (s, e) => Terminal.Open());
+            tools.DropDownItems.Add(I18n.T("port.checkNow"), null, async (s, e) => await FixPorts(ServiceManager.Rows.Where(x => x.Id != "php")));
             tools.DropDownItems.Add(I18n.T("tools.hosts"), null, (s, e) => WinUtil.RunElevated("notepad.exe", "\"" + HostsFile.FilePath + "\"", false));
             tools.DropDownItems.Add(I18n.T("tools.root"), null, (s, e) => WinUtil.OpenFolder(Paths.Root));
             tools.DropDownItems.Add(I18n.T("tools.logs"), null, (s, e) => WinUtil.OpenFolder(Paths.Logs));
@@ -608,11 +812,60 @@ namespace Portly.UI
             if (AppInfo.UpdatesSupported)
                 items.Add(I18n.T("menu.checkUpdates"), null, async (s, e) => await BackgroundChecks(true, true));
             items.Add(I18n.T("menu.about"), null, (s, e) => { ShowFromTray(); using (var f = new AboutForm()) f.ShowDialog(this); });
-            var don = new ToolStripMenuItem("♥ " + I18n.T("main.donate")) { ForeColor = Ui.Heart };
+            var don = new ToolStripMenuItem("♥ " + I18n.T("main.donate"));
             don.Click += (s, e) => WinUtil.Open(AppInfo.DonateUrl);
             items.Add(don);
+            don.ForeColor = Ui.Heart;
             items.Add(new ToolStripSeparator());
             items.Add(I18n.T("menu.exit"), null, async (s, e) => await ExitAsync());
+        }
+
+        // =====================================================================
+        // Ports
+        // =====================================================================
+        /// <summary>Checks the ports of the services about to start. Returns false when the user cancelled.</summary>
+        async Task<bool> ResolvePorts(IEnumerable<Service> services)
+        {
+            var list = services.ToList();
+            SetStatus(I18n.T("port.checking"));
+            var conflicts = await Task.Run(() => PortGuard.Check(list));
+            if (conflicts.Count == 0) return true;
+            ShowFromTray();
+            PortChoice choice;
+            using (var f = new PortConflictForm(conflicts))
+            {
+                f.ShowDialog(this);
+                choice = f.Choice;
+            }
+            if (choice == PortChoice.UseFreePorts)
+            {
+                var summary = PortGuard.UseSuggestions(conflicts);
+                SetStatus(I18n.T("port.changed", summary));
+                foreach (var r in _rows) UpdateRow(r.Svc);
+                return true;
+            }
+            if (choice == PortChoice.CloseOwners)
+            {
+                var failed = await Task.Run(() => PortGuard.CloseOwners(conflicts));
+                if (failed.Count == 0) return true;
+                Ui.Error(this, I18n.T("port.stillUsed", string.Join("\n", failed)));
+            }
+            return false;
+        }
+
+        /// <summary>"Fix" link on a card, or Tools > Check ports: resolve and start what failed.</summary>
+        async Task FixPorts(IEnumerable<Service> services)
+        {
+            var list = services.Where(s => !s.IsActive).ToList();
+            if (list.Count == 0) return;
+            var conflicts = await Task.Run(() => PortGuard.Check(list));
+            if (conflicts.Count == 0)
+            {
+                Ui.Info(this, I18n.T("port.allFree"));
+                return;
+            }
+            if (!await ResolvePorts(list)) return;
+            foreach (var s in conflicts.Select(c => c.Service).Distinct()) await ServiceManager.StartAsync(s);
         }
 
         // =====================================================================
@@ -633,6 +886,9 @@ namespace Portly.UI
                         OpenPackages(null, true);
                         return;
                     }
+                    var s = Settings.Current;
+                    var toStart = ServiceManager.Rows.Where(x => x.Id != "php" && s.IsEnabled(x.Id)).ToList();
+                    if (!await ResolvePorts(toStart)) return;
                     CheckVcRuntime(false);
                     await ServiceManager.StartAllAsync();
                     if (ServiceManager.Web.State == ServiceState.Running) AskTrustCa();
@@ -653,6 +909,13 @@ namespace Portly.UI
             var port = https ? s.HttpsPort : s.HttpPort;
             var def = https ? 443 : 80;
             WinUtil.Open((https ? "https" : "http") + "://localhost" + (port == def ? "" : ":" + port) + "/");
+        }
+
+        void OpenMailpit()
+        {
+            if (PackageTypes.ActiveDir("mailpit") == null) { OpenPackages("mailpit"); return; }
+            if (!ServiceManager.Mailpit.IsActive) SetStatus(I18n.T("main.mailNotRunning"));
+            WinUtil.Open("http://127.0.0.1:" + Settings.Current.MailpitWebPort + "/");
         }
 
         void OpenDatabaseTool()
@@ -746,7 +1009,7 @@ namespace Portly.UI
                 if (f.ShowDialog(this) != DialogResult.OK) return;
             }
             if (docRoot != Settings.Current.DocumentRoot) WatchDocRoot();
-            BuildUi();
+            RebuildTheme();
         }
 
         void OpenPackages(string type, bool firstRun = false)
@@ -796,16 +1059,18 @@ namespace Portly.UI
         // ---------------- updates ----------------
         void UpdateBanner()
         {
-            if (_banner == null) return;
+            if (_updateBtn == null) return;
             if (Updater.Available != null)
             {
-                _banner.Text = I18n.T("update.banner", Updater.Available.Version);
-                _banner.Visible = true;
+                _updateBtn.Text = I18n.T("update.short", Updater.Available.Version);
+                _updateBtn.Kind = ButtonKind.Primary;
+                _updateBtn.Visible = true;
                 return;
             }
             var pending = AppInfo.UpdatesSupported ? Catalog.PendingUpdates().Count : 0;
-            _banner.Text = I18n.T("update.packages", pending);
-            _banner.Visible = pending > 0;
+            _updateBtn.Text = I18n.T("update.packages", pending);
+            _updateBtn.Kind = ButtonKind.Secondary;
+            _updateBtn.Visible = pending > 0;
         }
 
         async void OnBannerClick()
@@ -814,7 +1079,7 @@ namespace Portly.UI
             if (u == null) { OpenPackages(null); return; }
             var msg = I18n.T("update.confirm", u.Version, AppInfo.VersionText) + (string.IsNullOrEmpty(u.Notes) ? "" : "\n\n" + u.Notes);
             if (!Ui.Confirm(this, msg)) return;
-            _banner.Enabled = false;
+            _updateBtn.Enabled = false;
             try
             {
                 await Updater.ApplyAsync(u, p => SafeInvoke(() => SetStatus(I18n.T("update.downloading", p.Percent < 0 ? Ui.FormatBytes(p.Bytes) : p.Percent + "%"))), CancellationToken.None);
@@ -827,7 +1092,7 @@ namespace Portly.UI
             }
             catch (Exception ex)
             {
-                _banner.Enabled = true;
+                _updateBtn.Enabled = true;
                 Ui.Error(this, I18n.T("update.failed", ex.Message));
             }
         }
@@ -963,6 +1228,7 @@ namespace Portly.UI
         {
             if (_exiting) return;
             _exiting = true;
+            SystemEvents.UserPreferenceChanged -= OnSystemThemeChanged;
             SetStatus(I18n.T("main.stopping"));
             Enabled = false;
             await Task.WhenAny(ServiceManager.StopAllAsync(), Task.Delay(30000));
