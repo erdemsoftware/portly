@@ -401,5 +401,15 @@
   "health.defenderDone": "সম্পন্ন। Windows Defender আর Portly ফোল্ডারগুলো রিয়েল-টাইমে স্ক্যান করে না।",
   "settings.legacySql": "পুরোনো অ্যাপ্লিকেশনের জন্য শিথিল SQL মোড (strict মোড নেই, ONLY_FULL_GROUP_BY নেই)",
   "settings.firewallAdd": "অন্য ডিভাইসগুলো তখনই সংযোগ করতে পারবে যখন Windows Firewall অনুমতি দেয়। এখন ওয়েব পোর্টের জন্য একটি ইনবাউন্ড নিয়ম যোগ করবেন? (অ্যাডমিনিস্ট্রেটর)",
-  "settings.firewallRemove": "ওয়েব পোর্টের জন্য Portly ফায়ারওয়াল নিয়মটি সরাবেন? (অ্যাডমিনিস্ট্রেটর)"
+  "settings.firewallRemove": "ওয়েব পোর্টের জন্য Portly ফায়ারওয়াল নিয়মটি সরাবেন? (অ্যাডমিনিস্ট্রেটর)",
+  "pkgcat.web": "ওয়েব সার্ভার",
+  "pkgcat.php": "PHP ও টুল",
+  "pkgcat.db": "ডেটাবেস",
+  "pkgcat.dbtool": "ডেটাবেস টুল",
+  "pkgcat.cache": "ক্যাশ",
+  "pkgcat.mail": "মেইল ক্যাচার",
+  "pkgcat.runtime": "রানটাইম",
+  "pkgcat.dev": "ডেভেলপার টুল",
+  "pkgcat.share": "শেয়ারিং",
+  "main.chooseServices": "সার্ভিস বাছাই করুন"
 }

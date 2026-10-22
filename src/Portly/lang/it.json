@@ -401,5 +401,15 @@
   "health.defenderDone": "Fatto. Windows Defender non analizza più in tempo reale le cartelle di Portly.",
   "settings.legacySql": "Modalità SQL permissiva per vecchie applicazioni (niente modalità strict, niente ONLY_FULL_GROUP_BY)",
   "settings.firewallAdd": "Gli altri dispositivi possono connettersi solo se Windows Firewall lo consente. Aggiungere ora una regola in entrata per le porte web? (amministratore)",
-  "settings.firewallRemove": "Rimuovere la regola firewall di Portly per le porte web? (amministratore)"
+  "settings.firewallRemove": "Rimuovere la regola firewall di Portly per le porte web? (amministratore)",
+  "pkgcat.web": "Server web",
+  "pkgcat.php": "PHP e strumenti",
+  "pkgcat.db": "Database",
+  "pkgcat.dbtool": "Strumenti per database",
+  "pkgcat.cache": "Cache",
+  "pkgcat.mail": "Cattura e-mail",
+  "pkgcat.runtime": "Runtime",
+  "pkgcat.dev": "Strumenti per sviluppatori",
+  "pkgcat.share": "Condivisione",
+  "main.chooseServices": "Scegli i servizi"
 }

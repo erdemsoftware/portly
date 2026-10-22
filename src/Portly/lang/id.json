@@ -401,5 +401,15 @@
   "health.defenderDone": "Selesai. Windows Defender tidak lagi memindai folder Portly secara real-time.",
   "settings.legacySql": "Mode SQL longgar untuk aplikasi lama (tanpa mode strict, tanpa ONLY_FULL_GROUP_BY)",
   "settings.firewallAdd": "Perangkat lain hanya bisa terhubung jika Windows Firewall mengizinkannya. Tambahkan aturan masuk untuk port web sekarang? (administrator)",
-  "settings.firewallRemove": "Hapus aturan firewall Portly untuk port web? (administrator)"
+  "settings.firewallRemove": "Hapus aturan firewall Portly untuk port web? (administrator)",
+  "pkgcat.web": "Server web",
+  "pkgcat.php": "PHP dan alat",
+  "pkgcat.db": "Basis data",
+  "pkgcat.dbtool": "Alat basis data",
+  "pkgcat.cache": "Cache",
+  "pkgcat.mail": "Penangkap email",
+  "pkgcat.runtime": "Runtime",
+  "pkgcat.dev": "Alat pengembang",
+  "pkgcat.share": "Berbagi",
+  "main.chooseServices": "Pilih layanan"
 }

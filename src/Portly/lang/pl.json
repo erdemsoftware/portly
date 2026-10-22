@@ -401,5 +401,15 @@
   "health.defenderDone": "Gotowe. Windows Defender nie skanuje już folderów Portly w czasie rzeczywistym.",
   "settings.legacySql": "Łagodny tryb SQL dla starych aplikacji (bez trybu ścisłego, bez ONLY_FULL_GROUP_BY)",
   "settings.firewallAdd": "Inne urządzenia mogą się połączyć tylko wtedy, gdy Zapora systemu Windows na to pozwala. Dodać teraz regułę przychodzącą dla portów WWW? (administrator)",
-  "settings.firewallRemove": "Usunąć regułę zapory Portly dla portów WWW? (administrator)"
+  "settings.firewallRemove": "Usunąć regułę zapory Portly dla portów WWW? (administrator)",
+  "pkgcat.web": "Serwery WWW",
+  "pkgcat.php": "PHP i narzędzia",
+  "pkgcat.db": "Bazy danych",
+  "pkgcat.dbtool": "Narzędzia baz danych",
+  "pkgcat.cache": "Pamięć podręczna",
+  "pkgcat.mail": "Przechwytywanie poczty",
+  "pkgcat.runtime": "Środowiska uruchomieniowe",
+  "pkgcat.dev": "Narzędzia programisty",
+  "pkgcat.share": "Udostępnianie",
+  "main.chooseServices": "Wybierz usługi"
 }

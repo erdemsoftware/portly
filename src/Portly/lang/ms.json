@@ -401,5 +401,15 @@
   "health.defenderDone": "Selesai. Windows Defender tidak lagi mengimbas folder Portly dalam masa nyata.",
   "settings.legacySql": "Mod SQL longgar untuk aplikasi lama (tanpa mod ketat, tanpa ONLY_FULL_GROUP_BY)",
   "settings.firewallAdd": "Peranti lain hanya boleh bersambung jika Windows Firewall membenarkannya. Tambah peraturan masuk untuk port web sekarang? (pentadbir)",
-  "settings.firewallRemove": "Buang peraturan firewall Portly untuk port web? (pentadbir)"
+  "settings.firewallRemove": "Buang peraturan firewall Portly untuk port web? (pentadbir)",
+  "pkgcat.web": "Pelayan web",
+  "pkgcat.php": "PHP dan alatan",
+  "pkgcat.db": "Pangkalan data",
+  "pkgcat.dbtool": "Alatan pangkalan data",
+  "pkgcat.cache": "Cache",
+  "pkgcat.mail": "Penangkap e-mel",
+  "pkgcat.runtime": "Masa jalan",
+  "pkgcat.dev": "Alatan pembangun",
+  "pkgcat.share": "Perkongsian",
+  "main.chooseServices": "Pilih perkhidmatan"
 }

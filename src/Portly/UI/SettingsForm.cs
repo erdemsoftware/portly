@@ -241,6 +241,7 @@ namespace Portly.UI
             s.Language = lang;
             s.Theme = theme;
             s.DocumentRoot = root;
+            if (tld != s.Tld) s.Raw.Set("general", "TldChosen", "1");
             s.Tld = tld;
             s.Terminal = ((Item)_terminal.SelectedItem).Value;
             s.AutoVhosts = _autoVhosts.Checked;

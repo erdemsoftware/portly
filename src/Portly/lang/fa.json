@@ -402,5 +402,15 @@
   "health.defenderDone": "انجام شد. Windows Defender دیگر پوشه‌های Portly را به‌صورت بلادرنگ اسکن نمی‌کند.",
   "settings.legacySql": "حالت SQL آسان‌گیر برای برنامه‌های قدیمی (بدون حالت strict، بدون ONLY_FULL_GROUP_BY)",
   "settings.firewallAdd": "دستگاه‌های دیگر فقط در صورتی می‌توانند وصل شوند که فایروال Windows اجازه دهد. اکنون یک قانون ورودی برای پورت‌های وب اضافه شود؟ (مدیر سیستم)",
-  "settings.firewallRemove": "قانون فایروال Portly برای پورت‌های وب حذف شود؟ (مدیر سیستم)"
+  "settings.firewallRemove": "قانون فایروال Portly برای پورت‌های وب حذف شود؟ (مدیر سیستم)",
+  "pkgcat.web": "وب‌سرورها",
+  "pkgcat.php": "PHP و ابزارها",
+  "pkgcat.db": "پایگاه‌های داده",
+  "pkgcat.dbtool": "ابزارهای پایگاه داده",
+  "pkgcat.cache": "حافظه نهان",
+  "pkgcat.mail": "گیرنده‌های ایمیل",
+  "pkgcat.runtime": "محیط‌های اجرا",
+  "pkgcat.dev": "ابزارهای توسعه‌دهنده",
+  "pkgcat.share": "اشتراک‌گذاری",
+  "main.chooseServices": "انتخاب سرویس‌ها"
 }

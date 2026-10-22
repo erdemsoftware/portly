@@ -401,5 +401,15 @@
   "health.defenderDone": "Terminé. Windows Defender n'analyse plus les dossiers Portly en temps réel.",
   "settings.legacySql": "Mode SQL souple pour les anciennes applications (sans mode strict, sans ONLY_FULL_GROUP_BY)",
   "settings.firewallAdd": "Les autres appareils ne peuvent se connecter que si le pare-feu Windows l'autorise. Ajouter maintenant une règle entrante pour les ports web ? (administrateur)",
-  "settings.firewallRemove": "Supprimer la règle de pare-feu Portly pour les ports web ? (administrateur)"
+  "settings.firewallRemove": "Supprimer la règle de pare-feu Portly pour les ports web ? (administrateur)",
+  "pkgcat.web": "Serveurs web",
+  "pkgcat.php": "PHP et outils",
+  "pkgcat.db": "Bases de données",
+  "pkgcat.dbtool": "Outils de base de données",
+  "pkgcat.cache": "Cache",
+  "pkgcat.mail": "Capture d'e-mails",
+  "pkgcat.runtime": "Environnements d'exécution",
+  "pkgcat.dev": "Outils de développement",
+  "pkgcat.share": "Partage",
+  "main.chooseServices": "Choisir les services"
 }

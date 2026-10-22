@@ -56,6 +56,7 @@ namespace Portly.Services
             if (_p != null && !_p.HasExited) { SetState(ServiceState.Running); return; }
             StopRequested = false;
             SetState(ServiceState.Starting);
+            if (_extraArgs == null) { try { File.Delete(ResetFile); } catch { } } // left by a root password reset
             var dir = Path.Combine(Paths.BinOf(engine), folder);
             var data = DataDirFor(folder);
             var mysqld = Path.Combine(dir, "bin", "mysqld.exe");
@@ -113,16 +114,31 @@ namespace Portly.Services
             finally { _extraArgs = null; }
         }
 
+        static string ResetFile { get { return Path.Combine(Paths.Tmp, "reset-root.sql"); } }
+
         /// <summary>Forgotten root password: restart once with --init-file that clears it.</summary>
         public async Task<string> ResetRootPasswordAsync()
         {
             await StopAsync();
-            var f = Path.Combine(Paths.Tmp, "reset-root.sql");
+            var f = ResetFile;
             File.WriteAllText(f, "ALTER USER 'root'@'localhost' IDENTIFIED BY '';\nFLUSH PRIVILEGES;\n");
-            try { await StartWithArgsAsync("--init-file=\"" + Paths.Fwd(f) + "\""); }
-            finally { try { File.Delete(f); } catch { } }
-            if (State != ServiceState.Running) return LastError ?? I18n.T("err.timeout");
+            var old = Settings.Current.MysqlRootPassword;
+            // mysqld reads the init file some time after it opens the port, so the file is not deleted here
+            // (the next normal start removes it); success = the empty password works and the server stays up
+            await StartWithArgsAsync("--init-file=\"" + Paths.Fwd(f) + "\"");
             Settings.Current.MysqlRootPassword = "";
+            bool ok = false;
+            for (int i = 0; i < 40 && State == ServiceState.Running && !ok; i++)
+            {
+                await Task.Delay(500);
+                ok = await Task.Run(() => Tools.Database.Sql("SELECT 1;", 5000).Ok);
+            }
+            if (ok) { await Task.Delay(1500); ok = State == ServiceState.Running; }
+            if (!ok)
+            {
+                Settings.Current.MysqlRootPassword = old;
+                return (State != ServiceState.Running ? LastError : null) ?? I18n.T("err.timeout");
+            }
             Settings.Current.Save();
             Log.Info(I18n.T("log.rootPassword"));
             return null;

@@ -53,9 +53,14 @@ namespace Portly.UI
                 Text = firstRun ? I18n.T("pkg.firstRunIntro") : (AppInfo.IsLegacy ? I18n.T("pkg.legacyNote") : I18n.T("pkg.intro", Catalog.Updated)),
             };
             var bar = new FlowLayoutPanel { Dock = DockStyle.Top, AutoSize = true, WrapContents = false };
-            _filter = new ThemedCombo { DropDownStyle = ComboBoxStyle.DropDownList, Width = Ui.S(180), Margin = Ui.P(0, 3, 8, 0) };
+            _filter = new ThemedCombo { DropDownStyle = ComboBoxStyle.DropDownList, Width = Ui.S(220), Margin = Ui.P(0, 3, 8, 0), MaxDropDownItems = 20 };
             _filter.Items.Add(new Item(I18n.T("pkg.all"), ""));
-            foreach (var t in PackageTypes.All) _filter.Items.Add(new Item(t.Name, t.Id));
+            // a category ("cat:db") and, indented below it, its package types
+            foreach (var c in PackageTypes.Categories)
+            {
+                _filter.Items.Add(new Item(I18n.T("pkgcat." + c), "cat:" + c));
+                foreach (var t in PackageTypes.Ordered.Where(x => x.Category == c)) _filter.Items.Add(new Item("      " + t.Name, t.Id));
+            }
             _filter.SelectedItem = _filter.Items.Cast<Item>().FirstOrDefault(i => i.Value == (type ?? "")) ?? _filter.Items[0];
             _filter.SelectedIndexChanged += (s, e) => Fill();
             bar.Controls.Add(Ui.Label(I18n.T("pkg.show")));
@@ -122,12 +127,12 @@ namespace Portly.UI
             _list.BeginUpdate();
             _list.Items.Clear();
             _list.Groups.Clear();
-            // one titled group per package type: Apache / Nginx / PHP / MySQL ...
-            foreach (var t in PackageTypes.All) _list.Groups.Add(new ListViewGroup(t.Id, t.Name));
+            // one titled group per category: Web server / PHP / Databases / Database tools / Mail ...
+            foreach (var c in PackageTypes.Categories) _list.Groups.Add(new ListViewGroup(c, I18n.T("pkgcat." + c)));
             var rows = new List<PkgRow>();
-            foreach (var t in PackageTypes.All)
+            foreach (var t in PackageTypes.Ordered)
             {
-                if (filter != "" && t.Id != filter) continue;
+                if (filter.StartsWith("cat:") ? t.Category != filter.Substring(4) : filter != "" && t.Id != filter) continue;
                 var installed = PackageTypes.Installed(t.Id);
                 foreach (var e in Catalog.ForType(t.Id))
                     rows.Add(new PkgRow { Type = t.Id, Folder = e.Folder, Entry = e, Installed = e.IsInstalled });
@@ -148,7 +153,7 @@ namespace Portly.UI
                     if (r.Update != null) status += " - " + I18n.T("pkg.updateTo", r.Update.Version);
                 }
                 else status = "";
-                var it = new ListViewItem(new[] { name, version, note, status }) { Tag = r, Name = r.Type + "/" + r.Folder, Group = _list.Groups[r.Type] };
+                var it = new ListViewItem(new[] { name, version, note, status }) { Tag = r, Name = r.Type + "/" + r.Folder, Group = _list.Groups[PackageTypes.Get(r.Type).Category] };
                 if (r.Installed) it.ForeColor = r.Update != null ? Color.FromArgb(180, 83, 9) : Ui.Green;
                 if (checkedKeys.Contains(it.Name)) it.Checked = true;
                 _list.Items.Add(it);
@@ -308,7 +313,7 @@ namespace Portly.UI
         {
             if (_busy) return;
             var type = ((Item)_filter.SelectedItem).Value;
-            if (type == "")
+            if (type == "" || type.StartsWith("cat:"))
             {
                 using (var pick = new ManualPackageForm()) { if (pick.ShowDialog(this) != DialogResult.OK) return; type = pick.Type; }
             }
@@ -371,7 +376,7 @@ namespace Portly.UI
             help.MaximumSize = new Size(Ui.S(420), 0);
             t.Controls.Add(help);
             _type = new ThemedCombo { Width = Ui.S(220), Margin = Ui.P(0, 10, 0, 0) };
-            foreach (var pt in PackageTypes.All) _type.Items.Add(new Item(pt.Name, pt.Id));
+            foreach (var pt in PackageTypes.Ordered) _type.Items.Add(new Item(pt.Name + "  (" + I18n.T("pkgcat." + pt.Category) + ")", pt.Id));
             _type.SelectedIndex = 0;
             t.Controls.Add(_type);
             var buttons = new FlowLayoutPanel { AutoSize = true, FlowDirection = FlowDirection.RightToLeft, Dock = DockStyle.Fill, Margin = Ui.P(0, 14, 0, 0) };

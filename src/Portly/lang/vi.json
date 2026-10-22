@@ -401,5 +401,15 @@
   "health.defenderDone": "Xong. Windows Defender không còn quét các thư mục Portly theo thời gian thực.",
   "settings.legacySql": "Chế độ SQL nới lỏng cho ứng dụng cũ (không strict mode, không ONLY_FULL_GROUP_BY)",
   "settings.firewallAdd": "Thiết bị khác chỉ có thể kết nối nếu Tường lửa Windows cho phép. Thêm quy tắc vào cho các cổng web ngay bây giờ? (quản trị viên)",
-  "settings.firewallRemove": "Xóa quy tắc tường lửa Portly cho các cổng web? (quản trị viên)"
+  "settings.firewallRemove": "Xóa quy tắc tường lửa Portly cho các cổng web? (quản trị viên)",
+  "pkgcat.web": "Máy chủ web",
+  "pkgcat.php": "PHP và công cụ",
+  "pkgcat.db": "Cơ sở dữ liệu",
+  "pkgcat.dbtool": "Công cụ cơ sở dữ liệu",
+  "pkgcat.cache": "Bộ nhớ đệm",
+  "pkgcat.mail": "Bắt thư",
+  "pkgcat.runtime": "Môi trường chạy",
+  "pkgcat.dev": "Công cụ lập trình",
+  "pkgcat.share": "Chia sẻ",
+  "main.chooseServices": "Chọn dịch vụ"
 }

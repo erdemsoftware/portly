@@ -41,7 +41,7 @@ namespace Portly.Config
 
         static bool HasCaKey { get { return File.Exists(CaKey) || File.Exists(CaKeyPlain); } }
         public static string SitesDir { get { return Path.Combine(Paths.Ssl, "sites"); } }
-        /// <summary>CA bundle for PHP curl/openssl: Mozilla roots + Portly CA (so PHP can call https://*.test too).</summary>
+        /// <summary>CA bundle for PHP curl/openssl: Mozilla roots + Portly CA (so PHP can call the local https:// sites too).</summary>
         public static string BundleFile { get { return Path.Combine(Paths.Ssl, "cacert.pem"); } }
         static string MozillaFile { get { return Path.Combine(Paths.Cache, "cacert-mozilla.pem"); } }
         static readonly object Sync = new object();

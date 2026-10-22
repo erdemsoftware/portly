@@ -401,5 +401,15 @@
   "health.defenderDone": "Klaar. Windows Defender scant de Portly-mappen niet meer realtime.",
   "settings.legacySql": "Soepele SQL-modus voor oude applicaties (geen strict mode, geen ONLY_FULL_GROUP_BY)",
   "settings.firewallAdd": "Andere apparaten kunnen alleen verbinden als Windows Firewall dat toestaat. Nu een inkomende regel voor de webpoorten toevoegen? (beheerder)",
-  "settings.firewallRemove": "De Portly-firewallregel voor de webpoorten verwijderen? (beheerder)"
+  "settings.firewallRemove": "De Portly-firewallregel voor de webpoorten verwijderen? (beheerder)",
+  "pkgcat.web": "Webservers",
+  "pkgcat.php": "PHP en hulpmiddelen",
+  "pkgcat.db": "Databases",
+  "pkgcat.dbtool": "Databasetools",
+  "pkgcat.cache": "Cache",
+  "pkgcat.mail": "Mailvangers",
+  "pkgcat.runtime": "Runtimes",
+  "pkgcat.dev": "Ontwikkeltools",
+  "pkgcat.share": "Delen",
+  "main.chooseServices": "Services kiezen"
 }

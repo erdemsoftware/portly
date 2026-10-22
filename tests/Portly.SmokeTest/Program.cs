@@ -250,7 +250,8 @@ namespace Portly.SmokeTest
             // ---------- forgotten root password ----------
             try
             {
-                Database.Sql("ALTER USER 'root'@'localhost' IDENTIFIED BY 'Gizli-123';");
+                var alter = Database.Sql("ALTER USER 'root'@'localhost' IDENTIFIED BY 'Gizli-123';");
+                if (!alter.Ok) Console.WriteLine("    ALTER USER failed: " + alter.Output.Trim());
                 s.MysqlRootPassword = "wrong"; s.Save();
                 var before = Database.Sql("SELECT 1;");
                 var err = await ServiceManager.MySql.ResetRootPasswordAsync();

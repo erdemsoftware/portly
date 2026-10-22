@@ -401,5 +401,15 @@
   "health.defenderDone": "เรียบร้อย Windows Defender ไม่สแกนโฟลเดอร์ Portly แบบเรียลไทม์อีกต่อไป",
   "settings.legacySql": "โหมด SQL แบบผ่อนปรนสำหรับแอปพลิเคชันเก่า (ไม่มี strict mode, ไม่มี ONLY_FULL_GROUP_BY)",
   "settings.firewallAdd": "อุปกรณ์อื่นจะเชื่อมต่อได้ก็ต่อเมื่อ Windows Firewall อนุญาต เพิ่มกฎขาเข้าสำหรับพอร์ตเว็บตอนนี้หรือไม่? (ผู้ดูแลระบบ)",
-  "settings.firewallRemove": "ลบกฎไฟร์วอลล์ของ Portly สำหรับพอร์ตเว็บหรือไม่? (ผู้ดูแลระบบ)"
+  "settings.firewallRemove": "ลบกฎไฟร์วอลล์ของ Portly สำหรับพอร์ตเว็บหรือไม่? (ผู้ดูแลระบบ)",
+  "pkgcat.web": "เว็บเซิร์ฟเวอร์",
+  "pkgcat.php": "PHP และเครื่องมือ",
+  "pkgcat.db": "ฐานข้อมูล",
+  "pkgcat.dbtool": "เครื่องมือฐานข้อมูล",
+  "pkgcat.cache": "แคช",
+  "pkgcat.mail": "ตัวดักจับอีเมล",
+  "pkgcat.runtime": "รันไทม์",
+  "pkgcat.dev": "เครื่องมือนักพัฒนา",
+  "pkgcat.share": "การแชร์",
+  "main.chooseServices": "เลือกบริการ"
 }

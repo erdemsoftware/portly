@@ -401,5 +401,15 @@
   "health.defenderDone": "Hotovo. Windows Defender už nekontroluje složky Portly v reálném čase.",
   "settings.legacySql": "Volnější režim SQL pro staré aplikace (bez striktního režimu, bez ONLY_FULL_GROUP_BY)",
   "settings.firewallAdd": "Ostatní zařízení se mohou připojit jen tehdy, když to brána firewall systému Windows povolí. Přidat nyní příchozí pravidlo pro webové porty? (správce)",
-  "settings.firewallRemove": "Odebrat pravidlo brány firewall Portly pro webové porty? (správce)"
+  "settings.firewallRemove": "Odebrat pravidlo brány firewall Portly pro webové porty? (správce)",
+  "pkgcat.web": "Webové servery",
+  "pkgcat.php": "PHP a nástroje",
+  "pkgcat.db": "Databáze",
+  "pkgcat.dbtool": "Databázové nástroje",
+  "pkgcat.cache": "Mezipaměť",
+  "pkgcat.mail": "Zachytávání pošty",
+  "pkgcat.runtime": "Běhová prostředí",
+  "pkgcat.dev": "Vývojářské nástroje",
+  "pkgcat.share": "Sdílení",
+  "main.chooseServices": "Vybrat služby"
 }

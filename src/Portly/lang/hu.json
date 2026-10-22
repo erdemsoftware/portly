@@ -401,5 +401,15 @@
   "health.defenderDone": "Kész. A Windows Defender már nem vizsgálja valós időben a Portly mappáit.",
   "settings.legacySql": "Laza SQL mód régi alkalmazásokhoz (strict mód nélkül, ONLY_FULL_GROUP_BY nélkül)",
   "settings.firewallAdd": "Más eszközök csak akkor csatlakozhatnak, ha a Windows tűzfal engedi. Hozzáadsz most egy bejövő szabályt a webportokhoz? (rendszergazda)",
-  "settings.firewallRemove": "Eltávolítod a Portly tűzfalszabályát a webportokhoz? (rendszergazda)"
+  "settings.firewallRemove": "Eltávolítod a Portly tűzfalszabályát a webportokhoz? (rendszergazda)",
+  "pkgcat.web": "Webszerverek",
+  "pkgcat.php": "PHP és eszközök",
+  "pkgcat.db": "Adatbázisok",
+  "pkgcat.dbtool": "Adatbázis-eszközök",
+  "pkgcat.cache": "Gyorsítótár",
+  "pkgcat.mail": "Levélelfogók",
+  "pkgcat.runtime": "Futtatókörnyezetek",
+  "pkgcat.dev": "Fejlesztői eszközök",
+  "pkgcat.share": "Megosztás",
+  "main.chooseServices": "Szolgáltatások kiválasztása"
 }

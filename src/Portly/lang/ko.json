@@ -401,5 +401,15 @@
   "health.defenderDone": "완료되었습니다. Windows Defender가 더 이상 Portly 폴더를 실시간으로 검사하지 않습니다.",
   "settings.legacySql": "오래된 애플리케이션용 완화된 SQL 모드 (strict 모드 없음, ONLY_FULL_GROUP_BY 없음)",
   "settings.firewallAdd": "다른 기기는 Windows 방화벽이 허용해야만 연결할 수 있습니다. 지금 웹 포트에 대한 인바운드 규칙을 추가하시겠습니까? (관리자)",
-  "settings.firewallRemove": "웹 포트에 대한 Portly 방화벽 규칙을 제거하시겠습니까? (관리자)"
+  "settings.firewallRemove": "웹 포트에 대한 Portly 방화벽 규칙을 제거하시겠습니까? (관리자)",
+  "pkgcat.web": "웹 서버",
+  "pkgcat.php": "PHP 및 도구",
+  "pkgcat.db": "데이터베이스",
+  "pkgcat.dbtool": "데이터베이스 도구",
+  "pkgcat.cache": "캐시",
+  "pkgcat.mail": "메일 캐처",
+  "pkgcat.runtime": "런타임",
+  "pkgcat.dev": "개발 도구",
+  "pkgcat.share": "공유",
+  "main.chooseServices": "서비스 선택"
 }

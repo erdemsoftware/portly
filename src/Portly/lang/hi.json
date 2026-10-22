@@ -401,5 +401,15 @@
   "health.defenderDone": "हो गया। Windows Defender अब Portly फ़ोल्डरों को रीयल-टाइम में स्कैन नहीं करता।",
   "settings.legacySql": "पुराने एप्लिकेशन के लिए लचीला SQL मोड (कोई strict मोड नहीं, कोई ONLY_FULL_GROUP_BY नहीं)",
   "settings.firewallAdd": "दूसरे डिवाइस तभी कनेक्ट हो सकते हैं जब Windows Firewall अनुमति दे। वेब पोर्ट के लिए अभी इनबाउंड नियम जोड़ें? (एडमिनिस्ट्रेटर)",
-  "settings.firewallRemove": "वेब पोर्ट के लिए Portly फ़ायरवॉल नियम हटाएँ? (एडमिनिस्ट्रेटर)"
+  "settings.firewallRemove": "वेब पोर्ट के लिए Portly फ़ायरवॉल नियम हटाएँ? (एडमिनिस्ट्रेटर)",
+  "pkgcat.web": "वेब सर्वर",
+  "pkgcat.php": "PHP और टूल",
+  "pkgcat.db": "डेटाबेस",
+  "pkgcat.dbtool": "डेटाबेस टूल",
+  "pkgcat.cache": "कैश",
+  "pkgcat.mail": "मेल कैचर",
+  "pkgcat.runtime": "रनटाइम",
+  "pkgcat.dev": "डेवलपर टूल",
+  "pkgcat.share": "शेयरिंग",
+  "main.chooseServices": "सेवाएँ चुनें"
 }

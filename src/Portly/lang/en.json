@@ -401,5 +401,15 @@
   "health.defenderDone": "Done. Windows Defender no longer scans the Portly folders in real time.",
   "settings.legacySql": "Relaxed SQL mode for old applications (no strict mode, no ONLY_FULL_GROUP_BY)",
   "settings.firewallAdd": "Other devices can only connect if Windows Firewall allows it. Add an inbound rule for the web ports now? (administrator)",
-  "settings.firewallRemove": "Remove the Portly firewall rule for the web ports? (administrator)"
+  "settings.firewallRemove": "Remove the Portly firewall rule for the web ports? (administrator)",
+  "pkgcat.web": "Web servers",
+  "pkgcat.php": "PHP and tools",
+  "pkgcat.db": "Databases",
+  "pkgcat.dbtool": "Database tools",
+  "pkgcat.cache": "Cache",
+  "pkgcat.mail": "Mail catchers",
+  "pkgcat.runtime": "Runtimes",
+  "pkgcat.dev": "Developer tools",
+  "pkgcat.share": "Sharing",
+  "main.chooseServices": "Choose services"
 }

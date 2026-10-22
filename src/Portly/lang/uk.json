@@ -401,5 +401,15 @@
   "health.defenderDone": "Готово. Windows Defender більше не перевіряє папки Portly в реальному часі.",
   "settings.legacySql": "М'який режим SQL для старих застосунків (без суворого режиму, без ONLY_FULL_GROUP_BY)",
   "settings.firewallAdd": "Інші пристрої зможуть підключитися, лише якщо це дозволяє брандмауер Windows. Додати зараз вхідне правило для веб-портів? (адміністратор)",
-  "settings.firewallRemove": "Видалити правило брандмауера Portly для веб-портів? (адміністратор)"
+  "settings.firewallRemove": "Видалити правило брандмауера Portly для веб-портів? (адміністратор)",
+  "pkgcat.web": "Веб-сервери",
+  "pkgcat.php": "PHP та інструменти",
+  "pkgcat.db": "Бази даних",
+  "pkgcat.dbtool": "Інструменти БД",
+  "pkgcat.cache": "Кеш",
+  "pkgcat.mail": "Перехоплення пошти",
+  "pkgcat.runtime": "Середовища виконання",
+  "pkgcat.dev": "Інструменти розробника",
+  "pkgcat.share": "Спільний доступ",
+  "main.chooseServices": "Вибрати служби"
 }

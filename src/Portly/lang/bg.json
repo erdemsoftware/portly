@@ -401,5 +401,15 @@
   "health.defenderDone": "Готово. Windows Defender вече не сканира папките на Portly в реално време.",
   "settings.legacySql": "Облекчен SQL режим за стари приложения (без строг режим, без ONLY_FULL_GROUP_BY)",
   "settings.firewallAdd": "Други устройства могат да се свържат само ако защитната стена на Windows го позволява. Да се добави ли сега входящо правило за уеб портовете? (администратор)",
-  "settings.firewallRemove": "Да се премахне ли правилото на Portly в защитната стена за уеб портовете? (администратор)"
+  "settings.firewallRemove": "Да се премахне ли правилото на Portly в защитната стена за уеб портовете? (администратор)",
+  "pkgcat.web": "Уеб сървъри",
+  "pkgcat.php": "PHP и инструменти",
+  "pkgcat.db": "Бази данни",
+  "pkgcat.dbtool": "Инструменти за БД",
+  "pkgcat.cache": "Кеш",
+  "pkgcat.mail": "Прихващане на поща",
+  "pkgcat.runtime": "Среди за изпълнение",
+  "pkgcat.dev": "Инструменти за разработчици",
+  "pkgcat.share": "Споделяне",
+  "main.chooseServices": "Избор на услуги"
 }

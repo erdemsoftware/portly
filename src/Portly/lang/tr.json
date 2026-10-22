@@ -401,5 +401,15 @@
   "health.defenderDone": "Tamam. Windows Defender artık Portly klasörlerini anlık taramıyor.",
   "settings.legacySql": "Eski uygulamalar için esnek SQL modu (katı mod yok, ONLY_FULL_GROUP_BY yok)",
   "settings.firewallAdd": "Diğer cihazlar ancak Windows Güvenlik Duvarı izin verirse bağlanabilir. Web portları için gelen bağlantı kuralı şimdi eklensin mi? (yönetici)",
-  "settings.firewallRemove": "Web portları için Portly güvenlik duvarı kuralı kaldırılsın mı? (yönetici)"
+  "settings.firewallRemove": "Web portları için Portly güvenlik duvarı kuralı kaldırılsın mı? (yönetici)",
+  "pkgcat.web": "Web sunucuları",
+  "pkgcat.php": "PHP ve araçları",
+  "pkgcat.db": "Veritabanları",
+  "pkgcat.dbtool": "Veritabanı panelleri",
+  "pkgcat.cache": "Önbellek",
+  "pkgcat.mail": "Posta yakalayıcılar",
+  "pkgcat.runtime": "Çalışma ortamları",
+  "pkgcat.dev": "Geliştirici araçları",
+  "pkgcat.share": "Paylaşım",
+  "main.chooseServices": "Servisleri seç"
 }

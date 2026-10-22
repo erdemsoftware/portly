@@ -401,5 +401,15 @@
   "health.defenderDone": "完成。Windows Defender 不再实时扫描 Portly 文件夹。",
   "settings.legacySql": "适用于旧应用的宽松 SQL 模式（无严格模式，无 ONLY_FULL_GROUP_BY）",
   "settings.firewallAdd": "只有在 Windows 防火墙允许时，其他设备才能连接。现在为 Web 端口添加入站规则吗？（管理员）",
-  "settings.firewallRemove": "删除 Portly 针对 Web 端口的防火墙规则吗？（管理员）"
+  "settings.firewallRemove": "删除 Portly 针对 Web 端口的防火墙规则吗？（管理员）",
+  "pkgcat.web": "Web 服务器",
+  "pkgcat.php": "PHP 及工具",
+  "pkgcat.db": "数据库",
+  "pkgcat.dbtool": "数据库工具",
+  "pkgcat.cache": "缓存",
+  "pkgcat.mail": "邮件捕获",
+  "pkgcat.runtime": "运行时",
+  "pkgcat.dev": "开发工具",
+  "pkgcat.share": "共享",
+  "main.chooseServices": "选择服务"
 }

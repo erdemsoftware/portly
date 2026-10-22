@@ -401,5 +401,15 @@
   "health.defenderDone": "Klart. Windows Defender genomsöker inte längre Portly-mapparna i realtid.",
   "settings.legacySql": "Avslappnat SQL-läge för gamla program (inget strict-läge, ingen ONLY_FULL_GROUP_BY)",
   "settings.firewallAdd": "Andra enheter kan bara ansluta om Windows-brandväggen tillåter det. Lägga till en inkommande regel för webbportarna nu? (administratör)",
-  "settings.firewallRemove": "Ta bort Portlys brandväggsregel för webbportarna? (administratör)"
+  "settings.firewallRemove": "Ta bort Portlys brandväggsregel för webbportarna? (administratör)",
+  "pkgcat.web": "Webbservrar",
+  "pkgcat.php": "PHP och verktyg",
+  "pkgcat.db": "Databaser",
+  "pkgcat.dbtool": "Databasverktyg",
+  "pkgcat.cache": "Cache",
+  "pkgcat.mail": "E-postfångare",
+  "pkgcat.runtime": "Körmiljöer",
+  "pkgcat.dev": "Utvecklarverktyg",
+  "pkgcat.share": "Delning",
+  "main.chooseServices": "Välj tjänster"
 }

@@ -17,6 +17,12 @@ namespace Portly.Core
         {
             Current = new Settings();
             if (!File.Exists(Paths.SettingsFile)) Current.Save();
+            // early test builds saved "test" as the default ending: move them to .portly unless the user picked it
+            else if (Current.Tld == "test" && Current._ini.Get("general", "TldChosen", "") != "1")
+            {
+                Current.Tld = DefaultTld;
+                Current.Save();
+            }
         }
 
         public void Save() { _ini.Save(); }
@@ -108,9 +114,14 @@ namespace Portly.Core
         public bool IsEnabled(string service)
         {
             bool def = service == "web" || service == "mysql";
-            return _ini.GetBool("enabled", service, def);
+            // a service the user removed from the main window is never started by "Start all"
+            return _ini.GetBool("enabled", service, def) && _ini.GetBool("shown", service, true);
         }
         public void SetEnabled(string service, bool on) { _ini.Set("enabled", service, on); }
+
+        /// <summary>Service cards on the main window. Without a saved choice the caller's default is used.</summary>
+        public bool IsShown(string service, bool def) { return _ini.GetBool("shown", service, def); }
+        public void SetShown(string service, bool on) { _ini.Set("shown", service, on); }
 
         // ---------- active package versions ----------
         public string GetVersion(string type) { return _ini.Get("versions", type, ""); }

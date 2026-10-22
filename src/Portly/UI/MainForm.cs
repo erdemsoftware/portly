@@ -244,13 +244,17 @@ namespace Portly.UI
             _startAll = Ui.Button(I18n.T("main.startAll"), async (s, e) => await ToggleAll(), true, "play");
             _startAll.MinimumSize = new Size(Ui.S(170), Ui.S(40));
             _startAll.Font = Ui.Bold;
-            var header = PageHeader(I18n.T("nav.services"), out _servicesSub, _startAll);
+            ModernButton choose = null;
+            choose = Ui.Button(I18n.T("main.chooseServices"), (s, e) => ChooseServices(choose), false, "list");
+            choose.MinimumSize = new Size(0, Ui.S(40));
+            var header = PageHeader(I18n.T("nav.services"), out _servicesSub, _startAll, choose);
 
             var list = new TableLayoutPanel { Dock = DockStyle.Top, AutoSize = true, ColumnCount = 1, BackColor = Color.Transparent };
             list.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             foreach (var svc in ServiceManager.Rows)
             {
                 var row = BuildServiceCard(svc);
+                row.Card.Visible = IsServiceShown(svc);
                 list.Controls.Add(row.Card);
                 _rows.Add(row);
             }
@@ -274,6 +278,36 @@ namespace Portly.UI
             page.Controls.Add(list);
             page.Controls.Add(header);
             return page;
+        }
+
+        /// <summary>Extra databases and caches start hidden until they are installed; the user's own choice wins.</summary>
+        static bool IsServiceShown(Service svc)
+        {
+            bool optional = svc.Id == "postgresql" || svc.Id == "mongodb" || svc.Id == "memcached";
+            return Settings.Current.IsShown(svc.Id, !optional || svc.IsInstalled);
+        }
+
+        /// <summary>Checklist of the service cards shown on the main window; it stays open while ticking.</summary>
+        void ChooseServices(Control anchor)
+        {
+            var m = new ContextMenuStrip { Renderer = new MenuRenderer() };
+            foreach (var r in _rows)
+            {
+                var row = r;
+                var item = new ToolStripMenuItem(row.Svc.Title) { Checked = row.Card.Visible, CheckOnClick = true };
+                item.CheckedChanged += async (s, e) =>
+                {
+                    Settings.Current.SetShown(row.Svc.Id, item.Checked);
+                    Settings.Current.Save();
+                    row.Card.Visible = item.Checked;
+                    // a hidden service would keep running out of sight
+                    if (!item.Checked && row.Svc.IsActive) await row.Svc.StopAsync();
+                };
+                m.Items.Add(item);
+            }
+            m.Closing += (s, e) => { if (e.CloseReason == ToolStripDropDownCloseReason.ItemClicked) e.Cancel = true; };
+            m.Closed += (s, e) => BeginInvoke((Action)m.Dispose);
+            m.Show(anchor, new Point(0, anchor.Height));
         }
 
         ModernButton Tile(string text, string glyph, EventHandler click)
@@ -453,6 +487,7 @@ namespace Portly.UI
             if (row == null) return;
             var p = Theme.Current;
             bool installed = svc.IsInstalled;
+            row.Card.Visible = IsServiceShown(svc); // an optional database appears once it is installed
             string statusText; Color statusColor;
             switch (svc.State)
             {
@@ -1469,9 +1504,7 @@ namespace Portly.UI
                 return;
             }
             if (!Visible) return;
-            Ui.Info(this, I18n.T("health.title") + "\n\n- " + string.Join("\n\n- ", show.Select(i => i.Text)));
-            foreach (var i in show.Where(x => x.Fix != null))
-                if (Ui.Confirm(this, i.Text + "\n\n" + i.FixLabel + "?")) i.Fix();
+            using (var f = new HealthForm(show)) f.ShowDialog(this);
             ini.Set("general", "HealthShown", string.Join("|", shown.Concat(show.Select(i => i.Key)).Distinct().Where(k => k != "")));
             Settings.Current.Save();
         }

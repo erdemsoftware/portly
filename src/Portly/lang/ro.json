@@ -401,5 +401,15 @@
   "health.defenderDone": "Gata. Windows Defender nu mai scanează în timp real folderele Portly.",
   "settings.legacySql": "Mod SQL relaxat pentru aplicații vechi (fără mod strict, fără ONLY_FULL_GROUP_BY)",
   "settings.firewallAdd": "Alte dispozitive se pot conecta doar dacă Windows Firewall permite. Adaugi acum o regulă de intrare pentru porturile web? (administrator)",
-  "settings.firewallRemove": "Elimini regula de firewall Portly pentru porturile web? (administrator)"
+  "settings.firewallRemove": "Elimini regula de firewall Portly pentru porturile web? (administrator)",
+  "pkgcat.web": "Servere web",
+  "pkgcat.php": "PHP și instrumente",
+  "pkgcat.db": "Baze de date",
+  "pkgcat.dbtool": "Instrumente pentru baze de date",
+  "pkgcat.cache": "Cache",
+  "pkgcat.mail": "Captură e-mail",
+  "pkgcat.runtime": "Medii de rulare",
+  "pkgcat.dev": "Instrumente pentru dezvoltatori",
+  "pkgcat.share": "Partajare",
+  "main.chooseServices": "Alege serviciile"
 }

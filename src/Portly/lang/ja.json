@@ -401,5 +401,15 @@
   "health.defenderDone": "完了しました。Windows Defender は Portly のフォルダーをリアルタイムでスキャンしなくなりました。",
   "settings.legacySql": "古いアプリケーション向けの緩い SQL モード（strict モードなし、ONLY_FULL_GROUP_BY なし）",
   "settings.firewallAdd": "他のデバイスは Windows ファイアウォールが許可した場合のみ接続できます。今すぐ Web ポートの受信規則を追加しますか？（管理者）",
-  "settings.firewallRemove": "Web ポート用の Portly ファイアウォール規則を削除しますか？（管理者）"
+  "settings.firewallRemove": "Web ポート用の Portly ファイアウォール規則を削除しますか？（管理者）",
+  "pkgcat.web": "Web サーバー",
+  "pkgcat.php": "PHP とツール",
+  "pkgcat.db": "データベース",
+  "pkgcat.dbtool": "データベースツール",
+  "pkgcat.cache": "キャッシュ",
+  "pkgcat.mail": "メールキャッチャー",
+  "pkgcat.runtime": "ランタイム",
+  "pkgcat.dev": "開発ツール",
+  "pkgcat.share": "共有",
+  "main.chooseServices": "サービスを選択"
 }

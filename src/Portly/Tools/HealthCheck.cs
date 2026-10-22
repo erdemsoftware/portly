@@ -12,7 +12,7 @@ namespace Portly.Tools
         public string Key;     // stable id, used to show each warning only once
         public string Text;
         public string FixLabel;
-        public Action Fix;     // null = information only
+        public Func<int> Fix;  // returns 0 on success; null = information only
     }
 
     /// <summary>

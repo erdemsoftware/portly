@@ -402,5 +402,15 @@
   "health.defenderDone": "ہو گیا۔ Windows Defender اب Portly فولڈرز کو ریئل ٹائم میں اسکین نہیں کرتا۔",
   "settings.legacySql": "پرانی ایپلیکیشنز کے لیے نرم SQL موڈ (strict موڈ نہیں، ONLY_FULL_GROUP_BY نہیں)",
   "settings.firewallAdd": "دوسرے آلات صرف اسی صورت میں جڑ سکتے ہیں جب Windows Firewall اجازت دے۔ ابھی ویب پورٹس کے لیے ان باؤنڈ رول شامل کریں؟ (ایڈمنسٹریٹر)",
-  "settings.firewallRemove": "ویب پورٹس کے لیے Portly کا فائر وال رول ہٹائیں؟ (ایڈمنسٹریٹر)"
+  "settings.firewallRemove": "ویب پورٹس کے لیے Portly کا فائر وال رول ہٹائیں؟ (ایڈمنسٹریٹر)",
+  "pkgcat.web": "ویب سرورز",
+  "pkgcat.php": "PHP اور ٹولز",
+  "pkgcat.db": "ڈیٹا بیسز",
+  "pkgcat.dbtool": "ڈیٹا بیس ٹولز",
+  "pkgcat.cache": "کیشے",
+  "pkgcat.mail": "میل کیچرز",
+  "pkgcat.runtime": "رن ٹائمز",
+  "pkgcat.dev": "ڈویلپر ٹولز",
+  "pkgcat.share": "شیئرنگ",
+  "main.chooseServices": "سروسز منتخب کریں"
 }

@@ -401,5 +401,15 @@
   "health.defenderDone": "Erledigt. Windows Defender prüft die Portly-Ordner nicht mehr in Echtzeit.",
   "settings.legacySql": "Lockerer SQL-Modus für alte Anwendungen (kein Strict-Modus, kein ONLY_FULL_GROUP_BY)",
   "settings.firewallAdd": "Andere Geräte können sich nur verbinden, wenn die Windows-Firewall es erlaubt. Jetzt eine eingehende Regel für die Web-Ports hinzufügen? (Administrator)",
-  "settings.firewallRemove": "Die Portly-Firewallregel für die Web-Ports entfernen? (Administrator)"
+  "settings.firewallRemove": "Die Portly-Firewallregel für die Web-Ports entfernen? (Administrator)",
+  "pkgcat.web": "Webserver",
+  "pkgcat.php": "PHP und Werkzeuge",
+  "pkgcat.db": "Datenbanken",
+  "pkgcat.dbtool": "Datenbank-Tools",
+  "pkgcat.cache": "Cache",
+  "pkgcat.mail": "Mail-Fänger",
+  "pkgcat.runtime": "Laufzeitumgebungen",
+  "pkgcat.dev": "Entwicklerwerkzeuge",
+  "pkgcat.share": "Teilen",
+  "main.chooseServices": "Dienste auswählen"
 }

@@ -402,5 +402,15 @@
   "health.defenderDone": "تم. لم يعد Windows Defender يفحص مجلدات Portly في الوقت الفعلي.",
   "settings.legacySql": "وضع SQL مرن للتطبيقات القديمة (بدون الوضع الصارم، بدون ONLY_FULL_GROUP_BY)",
   "settings.firewallAdd": "لا يمكن للأجهزة الأخرى الاتصال إلا إذا سمح جدار حماية Windows بذلك. هل تريد إضافة قاعدة واردة لمنافذ الويب الآن؟ (مسؤول)",
-  "settings.firewallRemove": "هل تريد إزالة قاعدة جدار الحماية الخاصة بـ Portly لمنافذ الويب؟ (مسؤول)"
+  "settings.firewallRemove": "هل تريد إزالة قاعدة جدار الحماية الخاصة بـ Portly لمنافذ الويب؟ (مسؤول)",
+  "pkgcat.web": "خوادم الويب",
+  "pkgcat.php": "PHP وأدواتها",
+  "pkgcat.db": "قواعد البيانات",
+  "pkgcat.dbtool": "أدوات قواعد البيانات",
+  "pkgcat.cache": "ذاكرة التخزين المؤقت",
+  "pkgcat.mail": "ملتقطات البريد",
+  "pkgcat.runtime": "بيئات التشغيل",
+  "pkgcat.dev": "أدوات المطورين",
+  "pkgcat.share": "المشاركة",
+  "main.chooseServices": "اختيار الخدمات"
 }

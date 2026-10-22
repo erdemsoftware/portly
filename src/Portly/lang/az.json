@@ -401,5 +401,15 @@
   "health.defenderDone": "Hazırdır. Windows Defender artıq Portly qovluqlarını real vaxtda skan etmir.",
   "settings.legacySql": "Köhnə tətbiqlər üçün yumşaq SQL rejimi (strict rejimi yox, ONLY_FULL_GROUP_BY yox)",
   "settings.firewallAdd": "Digər cihazlar yalnız Windows Firewall icazə verdikdə qoşula bilər. Veb portları üçün indi daxil olan qayda əlavə edilsin? (administrator)",
-  "settings.firewallRemove": "Veb portları üçün Portly firewall qaydası silinsin? (administrator)"
+  "settings.firewallRemove": "Veb portları üçün Portly firewall qaydası silinsin? (administrator)",
+  "pkgcat.web": "Veb serverlər",
+  "pkgcat.php": "PHP və alətlər",
+  "pkgcat.db": "Verilənlər bazaları",
+  "pkgcat.dbtool": "Verilənlər bazası alətləri",
+  "pkgcat.cache": "Keş",
+  "pkgcat.mail": "Poçt tutucular",
+  "pkgcat.runtime": "İcra mühitləri",
+  "pkgcat.dev": "Tərtibatçı alətləri",
+  "pkgcat.share": "Paylaşım",
+  "main.chooseServices": "Xidmətləri seç"
 }

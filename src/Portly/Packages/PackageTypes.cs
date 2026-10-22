@@ -11,6 +11,8 @@ namespace Portly.Packages
     {
         public string Id;
         public string Name;
+        /// <summary>Group in the packages window: web, php, db, dbtool, cache, mail, runtime, dev, share.</summary>
+        public string Category = "";
         /// <summary>File that proves a version folder is a valid installation (relative to the folder).</summary>
         public string DetectFile;
         /// <summary>Folders added to PATH for the terminal (relative to the version folder).</summary>
@@ -20,42 +22,51 @@ namespace Portly.Packages
     /// <summary>Package kinds Portly knows how to install and use.</summary>
     public static class PackageTypes
     {
+        /// <summary>Category order in the packages window (title key: "pkgcat." + id).</summary>
+        public static readonly string[] Categories = { "web", "php", "db", "dbtool", "cache", "mail", "runtime", "dev", "share" };
+
+        /// <summary>Types grouped by category, in display order.</summary>
+        public static IEnumerable<PackageType> Ordered
+        {
+            get { return Categories.SelectMany(c => All.Where(t => t.Category == c)).Concat(All.Where(t => !Categories.Contains(t.Category))); }
+        }
+
         public static readonly List<PackageType> All = new List<PackageType>
         {
-            new PackageType { Id = "apache",     Name = "Apache",     DetectFile = @"bin\httpd.exe",   PathDirs = new[] { "bin" } },
-            new PackageType { Id = "nginx",      Name = "Nginx",      DetectFile = "nginx.exe" },
-            new PackageType { Id = "php",        Name = "PHP",        DetectFile = "php-cgi.exe" },
-            new PackageType { Id = "mysql",      Name = "MySQL",      DetectFile = @"bin\mysqld.exe",  PathDirs = new[] { "bin" } },
-            new PackageType { Id = "nodejs",     Name = "Node.js",    DetectFile = "node.exe" },
-            new PackageType { Id = "redis",      Name = "Redis",      DetectFile = "redis-server.exe" },
-            new PackageType { Id = "mailpit",    Name = "Mailpit",    DetectFile = "mailpit.exe" },
-            new PackageType { Id = "mailhog",    Name = "MailHog",    DetectFile = "MailHog.exe",      PathDirs = new string[0] },
-            new PackageType { Id = "smtp4dev",   Name = "smtp4dev",   DetectFile = "Rnwood.Smtp4dev.exe", PathDirs = new string[0] },
-            new PackageType { Id = "cloudflared", Name = "Cloudflare Tunnel", DetectFile = "cloudflared.exe", PathDirs = new string[0] },
+            new PackageType { Id = "apache", Category = "web",     Name = "Apache",     DetectFile = @"bin\httpd.exe",   PathDirs = new[] { "bin" } },
+            new PackageType { Id = "nginx", Category = "web",      Name = "Nginx",      DetectFile = "nginx.exe" },
+            new PackageType { Id = "php", Category = "php",        Name = "PHP",        DetectFile = "php-cgi.exe" },
+            new PackageType { Id = "mysql", Category = "db",      Name = "MySQL",      DetectFile = @"bin\mysqld.exe",  PathDirs = new[] { "bin" } },
+            new PackageType { Id = "nodejs", Category = "runtime",     Name = "Node.js",    DetectFile = "node.exe" },
+            new PackageType { Id = "redis", Category = "cache",      Name = "Redis",      DetectFile = "redis-server.exe" },
+            new PackageType { Id = "mailpit", Category = "mail",    Name = "Mailpit",    DetectFile = "mailpit.exe" },
+            new PackageType { Id = "mailhog", Category = "mail",    Name = "MailHog",    DetectFile = "MailHog.exe",      PathDirs = new string[0] },
+            new PackageType { Id = "smtp4dev", Category = "mail",   Name = "smtp4dev",   DetectFile = "Rnwood.Smtp4dev.exe", PathDirs = new string[0] },
+            new PackageType { Id = "cloudflared", Category = "share", Name = "Cloudflare Tunnel", DetectFile = "cloudflared.exe", PathDirs = new string[0] },
             // more databases and caches
-            new PackageType { Id = "mariadb",    Name = "MariaDB",    DetectFile = @"bin\mysqld.exe",  PathDirs = new[] { "bin" } },
-            new PackageType { Id = "postgresql", Name = "PostgreSQL", DetectFile = @"bin\postgres.exe", PathDirs = new[] { "bin" } },
-            new PackageType { Id = "mongodb",    Name = "MongoDB",    DetectFile = @"bin\mongod.exe",  PathDirs = new[] { "bin" } },
-            new PackageType { Id = "memcached",  Name = "Memcached",  DetectFile = @"bin\memcached.exe", PathDirs = new string[0] },
+            new PackageType { Id = "mariadb", Category = "db",    Name = "MariaDB",    DetectFile = @"bin\mysqld.exe",  PathDirs = new[] { "bin" } },
+            new PackageType { Id = "postgresql", Category = "db", Name = "PostgreSQL", DetectFile = @"bin\postgres.exe", PathDirs = new[] { "bin" } },
+            new PackageType { Id = "mongodb", Category = "db",    Name = "MongoDB",    DetectFile = @"bin\mongod.exe",  PathDirs = new[] { "bin" } },
+            new PackageType { Id = "memcached", Category = "cache",  Name = "Memcached",  DetectFile = @"bin\memcached.exe", PathDirs = new string[0] },
             // database GUIs
-            new PackageType { Id = "heidisql",   Name = "HeidiSQL",   DetectFile = "heidisql.exe",     PathDirs = new string[0] },
-            new PackageType { Id = "dbeaver",    Name = "DBeaver",    DetectFile = "dbeaver.exe",      PathDirs = new string[0] },
-            new PackageType { Id = "beekeeper",  Name = "Beekeeper Studio", DetectFile = "Beekeeper-Studio.exe", PathDirs = new string[0] },
-            new PackageType { Id = "dbgate",     Name = "DbGate",     DetectFile = "DbGate.exe",       PathDirs = new string[0] },
-            new PackageType { Id = "sqlite",     Name = "SQLite tools", DetectFile = "sqlite3.exe" },
-            new PackageType { Id = "sqlitebrowser", Name = "DB Browser for SQLite", DetectFile = "DB Browser for SQLite.exe", PathDirs = new string[0] },
+            new PackageType { Id = "heidisql", Category = "dbtool",   Name = "HeidiSQL",   DetectFile = "heidisql.exe",     PathDirs = new string[0] },
+            new PackageType { Id = "dbeaver", Category = "dbtool",    Name = "DBeaver",    DetectFile = "dbeaver.exe",      PathDirs = new string[0] },
+            new PackageType { Id = "beekeeper", Category = "dbtool",  Name = "Beekeeper Studio", DetectFile = "Beekeeper-Studio.exe", PathDirs = new string[0] },
+            new PackageType { Id = "dbgate", Category = "dbtool",     Name = "DbGate",     DetectFile = "DbGate.exe",       PathDirs = new string[0] },
+            new PackageType { Id = "sqlite", Category = "db",     Name = "SQLite tools", DetectFile = "sqlite3.exe" },
+            new PackageType { Id = "sqlitebrowser", Category = "dbtool", Name = "DB Browser for SQLite", DetectFile = "DB Browser for SQLite.exe", PathDirs = new string[0] },
             // developer tools and runtimes
-            new PackageType { Id = "git",        Name = "Git",        DetectFile = @"cmd\git.exe",     PathDirs = new[] { "cmd" } },
-            new PackageType { Id = "vscode",     Name = "VS Code",    DetectFile = "Code.exe",         PathDirs = new[] { "bin" } },
-            new PackageType { Id = "notepadpp",  Name = "Notepad++",  DetectFile = "notepad++.exe",    PathDirs = new string[0] },
-            new PackageType { Id = "python",     Name = "Python",     DetectFile = "python.exe" },
-            new PackageType { Id = "go",         Name = "Go",         DetectFile = @"bin\go.exe",      PathDirs = new[] { "bin" } },
-            new PackageType { Id = "bun",        Name = "Bun",        DetectFile = "bun.exe" },
-            new PackageType { Id = "deno",       Name = "Deno",       DetectFile = "deno.exe" },
-            new PackageType { Id = "wpcli",      Name = "WP-CLI",     DetectFile = "wp-cli.phar" },
-            new PackageType { Id = "composer",   Name = "Composer",   DetectFile = "composer.phar" },
-            new PackageType { Id = "adminer",    Name = "Adminer",    DetectFile = "index.php",        PathDirs = new string[0] },
-            new PackageType { Id = "phpmyadmin", Name = "phpMyAdmin", DetectFile = "index.php",        PathDirs = new string[0] },
+            new PackageType { Id = "git", Category = "dev",        Name = "Git",        DetectFile = @"cmd\git.exe",     PathDirs = new[] { "cmd" } },
+            new PackageType { Id = "vscode", Category = "dev",     Name = "VS Code",    DetectFile = "Code.exe",         PathDirs = new[] { "bin" } },
+            new PackageType { Id = "notepadpp", Category = "dev",  Name = "Notepad++",  DetectFile = "notepad++.exe",    PathDirs = new string[0] },
+            new PackageType { Id = "python", Category = "runtime",     Name = "Python",     DetectFile = "python.exe" },
+            new PackageType { Id = "go", Category = "runtime",         Name = "Go",         DetectFile = @"bin\go.exe",      PathDirs = new[] { "bin" } },
+            new PackageType { Id = "bun", Category = "runtime",        Name = "Bun",        DetectFile = "bun.exe" },
+            new PackageType { Id = "deno", Category = "runtime",       Name = "Deno",       DetectFile = "deno.exe" },
+            new PackageType { Id = "wpcli", Category = "php",      Name = "WP-CLI",     DetectFile = "wp-cli.phar" },
+            new PackageType { Id = "composer", Category = "php",   Name = "Composer",   DetectFile = "composer.phar" },
+            new PackageType { Id = "adminer", Category = "dbtool",    Name = "Adminer",    DetectFile = "index.php",        PathDirs = new string[0] },
+            new PackageType { Id = "phpmyadmin", Category = "dbtool", Name = "phpMyAdmin", DetectFile = "index.php",        PathDirs = new string[0] },
         };
 
         public static PackageType Get(string id)
