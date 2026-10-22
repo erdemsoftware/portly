@@ -23,6 +23,8 @@ namespace Portly.Config
         public bool IsGroup;
         /// <summary>PHP version folder chosen for this site ("" = default).</summary>
         public string PhpOverride = "";
+        /// <summary>Extra host names (sites.ini "aliases=", comma separated): "shop.test", "*.shop.portly" ...</summary>
+        public List<string> Aliases = new List<string>();
 
         public string ShortName { get { var i = Name.LastIndexOf('/'); return i < 0 ? Name : Name.Substring(i + 1); } }
 
@@ -148,6 +150,7 @@ namespace Portly.Config
             }
 
             site.PhpOverride = ini.Get(name, "php", "");
+            site.Aliases = ini.Get(name, "aliases", "").Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim().ToLowerInvariant()).Where(x => x != "").Distinct().ToList();
             if (ini.GetBool(name, "disabled", false)) { site.Valid = false; site.Problem = I18n.T("sites.disabled"); }
             return site;
         }
@@ -157,6 +160,15 @@ namespace Portly.Config
             var ini = new Ini(Paths.SitesFile);
             if (string.IsNullOrEmpty(phpFolder)) ini.Remove(siteName, "php");
             else ini.Set(siteName, "php", phpFolder);
+            ini.Save();
+        }
+
+        public static void SetAliases(string siteName, IEnumerable<string> aliases)
+        {
+            var ini = new Ini(Paths.SitesFile);
+            var list = (aliases ?? new string[0]).Select(x => x.Trim().ToLowerInvariant()).Where(x => x != "").Distinct().ToList();
+            if (list.Count == 0) ini.Remove(siteName, "aliases");
+            else ini.Set(siteName, "aliases", string.Join(",", list));
             ini.Save();
         }
 

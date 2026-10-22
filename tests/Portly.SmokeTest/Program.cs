@@ -20,7 +20,7 @@ namespace Portly.SmokeTest
     /// Runs Portly's engine without the UI on non-standard ports (so it can run next to Laragon/XAMPP).
     /// Optional argument: a folder with existing MySQL installs to link instead of downloading 280 MB.
     /// </summary>
-    static class Program
+    static partial class Program
     {
         static int _fail, _ok;
 
@@ -348,6 +348,16 @@ namespace Portly.SmokeTest
                 }
             }
             catch (Exception ex) { Check("site shared on the internet", false, ex.Message); }
+
+            // ---------- feature groups (one file each: Tests.<Group>.cs) ----------
+            foreach (var group in new Func<Settings, string, Task>[] { Tests_PhpTooling, Tests_Database, Tests_Updates, Tests_SitesWeb, Tests_DevWorkflow, Tests_Platform })
+            {
+                try { await group(s, www); }
+                catch (Exception ex) { Check(group.Method.Name, false, ex.GetType().Name + ": " + ex.Message); }
+                // a group may stop or reconfigure services: leave the stack as the next group expects it
+                if (ServiceManager.Web.State != ServiceState.Running) await ServiceManager.StartWebAsync();
+                if (ServiceManager.MySql.State != ServiceState.Running) await ServiceManager.MySql.StartAsync();
+            }
 
             // ---------- switch to Nginx ----------
             await ServiceManager.SwitchWebServerAsync("nginx");

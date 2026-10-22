@@ -6,7 +6,7 @@ using System.Text;
 namespace Portly.Core
 {
     /// <summary>Typed access to usr\portly.ini. Every option is visible in the Settings window.</summary>
-    public class Settings
+    public partial class Settings
     {
         public static Settings Current { get; private set; }
         readonly Ini _ini;

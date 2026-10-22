@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -19,6 +20,7 @@ namespace Portly.UI
         NumericUpDown _backupKeep;
         TextBox _docRoot, _tld;
         CheckBox _legacySql;
+        readonly Dictionary<string, CheckBox> _features = new Dictionary<string, CheckBox>();
         CheckBox _autoVhosts, _ssl, _runAtStartup, _startMin, _startServices, _closeToTray, _addToPath, _checkUpdates, _allowLan;
         RadioButton _apache, _nginx;
         NumericUpDown _http, _https, _mysql, _redis, _mailWeb, _mailSmtp, _phpPort, _phpChildren;
@@ -134,6 +136,16 @@ namespace Portly.UI
             AddRow(g3, "", Hint(I18n.T("settings.backupHint")));
             _legacySql = Check(I18n.T("settings.legacySql"), s.LegacySqlMode, g3);
             Section(stack, "MySQL", g3);
+
+            // optional features: rarely used ones start off and are switched on here
+            var g4 = Grid();
+            AddRow(g4, "", Hint(I18n.T("features.intro")));
+            foreach (var f in Features.All)
+            {
+                _features[f.Id] = Check(I18n.T(f.TitleKey), Features.IsOn(f.Id), g4);
+                AddRow(g4, "", Hint(I18n.T(f.HintKey)));
+            }
+            Section(stack, I18n.T("features.title"), g4);
 
             scroll.Controls.Add(stack);
 
@@ -303,6 +315,7 @@ namespace Portly.UI
             bool lanChanged = s.AllowLan != _allowLan.Checked;
             bool sqlModeChanged = s.LegacySqlMode != _legacySql.Checked;
             s.LegacySqlMode = _legacySql.Checked;
+            foreach (var kv in _features) Features.Set(kv.Key, kv.Value.Checked);
             s.AllowLan = _allowLan.Checked;
             if (sqlModeChanged) mysqlRestart = true;
             // LAN access needs an inbound firewall rule for the web ports (removed again when switched off)
