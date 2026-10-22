@@ -26,6 +26,30 @@ namespace Portly.Tools
             return f;
         }
 
+        /// <summary>Run one of the bundled client tools (mysqlcheck, mysqldump, mariadb-upgrade ...) as root.</summary>
+        public static RunResult Tool(string exe, string args, int timeout) { return Client(exe, args, null, timeout); }
+
+        /// <summary>
+        /// Start a client tool with redirected input / output for streaming (SQL import).
+        /// The caller deletes <paramref name="cnf"/> after the process ended.
+        /// </summary>
+        public static System.Diagnostics.Process StartClient(string exe, string args, out string cnf)
+        {
+            cnf = null;
+            var bin = MySqlService.BinDir;
+            if (bin == null) throw new Exception(I18n.T("err.notInstalled", "MySQL"));
+            cnf = ClientFile();
+            var psi = new System.Diagnostics.ProcessStartInfo(Path.Combine(bin, exe), "--defaults-extra-file=\"" + cnf + "\" " + args)
+            {
+                UseShellExecute = false, CreateNoWindow = true, WorkingDirectory = bin,
+                RedirectStandardInput = true, RedirectStandardOutput = true, RedirectStandardError = true,
+                StandardOutputEncoding = Encoding.UTF8, StandardErrorEncoding = Encoding.UTF8,
+            };
+            var p = System.Diagnostics.Process.Start(psi);
+            JobObject.Add(p);
+            return p;
+        }
+
         static RunResult Client(string exe, string args, string stdin, int timeout)
         {
             var bin = MySqlService.BinDir;
@@ -45,20 +69,66 @@ namespace Portly.Tools
             return Client("mysql.exe", "--default-character-set=utf8mb4 --batch --skip-column-names", sql, timeout);
         }
 
-        static string Clean(RunResult r)
+        public static string Clean(RunResult r)
         {
             return string.Join("\n", r.Output.Split('\n').Where(l => !l.Contains("[Warning]") && !l.Contains("Using a password")).Select(l => l.Trim()).Where(l => l != ""));
         }
 
-        /// <summary>Returns null on success, otherwise the error text.</summary>
-        public static string CreateDatabase(string name)
+        /// <summary>Returns null on success, otherwise the error text. Uses the default collation (Settings > MySQL).</summary>
+        public static string CreateDatabase(string name) { return CreateDatabase(name, null); }
+
+        public static string CreateDatabase(string name, string collation)
         {
             if (!IsValidName(name)) return I18n.T("err.dbName");
             if (ServiceManager.MySql.State != ServiceState.Running) return I18n.T("err.mysqlNotRunning");
-            var r = Sql("CREATE DATABASE IF NOT EXISTS `" + name + "` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;");
+            collation = DbOptions.Valid(collation) ? collation : DbOptions.EffectiveCollation();
+            var r = Sql("CREATE DATABASE IF NOT EXISTS `" + name + "` CHARACTER SET " + DbOptions.CharsetOf(collation) + " COLLATE " + collation + ";");
             if (!r.Ok) return Clean(r);
             Log.Info(I18n.T("log.dbCreated", name));
             return null;
+        }
+
+        /// <summary>Collation of an existing database, or null.</summary>
+        public static string CollationOf(string db)
+        {
+            if (!IsValidName(db)) return null;
+            var r = Sql("SELECT DEFAULT_COLLATION_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = " + SqlString(db) + ";");
+            var v = r.Ok ? Clean(r).Trim() : "";
+            return v == "" ? null : v;
+        }
+
+        /// <summary>
+        /// A user that may only use one database ('user'@'localhost' and 'user'@'127.0.0.1').
+        /// Returns null on success, otherwise the error text.
+        /// </summary>
+        public static string CreateUser(string db, string user, string password)
+        {
+            if (!IsValidName(db) || !IsValidName(user) || user.Length > 32) return I18n.T("db.badUser");
+            if (ServiceManager.MySql.State != ServiceState.Running) return I18n.T("err.mysqlNotRunning");
+            var sb = new StringBuilder();
+            foreach (var host in new[] { "localhost", "127.0.0.1", "::1" })
+            {
+                var u = SqlString(user) + "@" + SqlString(host);
+                sb.Append("CREATE USER IF NOT EXISTS " + u + " IDENTIFIED BY " + SqlString(password ?? "") + ";\n");
+                sb.Append("ALTER USER " + u + " IDENTIFIED BY " + SqlString(password ?? "") + ";\n");
+                sb.Append("GRANT ALL PRIVILEGES ON `" + db + "`.* TO " + u + ";\n");
+            }
+            sb.Append("FLUSH PRIVILEGES;\n");
+            var r = Sql(sb.ToString());
+            if (!r.Ok) return Clean(r);
+            Log.Info(I18n.T("log.dbUserCreated", user, db));
+            return null;
+        }
+
+        /// <summary>Random password from letters and digits (no quoting trouble in connection strings).</summary>
+        public static string RandomPassword(int length)
+        {
+            const string chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
+            var bytes = new byte[length];
+            using (var rng = System.Security.Cryptography.RandomNumberGenerator.Create()) rng.GetBytes(bytes);
+            var sb = new StringBuilder();
+            foreach (var b in bytes) sb.Append(chars[b % chars.Length]);
+            return sb.ToString();
         }
 
         public static List<string> ListDatabases()
@@ -69,7 +139,7 @@ namespace Portly.Tools
             return r.Output.Split('\n').Select(l => l.Trim()).Where(l => l != "" && !system.Contains(l) && !l.Contains("[Warning]")).ToList();
         }
 
-        static string SqlString(string s) { return "'" + s.Replace("\\", "\\\\").Replace("'", "''") + "'"; }
+        public static string SqlString(string s) { return "'" + s.Replace("\\", "\\\\").Replace("'", "''") + "'"; }
 
         public static string ChangeRootPassword(string newPassword)
         {

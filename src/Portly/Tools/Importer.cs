@@ -332,16 +332,14 @@ namespace Portly.Tools
                 if (ServiceManager.MySql.State != ServiceState.Running) throw new Exception(I18n.T("err.mysqlNotRunning"));
             }
             status(I18n.T("import.loading"));
-            // MariaDB does not know MySQL 8 collations (utf8mb4_0900_*): treat it like MySQL 5.x for the rewrite
-            var targetMajor = Settings.Current.DbEngine == "mariadb" ? 5 : PackageTypes.ParseVersion(PackageTypes.ActiveFolder("mysql")).Major;
-            var errors = await Task.Run(() => Load(dump, targetMajor), ct);
+            var errors = await Task.Run(() => Load(dump), ct);
             try { File.Delete(dump); } catch { }
             Log.Info(I18n.T("import.dbDone", names.Count, errors));
             return I18n.T("import.dbDone", names.Count, errors);
         }
 
         /// <summary>Stream the dump into mysql.exe, fixing MariaDB-only syntax on the way. Returns the error count.</summary>
-        static int Load(string dump, int targetMajor)
+        static int Load(string dump)
         {
             var bin = MySqlService.BinDir;
             var cnf = WriteCnf(Settings.Current.MysqlRootPassword, Settings.Current.MysqlPort);
@@ -359,17 +357,14 @@ namespace Portly.Tools
                     p.OutputDataReceived += (o, e) => { };
                     p.BeginErrorReadLine();
                     p.BeginOutputReadLine();
+                    var filter = DumpFilter.ForActive();
                     using (var reader = new StreamReader(dump, new UTF8Encoding(false)))
                     using (var writer = new StreamWriter(p.StandardInput.BaseStream, new UTF8Encoding(false), 1 << 16))
                     {
                         string line;
                         while ((line = reader.ReadLine()) != null)
                         {
-                            if (line.StartsWith("/*M!999999")) continue; // MariaDB "sandbox mode" header, unknown to MySQL
-                            line = line.Replace("utf8mb4_uca1400_ai_ci", "utf8mb4_unicode_ci").Replace("utf8mb3_uca1400_ai_ci", "utf8mb3_general_ci")
-                                       .Replace("utf8mb4_uca1400_as_cs", "utf8mb4_bin");
-                            if (targetMajor < 8) line = line.Replace("utf8mb4_0900_ai_ci", "utf8mb4_unicode_ci");
-                            writer.Write(line);
+                            writer.Write(filter.Apply(line));
                             writer.Write('\n');
                         }
                     }
@@ -383,6 +378,53 @@ namespace Portly.Tools
         static string Clean(string output)
         {
             return string.Join("\n", (output ?? "").Split('\n').Select(l => l.Trim()).Where(l => l != "" && !l.Contains("[Warning]") && !l.Contains("Using a password")));
+        }
+    }
+
+    /// <summary>
+    /// Line filter for loading a dump into the active server: fixes MariaDB-only syntax for MySQL and MySQL-only syntax
+    /// for MariaDB. Skipped lines become empty lines so mysql's "ERROR ... at line N" still points into the original file.
+    /// </summary>
+    public class DumpFilter
+    {
+        readonly bool _toMaria;
+        readonly Version _ver;
+        bool _skipping;
+        static readonly Regex MySql8Comment = new Regex(@"/\*!80\d{3}\s[^*]*\*/");
+
+        public DumpFilter(bool targetMariaDb, Version targetVersion) { _toMaria = targetMariaDb; _ver = targetVersion; }
+
+        public static DumpFilter ForActive()
+        {
+            var engine = Settings.Current.DbEngine;
+            return new DumpFilter(engine == "mariadb", PackageTypes.ParseVersion(PackageTypes.ActiveFolder(engine)));
+        }
+
+        public string Apply(string line)
+        {
+            if (_skipping)
+            {
+                if (line.TrimEnd().EndsWith(";")) _skipping = false;
+                return "";
+            }
+            if (line.StartsWith("/*M!999999")) return "";   // MariaDB "sandbox mode" header, unknown to MySQL and old clients
+            // GTID sets of the source server fail on a local server without GTID mode (may span lines)
+            if (line.StartsWith("SET @@GLOBAL.GTID_PURGED", StringComparison.OrdinalIgnoreCase))
+            {
+                _skipping = !line.TrimEnd().EndsWith(";");
+                return "";
+            }
+            bool uca1400 = _toMaria && _ver >= new Version(10, 10);
+            if (!uca1400 && line.Contains("uca1400"))
+                line = line.Replace("utf8mb4_uca1400_turkish_ai_ci", "utf8mb4_turkish_ci").Replace("utf8mb4_uca1400_ai_ci", "utf8mb4_unicode_ci")
+                           .Replace("utf8mb3_uca1400_ai_ci", "utf8mb3_general_ci").Replace("utf8mb4_uca1400_as_cs", "utf8mb4_bin");
+            // MariaDB and MySQL 5.x do not know the MySQL 8 collations
+            if ((_toMaria || _ver.Major < 8) && line.Contains("_0900_"))
+                line = line.Replace("utf8mb4_tr_0900_ai_ci", "utf8mb4_turkish_ci").Replace("utf8mb4_0900_ai_ci", "utf8mb4_unicode_ci")
+                           .Replace("utf8mb4_0900_as_cs", "utf8mb4_bin").Replace("utf8mb4_0900_bin", "utf8mb4_bin");
+            // MariaDB runs /*!80016 ... */ comments (its version number is higher) and fails on DEFAULT ENCRYPTION etc.
+            if (_toMaria && line.Contains("/*!80")) line = MySql8Comment.Replace(line, "");
+            return line;
         }
     }
 }
