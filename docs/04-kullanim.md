@@ -83,7 +83,7 @@ Menü > PHP > **Xdebug**. Etkin PHP sürümüne uygun DLL xdebug.org'dan indiril
 
 ## Otomatik veritabanı yedeği
 
-Ayarlar > MySQL > **Otomatik yedek** (varsayılan kapalı): 6, 12 ya da 24 saatte bir. MySQL çalışırken tüm veritabanları `backup\mysqluto-*.sql` olarak kaydedilir. Yalnızca son N otomatik yedek tutulur; elle alınan yedekler silinmez.
+Ayarlar > MySQL > **Otomatik yedek** (varsayılan kapalı): 6, 12 ya da 24 saatte bir. MySQL çalışırken tüm veritabanları `backup\mysql\auto-*.sql` olarak kaydedilir. Yalnızca son N otomatik yedek tutulur; elle alınan yedekler silinmez.
 
 ## Yeni proje şablonları
 
