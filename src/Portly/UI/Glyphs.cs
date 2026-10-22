@@ -109,6 +109,11 @@ namespace Portly.UI
                         g.DrawLines(p, new[] { new PointF(X(.28f), Y(.46f)), new PointF(X(.5f), Y(.68f)), new PointF(X(.72f), Y(.46f)) });
                         g.DrawLine(p, X(.2f), Y(.86f), X(.8f), Y(.86f));
                         break;
+                    case "import":
+                        g.DrawLines(p, new[] { new PointF(X(.15f), Y(.55f)), new PointF(X(.15f), Y(.85f)), new PointF(X(.85f), Y(.85f)), new PointF(X(.85f), Y(.55f)) });
+                        g.DrawLine(p, X(.5f), Y(.12f), X(.5f), Y(.62f));
+                        g.DrawLines(p, new[] { new PointF(X(.3f), Y(.44f)), new PointF(X(.5f), Y(.64f)), new PointF(X(.7f), Y(.44f)) });
+                        break;
                     case "external":
                         g.DrawLines(p, new[] { new PointF(X(.62f), Y(.15f)), new PointF(X(.85f), Y(.15f)), new PointF(X(.85f), Y(.38f)) });
                         g.DrawLine(p, X(.85f), Y(.15f), X(.48f), Y(.52f));

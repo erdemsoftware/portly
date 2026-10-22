@@ -69,7 +69,7 @@ namespace Portly.Packages
                 var extract = Path.Combine(Paths.Tmp, "extract", Guid.NewGuid().ToString("N").Substring(0, 8));
                 await Task.Run(() => ExtractZip(download, extract, p => Report(progress, "extract", p, 0), ct), ct);
                 var root = FindRoot(extract, e.Subdir);
-                Directory.Move(root, target);
+                MoveDir(root, target);
                 TryDeleteDir(extract);
             }
             TryDelete(download);
@@ -134,13 +134,30 @@ namespace Portly.Packages
                 throw new Exception(I18n.T("err.manualExists", name));
             }
             Directory.CreateDirectory(Paths.BinOf(type));
-            if (tmp != null) { Directory.Move(root, target); TryDeleteDir(tmp); }
+            if (tmp != null) { MoveDir(root, target); TryDeleteDir(tmp); }
             else CopyDir(root, target);
 
             PostInstall(new PackageEntry { Type = type, Folder = name, Version = PackageTypes.Label(name) }, null);
             if (Settings.Current.GetVersion(type) == "") { Settings.Current.SetVersion(type, name); Settings.Current.Save(); }
             Log.Info(I18n.T("log.installed", t.Name + " " + PackageTypes.Label(name)));
             return name;
+        }
+
+        /// <summary>
+        /// Move a freshly extracted folder. Antivirus scanners (Windows Defender) often hold files of a new
+        /// folder for a moment, which makes Directory.Move fail with "access denied": retry, then copy.
+        /// </summary>
+        public static void MoveDir(string from, string to)
+        {
+            for (int i = 0; i < 6; i++)
+            {
+                try { Directory.Move(from, to); return; }
+                catch (IOException) { }
+                catch (UnauthorizedAccessException) { }
+                System.Threading.Thread.Sleep(700);
+            }
+            CopyDir(from, to);
+            TryDeleteDir(from);
         }
 
         static void CopyDir(string from, string to)

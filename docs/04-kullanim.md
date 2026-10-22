@@ -61,9 +61,20 @@ Açılmış paketi doğrudan `bin\<tür>\<sürüm-adı>` içine kopyalayın. Por
 
 Klasör adında sürüm numarası olsun (ör. `php-7.3.33-nts`). Portly sürümü addan okur. MySQL'in her ana serisi (5.7, 8.4 ...) kendi veri klasörünü kullanır, yani sürüm eklemek mevcut veritabanlarını bozmaz.
 
-## Laragon / XAMPP'tan geçiş
+## Karşılama ekranı
 
-Menü > Araçlar > **Laragon / XAMPP'tan aktar**. Portly ilk açılışta bunları kendisi bulup önerir.
+Portly her açılışta üç adımlı bir karşılama ekranı gösterir: paketleri kur, başka programdan aktar, başlat. "Bu ekranı bir daha gösterme" işaretlenince bir daha çıkmaz. Ayarlar dosyasında `ShowWelcome=1` yapılarak geri getirilebilir.
+
+## Başka programdan geçiş
+
+Kenar çubuğu > **İçe aktar**. Desteklenenler:
+
+| Program | Projeler | Veritabanları |
+|---|---|---|
+| Laragon, XAMPP, WampServer, AMPPS, UwAmp, Uniform Server, Open Server, EasyPHP, MAMP | ✓ | ✓ |
+| Laravel Herd, Local (Flywheel) | ✓ | — (kendi uygulamalarında tutarlar) |
+
+Kurulumlar tüm sürücülerin kökünde ve Program Files altında aranır.
 
 - **Projeler:** Portly eski proje klasörünü olduğu gibi kullanabilir (kopyalama yok) ya da projeleri `C:\Portly\www` içine kopyalar.
 - **Veritabanları:** "Veritabanlarını listele" ile seçin. Eski MySQL çalışmıyorsa geçici olarak boş bir portta başlatılır; dökümü eski kurulumun kendi `mysqldump` aracıyla alınır ve Portly'nin MySQL'ine yüklenir. XAMPP'ın MariaDB'sine özgü satırlar yüklemede düzeltilir.

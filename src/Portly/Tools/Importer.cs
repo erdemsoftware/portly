@@ -24,17 +24,32 @@ namespace Portly.Tools
         public string MysqlData;
         public int MysqlPort = 3306;
         public string MysqlVersion = "";
-        public string Name { get { return (Kind == "xampp" ? "XAMPP" : "Laragon") + " (" + Root + ")"; } }
+        public string Product = "";   // display name: Laragon, XAMPP, WampServer ...
+        public string Name { get { return (Product != "" ? Product : Kind) + " (" + Root + ")"; } }
         public override string ToString() { return Name; }
     }
 
     /// <summary>
-    /// Move from Laragon or XAMPP: projects (use the folder in place, or copy it) and databases
+    /// Move from Laragon, XAMPP, WampServer, AMPPS, UwAmp, Uniform Server, Open Server, EasyPHP, MAMP
+    /// (and projects from Laravel Herd / Local): projects (use the folder in place, or copy it) and databases
     /// (dumped with the old installation's own mysqldump and loaded into Portly's MySQL).
     /// </summary>
     public static class Importer
     {
         static readonly string[] SystemDbs = { "information_schema", "mysql", "performance_schema", "sys", "phpmyadmin" };
+
+        /// <summary>Known stacks: product name, folder names to look for on every drive, project folders inside.</summary>
+        static readonly string[][] Stacks =
+        {
+            // product, folder patterns (on each drive / Program Files), project folders
+            new[] { "WampServer", "wamp64|wamp", "www" },
+            new[] { "AMPPS", @"Ampps|Program Files\Ampps|Program Files (x86)\Ampps", "www" },
+            new[] { "UwAmp", "UwAmp", "www" },
+            new[] { "Uniform Server", "UniServerZ|UniServer", "www" },
+            new[] { "Open Server", "OSPanel|OpenServer", "home|domains" },
+            new[] { "EasyPHP", "EasyPHP*", "eds-www|www" },
+            new[] { "MAMP", "MAMP", "htdocs" },
+        };
 
         public static List<ImportSource> Detect()
         {
@@ -46,13 +61,80 @@ namespace Portly.Tools
                 if (File.Exists(Path.Combine(lr, "laragon.exe"))) { var s = Laragon(lr); if (s != null) list.Add(s); }
                 var xr = Path.Combine(drive, "xampp");
                 if (Directory.Exists(Path.Combine(xr, "htdocs"))) { var s = Xampp(xr); if (s != null) list.Add(s); }
+                foreach (var st in Stacks)
+                    foreach (var pattern in st[1].Split('|'))
+                        foreach (var root in Match(drive, pattern))
+                        {
+                            if (list.Any(x => string.Equals(x.Root, root, StringComparison.OrdinalIgnoreCase))) continue;
+                            var s = Generic(st[0], root, st[2].Split('|'));
+                            if (s != null) list.Add(s);
+                        }
             }
+            // projects only: these keep their databases inside their own app
+            var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            foreach (var pair in new[] { new[] { "Laravel Herd", Path.Combine(home, "Herd") }, new[] { "Local (Flywheel)", Path.Combine(home, "Local Sites") } })
+                if (Directory.Exists(pair[1]) && Count(pair[1]) > 0)
+                    list.Add(new ImportSource { Kind = "projects", Product = pair[0], Root = pair[1], ProjectsDir = pair[1], ProjectCount = Count(pair[1]) });
             return list;
+        }
+
+        static IEnumerable<string> Match(string drive, string pattern)
+        {
+            if (!pattern.Contains("*")) { var d = Path.Combine(drive, pattern); if (Directory.Exists(d)) yield return d; yield break; }
+            string[] found;
+            try { found = Directory.GetDirectories(drive, pattern, SearchOption.TopDirectoryOnly); } catch { yield break; }
+            foreach (var d in found) yield return d;
+        }
+
+        /// <summary>Any other AMP stack: find the projects folder and the newest mysqld.exe below the root.</summary>
+        static ImportSource Generic(string product, string root, string[] projectDirs)
+        {
+            var projects = projectDirs.Select(d => Path.Combine(root, d)).FirstOrDefault(Directory.Exists);
+            if (projects == null) return null;
+            var src = new ImportSource { Kind = "generic", Product = product, Root = root, ProjectsDir = projects, ProjectCount = Count(projects) };
+            var mysqld = FindFiles(root, "mysqld.exe", 6).OrderByDescending(f => PackageTypes.ParseVersion(f)).FirstOrDefault();
+            if (mysqld != null)
+            {
+                src.MysqlBin = Path.GetDirectoryName(mysqld);
+                var home = Path.GetDirectoryName(src.MysqlBin);
+                src.MysqlIni = new[] { Path.Combine(src.MysqlBin, "my.ini"), Path.Combine(home, "my.ini"), Path.Combine(root, "my.ini") }.FirstOrDefault(File.Exists);
+                ReadMyIni(src);
+                if (src.MysqlData == null || !Directory.Exists(src.MysqlData))
+                    src.MysqlData = new[] { Path.Combine(home, "data"), Path.Combine(root, @"mysql\data"), Path.Combine(root, "data") }
+                        .FirstOrDefault(d => Directory.Exists(Path.Combine(d, "mysql")));
+                if (src.MysqlData == null) src.MysqlBin = null;
+                else
+                {
+                    var r = ProcessUtil.Run(mysqld, "--version", src.MysqlBin, null, 15000);
+                    var m = Regex.Match(r.Output, @"Ver\s+([\d.]+)(-MariaDB)?", RegexOptions.IgnoreCase);
+                    src.MysqlVersion = m.Success ? m.Groups[1].Value + (m.Groups[2].Success ? " MariaDB" : "") : PackageTypes.Label(home);
+                }
+            }
+            return src;
+        }
+
+        static IEnumerable<string> FindFiles(string dir, string name, int depth)
+        {
+            var result = new List<string>();
+            try
+            {
+                var f = Path.Combine(dir, name);
+                if (File.Exists(f)) result.Add(f);
+                if (depth <= 0) return result;
+                foreach (var sub in Directory.GetDirectories(dir))
+                {
+                    var n = Path.GetFileName(sub).ToLowerInvariant();
+                    if (n == "www" || n == "htdocs" || n == "home" || n == "domains" || n == "node_modules" || n == "data" || n == "tmp" || n == "logs") continue;
+                    result.AddRange(FindFiles(sub, name, depth - 1));
+                }
+            }
+            catch { }
+            return result;
         }
 
         static ImportSource Laragon(string root)
         {
-            var src = new ImportSource { Kind = "laragon", Root = root };
+            var src = new ImportSource { Kind = "laragon", Product = "Laragon", Root = root };
             var ini = new Ini(Path.Combine(root, @"usr\laragon.ini"));
             var docRoot = ini.Get("apache", "DocumentRoot", "");
             if (docRoot == "") docRoot = ini.Get("nginx", "DocumentRoot", "");
@@ -83,7 +165,7 @@ namespace Portly.Tools
 
         static ImportSource Xampp(string root)
         {
-            var src = new ImportSource { Kind = "xampp", Root = root, ProjectsDir = Path.Combine(root, "htdocs") };
+            var src = new ImportSource { Kind = "xampp", Product = "XAMPP", Root = root, ProjectsDir = Path.Combine(root, "htdocs") };
             var bin = Path.Combine(root, @"mysql\bin");
             if (File.Exists(Path.Combine(bin, "mysqld.exe")))
             {

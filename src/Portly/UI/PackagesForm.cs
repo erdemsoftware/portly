@@ -24,7 +24,7 @@ namespace Portly.UI
             public bool Installed;
         }
 
-        static readonly string[] FirstRunTypes = { "apache", "php", "mysql", "adminer", "composer", "mailpit", "mailhog" };
+        static readonly string[] FirstRunTypes = { "apache", "php", "mysql", "phpmyadmin", "adminer", "composer", "mailpit", "mailhog" };
 
         readonly bool _firstRun;
         ComboBox _filter;

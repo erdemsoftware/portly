@@ -131,7 +131,7 @@ namespace Portly.Tools
             await Task.Run(() => ZipFile.ExtractToDirectory(zip, tmp), ct);
             var src = Path.Combine(tmp, "wordpress");
             if (!Directory.Exists(src)) src = Directory.GetDirectories(tmp).FirstOrDefault() ?? tmp;
-            Directory.Move(src, dir);
+            Installer.MoveDir(src, dir);
             try { Directory.Delete(tmp, true); } catch { }
 
             var sample = Path.Combine(dir, "wp-config-sample.php");

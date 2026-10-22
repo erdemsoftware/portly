@@ -60,6 +60,8 @@ namespace Portly.Core
         /// <summary>"system", "light" or "dark".</summary>
         public string Theme { get { var v = _ini.Get("general", "Theme", "system"); return v == "light" || v == "dark" ? v : "system"; } set { _ini.Set("general", "Theme", value); } }
         public string Terminal { get { return _ini.Get("general", "Terminal", "cmd"); } set { _ini.Set("general", "Terminal", value); } }
+        /// <summary>Start screen on every start until "Don't show again" is ticked.</summary>
+        public bool ShowWelcome { get { return _ini.GetBool("general", "ShowWelcome", true); } set { _ini.Set("general", "ShowWelcome", value); } }
         public bool FirstRunDone { get { return _ini.GetBool("general", "FirstRunDone", false); } set { _ini.Set("general", "FirstRunDone", value); } }
         public bool OsWarningShown { get { return _ini.GetBool("general", "OsWarningShown", false); } set { _ini.Set("general", "OsWarningShown", value); } }
         public string LastUpdateCheck { get { return _ini.Get("general", "LastUpdateCheck", ""); } set { _ini.Set("general", "LastUpdateCheck", value); } }

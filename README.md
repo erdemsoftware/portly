@@ -30,7 +30,7 @@ Portly; Apache ya da Nginx, PHP, MySQL, Node.js, Redis, Mailpit, Composer ve Adm
 | Çökme güvenliği | — | Portly kapanırsa servisler Windows tarafından kapatılır (job object) |
 | Port çakışması | Hata mesajı | Portu tutan program ve yolu gösterilir; **tek tıkla boş porta geç** ya da o programı kapat; artık süreçler kendiliğinden temizlenir |
 | Arayüz | Klasik | Kenar çubuklu modern arayüz, **açık/koyu tema** (Windows'u izler) |
-| Geçiş | — | **Laragon ve XAMPP'tan** projeleri ve veritabanlarını tek tıkla aktarma |
+| Geçiş | — | **Laragon, XAMPP, WampServer, AMPPS, UwAmp, Uniform Server, Open Server, EasyPHP, MAMP**'tan projeleri ve veritabanlarını tek tıkla aktarma (Herd ve Local'dan projeler) |
 | Paylaşım | ngrok (hesap gerekir) | **Cloudflare hızlı tüneli**, hesapsız ve ücretsiz |
 | Posta | Mailpit | **Mailpit, MailHog ya da smtp4dev** |
 | Diğer | — | Tek tıkla Xdebug, otomatik veritabanı yedeği, Symfony / CodeIgniter / CakePHP / Drupal şablonları |
@@ -89,7 +89,7 @@ Portly runs Apache or Nginx, PHP, MySQL, Node.js, Redis, Mailpit, Composer and A
 - Crash safe: if Portly dies, Windows closes all services (job object).
 - Port conflicts are checked before every start: see which program holds the port, switch to a free port in one click, or close that program. Leftover Portly services are cleaned up automatically.
 - Modern sidebar UI with light / dark theme that follows Windows.
-- One-click import from Laragon and XAMPP (projects and databases), share a site on the internet through a free Cloudflare quick tunnel, choice of Mailpit / MailHog / smtp4dev, one-click Xdebug, optional automatic database backups, Symfony / CodeIgniter / CakePHP / Drupal templates.
+- One-click import from Laragon, XAMPP, WampServer, AMPPS, UwAmp, Uniform Server, Open Server, EasyPHP and MAMP (projects and databases; projects from Laravel Herd and Local), share a site on the internet through a free Cloudflare quick tunnel, choice of Mailpit / MailHog / smtp4dev, one-click Xdebug, optional automatic database backups, Symfony / CodeIgniter / CakePHP / Drupal templates.
 - **Two editions**: Windows 10/11 (updates, latest packages) and Legacy for Windows 7 SP1 / 8 / 8.1 (frozen, compatible packages).
 - 31 languages (right-to-left for Arabic, Persian, Urdu), plain JSON files, contributions welcome.
 

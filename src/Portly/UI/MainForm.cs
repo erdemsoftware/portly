@@ -140,6 +140,7 @@ namespace Portly.UI
             nav.Controls.Add(_navLog);
             nav.Controls.Add(new Panel { Height = Ui.S(14), Width = Ui.S(10), BackColor = Color.Transparent });
             nav.Controls.Add(NavButton(I18n.T("main.packages"), "box", (s, e) => OpenPackages(null)));
+            nav.Controls.Add(NavButton(I18n.T("nav.import"), "import", (s, e) => OpenImport(true)));
             nav.Controls.Add(NavButton(I18n.T("main.settings"), "gear", (s, e) => OpenSettings()));
             var more = NavButton(I18n.T("main.menu"), "more", null);
             more.Click += (s, e) => { BuildMenu(_menu.Items); _menu.Show(more, new Point(more.Width, 0)); };
@@ -259,7 +260,9 @@ namespace Portly.UI
             quickTitle.Padding = Ui.P(2, 18, 0, 8);
             var tiles = new FlowLayoutPanel { Dock = DockStyle.Top, AutoSize = true, BackColor = Color.Transparent, Padding = Ui.P(0, 0, 0, 8) };
             tiles.Controls.Add(Tile(I18n.T("main.web"), "globe", (s, e) => OpenLocalhost()));
-            tiles.Controls.Add(Tile(I18n.T("main.database"), "database", (s, e) => OpenDatabaseTool()));
+            ModernButton dbTile = null;
+            dbTile = Tile(I18n.T("main.database"), "database", (s, e) => OpenDatabaseTool(dbTile));
+            tiles.Controls.Add(dbTile);
             tiles.Controls.Add(Tile(I18n.T("main.mail"), "mail", (s, e) => OpenMailpit()));
             tiles.Controls.Add(Tile(I18n.T("main.terminal"), "terminal", (s, e) => Terminal.Open()));
             tiles.Controls.Add(Tile(I18n.T("main.root"), "folder", (s, e) => WinUtil.OpenFolder(Settings.Current.DocumentRoot)));
@@ -813,7 +816,13 @@ namespace Portly.UI
             items.Add(sites);
 
             var db = new ToolStripMenuItem("MySQL");
-            db.DropDownItems.Add(I18n.T("main.database"), null, (s, e) => OpenDatabaseTool());
+            foreach (var t in new[] { "phpmyadmin", "adminer" })
+            {
+                var tool = t;
+                if (PackageTypes.ActiveDir(tool) == null) continue;
+                db.DropDownItems.Add(PackageTypes.Get(tool).Name, null, (s, e) => { var p2 = Settings.Current.HttpPort; WinUtil.Open("http://localhost" + (p2 == 80 ? "" : ":" + p2) + "/" + tool + "/"); });
+            }
+            if (db.DropDownItems.Count == 0) db.DropDownItems.Add(I18n.T("main.database"), null, (s, e) => OpenDatabaseTool());
             db.DropDownItems.Add(I18n.T("db.create"), null, (s, e) => CreateDatabase(""));
             db.DropDownItems.Add(I18n.T("db.backup"), null, async (s, e) => await BackupDatabases());
             db.DropDownItems.Add(I18n.T("db.password"), null, (s, e) => ChangeRootPassword());
@@ -993,16 +1002,26 @@ namespace Portly.UI
             WinUtil.Open("http://127.0.0.1:" + Settings.Current.MailpitWebPort + "/");
         }
 
-        void OpenDatabaseTool()
+        /// <summary>Adminer or phpMyAdmin; when both are installed, a small menu lets you pick.</summary>
+        void OpenDatabaseTool(Control anchor = null)
         {
-            if (PackageTypes.ActiveDir("adminer") == null && PackageTypes.ActiveDir("phpmyadmin") == null)
+            var tools = new[] { "phpmyadmin", "adminer" }.Where(t => PackageTypes.ActiveDir(t) != null).ToList();
+            if (tools.Count == 0)
             {
-                if (Ui.Confirm(this, I18n.T("db.noTool"))) OpenPackages("adminer");
+                if (Ui.Confirm(this, I18n.T("db.noTool"))) OpenPackages("phpmyadmin");
                 return;
             }
-            var tool = PackageTypes.ActiveDir("adminer") != null ? "adminer" : "phpmyadmin";
             var port = Settings.Current.HttpPort;
-            WinUtil.Open("http://localhost" + (port == 80 ? "" : ":" + port) + "/" + tool + "/");
+            Action<string> open = tool => WinUtil.Open("http://localhost" + (port == 80 ? "" : ":" + port) + "/" + tool + "/");
+            if (tools.Count == 1 || anchor == null) { open(tools[0]); return; }
+            var m = new ContextMenuStrip();
+            StyleMenu(m);
+            foreach (var t in tools)
+            {
+                var tool = t;
+                m.Items.Add(PackageTypes.Get(tool).Name + "   /" + tool, null, (s, e) => open(tool));
+            }
+            m.Show(anchor, new Point(0, anchor.Height));
         }
 
         void NewProject()
@@ -1276,14 +1295,14 @@ namespace Portly.UI
             }
 
             bool nothingInstalled = PackageTypes.All.All(t => PackageTypes.Installed(t.Id).Count == 0);
-            if (nothingInstalled && !s.FirstRunDone)
-            {
-                s.FirstRunDone = true;
-                s.Save();
+            bool startFromWelcome = false;
+            if (s.ShowWelcome && !_startHidden)
+                startFromWelcome = ShowWelcome(nothingInstalled);
+            else if (nothingInstalled && !s.FirstRunDone)
                 OpenPackages(null, true);
-                OpenImport(false);
-            }
-            else CheckVcRuntime(true);
+            s.FirstRunDone = true;
+            s.Save();
+            if (!nothingInstalled) CheckVcRuntime(true);
 
             // automatic database backup (off by default): checked every 10 minutes
             var backupTimer = new System.Windows.Forms.Timer { Interval = 10 * 60 * 1000 };
@@ -1294,7 +1313,7 @@ namespace Portly.UI
             backupTimer.Start();
 
             var checks = BackgroundChecks(false, false);
-            if (_startServices || s.StartServicesOnLaunch) await ToggleAll();
+            if (_startServices || s.StartServicesOnLaunch || startFromWelcome) await ToggleAll();
             await checks;
         }
 
@@ -1330,9 +1349,9 @@ namespace Portly.UI
         }
 
         /// <summary>Laragon / XAMPP import. quiet = only open when something was found (first start).</summary>
-        async void OpenImport(bool interactive)
+        async void OpenImport(bool interactive, List<ImportSource> known = null)
         {
-            var sources = await Task.Run(() => Importer.Detect());
+            var sources = known ?? await Task.Run(() => Importer.Detect());
             if (sources.Count == 0)
             {
                 if (interactive) Ui.Info(this, I18n.T("import.none"));
@@ -1345,6 +1364,26 @@ namespace Portly.UI
                 f.ShowDialog(this);
                 if (f.ProjectsChanged) { WatchDocRoot(); await ServiceManager.ReloadWebAsync(); RebuildTheme(); }
             }
+        }
+
+        /// <summary>Start screen. Returns true when the user chose "Start all".</summary>
+        bool ShowWelcome(bool nothingInstalled)
+        {
+            WelcomeAction action;
+            List<ImportSource> sources;
+            using (var f = new WelcomeForm())
+            {
+                f.ShowDialog(this);
+                action = f.Action;
+                sources = f.Sources;
+            }
+            switch (action)
+            {
+                case WelcomeAction.Packages: OpenPackages(null, nothingInstalled); break;
+                case WelcomeAction.Import: OpenImport(true, sources); break;
+                case WelcomeAction.StartAll: return true;
+            }
+            return false;
         }
 
         void ShowDonate()

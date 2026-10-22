@@ -144,7 +144,8 @@
       "folder": "phpMyAdmin-5.2.3",
       "url": "https://files.phpmyadmin.net/phpMyAdmin/5.2.3/phpMyAdmin-5.2.3-all-languages.zip",
       "note": "http://localhost/phpmyadmin",
-      "minOs": "6.1"
+      "minOs": "6.1",
+      "recommended": true
     }
   ],
   "xdebug": {

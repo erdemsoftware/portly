@@ -79,7 +79,7 @@ namespace Portly.SmokeTest
                 Catalog.Recommended("apache"), Catalog.Recommended("nginx"), php,
                 Catalog.ForType("php").First(e => e.Branch == "8.4"),
                 Catalog.Recommended("redis"), Catalog.Recommended("mailpit"),
-                Catalog.Recommended("adminer"), Catalog.Recommended("composer"),
+                Catalog.Recommended("adminer"), Catalog.Recommended("composer"), Catalog.Recommended("phpmyadmin"),
             };
             if (!mysqlEntry.IsInstalled) wanted.Add(mysqlEntry);
             foreach (var e in wanted)
@@ -310,6 +310,8 @@ namespace Portly.SmokeTest
             Check(server + ": dashboard lists sites", dash.Contains("demo.localhost") && dash.Contains("legacyapp"), dash.Length + " bytes");
             var adminer = Get("http://127.0.0.1:" + s.HttpPort + "/adminer/", "localhost");
             Check(server + ": /adminer works", adminer.Contains("Adminer"), adminer.Length + " bytes");
+            var pma = Get("http://127.0.0.1:" + s.HttpPort + "/phpmyadmin/", "localhost");
+            Check(server + ": /phpmyadmin works (PHP " + PackageTypes.Label(PackageTypes.ActiveFolder("php")) + ")", pma.Contains("phpMyAdmin") && !pma.Contains("Fatal error"), pma.Length + " bytes");
         }
 
         static string _lastIssuer = "";
