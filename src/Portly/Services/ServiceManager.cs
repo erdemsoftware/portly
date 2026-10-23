@@ -54,6 +54,7 @@ namespace Portly.Services
 
         public static async Task StartWebAsync()
         {
+            if (ServiceMode.IsController) { await ServiceMode.CommandAsync("start", "web"); return; }
             var sites = await Task.Run(() => RefreshSites());
             var needed = Sites.NeededPhpFolders(sites);
             if (needed.Count > 0)
@@ -74,6 +75,7 @@ namespace Portly.Services
 
         public static async Task StopWebAsync()
         {
+            if (ServiceMode.IsController) { await ServiceMode.CommandAsync("stop", "web"); return; }
             await Web.StopAsync();
             await Php.StopAsync();
             await FrankenPhp.StopAsync();
@@ -82,6 +84,12 @@ namespace Portly.Services
         /// <summary>Re-generate configuration and restart the web server if it runs (new site, PHP switch ...).</summary>
         public static async Task ReloadWebAsync()
         {
+            if (ServiceMode.IsController)
+            {
+                await Task.Run(() => RefreshSites());
+                await ServiceMode.CommandAsync("reloadweb");
+                return;
+            }
             if (Web.IsActive || Php.IsActive)
             {
                 await StopWebAsync();
@@ -109,18 +117,29 @@ namespace Portly.Services
 
         public static Task StartAsync(Service s)
         {
+            // service mode: the Windows service runs the programs, the GUI only asks it
+            if (ServiceMode.IsController) return ServiceMode.CommandAsync("start", s.Id);
             if (s.Id == "web" || s.Id == "php") return StartWebAsync();
             return s.StartAsync();
         }
 
         public static Task StopAsync(Service s)
         {
+            if (ServiceMode.IsController) return ServiceMode.CommandAsync("stop", s.Id);
             if (s.Id == "web" || s.Id == "php") return StopWebAsync();
             return s.StopAsync();
         }
 
+        /// <summary>Restart one service (version switch); in service mode the Windows service does it.</summary>
+        public static Task RestartAsync(Service s)
+        {
+            if (ServiceMode.IsController) return ServiceMode.CommandAsync("restart", s.Id);
+            return s.RestartAsync();
+        }
+
         public static async Task StartAllAsync()
         {
+            if (ServiceMode.IsController) { await ServiceMode.StartAllAsync(); return; }
             await Tools.Hooks.RunAsync("before-start");
             var s = Settings.Current;
             var tasks = new List<Task>();
@@ -138,6 +157,7 @@ namespace Portly.Services
 
         public static Task StopAllAsync()
         {
+            if (ServiceMode.IsController) return ServiceMode.StopAllAsync();
             // on a thread-pool thread: Windows shutdown waits on this with .Wait() from the UI thread
             return Task.Run(async () =>
             {
@@ -153,6 +173,13 @@ namespace Portly.Services
         public static async Task SwitchWebServerAsync(string server)
         {
             if (server == Settings.Current.WebServer) return;
+            if (ServiceMode.IsController)
+            {
+                Settings.Current.WebServer = server;
+                Settings.Current.Save();
+                await ServiceMode.CommandAsync("reload");
+                return;
+            }
             bool wasRunning = Web.IsActive;
             await StopWebAsync();
             Settings.Current.WebServer = server;

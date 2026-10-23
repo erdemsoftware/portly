@@ -23,26 +23,59 @@ namespace Portly.UI
         public static Color Gray { get { return Theme.Current.Gray; } }
         public static Color Heart { get { return Theme.Current.Heart; } }
 
-        public static readonly Font Font = new Font("Segoe UI", 9f);
-        public static readonly Font Bold = new Font("Segoe UI Semibold", 9.5f);
-        public static readonly Font Small = new Font("Segoe UI", 8.25f);
-        public static readonly Font Title = new Font("Segoe UI Semibold", 16f);
-        public static readonly Font Brand = new Font("Segoe UI Semibold", 14f);
-        public static readonly Font Subtitle = new Font("Segoe UI Semibold", 10.5f);
-        public static readonly Font Mono = new Font("Consolas", 9.5f);
+        // Fonts follow the DPI of the monitor the main window is on (see SetDpi). Sizes are in points at the
+        // system DPI, so on a monitor with another DPI they are multiplied by Dpi / SystemDpi.
+        public static Font Font { get { return ScaledFont("Segoe UI", 9f); } }
+        public static Font Bold { get { return ScaledFont("Segoe UI Semibold", 9.5f); } }
+        public static Font Small { get { return ScaledFont("Segoe UI", 8.25f); } }
+        public static Font Title { get { return ScaledFont("Segoe UI Semibold", 16f); } }
+        public static Font Brand { get { return ScaledFont("Segoe UI Semibold", 14f); } }
+        public static Font Subtitle { get { return ScaledFont("Segoe UI Semibold", 10.5f); } }
+        public static Font Mono { get { return ScaledFont("Consolas", 9.5f); } }
 
-        static float _scale = -1;
-        public static float Scale
+        /// <summary>A font of the given point size at the current DPI (for custom controls).</summary>
+        public static Font ScaledFont(string family, float points, FontStyle style = FontStyle.Regular)
+        {
+            var key = family + "|" + points + "|" + (int)style + "|" + Dpi;
+            Font f;
+            lock (FontCache)
+            {
+                if (!FontCache.TryGetValue(key, out f))
+                    FontCache[key] = f = new Font(family, points * Dpi / SystemDpi, style);
+            }
+            return f;
+        }
+
+        // fonts stay alive for the whole run: controls of older windows may still use them
+        static readonly System.Collections.Generic.Dictionary<string, Font> FontCache = new System.Collections.Generic.Dictionary<string, Font>();
+
+        static int _systemDpi;
+        /// <summary>DPI that GDI uses for point sizes (the primary monitor's when Portly started).</summary>
+        public static int SystemDpi
         {
             get
             {
-                if (_scale < 0)
+                if (_systemDpi == 0)
                 {
-                    try { using (var g = Graphics.FromHwnd(IntPtr.Zero)) _scale = g.DpiX / 96f; }
-                    catch { _scale = 1f; }
+                    try { using (var g = Graphics.FromHwnd(IntPtr.Zero)) _systemDpi = (int)Math.Round(g.DpiX); }
+                    catch { _systemDpi = 96; }
+                    if (_systemDpi <= 0) _systemDpi = 96;
                 }
-                return _scale;
+                return _systemDpi;
             }
+        }
+
+        static int _dpi;
+        /// <summary>DPI of the monitor the main window is on (per-monitor V2 aware on Windows 10 1703+).</summary>
+        public static int Dpi { get { return _dpi == 0 ? SystemDpi : _dpi; } }
+        public static float Scale { get { return Dpi / 96f; } }
+
+        /// <summary>Switch sizes and fonts to another monitor's DPI. Returns false when nothing changed.</summary>
+        public static bool SetDpi(int dpi)
+        {
+            if (dpi <= 0 || dpi == Dpi) return false;
+            _dpi = dpi;
+            return true;
         }
 
         /// <summary>The first solid background color up the parent chain (for painting outside rounded corners).</summary>
@@ -170,6 +203,18 @@ namespace Portly.UI
             ApplyDirection(f);
             f.HandleCreated += (s, e) => Theme.ApplyTitleBar(f);
             f.Load += (s, e) => StyleTree(f);
+            // A dialog moved to a monitor with another scale is rescaled by WinForms (per-monitor V2: bounds and
+            // fonts). Ui.Scale stays with the main window, which rebuilds itself (MainForm.OnDpiChanged).
+            // Esc closes every dialog, also those without a Cancel button
+            f.KeyPreview = true;
+            f.KeyDown += (s, e) =>
+            {
+                if (e.KeyCode != Keys.Escape || e.Handled || !f.Modal || f.CancelButton != null) return;
+                var combo = f.ActiveControl as ComboBox;
+                if (combo != null && combo.DroppedDown) return;
+                e.Handled = true;
+                f.Close();
+            };
         }
 
         /// <summary>Arabic, Persian, Urdu: mirror the whole window (layout, text alignment, icons).</summary>

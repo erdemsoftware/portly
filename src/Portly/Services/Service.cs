@@ -42,6 +42,12 @@ namespace Portly.Services
             if (h != null) { try { h(this); } catch { } }
         }
 
+        /// <summary>Service mode: show the state reported by the Portly Windows service (the GUI runs nothing itself).</summary>
+        public void Mirror(ServiceState s, string error)
+        {
+            if (s != State || (error ?? "") != (LastError ?? "")) SetState(s, string.IsNullOrEmpty(error) ? null : error);
+        }
+
         public abstract Task StartAsync();
         public abstract Task StopAsync();
 

@@ -25,7 +25,7 @@ namespace Portly.Core
             }
         }
 
-        public void Save() { _ini.Save(); }
+        public void Save() { if (!ReadOnly) _ini.Save(); }
         public Ini Raw { get { return _ini; } }
 
         // ---------- general ----------
