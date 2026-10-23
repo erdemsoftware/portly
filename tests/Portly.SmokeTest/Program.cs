@@ -422,6 +422,24 @@ namespace Portly.SmokeTest
                 Check("self update replaces Portly.exe (old one kept as .old)", File.Exists(Path.Combine(Paths.Root, "Portly.exe.old")) && File.Exists(Path.Combine(Paths.Root, "Portly.exe")));
                 Check("self update keeps user data", File.Exists(Paths.SettingsFile) && Directory.Exists(Path.Combine(Paths.Root, "www", "demo")) && PackageTypes.Installed("php").Count >= 2);
                 Check("self update brings languages", File.Exists(Path.Combine(Paths.Lang, "de.json")));
+
+                // put this build back: the release zip may be older than the code under test, and the next run
+                // (and the msbuild copy step, which skips "newer" files) would otherwise test the old exe
+                try
+                {
+                    var exe = Path.Combine(Paths.Root, "Portly.exe");
+                    File.Delete(exe);                       // the zip's copy, not loaded
+                    File.Move(exe + ".old", exe);           // the loaded image can be renamed back
+                    var src = Path.GetFullPath(Path.Combine(Paths.Root, "..", "..", "src", "Portly"));
+                    foreach (var dir in new[] { "lang", "templates" })
+                        foreach (var f in Directory.GetFiles(Path.Combine(src, dir), "*", SearchOption.AllDirectories))
+                        {
+                            var to = Path.Combine(Paths.Root, dir, f.Substring(Path.Combine(src, dir).Length + 1));
+                            Directory.CreateDirectory(Path.GetDirectoryName(to));
+                            File.Copy(f, to, true);
+                        }
+                }
+                catch (Exception ex) { Console.WriteLine("  (could not restore the test build: " + ex.Message + ")"); }
             }
             else Console.WriteLine("  (skip self update: run build.ps1 first)");
 
