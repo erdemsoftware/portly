@@ -140,3 +140,34 @@ Servisler sayfasında **Servisleri seç** ile ana ekranda görünecek servisler 
 ## Windows'ta zaten kurulu programlar
 
 VS Code, Notepad++, Git, HeidiSQL, DBeaver, Beekeeper Studio, DbGate ve DB Browser for SQLite bilgisayarda normal yolla kuruluysa Portly onları kullanır; Paketler penceresinde yeşil "Windows'ta kurulu" satırı görünür ve yeniden indirmek gerekmez. İsterseniz taşınabilir sürümü yine de kurabilirsiniz; o zaman Portly'nin kendi kopyası önceliklidir.
+
+## Siteyi sunucuya göndermek / sunucudan çekmek
+
+Ayarlar > Özellikler'de **Sunucuya gönder / sunucudan çek** açılınca (yalnız Windows 10/11 sürümü; Windows'un kendi `ssh.exe` ve `tar.exe` programlarını kullanır) site kartındaki **⋯ > Sunucu...** penceresi çıkar. XAMPP/Laragon'daki bir WordPress sitesini hostinge taşımak ya da canlı siteyi yerele almak için düşünülmüştür.
+
+1. **Sunucu, SSH portu, kullanıcı** ve **sunucudaki klasör** (ör. Plesk'te `/var/www/vhosts/ornek.com/httpdocs`, cPanel'de `~/public_html`) girilir.
+2. **Anahtar oluştur** `usr\ssh\id_ed25519_portly` anahtarını üretir ve açık anahtarı gösterir. **Açık anahtarı kopyala** ile alıp sunucuya bir kez ekleyin: Plesk > Web Siteleri ve Alan Adları > SSH Anahtarları (ya da `~/.ssh/authorized_keys`), cPanel > Güvenlik > SSH Erişimi > Anahtar İçe Aktar > Yetkilendir. Şifreyle giriş desteklenmez; parolalı anahtar ancak ssh-agent'ta yüklüyse çalışır.
+3. **Bağlantıyı dene**: ilk bağlantıda sunucu anahtarının parmak izi gösterilir ve `usr\ssh\known_hosts` içine kaydedilir. Anahtar sonradan değişirse bağlantı reddedilir.
+4. **Veritabanı**: varsayılan olarak sunucudaki `wp-config.php` ya da `.env` ayarları kullanılır, Portly hiçbir şifre saklamaz. Elle girilen şifre `usr\deploy.ini` içinde Windows DPAPI ile şifreli tutulur ve sunucuya komut satırıyla değil standart girdiyle gider (sunucuda `umask 077` ile oluşturulup iş bitince silinen geçici bir dosyaya yazılır).
+5. **Adresler** (WordPress): yerel ve canlı adres girilirse veritabanındaki adresler WP-CLI `search-replace` ile değiştirilir.
+6. **Hariç tut**: `.git, node_modules, .env, *.log, storage/logs, wp-content/cache, wp-config.php` varsayılandır. Bu dosyalar hiçbir yöne aktarılmaz ve silinmez (iki taraf da kendi `wp-config.php` / `.env` dosyasını korur). İlk çekmede yerelde `wp-config.php` yoksa yerel veritabanına göre oluşturulur.
+
+**Sunucudan çek** (varsayılan, güvenli yön): önce yerel dosyalar `backup\deploy\<site>-<tarih>.zip` olarak yedeklenir, sonra sunucudaki dosyalar `tar` ile sıkıştırılıp SSH üzerinden iner ve yerel klasörün yerini alır; veritabanı `mysqldump | gzip` ile gelir ve yerel veritabanına aktarılır.
+
+**Sunucuya gönder** her zaman önce bir özet gösterir (dosya sayısı/boyutu, veritabanı, uzak klasör, yedek) ve aynı pencerede site adının yazılmasını ister. Varsayılan olarak sunucu önce `~/portly-backups/<site>-<tarih>.tar.gz` ve `.sql.gz` olarak yedeklenir. Dosyalar sunucuda üzerine yazılır; yalnızca sunucuda olan dosyalar silinmez. WordPress adresleri sunucuda WP-CLI varsa orada, yoksa yerelde dışa aktarılan kopya üzerinde değiştirilir (yerel veritabanı değişmez). Tüm adımlar pencerenin altındaki günlükte görünür; şifreler hiçbir zaman yazılmaz.
+
+## Windows hizmeti olarak çalıştırma
+
+Ayarlar > Özellikler'de **Windows hizmeti** açılınca Ayarlar > Genel'de **Windows hizmeti olarak çalıştır (oturum açmadan başlar)** kutusu çıkar. İşaretleyip kaydedince Portly ne olacağını açıklar ve Windows bir kez yönetici izni ister:
+
+- Web sunucusu, PHP ve veritabanları **"Portly"** adlı Windows hizmetinde (LocalSystem) çalışır, bilgisayar açılınca kimse oturum açmadan başlar ve çökerse Windows yeniden başlatır.
+- Portly penceresi yalnızca hizmeti yönetir: **Hepsini başlat / durdur** hizmeti başlatır / durdurur, kartlardaki anahtarlar tek tek servisleri hizmete yaptırır. Pencereyi kapatmak servisleri durdurmaz.
+- Kullanıcınıza Portly klasöründe değiştirme izni verilir (hizmetin oluşturduğu günlük ve veri dosyaları düzenlenebilir kalsın diye) ve MySQL root şifresinin bir kopyası hizmet için bu bilgisayara özel DPAPI ile saklanır.
+- Kutu kaldırılınca (ya da özellik kapatılınca) hizmet durdurulur ve silinir; servisler eskisi gibi pencereden başlatılır.
+
+Hizmet açıkken "root şifresini sıfırla" ve "kurtarma modu" gibi MySQL'i farklı seçeneklerle yeniden başlatan işlemler için önce hizmet modunu kapatın.
+
+## Erişilebilirlik ve yüksek DPI
+
+- Portly her monitörün kendi ölçeğini izler (Windows 10 1703+, per-monitor V2): pencere %100 ile %200 ölçekli monitörler arasında taşınınca yeniden çizilir, bulanıklaşmaz.
+- Tüm düğmeler, anahtarlar ve kartlar ekran okuyuculara (Ekran Okuyucusu, NVDA) adlarıyla görünür; düğmeler Enter / Boşluk ile, anahtarlar Boşluk ile çalışır. Klavye odağı iki temada da görünür bir çerçeveyle gösterilir, Esc her pencereyi kapatır.
