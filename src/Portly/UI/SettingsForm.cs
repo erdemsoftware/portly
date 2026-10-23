@@ -23,7 +23,8 @@ namespace Portly.UI
         CheckBox _legacySql;
         readonly Dictionary<string, CheckBox> _features = new Dictionary<string, CheckBox>();
         CheckBox _autoVhosts, _ssl, _runAtStartup, _startMin, _startServices, _closeToTray, _addToPath, _checkUpdates, _allowLan;
-        RadioButton _apache, _nginx;
+        RadioButton _apache, _nginx, _caddy;
+        TextBox _excluded;
         NumericUpDown _http, _https, _mysql, _redis, _mailWeb, _mailSmtp, _phpPort, _phpChildren;
 
         public SettingsForm()
@@ -83,6 +84,12 @@ namespace Portly.UI
             _startServices = Check(I18n.T("settings.startServices"), s.StartServicesOnLaunch, g);
             _closeToTray = Check(I18n.T("settings.closeToTray"), s.CloseToTray, g);
             _addToPath = Check(I18n.T("settings.addToPath"), s.AddToPath, g);
+            if (Features.IsOn("archive"))
+            {
+                _excluded = new TextBox { Text = s.ExcludedFolders, Width = Ui.S(320) };
+                AddRow(g, I18n.T("archive.excluded"), _excluded);
+                AddRow(g, "", Hint(I18n.T("archive.excludedHint", Settings.DefaultExcludedFolders)));
+            }
             _checkUpdates = Check(AppInfo.UpdatesSupported ? I18n.T("settings.checkUpdates") : I18n.T("settings.noUpdatesLegacy"), AppInfo.UpdatesSupported && s.CheckUpdates, g);
             _checkUpdates.Enabled = AppInfo.UpdatesSupported;
             _proxy = new ProxySettingsPanel();
@@ -96,6 +103,9 @@ namespace Portly.UI
             _nginx = new RadioButton { Text = "Nginx", AutoSize = true, Checked = s.WebServer == "nginx" };
             web.Controls.Add(_apache);
             web.Controls.Add(_nginx);
+            // Caddy only while its optional feature is on (Windows 10+ edition)
+            _caddy = new RadioButton { Text = "Caddy", AutoSize = true, Checked = s.WebServer == "caddy", Visible = !AppInfo.IsLegacy && Features.IsOn("caddy") };
+            web.Controls.Add(_caddy);
             AddRow(g2, I18n.T("settings.webServer"), web);
             _dbEngine = new ThemedCombo { Width = Ui.S(200) };
             foreach (var en in new[] { "mysql", "mariadb" })
@@ -297,11 +307,14 @@ namespace Portly.UI
             var phpLow = (int)_phpPort.Value;
             if (ports.Any(p => p >= phpLow && p < phpLow + 100)) { Ui.Error(this, I18n.T("settings.phpPortOverlap", phpLow, phpLow + 99)); return; }
 
-            bool webChanged = (_nginx.Checked ? "nginx" : "apache") != s.WebServer;
+            var server = _caddy.Checked && _caddy.Visible ? "caddy" : _nginx.Checked ? "nginx" : "apache";
+            bool webChanged = server != s.WebServer;
+            bool excludedChanged = _excluded != null && _excluded.Text.Trim() != s.ExcludedFolders;
+            if (excludedChanged) s.ExcludedFolders = _excluded.Text.Trim();
             bool webReload = root != s.DocumentRoot || tld != s.Tld || _autoVhosts.Checked != s.AutoVhosts || _ssl.Checked != s.Ssl
                 || (int)_http.Value != s.HttpPort || (int)_https.Value != s.HttpsPort || _allowLan.Checked != s.AllowLan
                 || (int)_phpPort.Value != s.PhpBasePort || (int)_phpChildren.Value != s.PhpChildren
-                || (int)_mailSmtp.Value != s.MailpitSmtpPort || (int)_mysql.Value != s.MysqlPort;
+                || (int)_mailSmtp.Value != s.MailpitSmtpPort || (int)_mysql.Value != s.MysqlPort || excludedChanged;
             var dbEngine = ((Item)_dbEngine.SelectedItem).Value;
             if (dbEngine != s.DbEngine)
             {
@@ -384,7 +397,7 @@ namespace Portly.UI
 
             Task.Run(async () =>
             {
-                if (webChanged) await ServiceManager.SwitchWebServerAsync(_nginx.Checked ? "nginx" : "apache");
+                if (webChanged) await ServiceManager.SwitchWebServerAsync(server);
                 if (mysqlRestart && mysqlWasActive)
                 {
                     await ServiceManager.MySql.StopAsync();   // stops the engine that is running now

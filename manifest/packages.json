@@ -97,6 +97,27 @@
       "minOs": "10.0"
     },
     {
+      "type": "caddy",
+      "version": "2.11.7",
+      "folder": "caddy-2.11.7",
+      "url": "https://github.com/caddyserver/caddy/releases/download/v2.11.7/caddy_2.11.7_windows_amd64.zip",
+      "sha256": "0a1edc0b799512051c57071ce0e798d3f2cf67dc98171366f1d2b326072e3b06",
+      "note": "web server (optional feature)",
+      "recommended": true,
+      "minOs": "10.0"
+    },
+    {
+      "type": "frankenphp",
+      "version": "1.13.2",
+      "folder": "frankenphp-1.13.2-php-8.5.12",
+      "url": "https://github.com/php/frankenphp/releases/download/v1.13.2/frankenphp-windows-x86_64.zip",
+      "sha256": "a2ecfc278493f2cf8b5eb4a5f7c47f6eaa03d282e9c643afa933afb696ea407c",
+      "note": "PHP 8.5.12 (thread safe) built in",
+      "vc": 30,
+      "recommended": true,
+      "minOs": "10.0"
+    },
+    {
       "type": "php",
       "version": "8.5.12",
       "folder": "php-8.5.12-nts-Win32-vs17-x64",

@@ -53,6 +53,7 @@ namespace Portly.Config
                         { "url", x.Valid ? x.Url(ssl) : "" },
                         { "php", PackageTypes.Label(x.PhpFolder) },
                         { "problem", x.Problem },
+                        { "aliases", x.Aliases.ToList() },
                     }).ToList() },
                 { "tools", tools },
                 { "t", new Dictionary<string, object>

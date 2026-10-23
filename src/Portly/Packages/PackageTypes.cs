@@ -17,6 +17,8 @@ namespace Portly.Packages
         public string DetectFile;
         /// <summary>Folders added to PATH for the terminal (relative to the version folder).</summary>
         public string[] PathDirs = new[] { "" };
+        /// <summary>Optional feature id (Core/Features.cs): the type is listed only while that feature is on.</summary>
+        public string Feature = "";
     }
 
     /// <summary>Package kinds Portly knows how to install and use.</summary>
@@ -28,13 +30,20 @@ namespace Portly.Packages
         /// <summary>Types grouped by category, in display order.</summary>
         public static IEnumerable<PackageType> Ordered
         {
-            get { return Categories.SelectMany(c => All.Where(t => t.Category == c)).Concat(All.Where(t => !Categories.Contains(t.Category))); }
+            get
+            {
+                var shown = All.Where(t => t.Feature == "" || Features.IsOn(t.Feature)).ToList();
+                return Categories.SelectMany(c => shown.Where(t => t.Category == c)).Concat(shown.Where(t => !Categories.Contains(t.Category)));
+            }
         }
 
         public static readonly List<PackageType> All = new List<PackageType>
         {
             new PackageType { Id = "apache", Category = "web",     Name = "Apache",     DetectFile = @"bin\httpd.exe",   PathDirs = new[] { "bin" } },
             new PackageType { Id = "nginx", Category = "web",      Name = "Nginx",      DetectFile = "nginx.exe" },
+            new PackageType { Id = "caddy", Category = "web",      Name = "Caddy",      DetectFile = "caddy.exe",        PathDirs = new string[0], Feature = "caddy" },
+            // its folder has its own php.exe: never on PATH, so it cannot shadow the chosen PHP version
+            new PackageType { Id = "frankenphp", Category = "php", Name = "FrankenPHP", DetectFile = "frankenphp.exe",   PathDirs = new string[0], Feature = "frankenphp" },
             new PackageType { Id = "php", Category = "php",        Name = "PHP",        DetectFile = "php-cgi.exe" },
             new PackageType { Id = "mysql", Category = "db",      Name = "MySQL",      DetectFile = @"bin\mysqld.exe",  PathDirs = new[] { "bin" } },
             new PackageType { Id = "nodejs", Category = "runtime",     Name = "Node.js",    DetectFile = "node.exe" },
