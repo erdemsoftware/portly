@@ -302,11 +302,17 @@ namespace Portly.UI
         {
             var r = Selected;
             if (r == null) return;
+            if (r.Type == Settings.Current.DbEngine)
+            {
+                // another line has its own data folder: offer to bring the databases along
+                var sw = DatabaseUi.BeforeSwitch(this, r.Type, r.Folder);
+                if (sw != DatabaseUi.SwitchResult.Continue) { Fill(); return; }
+            }
             Settings.Current.SetVersion(r.Type, r.Folder);
             Settings.Current.Save();
             Log.Info(I18n.T("log.switched", PackageTypes.Get(r.Type).Name, PackageTypes.Label(r.Folder)));
             Fill();
-            if (r.Type == "mysql" && ServiceManager.MySql.IsActive) await ServiceManager.MySql.RestartAsync();
+            if (r.Type == Settings.Current.DbEngine && ServiceManager.MySql.IsActive) await ServiceManager.MySql.RestartAsync();
             else if (r.Type == "redis" && ServiceManager.Redis.IsActive) await ServiceManager.Redis.RestartAsync();
             else await ServiceManager.ReloadWebAsync();
         }

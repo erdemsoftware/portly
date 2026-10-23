@@ -113,13 +113,49 @@ Bkz. [02-mimari.md](02-mimari.md#port-çakışmaları). Kısacası "Hepsini baş
 - **SQLite:** `sqlite3` terminalde; görsel araç olarak DB Browser for SQLite.
 - **Görsel araçlar:** Hızlı erişim > Veritabanı menüsü. phpMyAdmin ve Adminer tarayıcıda; HeidiSQL, DBeaver, Beekeeper Studio, DbGate masaüstünde (Portly'nin MySQL bağlantısıyla açılır). CloudBeaver yalnızca Docker ile dağıtıldığı için katalogda yok; aynı motoru kullanan DBeaver var.
 
+### Veritabanı dili (karşılaştırma) ve varsayılan tablo türü
+
+Ayarlar > MySQL > **Karşılaştırma (dil)** ve **Varsayılan tablo türü**. Varsayılan `utf8mb4_unicode_ci` ve InnoDB. Türkçe sıralama ve büyük/küçük harf (ı/İ) için `utf8mb4_turkish_ci` seçin. Liste etkin motora ve sürüme göre değişir: `utf8mb4_0900_ai_ci` / `utf8mb4_tr_0900_ai_ci` yalnızca MySQL 8+, `utf8mb4_uca1400_ai_ci` / `utf8mb4_uca1400_turkish_ai_ci` yalnızca MariaDB 10.10+; Aria tablo türü yalnızca MariaDB. Seçim `my.ini`'ye (`character-set-server`, `collation-server`, `default-storage-engine`) yazılır ve veritabanı yeniden başlar. Sunucunun bilmediği bir değer kalırsa (ör. MariaDB'ye geçince MySQL'e özgü dil) `utf8mb4_unicode_ci` kullanılır.
+
+### Yeni veritabanı
+
+Menü > Veritabanı > **Veritabanı oluştur**: ad, karşılaştırma (varsayılan seçili) ve isteğe bağlı yalnızca o veritabanına yetkili yeni kullanıcı + şifre (rastgele önerilir). Bağlantı bilgileri ve `.env` satırları kopyalanabilir olarak gösterilir. Yeni proje sihirbazının oluşturduğu veritabanları da varsayılan karşılaştırmayı kullanır.
+
+### Büyük SQL dosyası içe aktarma
+
+Menü > Veritabanı > **SQL dosyası içe aktar...**: `.sql`, `.sql.gz` ya da `.zip` (içindeki ilk `.sql`). Hedef: var olan veritabanı, yeni veritabanı (varsayılan karşılaştırmayla) ya da dosyada yazan veritabanı. Dosya belleğe alınmadan akış halinde `mysql` istemcisine verilir; ilerleme çubuğu okunan baytı gösterir, İptal ile durdurulur. Hata olursa hatalı satırın numarası ve metni gösterilir. MariaDB dökümünü MySQL'e (ya da tersini) yüklerken uyumsuz satırlar (`uca1400` / `0900` karşılaştırmaları, `/*!80016 ... */`, MariaDB sandbox satırı, `GTID_PURGED`) yolda düzeltilir.
+
+### Denetle ve onar
+
+Menü > Veritabanı > **Denetle ve onar**. XAMPP'taki "MySQL shutdown unexpectedly" sorununun çoğu bozuk Aria/MyISAM tablolarından (çoğunlukla `mysql.*` sistem tabloları) gelir. Önce sistem tabloları, sonra tüm veritabanları `mysqlcheck` / `mariadb-check` ile denetlenir; bozuk MyISAM/Aria tabloları onarılır. Sonuç: "N tablo denetlendi, M onarıldı, K kurtarma modu gerektiriyor". InnoDB tabloları bu yolla onarılamaz; aynı pencereden kurtarma modu başlatılabilir (iki adımlı onay).
+
+MariaDB Aria günlükleri yüzünden hiç başlamıyorsa çevrimdışı onarım önerilir: `aria_log.*`, `aria_log_control` ve `mysql.*` Aria tabloları önce `backup\mysql\aria-<tarih>` klasörüne kopyalanır, tablolar `aria_chk -r` ile onarılır, günlük dosyaları ancak kopya doğrulandıktan sonra kaldırılır ve sunucu başlatılır. Veritabanı beklenmedik kapandığında ve hata günlüğünde çökme/bozulma izi olduğunda hata metni bu menüyü önerir.
+
+### Sürüm değiştirirken veritabanlarını taşıma
+
+Her motor + ana sürüm kendi veri klasörünü kullanır. Yeni bir sürüme geçince (Paketler > "Bu sürümü kullan", servis kartındaki sürüm listesi ya da Ayarlar'daki motor seçimi) yeni sürümün klasörü yoksa ve eskisinde veritabanı varsa Portly sorar: **Veritabanlarımı taşı**, **Boş başlat** ya da İptal.
+
+- Taşımada önce eski sürüm bir kez başlatılır (düzgün kapanmamışsa kendi kurtarmasını yapar), her şey `backup\mysql\pre-upgrade-*.sql` olarak yedeklenir ve eski sunucu düzgünce durdurulur.
+- **Aynı motor, yükseltme** (MySQL 5.7 → 8.0 → 8.4 → 9.x, MariaDB 10.x → 11.x): veri klasörü yeni sürüm için **kopyalanır** (taşınmaz) ve yeni sunucu başlatılır. MySQL 8.0.16+ kendini başlarken yükseltir; MariaDB'de ardından `mariadb-upgrade` çalışır; 5.7 → 8.0'da önce `mysqlcheck --check-upgrade` çalıştırılır. Seri atlayan MySQL geçişleri (5.7 → 8.4, 8.0 → 9.x) döküm yoluyla yapılır.
+- **Motor değişimi (MySQL ↔ MariaDB) ya da eski sürüme dönüş:** dosyalar asla kopyalanmaz; veritabanları eski sunucudan dökülüp yenisine yüklenir (aynı uyumluluk düzeltmeleriyle). root dışındaki kullanıcılar taşınmaz.
+- Eski veri klasörüne dokunulmaz; yeri sonuç penceresinde yazar. Yeni sürüm başlamazsa eski sürüm yeniden etkin olur, yarım kopya `.failed-<tarih>` adıyla kenara alınır.
+- Her başarılı açılışta veri klasörüne `portly-server.txt` (son kullanan sürüm) yazılır. Daha yeni bir sürümün kullandığı klasörü eski bir sürümün açması engellenir.
+
+### WSL'den erişim (Modern sürüm, isteğe bağlı)
+
+Ayarlar > Özellikler > **WSL**, sonra Menü > Veritabanı > **WSL'den erişim...**. WSL2'nin varsayılan NAT ağında Linux içinden Windows'taki `localhost`'a ulaşılamaz.
+
+- `.wslconfig` içinde `networkingMode=mirrored` varsa bir şey değişmez: WSL içinden `127.0.0.1` kullanılır.
+- Yoksa Portly `vEthernet (WSL)` bağdaştırıcısının adresini bulur, MySQL'in `bind-address` listesine ekler (MySQL 8.0.13+ / MariaDB 10.11+; eski sürümde "Yerel ağdan erişim" önerilir), `portly_wsl'@'<alt ağ>.%'` kullanıcısını rastgele şifreyle oluşturur (şifre ayarlarda DPAPI ile şifreli), yalnızca o alt ağ ve MySQL portu için Windows Güvenlik Duvarı kuralı ekler (yönetici izni; neler yapılacağı önce gösterilir) ve kopyalanabilir bağlantı bilgisini gösterir. WSL içinden sunucu adresi varsayılan ağ geçididir: `ip route show default | awk '{print $3}'`.
+- WSL alt ağı yeniden başlatmadan sonra değişebilir; dinleme adresi her açılışta güncellenir, kullanıcı ve kural için pencerede **Güncelle** düğmesi çıkar. **Kapat** (ya da özelliği kapatmak) kullanıcıyı, dinleme adresini ve kuralı kaldırır.
+
 ## Sık sorunlara karşı önlemler
 
 Ayrıntılı araştırma: [05-yaygin-sorunlar.md](05-yaygin-sorunlar.md).
 
 - **Sistem denetimi** (ilk açılışta ve Menü > Araçlar): OneDrive içindeki klasörler, İngilizce dışı harf içeren yollar, kapalı uzun yol desteği (tek tıkla açılır), `PHPRC` değişkeni, PATH'te başka bir PHP.
 - **root şifresini unuttum:** Menü > Veritabanı > root şifresini sıfırla. Sunucu bir kez `--init-file` ile başlar, şifre boşalır.
-- **Çökme / elektrik kesintisi:** Menü > Veritabanı > Kurtarma modunda başlat (`innodb_force_recovery=1`), yedek alın, sonra normal başlatın.
+- **Çökme / elektrik kesintisi:** önce Menü > Veritabanı > Denetle ve onar; InnoDB için Kurtarma modunda başlat (`innodb_force_recovery=1`), yedek alın, sonra normal başlatın.
 - **Yavaşlık:** Menü > Araçlar > Windows Defender istisnası (isteğe bağlı, yönetici izni ister).
 - **hosts engeli:** Antivirüs hosts dosyasını geri alırsa Portly uyarır; çözüm olarak `localhost` alan adı sonu önerilir.
 - **Eski uygulamalar:** Ayarlar > MySQL > esnek SQL modu.

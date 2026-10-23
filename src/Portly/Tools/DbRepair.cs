@@ -70,7 +70,8 @@ namespace Portly.Tools
                 if (parts.Length == 0 || !parts[0].Contains(".")) continue;
                 current = parts[0];
                 var rest = string.Join(" ", parts.Skip(1));
-                d[current] = rest == "" || rest.Equals("OK", StringComparison.OrdinalIgnoreCase) || rest.StartsWith("Table is already up to date", StringComparison.OrdinalIgnoreCase) ? "" : rest;
+                d[current] = rest == "" || rest.Equals("OK", StringComparison.OrdinalIgnoreCase) || rest.StartsWith("note", StringComparison.OrdinalIgnoreCase)
+                    || rest.StartsWith("Table is already up to date", StringComparison.OrdinalIgnoreCase) ? "" : rest;
             }
             return d;
         }
