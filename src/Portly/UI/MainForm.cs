@@ -67,6 +67,8 @@ namespace Portly.UI
 
             ServiceManager.Changed += svc => SafeInvoke(() => { UpdateRow(svc); UpdateGlobal(); });
             ServiceManager.SitesChanged += () => SafeInvoke(FillSites);
+            int jobsShown = 0;
+            Jobs.Changed += () => SafeInvoke(() => { var n = Jobs.ActiveCountAll(); if (n != jobsShown) { jobsShown = n; FillSites(); } });
             Log.Written += line => SafeInvoke(() => AppendLog(line));
             Catalog.Changed += () => SafeInvoke(UpdateBanner);
             SystemEvents.UserPreferenceChanged += OnSystemThemeChanged;
@@ -669,6 +671,7 @@ namespace Portly.UI
                 }
                 badges.Add(lockPill);
             }
+            badges.AddRange(DevWorkflowUi.SiteBadges(site, this, FillSites));
             int bx = Ui.S(64);
             foreach (var b in badges.Where(x => x.Visible || x != php))
             {
@@ -734,6 +737,7 @@ namespace Portly.UI
                     items.Add(I18n.T("share.stop"), null, (s, e) => { Share.Stop(site); FillSites(); });
                 }
             }
+            DevWorkflowUi.AddSiteMenuItems(items, site, this, FillSites);
             items.Add(new ToolStripSeparator());
             items.Add(I18n.T("sites.delete"), null, async (s, e) =>
             {

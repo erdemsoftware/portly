@@ -185,7 +185,8 @@ namespace Portly.Tools
             var dirs = new List<string>();
             if (site != null && site.PhpFolder != "") dirs.Add(Path.Combine(Paths.BinOf("php"), site.PhpFolder));
             dirs.AddRange(Terminal.PathDirs());
-            env["PATH"] = string.Join(";", dirs.Distinct(StringComparer.OrdinalIgnoreCase)) + ";" + Environment.GetEnvironmentVariable("PATH");
+            dirs.Add(Environment.GetEnvironmentVariable("PATH") ?? "");
+            env["PATH"] = string.Join(";", dirs.Where(d => d != "").Distinct(StringComparer.OrdinalIgnoreCase));
             env["PORTLY_ROOT"] = Paths.Root;
             if (site != null)
             {
