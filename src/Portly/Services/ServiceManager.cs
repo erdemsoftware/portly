@@ -108,8 +108,9 @@ namespace Portly.Services
             return s.StopAsync();
         }
 
-        public static Task StartAllAsync()
+        public static async Task StartAllAsync()
         {
+            await Tools.Hooks.RunAsync("before-start");
             var s = Settings.Current;
             var tasks = new List<Task>();
             if (s.IsEnabled("web")) tasks.Add(StartWebAsync());
@@ -119,13 +120,23 @@ namespace Portly.Services
             if (s.IsEnabled("postgresql")) tasks.Add(Postgres.StartAsync());
             if (s.IsEnabled("mongodb")) tasks.Add(Mongo.StartAsync());
             if (s.IsEnabled("memcached")) tasks.Add(Memcached.StartAsync());
-            return Task.WhenAll(tasks);
+            await Task.WhenAll(tasks);
+            await Tools.Hooks.RunAsync("after-start");
+            Tools.Jobs.StartAutostart(CurrentSites);
         }
 
         public static Task StopAllAsync()
         {
-            return Task.WhenAll(StopWebAsync(), Nginx.StopAsync(), Apache.StopAsync(), MySql.StopAsync(), Redis.StopAsync(), Mailpit.StopAsync(),
-                Postgres.StopAsync(), Mongo.StopAsync(), Memcached.StopAsync());
+            // on a thread-pool thread: Windows shutdown waits on this with .Wait() from the UI thread
+            return Task.Run(async () =>
+            {
+                bool any = AnyActive;
+                if (any) await Tools.Hooks.RunAsync("before-stop");
+                await Tools.Jobs.StopAllAsync();
+                await Task.WhenAll(StopWebAsync(), Nginx.StopAsync(), Apache.StopAsync(), MySql.StopAsync(), Redis.StopAsync(), Mailpit.StopAsync(),
+                    Postgres.StopAsync(), Mongo.StopAsync(), Memcached.StopAsync());
+                if (any) await Tools.Hooks.RunAsync("after-stop");
+            });
         }
 
         public static async Task SwitchWebServerAsync(string server)
