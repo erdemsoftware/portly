@@ -29,6 +29,7 @@ namespace Portly.Core
         class TimeoutClient : WebClient
         {
             public int Timeout = 30000;
+            public bool KeepAlive = true;
             protected override WebRequest GetWebRequest(Uri address)
             {
                 var r = base.GetWebRequest(address);
@@ -38,6 +39,7 @@ namespace Portly.Core
                 {
                     h.AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate;
                     h.ReadWriteTimeout = Timeout;
+                    h.KeepAlive = KeepAlive;
                 }
                 return r;
             }
@@ -70,32 +72,65 @@ namespace Portly.Core
         {
             Directory.CreateDirectory(Path.GetDirectoryName(target));
             var part = target + ".part";
-            using (var c = NewClient(60000))
+            // CDNs (windows.php.net -> downloads.php.net) drop idle or long connections now and then:
+            // a fresh connection and up to three tries instead of failing the whole install
+            for (int attempt = 1; ; attempt++)
             {
-                c.DownloadProgressChanged += (s, e) =>
+                using (var c = NewClient(60000))
                 {
-                    if (progress != null) progress(e.TotalBytesToReceive > 0 ? e.ProgressPercentage : -1, e.BytesReceived);
-                };
-                using (ct.Register(c.CancelAsync))
-                {
-                    try
+                    c.KeepAlive = false;
+                    c.DownloadProgressChanged += (s, e) =>
                     {
-                        await c.DownloadFileTaskAsync(new Uri(url), part).ConfigureAwait(false);
-                    }
-                    catch (WebException ex) when (ex.Status == WebExceptionStatus.RequestCanceled)
+                        if (progress != null) progress(e.TotalBytesToReceive > 0 ? e.ProgressPercentage : -1, e.BytesReceived);
+                    };
+                    using (ct.Register(c.CancelAsync))
                     {
-                        TryDelete(part);
-                        throw new OperationCanceledException(ct);
-                    }
-                    catch
-                    {
-                        TryDelete(part);
-                        throw;
+                        try
+                        {
+                            await c.DownloadFileTaskAsync(new Uri(url), part).ConfigureAwait(false);
+                            break;
+                        }
+                        catch (WebException ex) when (ex.Status == WebExceptionStatus.RequestCanceled)
+                        {
+                            TryDelete(part);
+                            throw new OperationCanceledException(ct);
+                        }
+                        catch (WebException ex) when (attempt < 3 && IsTransient(ex))
+                        {
+                            TryDelete(part);
+                            Log.Warn("Download interrupted (" + ex.Status + "), trying again: " + url);
+                        }
+                        catch
+                        {
+                            TryDelete(part);
+                            throw;
+                        }
                     }
                 }
+                await Task.Delay(1500 * attempt, ct).ConfigureAwait(false);
             }
             if (File.Exists(target)) File.Delete(target);
             File.Move(part, target);
+        }
+
+        static bool IsTransient(WebException ex)
+        {
+            switch (ex.Status)
+            {
+                case WebExceptionStatus.ReceiveFailure:
+                case WebExceptionStatus.ConnectionClosed:
+                case WebExceptionStatus.KeepAliveFailure:
+                case WebExceptionStatus.ConnectFailure:
+                case WebExceptionStatus.Timeout:
+                case WebExceptionStatus.SecureChannelFailure:
+                case WebExceptionStatus.NameResolutionFailure:
+                    return true;
+                case WebExceptionStatus.ProtocolError:
+                    var resp = ex.Response as HttpWebResponse;
+                    return resp != null && (int)resp.StatusCode >= 500;
+                default:
+                    return false;
+            }
         }
 
         /// <summary>Returns true when the URL answers (used to fall back to archive URLs).</summary>

@@ -996,5 +996,6 @@
   "sslfix.problem.broken": "Sertifika dosyası okunamıyor",
   "sslfix.problem.custom": "Kendi sertifikanızda sorun var (site menüsünde Sertifika)",
   "sites.subCount": "{0} alt alan adı",
-  "sites.subOf": "{0}, {1} adresinin alt alan adıdır"
+  "sites.subOf": "{0}, {1} adresinin alt alan adıdır",
+  "svc.dbTitle": "MySQL / MariaDB"
 }

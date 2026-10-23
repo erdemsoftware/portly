@@ -327,7 +327,7 @@ namespace Portly.UI
             foreach (var r in _rows)
             {
                 var row = r;
-                var item = new ToolStripMenuItem(row.Svc.Title) { Checked = row.Card.Visible, CheckOnClick = true };
+                var item = new ToolStripMenuItem(DisplayName(row.Svc)) { Checked = row.Card.Visible, CheckOnClick = true };
                 item.CheckedChanged += async (s, e) =>
                 {
                     Settings.Current.SetShown(row.Svc.Id, item.Checked);
@@ -357,7 +357,7 @@ namespace Portly.UI
             row.Card = card;
             row.Tile = BrandTile.For(svc.Id == "web" || svc.Id == "mailpit" || svc.Id == "mysql" ? svc.PackageType : svc.Id);
             row.Tile.Location = new Point(Ui.S(18), Ui.S(16));
-            row.Name = Ui.Label(svc.Title, Ui.Subtitle);
+            row.Name = Ui.Label(DisplayName(svc), Ui.Subtitle);
             row.Name.Location = new Point(Ui.S(72), Ui.S(13));
             row.Detail = Ui.Label("", Ui.Font, Ui.Muted);
             row.Detail.Location = new Point(Ui.S(73), Ui.S(39));
@@ -422,10 +422,29 @@ namespace Portly.UI
             cm.Items.Add(I18n.T("svc.openLog"), null, (s, e) => WinUtil.Edit(Path.Combine(Paths.Logs, log)));
         }
 
+        /// <summary>MySQL and MariaDB are one card: the same port and data, either engine.</summary>
+        static string DisplayName(Service svc) { return svc == ServiceManager.MySql ? I18n.T("svc.dbTitle") : svc.Title; }
+
         void FillVersions(Row row)
         {
             var type = row.Svc.PackageType;
             row.Version.Items.Clear();
+            if (row.Svc == ServiceManager.MySql)
+            {
+                // both engines in one list: "MySQL 8.4.11", "MariaDB 11.8.9"; picking the other one switches the engine
+                var engine = Settings.Current.DbEngine;
+                var current = engine + "|" + PackageTypes.ActiveFolder(engine);
+                foreach (var en in new[] { "mysql", "mariadb" })
+                    foreach (var f in PackageTypes.Installed(en))
+                        row.Version.Items.Add(new Item(PackageTypes.Get(en).Name + " " + PackageTypes.Label(f), en + "|" + f));
+                int count = row.Version.Items.Count;
+                if (count == 0) row.Version.Items.Add(new Item("—", ""));
+                row.Version.Items.Add(new Item(I18n.T("svc.getVersions"), "__get"));
+                int sel = row.Version.Items.Cast<Item>().ToList().FindIndex(i => string.Equals(i.Value, current, StringComparison.OrdinalIgnoreCase));
+                row.Version.SelectedIndex = Math.Max(0, sel);
+                row.Version.Tag = row.Version.SelectedIndex;
+                return;
+            }
             var installed = PackageTypes.Installed(type);
             var active = PackageTypes.ActiveFolder(type);
             foreach (var f in installed) row.Version.Items.Add(new Item(PackageTypes.Label(f), f));
@@ -453,19 +472,46 @@ namespace Portly.UI
             }
             row.Version.Tag = row.Version.SelectedIndex;
             var type = row.Svc.PackageType;
-            if (string.Equals(PackageTypes.ActiveFolder(type), item.Value, StringComparison.OrdinalIgnoreCase)) return;
+            var folder = item.Value;
+            if (row.Svc == ServiceManager.MySql && folder.Contains("|"))
+            {
+                var engine = folder.Substring(0, folder.IndexOf('|'));
+                folder = folder.Substring(folder.IndexOf('|') + 1);
+                if (engine != Settings.Current.DbEngine)
+                {
+                    await SwitchDbEngine(engine, folder);
+                    return;
+                }
+            }
+            if (string.Equals(PackageTypes.ActiveFolder(type), folder, StringComparison.OrdinalIgnoreCase)) return;
             if (type == "mysql" || type == "mariadb")
             {
                 // another line has its own data folder: offer to bring the databases along
-                var sw = DatabaseUi.BeforeSwitch(this, type, item.Value);
+                var sw = DatabaseUi.BeforeSwitch(this, type, folder);
                 if (sw != DatabaseUi.SwitchResult.Continue) { RefreshVersions(); return; }
             }
-            Settings.Current.SetVersion(type, item.Value);
+            Settings.Current.SetVersion(type, folder);
             Settings.Current.Save();
-            Log.Info(I18n.T("log.switched", PackageTypes.Get(type).Name, PackageTypes.Label(item.Value)));
+            Log.Info(I18n.T("log.switched", PackageTypes.Get(type).Name, PackageTypes.Label(folder)));
             Terminal.ApplyUserPath();
             UpdateRow(row.Svc);
             await ApplyVersionChange(type);
+        }
+
+        /// <summary>MySQL &lt;-&gt; MariaDB from the card (same as Settings > Services > Database engine).</summary>
+        async Task SwitchDbEngine(string engine, string folder)
+        {
+            var sw = DatabaseUi.BeforeSwitch(this, engine, folder);
+            if (sw == DatabaseUi.SwitchResult.Cancelled) { RefreshVersions(); return; }
+            bool wasActive = ServiceManager.MySql.IsActive;
+            if (wasActive) await ServiceManager.MySql.StopAsync();   // stops the engine that runs now
+            Settings.Current.DbEngine = engine;
+            Settings.Current.SetVersion(engine, folder);
+            Settings.Current.Save();
+            Log.Info(I18n.T("log.switched", I18n.T("svc.dbTitle"), PackageTypes.Get(engine).Name + " " + PackageTypes.Label(folder)));
+            Terminal.ApplyUserPath();
+            if (wasActive) await ServiceManager.MySql.StartAsync();
+            RefreshVersions();
         }
 
         async Task ApplyVersionChange(string type)
@@ -531,6 +577,12 @@ namespace Portly.UI
             var p = Theme.Current;
             bool installed = svc.IsInstalled;
             row.Card.Visible = IsServiceShown(svc); // an optional database appears once it is installed
+            if (svc == ServiceManager.MySql)
+            {
+                // the card's logo follows the engine (MySQL / MariaDB)
+                using (var t = BrandTile.For(svc.PackageType)) { row.Tile.Text = t.Text; row.Tile.Color = t.Color; }
+                row.Tile.Invalidate();
+            }
             string statusText; Color statusColor;
             switch (svc.State)
             {

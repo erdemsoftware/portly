@@ -996,5 +996,6 @@
   "sslfix.problem.broken": "Certificate file cannot be read",
   "sslfix.problem.custom": "Your own certificate has a problem (Certificate in the site menu)",
   "sites.subCount": "{0} subdomains",
-  "sites.subOf": "{0} is a subdomain of {1}"
+  "sites.subOf": "{0} is a subdomain of {1}",
+  "svc.dbTitle": "MySQL / MariaDB"
 }
