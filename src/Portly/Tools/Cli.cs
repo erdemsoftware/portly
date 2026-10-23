@@ -319,7 +319,8 @@ namespace Portly.Tools
 
         static string SitesText()
         {
-            var sites = ServiceManager.CurrentSites.Count > 0 ? ServiceManager.CurrentSites : Sites.Scan();
+            // always scan: the cached list misses a project created a moment ago (the scan is cheap)
+            var sites = Sites.Scan();
             if (sites.Count == 0) return I18n.T("sites.none");
             var sb = new StringBuilder();
             foreach (var s in sites)
@@ -337,7 +338,8 @@ namespace Portly.Tools
         static Site FindSite(string name)
         {
             if (string.IsNullOrEmpty(name)) return null;
-            var sites = ServiceManager.CurrentSites.Count > 0 ? ServiceManager.CurrentSites : Sites.Scan();
+            // always scan: the cached list misses a project created a moment ago (the scan is cheap)
+            var sites = Sites.Scan();
             name = name.Trim().ToLowerInvariant().TrimEnd('/');
             return sites.FirstOrDefault(s => s.Name.ToLowerInvariant() == name)
                 ?? sites.FirstOrDefault(s => s.Host == name)
