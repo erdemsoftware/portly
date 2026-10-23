@@ -1,0 +1,39 @@
+{
+    "version": "{{VERSION}}",
+    "description": "Fast, portable local PHP development environment (Apache / Nginx, PHP, MySQL / MariaDB) for Windows 10 / 11",
+    "homepage": "https://github.com/erdemsoftware/portly",
+    "license": "MIT",
+    "architecture": {
+        "64bit": {
+            "url": "{{ZIP_URL}}",
+            "hash": "{{ZIP_SHA256}}"
+        }
+    },
+    "extract_dir": "Portly",
+    "shortcuts": [
+        [
+            "Portly.exe",
+            "Portly"
+        ]
+    ],
+    "persist": [
+        "bin",
+        "data",
+        "www",
+        "usr",
+        "backup"
+    ],
+    "checkver": {
+        "github": "https://github.com/erdemsoftware/portly"
+    },
+    "autoupdate": {
+        "architecture": {
+            "64bit": {
+                "url": "https://github.com/erdemsoftware/portly/releases/download/v$version/Portly-$version-win10.zip"
+            }
+        },
+        "hash": {
+            "url": "$baseurl/SHA256SUMS.txt"
+        }
+    }
+}

@@ -25,6 +25,7 @@ namespace Portly.UI
             public Label Name, Detail, Error;
             public LinkLabel Fix;
             public Pill Status;
+            public Pill Sec;       // end of life / security fix available (security.json)
             public ComboBox Version;
             public ToggleSwitch Toggle;
             public ModernButton Get;
@@ -41,6 +42,7 @@ namespace Portly.UI
         Label _status, _servicesSub, _sitesSub;
         readonly List<Row> _rows = new List<Row>();
         FlowLayoutPanel _siteFlow;
+        UpdateNoticeBar _notices;
         RichTextBox _log;
         readonly List<string> _logLines = new List<string>();
         FileSystemWatcher _watcher;
@@ -276,6 +278,9 @@ namespace Portly.UI
             page.Controls.Add(tiles);
             page.Controls.Add(quickTitle);
             page.Controls.Add(list);
+            // "PHP 8.6.0 is out" cards between the header and the services
+            _notices = new UpdateNoticeBar { ApplyVersionChange = ApplyVersionChange, OpenPackages = t => OpenPackages(t), Changed = () => { RefreshVersions(); UpdateBanner(); } };
+            page.Controls.Add(_notices);
             page.Controls.Add(header);
             return page;
         }
@@ -336,6 +341,8 @@ namespace Portly.UI
             row.Toggle = new ToggleSwitch { Anchor = AnchorStyles.Top | AnchorStyles.Right, AccessibleName = svc.Title };
             row.Toggle.Click += async (s, e) => await OnToggle(row);
             row.Status = new Pill { Anchor = AnchorStyles.Top | AnchorStyles.Right };
+            row.Sec = new Pill { Anchor = AnchorStyles.Top | AnchorStyles.Right, Visible = false, Cursor = Cursors.Hand };
+            row.Sec.Click += async (s, e) => await OnSecurityPill(row);
             row.Version = new ThemedCombo { DropDownStyle = ComboBoxStyle.DropDownList, Width = Ui.S(130), DropDownWidth = Ui.S(280), Anchor = AnchorStyles.Top | AnchorStyles.Right, AccessibleName = svc.Title + " " + I18n.T("col.version") };
             FillVersions(row);
             row.Version.SelectionChangeCommitted += async (s, e) => await OnVersionChanged(row);
@@ -351,7 +358,7 @@ namespace Portly.UI
             card.ContextMenuStrip = cm;
             row.Name.ContextMenuStrip = cm;
 
-            card.Controls.AddRange(new Control[] { row.Tile, row.Name, row.Detail, row.Error, row.Fix, row.Toggle, row.Status, row.Version, row.Get });
+            card.Controls.AddRange(new Control[] { row.Tile, row.Name, row.Detail, row.Error, row.Fix, row.Toggle, row.Status, row.Version, row.Get, row.Sec });
             card.Resize += (s, e) => LayoutCard(row);
             card.Width = Ui.S(700);
             LayoutCard(row);
@@ -367,6 +374,7 @@ namespace Portly.UI
             int edge = (row.ShowGet ? row.Get.Left : row.Toggle.Left) - Ui.S(14);
             row.Status.Location = new Point(edge - row.Status.Width, top + 1);
             row.Version.Location = new Point(row.Status.Left - Ui.S(12) - row.Version.Width, top - Ui.S(1));
+            if (row.Sec != null) row.Sec.Location = new Point(row.Version.Left - Ui.S(8) - row.Sec.Width, top + 1);
             row.Error.Width = Math.Max(Ui.S(100), w - Ui.S(73) - Ui.S(90));
             row.Fix.Location = new Point(w - Ui.S(18) - row.Fix.Width, Ui.S(68));
         }
@@ -516,6 +524,7 @@ namespace Portly.UI
             var detail = installed ? svc.Title + " " + version + "  ·  " + ports : I18n.T("svc.notInstalledHint");
             if (svc.Id != "php" && installed && !Settings.Current.IsEnabled(svc.Id)) detail += "  ·  " + I18n.T("svc.notInAll");
             row.Detail.Text = detail;
+            UpdateSecurityPill(row);
 
             bool err = svc.State == ServiceState.Error && !string.IsNullOrEmpty(svc.LastError);
             row.Error.Text = err ? svc.LastError.Replace("\n", "  ") : "";
@@ -994,6 +1003,7 @@ namespace Portly.UI
                 var code = HealthCheck.AddDefenderExclusion();
                 if (code == 0) Ui.Info(this, I18n.T("health.defenderDone"));
             });
+            tools.DropDownItems.Add(I18n.T("verify.menu"), null, (s, e) => ShowVerify(null));
             tools.DropDownItems.Add(I18n.T("tools.hosts"), null, (s, e) => WinUtil.RunElevated("notepad.exe", "\"" + HostsFile.FilePath + "\"", false));
             tools.DropDownItems.Add(I18n.T("tools.root"), null, (s, e) => WinUtil.OpenFolder(Paths.Root));
             tools.DropDownItems.Add(I18n.T("tools.logs"), null, (s, e) => WinUtil.OpenFolder(Paths.Logs));
@@ -1273,6 +1283,63 @@ namespace Portly.UI
             });
         }
 
+        // ---------------- security / antivirus ----------------
+        void UpdateSecurityPill(Row row)
+        {
+            if (row.Sec == null) return;
+            var st = row.Svc.IsInstalled ? SecurityInfo.StatusOf(row.Svc.PackageType, PackageTypes.ActiveFolder(row.Svc.PackageType)) : null;
+            row.Sec.Visible = st != null;
+            if (st == null) return;
+            row.Sec.Text = st.Short;
+            row.Sec.Color = st.Advisories.Count > 0 ? Theme.Current.Red : Theme.Current.Orange;
+            row.Sec.AccessibleName = st.Long;
+            var tip = row.Sec.Tag as ToolTip;
+            if (tip == null) row.Sec.Tag = tip = new ToolTip();
+            tip.SetToolTip(row.Sec, st.Long + (st.Fix != null ? "\n" + I18n.T("sec.clickToUpdate", st.Fix.Version) : ""));
+        }
+
+        /// <summary>Pill click: one-click update to the fixed build, otherwise the packages window of the type.</summary>
+        async Task OnSecurityPill(Row row)
+        {
+            var type = row.Svc.PackageType;
+            var folder = PackageTypes.ActiveFolder(type);
+            var st = SecurityInfo.StatusOf(type, folder);
+            if (st == null || st.Fix == null || st.Fix.IsInstalled) { OpenPackages(type); return; }
+            var name = PackageTypes.Get(type).Name + " " + st.Fix.Version;
+            if (!Ui.Confirm(this, I18n.T("sec.updateConfirm", st.Long, name))) return;
+            row.Sec.Enabled = false;
+            try
+            {
+                await Installer.UpdateAsync(folder, st.Fix, p => SafeInvoke(() => SetStatus(name + " - " + I18n.T("pkg.stage." + p.Stage) + (p.Percent >= 0 && p.Stage == "download" ? " " + p.Percent + "%" : ""))), CancellationToken.None);
+                Terminal.ApplyUserPath();
+                RefreshVersions();
+                await ApplyVersionChange(type);
+                UpdateNoticeBar.OfferRemoveOld(this, new[] { Tuple.Create(type, folder) });
+                SetStatus(I18n.T("log.installed", name));
+            }
+            catch (Exception ex) { Ui.Error(this, ex.Message); }
+            finally { row.Sec.Enabled = true; RefreshVersions(); UpdateBanner(); }
+        }
+
+        /// <summary>Start-up: are the .exe/.dll files of the active versions still there? (existence + size only, fast)</summary>
+        async Task QuickIntegrityCheck()
+        {
+            List<IntegrityProblem> problems;
+            try { problems = await Task.Run(() => Integrity.QuickCheckActive()); } catch { return; }
+            if (problems.Count == 0) return;
+            foreach (var p in problems) Log.Warn(I18n.T("verify.problem", p.Count, p.Title));
+            if (Visible) ShowVerify(problems);
+            else _tray.ShowBalloonTip(8000, "Portly", I18n.T("verify.problem", problems[0].Count, problems[0].Title), ToolTipIcon.Warning);
+        }
+
+        void ShowVerify(List<IntegrityProblem> problems)
+        {
+            ShowFromTray();
+            bool repaired;
+            using (var f = new VerifyPackagesForm(problems)) { f.ShowDialog(this); repaired = f.Repaired; }
+            if (repaired) { RefreshVersions(); Task.Run(() => ServiceManager.RefreshSites()); }
+        }
+
         // ---------------- updates ----------------
         void UpdateBanner()
         {
@@ -1284,6 +1351,7 @@ namespace Portly.UI
                 _updateBtn.Visible = true;
                 return;
             }
+            if (_notices != null) _notices.Reload();
             var pending = AppInfo.UpdatesSupported ? Catalog.PendingUpdates().Count : 0;
             _updateBtn.Text = I18n.T("update.packages", pending);
             _updateBtn.Kind = ButtonKind.Secondary;
@@ -1320,20 +1388,25 @@ namespace Portly.UI
             if (!AppInfo.UpdatesSupported) return;
             await Donate.RefreshAsync();
             var s = Settings.Current;
-            if (!force)
+            // the app itself every 12 hours; new package versions at the first start of a day
+            bool appDue = force, pkgDue = force;
+            if (!force && s.CheckUpdates)
             {
-                if (!s.CheckUpdates) { SafeInvoke(UpdateBanner); return; }
                 DateTime last;
-                if (DateTime.TryParse(s.LastUpdateCheck, out last) && last > DateTime.Now.AddHours(-12)) { SafeInvoke(UpdateBanner); return; }
+                appDue = !(DateTime.TryParse(s.LastUpdateCheck, out last) && last > DateTime.Now.AddHours(-12));
+                pkgDue = UpdateNotices.DailyCheckDue;
             }
+            if (!appDue && !pkgDue) { SafeInvoke(UpdateBanner); return; }
             try
             {
                 await Catalog.RefreshAsync();
-                var u = await Updater.CheckAsync();
+                UpdateNotices.MarkChecked();
+                var u = appDue ? await Updater.CheckAsync() : Updater.Available;
                 SafeInvoke(() =>
                 {
                     UpdateBanner();
-                    if (interactive && u == null) Ui.Info(this, I18n.T("update.none", AppInfo.VersionText));
+                    if (interactive && u == null && UpdateNotices.Current.Count == 0) Ui.Info(this, I18n.T("update.none", AppInfo.VersionText));
+                    if (interactive && UpdateNotices.Current.Count > 0) { ShowFromTray(); ShowPage("services"); }
                     if (u != null && !Visible) _tray.ShowBalloonTip(5000, "Portly", I18n.T("update.banner", u.Version), ToolTipIcon.Info);
                 });
             }
@@ -1436,6 +1509,7 @@ namespace Portly.UI
             backupTimer.Start();
 
             await ShowHealth(false);
+            await QuickIntegrityCheck();
             var checks = BackgroundChecks(false, false);
             if (_startServices || s.StartServicesOnLaunch || startFromWelcome) await ToggleAll();
             await checks;

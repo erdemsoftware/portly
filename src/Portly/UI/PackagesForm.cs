@@ -71,6 +71,8 @@ namespace Portly.UI
                 _refresh = Ui.Button(I18n.T("pkg.refresh"), async (s, e) => await RefreshCatalog());
                 bar.Controls.Add(_refresh);
             }
+            // free disk space: versions nothing uses any more
+            bar.Controls.Add(Ui.Button(I18n.T("cleanup.button"), (s, e) => { if (_busy) return; using (var f = new CleanupForm()) f.ShowDialog(this); Fill(); }));
             top.Controls.Add(bar);
             top.Controls.Add(intro);
 
@@ -79,6 +81,7 @@ namespace Portly.UI
             _list.Columns.Add(I18n.T("col.version"), Ui.S(110));
             _list.Columns.Add(I18n.T("col.note"), Ui.S(250));
             _list.Columns.Add(I18n.T("col.status"), Ui.S(220));
+            _list.ShowItemToolTips = true;
             // themed column headers (the native header stays light in dark mode)
             _list.OwnerDraw = true;
             _list.DrawItem += (s, e) => e.DrawDefault = true;
@@ -190,8 +193,12 @@ namespace Portly.UI
                     if (r.Update != null) status += " - " + I18n.T("pkg.updateTo", r.Update.Version);
                 }
                 else status = "";
+                // end of life / known vulnerabilities (security.json)
+                var sec = r.Installed ? SecurityInfo.StatusOf(r.Type, r.Folder) : null;
+                if (sec != null) status += " - " + sec.Long;
                 var it = new ListViewItem(new[] { name, version, note, status }) { Tag = r, Name = r.Type + "/" + r.Folder, Group = _list.Groups[PackageTypes.Get(r.Type).Category] };
                 if (r.Installed) it.ForeColor = r.Update != null ? Color.FromArgb(180, 83, 9) : Ui.Green;
+                if (sec != null) { it.ForeColor = sec.Advisories.Count > 0 ? Ui.Red : Ui.Orange; it.ToolTipText = sec.Long; }
                 if (checkedKeys.Contains(it.Name)) it.Checked = true;
                 _list.Items.Add(it);
             }
@@ -262,6 +269,7 @@ namespace Portly.UI
             _progress.Visible = true;
             int done = 0, failed = 0;
             var phpCopies = new List<Tuple<string, string>>();   // (extensions from, to) for new / updated PHP versions
+            var replaced = new List<Tuple<string, string>>();
             foreach (var r in jobs)
             {
                 var entry = r.Installed ? r.Update : r.Entry;
@@ -277,7 +285,7 @@ namespace Portly.UI
                         _status.Text = "[" + (done + failed + 1) + "/" + jobs.Count + "] " + label + " - " + stage + (p.Stage == "download" ? " " + (p.Percent >= 0 ? p.Percent + "%" : Ui.FormatBytes(p.Bytes)) : "");
                     }));
                     var phpFrom = r.Installed ? r.Folder : PackageTypes.ActiveFolder("php");
-                    if (r.Installed) await Installer.UpdateAsync(r.Folder, entry, report, _cts.Token);
+                    if (r.Installed) { await Installer.UpdateAsync(r.Folder, entry, report, _cts.Token); replaced.Add(Tuple.Create(r.Type, r.Folder)); }
                     else await Installer.InstallAsync(entry, report, _cts.Token);
                     if (entry.Type == "php") phpCopies.Add(Tuple.Create(phpFrom, entry.Folder));
                     done++;
@@ -301,6 +309,7 @@ namespace Portly.UI
             Terminal.ApplyUserPath();
             foreach (var c in phpCopies) await PhpExtensionsForm.OfferCopyAsync(this, c.Item1, c.Item2);
             if (!_cts.IsCancellationRequested) _status.Text = I18n.T("pkg.finished", done, failed);
+            if (replaced.Count > 0) { UpdateNoticeBar.OfferRemoveOld(this, replaced); Fill(); }
             if (_firstRun && done > 0 && failed == 0)
             {
                 Ui.Info(this, I18n.T("pkg.firstRunDone"));

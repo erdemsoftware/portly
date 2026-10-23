@@ -48,6 +48,7 @@ namespace Portly.Tools
                 psi.EnvironmentVariables["GIT_SSL_CAINFO"] = Certs.BundleFile;
             }
             if (File.Exists(Certs.CaCertPath)) psi.EnvironmentVariables["NODE_EXTRA_CA_CERTS"] = Certs.CaCertPath;
+            Proxy.ApplyEnv(psi.EnvironmentVariables); // composer / npm / git behind a manual proxy
             return psi;
         }
 

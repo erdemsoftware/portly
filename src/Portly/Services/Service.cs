@@ -86,9 +86,22 @@ namespace Portly.Services
         {
             int code = 0;
             try { code = p.ExitCode; } catch { }
+            // a DLL blocked by Smart App Control / removed by an antivirus program: name it
+            var blocked = Tools.Antivirus.ExplainStartFailure(LogsFor(p));
+            if (blocked != "") return blocked;
             if (code == -1073741515 || code == -1073741701 || code == -1073741511)
                 return I18n.T("err.vcRuntime");
             return I18n.T("err.exited", code);
+        }
+
+        static string[] LogsFor(Process p)
+        {
+            string exe = "";
+            try { exe = Path.GetFileNameWithoutExtension(p.StartInfo.FileName).ToLowerInvariant(); } catch { }
+            if (exe == "httpd") return new[] { "apache-error.log", "apache-console.log" };
+            if (exe == "nginx") return new[] { "nginx-error.log", "nginx-console.log" };
+            if (exe == "php-cgi") return new[] { "php_errors.log", "php-" + PackageTypes.Label(Path.GetFileName(Path.GetDirectoryName(p.StartInfo.FileName))) + ".log" };
+            return new[] { exe + ".log" };
         }
 
         /// <summary>Returns false (and sets the error) when another program already uses the port.</summary>

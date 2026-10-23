@@ -210,3 +210,52 @@ Bilinen sınırlar: proje yolunda `!` ya da konsol kod sayfasında olmayan harfl
 Ayarlar > Özellikler > **Birden fazla Node.js sürümü** açıkken `node`, `npm`, `npx` shim'leri sürümü şuna göre seçer: bulunulan ya da üst klasördeki `.nvmrc` / `.node-version` (`22`, `v22.11.0`, `22.x`, `lts/*`, `lts/jod`, `node` ...), yoksa Portly sitesinin `package.json` içindeki `engines.node` kısıtı, yoksa etkin Node.js. Uyan sürüm kurulu değilse sürümü ve Paketler > Node.js'ten kurulacağını söyleyen tek satırlık mesaj yazılır. Node sürümleri Paketler penceresinden yan yana kurulur.
 
 npm'in global paketleri her ana sürüm için ayrı klasöre gider (`usr\npm\node22` ...); shim bu klasörü PATH'e ekler, böylece `npm i -g` ile kurulan araçlar kendi Node sürümüyle çalışmaya devam eder. Özellik kapalıyken shim'ler hep etkin Node.js'i kullanır ve npm'in global klasörüne dokunmaz.
+## Yeni sürüm bildirimleri
+
+Modern sürümde Portly, günün ilk açılışında (Ayarlar'da "Güncellemeleri otomatik denetle" açıksa) ve **Menü > Güncellemeleri denetle** ile paket kataloğunu yeniler. Kurulu her paket türü için iki şeye bakar:
+
+- **Yeni dal**: kurulu en yeni sürümden daha yeni bir seri çıktıysa (ör. PHP 8.5 kullanıyorsunuz, PHP 8.6 çıktı) Servisler sayfasının üstünde "PHP 8.6.0 çıktı" kartı görünür. **Kur ve kullan** indirir, kurar ve varsayılan sürüm yapar (web sunucusu yeniden yüklenir). Ön sürümler (RC, beta) önerilmez. MySQL, MariaDB, Node.js ve MongoDB'de yalnızca uzun destekli (LTS) seriler önerilir; ör. MySQL 8.4 kullanana 9.7 önerilir, 26.x Innovation önerilmez. Nginx'te mainline değil stable önerilir.
+- **Yama**: aynı serinin daha yeni yapısı (PHP 8.4.26 → 8.4.27). Birden çok yama varsa **Tümünü güncelle (3)** ile hepsi birlikte kurulur; php.ini ve ayarlar yeni sürüme taşınır.
+
+Veritabanlarında (MySQL, MariaDB, PostgreSQL, MongoDB) yeni seri yalnızca kurulur, geçiş sizde kalır: veri klasörü seriye özgü olduğu için geçişi sürüm listesinden, verileri güvenle taşıyan normal geçişle yaparsınız.
+
+**Sonra** kartı bu oturum için gizler, **Bu sürümü atla** o sürümü bir daha göstermez (her paket türü için ayrı hatırlanır). Bildirimler açılışta pencere açmaz; yalnızca kart görünür.
+
+Yama güncellemesi bitince Portly eski yapıyı kaldırmayı önerir (bir site o PHP sürümünü seçmişse ya da çalışıyorsa önermez).
+
+## Destek bitişi ve güvenlik uyarıları
+
+Portly, kurulu sürümleri `security.json` dosyasındaki bilgilerle karşılaştırır (Legacy sürüm yalnızca exe içindeki kopyayı kullanır):
+
+- Serinin desteği bittiyse servis kartında turuncu **Desteği bitti** etiketi ve Paketler penceresinde "… tarihinden beri destek yok" yazısı çıkar.
+- Bilinen bir güvenlik açığı varsa kırmızı **Güvenlik düzeltmesi** etiketi ve "Güvenlik düzeltmesi var: 8.3.31 (CVE-…)" yazısı çıkar. Etikete tıklayınca aynı serinin düzeltilmiş sürümüne tek tıkla geçilir.
+- Aynı dosya bazı güvenlik ayarlarını tüm php.ini dosyalarına uygulayabilir; ama yalnızca Portly'nin içindeki sabit listede olan, PHP'yi daha sıkı yapan ayarlar (`session.upload_progress.enabled = Off`, `allow_url_include = Off`, `expose_php = Off` gibi). Listede olmayan her şey yok sayılır.
+
+## Antivirüs ve Akıllı Uygulama Denetimi
+
+- **Akıllı Uygulama Denetimi (Smart App Control)** açık ya da değerlendirme modundaysa Sistem denetimi bunu bir kez bildirir: imzasız PHP eklentilerini veya Apache modüllerini engelleyebilir. Bir servis başlamazsa Portly günlükleri ve Windows Kod Bütünlüğü kaydını okuyup engellenen ya da bulunamayan DLL'in adını hata satırında gösterir.
+- Portly her paketi kurarken dosya listesini (`.portly-files`: yol, boyut, .exe/.dll için SHA-256) paket klasörüne yazar. Her açılışta etkin sürümlerin .exe/.dll dosyalarının yerinde olup olmadığına hızlıca bakar; eksik varsa "Antivirüsünüz büyük olasılıkla PHP 8.5.12 sürümünün N dosyasını sildi" penceresi açılır.
+- **Araçlar > Paketleri doğrula (antivirüs / karantina)**: tüm paketlerin tam denetimi (dosya varlığı + SHA-256), **Onar** (aynı sürümü yeniden indirip yalnızca eksik/değişmiş dosyaları geri koyar; php.ini ve ayarlarınız kalır), **Defender istisnası ekle** (yönetici onayı ister), **Defender geçmişi** (Windows Defender'ın Portly klasöründeki bulguları ve son 7 günde engellenen dosyalar) ve **Defender ile tara** (Portly klasörünü `MpCmdRun.exe -Scan -ScanType 3` ile tarar).
+- Bu özellikten önce kurulmuş sürümlerin dosya listesi yoktur; denetimde atlanır. Yeniden kurunca liste oluşur.
+
+## Kullanılmayan sürümleri kaldırma
+
+**Paketler > Kullanılmayanları kaldır…** etkin olmayan, hiçbir sitenin seçmediği (`sites.ini` içindeki `php=`) sürümleri boyutlarıyla listeler. İşaretlediğiniz sürümler kaldırılır; çalışan bir programı olan sürüme dokunulmaz. Veritabanı verileri (`data\`) ve projeler silinmez.
+
+## Vekil sunucu (proxy)
+
+**Ayarlar > Genel > Vekil sunucu (proxy)** tüm indirmeler için geçerlidir:
+
+- **Sistem** (varsayılan): Windows'un proxy ayarı (Internet Seçenekleri, PAC betiği) ve oturum kullanıcısının kimliği.
+- **Yok**: doğrudan bağlantı.
+- **Elle**: `sunucu:port`, isteğe bağlı kullanıcı ve şifre (şifre Windows DPAPI ile şifrelenip saklanır). Bu modda Portly terminali `HTTP_PROXY`, `HTTPS_PROXY` ve `NO_PROXY` değişkenlerini de ayarlar; composer, npm, git ve pip proxy'yi kullanır.
+
+**Bağlantıyı dene** paket kataloğunu indirmeyi dener ve sorunu sade dille söyler: DNS, proxy adresi, proxy şifresi (407), TLS (HTTPS'i inceleyen antivirüs/şirket proxy'si) ya da HTTP hatası.
+
+## Sessiz kurulum ve paket yöneticileri
+
+```
+Portly-<sürüm>-win10-setup.exe /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /DIR="D:\Portly"
+```
+
+Kaldırırken paketler, veritabanları, projeler ve ayarlar varsayılan olarak korunur; hepsini silmek için `unins000.exe /VERYSILENT /PURGE` kullanın (pencereli kaldırmada sorulur, varsayılan cevap "koru"dur). winget (`winget install ErdemSoftware.Portly`) ve Scoop paketleri yayın sürecinde hazırlanır (bkz. `docs/03-yayinlama.md`).

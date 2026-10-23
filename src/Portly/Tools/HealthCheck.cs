@@ -65,6 +65,11 @@ namespace Portly.Tools
             if (other != null && !other.StartsWith(root, StringComparison.OrdinalIgnoreCase))
                 list.Add(new HealthIssue { Key = "otherphp:" + other, Text = I18n.T("health.otherPhp", other) });
 
+            // 6. Smart App Control (Windows 11) blocks unsigned / unknown DLLs, e.g. PHP extensions
+            var sac = Antivirus.SmartAppControlState();
+            if (sac == 1 || sac == 2)
+                list.Add(new HealthIssue { Key = "sac" + sac, Text = I18n.T(sac == 1 ? "health.sacOn" : "health.sacEval") });
+
             return list;
         }
 

@@ -31,6 +31,17 @@ if (-not $dotnet) { throw ".NET SDK not found. Install it from https://dot.net (
 $env:DOTNET_CLI_TELEMETRY_OPTOUT = '1'
 $env:DOTNET_NOLOGO = '1'
 
+# Optional code signing: set PORTLY_SIGN_PFX (path to a .pfx) and PORTLY_SIGN_PASSWORD, e.g. from CI secrets.
+# Without them nothing is signed and the build works as before.
+function Sign-File([string]$file) {
+    if (-not $env:PORTLY_SIGN_PFX -or -not (Test-Path $env:PORTLY_SIGN_PFX)) { return }
+    $signtool = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin\*\x64\signtool.exe" -ErrorAction SilentlyContinue | Sort-Object FullName -Descending | Select-Object -First 1
+    if (-not $signtool) { throw "signtool.exe not found (Windows SDK)" }
+    & $signtool.FullName sign /f $env:PORTLY_SIGN_PFX /p $env:PORTLY_SIGN_PASSWORD /fd SHA256 /tr 'http://timestamp.digicert.com' /td SHA256 /d 'Portly' $file
+    if ($LASTEXITCODE -ne 0) { throw "Signing failed: $file" }
+    Write-Host "  signed $file" -ForegroundColor Green
+}
+
 $dist = Join-Path $root 'dist'
 New-Item -ItemType Directory -Force $dist | Out-Null
 
@@ -45,6 +56,7 @@ foreach ($e in $editions) {
     if ($LASTEXITCODE -ne 0) { throw "Build failed: $($e.Name)" }
 
     $out = Join-Path $root "build\$($e.Name)"
+    Sign-File (Join-Path $out 'Portly.exe')
     $stage = Join-Path $root "build\stage\Portly"
     if (Test-Path (Split-Path $stage)) { Remove-Item -Recurse -Force (Split-Path $stage) }
     New-Item -ItemType Directory -Force $stage | Out-Null
@@ -66,12 +78,16 @@ foreach ($e in $editions) {
         & $iscc /Q "/DAppVersion=$Version" "/DEdition=$($e.Suffix)" "/DSourceDir=$stage" "/DOutputDir=$dist" (Join-Path $root 'installer\portly.iss')
         if ($LASTEXITCODE -ne 0) { throw "Installer failed: $($e.Name)" }
         $setup = Join-Path $dist "Portly-$Version-$($e.Suffix)-setup.exe"
+        Sign-File $setup
         $sums += "$((Get-FileHash $setup -Algorithm SHA256).Hash.ToLower())  $(Split-Path $setup -Leaf)"
         Write-Host "  $setup" -ForegroundColor Green
     }
     if ($e.Name -eq 'Modern') { $modernHash = $hash }
 }
 $sums | Set-Content (Join-Path $dist 'SHA256SUMS.txt') -Encoding ascii
+
+# winget / Scoop manifests with this version's URLs and hashes (build\manifests, not uploaded as release assets)
+& (Join-Path $root 'tools\make-package-manifests.ps1') -Version $Version -Dist $dist -Out (Join-Path $root 'build\manifests')
 
 if ($UpdateManifest) {
     $manifest = Join-Path $root 'manifest\app.json'

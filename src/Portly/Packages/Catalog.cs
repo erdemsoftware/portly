@@ -64,6 +64,7 @@ namespace Portly.Packages
             {
                 try { MergePhpReleases(File.ReadAllText(PhpCacheFile, Encoding.UTF8)); } catch { }
             }
+            SecurityInfo.LoadLocal();
         }
 
         static string Embedded()
@@ -98,6 +99,7 @@ namespace Portly.Packages
                 ok = true;
             }
             catch (Exception ex) { Log.Warn("PHP release list failed: " + ex.Message); }
+            await SecurityInfo.RefreshAsync(); // end-of-life dates and advisories travel with the catalog
             var h = Changed; if (h != null) h();
             return ok;
         }

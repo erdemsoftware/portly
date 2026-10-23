@@ -47,6 +47,7 @@ namespace Portly.Core
         {
             var c = new TimeoutClient { Timeout = timeout, Encoding = Encoding.UTF8 };
             c.Headers[HttpRequestHeader.UserAgent] = UserAgent;
+            c.Proxy = Proxy.Current(); // Settings > General > Proxy (null = direct)
             return c;
         }
 
@@ -105,6 +106,7 @@ namespace Portly.Core
                 var r = (HttpWebRequest)WebRequest.Create(url);
                 r.Method = "HEAD";
                 r.UserAgent = UserAgent;
+                r.Proxy = Proxy.Current();
                 r.Timeout = 15000;
                 r.AllowAutoRedirect = true;
                 using (var resp = (HttpWebResponse)r.GetResponse()) return (int)resp.StatusCode < 400;
