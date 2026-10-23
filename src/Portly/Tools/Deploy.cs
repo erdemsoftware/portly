@@ -238,12 +238,15 @@ namespace Portly.Tools
                 var pat = raw.Replace('\\', '/').Trim('/');
                 if (pat == "") continue;
                 var pp = pat.Split('/');
-                // the pattern matches any run of whole path components that ends at this path's end
-                if (pp.Length > parts.Length) continue;
-                bool ok = true;
-                for (int i = 0; i < pp.Length && ok; i++)
-                    ok = Glob(pp[i], parts[parts.Length - pp.Length + i]);
-                if (ok) return true;
+                // the pattern matches a run of whole path components ending at this path or at one of its
+                // parent folders (an excluded folder excludes everything inside it)
+                for (int end = pp.Length; end <= parts.Length; end++)
+                {
+                    bool ok = true;
+                    for (int i = 0; i < pp.Length && ok; i++)
+                        ok = Glob(pp[i], parts[end - pp.Length + i]);
+                    if (ok) return true;
+                }
             }
             return false;
         }
@@ -265,7 +268,10 @@ namespace Portly.Tools
             if (p.DbFromServer)
             {
                 sb.Append("if [ -f \"$D/wp-config.php\" ]; then\n");
-                sb.Append("  g() { sed -n \"s/.*define( *['\\\"]$1['\\\"] *, *['\\\"]\\([^'\\\"]*\\)['\\\"].*/\\1/p\" \"$D/wp-config.php\" | head -n 1; }\n");
+                // value in single quotes (may contain "), else in double quotes
+                sb.Append("  g() { v=$(sed -n \"s/.*define( *['\\\"]$1['\\\"] *, *'\\([^']*\\)'.*/\\1/p\" \"$D/wp-config.php\" | head -n 1)\n");
+                sb.Append("    [ -n \"$v\" ] || v=$(sed -n \"s/.*define( *['\\\"]$1['\\\"] *, *\\\"\\([^\\\"]*\\)\\\".*/\\1/p\" \"$D/wp-config.php\" | head -n 1)\n");
+                sb.Append("    printf '%s' \"$v\"; }\n");
                 sb.Append("  N=$(g DB_NAME); U=$(g DB_USER); P=$(g DB_PASSWORD); H=$(g DB_HOST)\n");
                 sb.Append("elif [ -f \"$D/.env\" ]; then\n");
                 sb.Append("  g() { grep \"^$1=\" \"$D/.env\" | head -n 1 | cut -d= -f2- | sed -e 's/\\r$//' -e 's/^[\"'\\'']//' -e 's/[\"'\\'']$//'; }\n");
@@ -284,7 +290,8 @@ namespace Portly.Tools
             sb.Append("P=$(printf '%s' \"$P\" | sed -e 's/\\\\/\\\\\\\\/g' -e 's/\"/\\\\\"/g')\n");
             sb.Append("printf '[client]\\nuser=%s\\npassword=\"%s\"\\nhost=%s\\n' \"$U\" \"$P\" \"$H\" > \"$CNF\"\n");
             sb.Append("[ -n \"$DP\" ] && printf 'port=%s\\n' \"$DP\" >> \"$CNF\"\n");
-            sb.Append("DUMP='mysqldump --single-transaction --quick --routines --triggers --no-tablespaces --default-character-set=utf8mb4'\n");
+            // --defaults-extra-file must be the first option of mysqldump (mktemp paths have no spaces)
+            sb.Append("DUMP=\"mysqldump --defaults-extra-file=$CNF --single-transaction --quick --routines --triggers --no-tablespaces --default-character-set=utf8mb4\"\n");
             return sb.ToString();
         }
 
@@ -312,7 +319,7 @@ namespace Portly.Tools
         public static string PullDbScript(DeployProfile p)
         {
             // sh has no pipefail: a failed dump says so on standard error (checked by the caller)
-            return Head(p) + DbSetupScript(p) + "( $DUMP --defaults-extra-file=\"$CNF\" \"$N\" || echo " + DumpFailed + " >&2 ) | gzip -c\n";
+            return Head(p) + DbSetupScript(p) + "( $DUMP \"$N\" || echo " + DumpFailed + " >&2 ) | gzip -c\n";
         }
 
         public static string BackupScript(DeployProfile p, string stamp)
@@ -324,7 +331,7 @@ namespace Portly.Tools
             if (p.Database)
             {
                 sb.Append(DbSetupScript(p));
-                sb.Append("F=$(mktemp); ( $DUMP --defaults-extra-file=\"$CNF\" \"$N\" || echo x > \"$F\" ) | gzip -c > \"$B/" + name + ".sql.gz\"\n");
+                sb.Append("F=$(mktemp); ( $DUMP \"$N\" || echo x > \"$F\" ) | gzip -c > \"$B/" + name + ".sql.gz\"\n");
                 sb.Append("if [ -s \"$F\" ]; then rm -f \"$F\"; echo " + DumpFailed + " >&2; exit 4; fi; rm -f \"$F\"\n");
                 sb.Append("echo \"PORTLY_BACKUP $B/" + name + ".sql.gz\"\n");
             }
