@@ -394,6 +394,7 @@ namespace Portly.UI
                 case "memcached": return new BrandTile { Text = "Mc", Color = ColorTranslator.FromHtml("#5B8F2E") };
                 case "mailhog": return new BrandTile { Text = "MH", Color = ColorTranslator.FromHtml("#8B5CF6") };
                 case "smtp4dev": return new BrandTile { Text = "S4", Color = ColorTranslator.FromHtml("#0F766E") };
+                case "tomcat": return new BrandTile { Text = "Tc", Color = ColorTranslator.FromHtml("#D97706") };
                 default: return new BrandTile { Text = "?", Color = Color.SlateGray };
             }
         }

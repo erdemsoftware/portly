@@ -12,7 +12,7 @@ namespace Portly.Tools
     /// <summary>Command prompt / PowerShell with php, mysql, composer, node ... of the active versions on PATH.</summary>
     public static class Terminal
     {
-        static readonly string[] Types = { "php", "composer", "wpcli", "mysql", "mariadb", "postgresql", "mongodb", "nodejs", "bun", "deno", "python", "go", "git", "sqlite", "vscode", "apache", "nginx", "redis" };
+        static readonly string[] Types = { "php", "composer", "wpcli", "mysql", "mariadb", "postgresql", "mongodb", "nodejs", "bun", "deno", "python", "go", "java", "git", "sqlite", "vscode", "apache", "nginx", "redis" };
 
         public static List<string> PathDirs()
         {

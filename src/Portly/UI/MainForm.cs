@@ -302,6 +302,19 @@ namespace Portly.UI
             tiles.Controls.Add(Tile(I18n.T("main.root"), "folder", (s, e) => WinUtil.OpenFolder(Settings.Current.DocumentRoot)));
             tiles.Controls.Add(Tile("WordPress", "globe", (s, e) => NewProject("wordpress")));
             tiles.Controls.Add(Tile(I18n.T("main.newProject"), "plus", (s, e) => NewProject()));
+            if (TomcatService.Enabled)
+            {
+                ModernButton tcTile = null;
+                tcTile = Tile("Tomcat", "globe", (s, e) =>
+                {
+                    if (!ServiceManager.Tomcat.IsInstalled) { OpenPackages("tomcat"); return; }
+                    var m = new ContextMenuStrip();
+                    StyleMenu(m);
+                    TomcatUi.AddItems(m.Items);
+                    m.Show(tcTile, new Point(0, tcTile.Height));
+                });
+                tiles.Controls.Add(tcTile);
+            }
 
             page.Controls.Add(tiles);
             page.Controls.Add(quickTitle);
@@ -418,8 +431,9 @@ namespace Portly.UI
                 cm.Items.Add(auto);
             }
             cm.Items.Add(I18n.T("svc.getVersions"), null, (s, e) => OpenPackages(svc.PackageType));
-            var log = svc.Id == "web" ? Settings.Current.WebServer + "-error.log" : svc.Id == "mysql" ? "mysql-error.log" : svc.Id == "postgresql" ? "postgresql.log" : svc.Id == "mongodb" ? "mongodb.log" : svc.Id == "memcached" ? "memcached.log" : svc.Id == "redis" ? "redis.log" : svc.Id == "mailpit" ? Settings.Current.MailTool + ".log" : "php_errors.log";
+            var log = svc.Id == "web" ? Settings.Current.WebServer + "-error.log" : svc.Id == "mysql" ? "mysql-error.log" : svc.Id == "postgresql" ? "postgresql.log" : svc.Id == "mongodb" ? "mongodb.log" : svc.Id == "memcached" ? "memcached.log" : svc.Id == "redis" ? "redis.log" : svc.Id == "mailpit" ? Settings.Current.MailTool + ".log" : svc.Id == "tomcat" ? TomcatUi.LogFile : "php_errors.log";
             cm.Items.Add(I18n.T("svc.openLog"), null, (s, e) => WinUtil.Edit(Path.Combine(Paths.Logs, log)));
+            if (svc.Id == "tomcat") TomcatUi.AddItems(cm.Items);
         }
 
         void FillVersions(Row row)
@@ -500,6 +514,10 @@ namespace Portly.UI
                     break;
                 case "redis":
                     if (ServiceManager.Redis.IsActive) await ServiceManager.Redis.RestartAsync();
+                    break;
+                case "tomcat":
+                case "java":
+                    if (TomcatUi.NeedsRestart(type)) await ServiceManager.Tomcat.RestartAsync();
                     break;
             }
         }

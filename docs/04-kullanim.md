@@ -416,6 +416,24 @@ Ayarlar > Özellikler > "FrankenPHP çalışma ortamı" açılınca site menüs�
 - FrankenPHP başlayamazsa site klasik PHP ile açılmaya devam eder, hata günlüğe yazılır.
 - Swoole / OpenSwoole'un Windows için yerel sürümü yoktur; Octane için FrankenPHP kullanın.
 
+## Apache Tomcat (Java web uygulamaları)
+
+Ayarlar > Özellikler > **Apache Tomcat** açılınca Paketler penceresinde Tomcat (Web sunucuları) görünür ve ana ekrana sürüm seçicili bir **Tomcat** kartı eklenir ("Servisleri seç" ile gizlenebilir). Tomcat Java ile çalışır: Paketler > Çalışma ortamları > **Java (Temurin)** her zaman listelenir.
+
+| Paket | Sürümler | Not |
+|---|---|---|
+| Java (Temurin) | 21 LTS ve 25 LTS, JRE ya da JDK | Eclipse Adoptium'un resmî zip'leri, SHA-256 doğrulamalı. Tomcat için JRE yeterli; `javac` / `jar` gerekirse JDK |
+| Apache Tomcat | 11.0, 10.1, 9.0 | 11 Java 17+, 10.1 Java 11+, 9.0 Java 8+ ister. 10.1 / 11 `jakarta.*`, 9.0 eski `javax.*` uygulamalar içindir |
+
+- Tomcat, etkin Java paketiyle başlar (yoksa Windows'taki `JAVA_HOME`). Java çok eskiyse kart hangi sürümün gerektiğini yazar.
+- Paket klasörü (`bin\tomcat\apache-tomcat-11.0.x`) hiç değiştirilmez: `CATALINA_BASE` = `data\tomcat\<dal>` (ör. `data\tomcat\11.0`). İlk başlatmada `conf\` ve varsayılan uygulamalar (ROOT, manager, host-manager, docs; `examples` hariç) buraya kopyalanır. Aynı daldaki yama güncellemesi uygulamalarınızı ve ayarlarınızı korur.
+- HTTP portu Ayarlar > Servisler > **Tomcat portu** (varsayılan 8080). Bağlantı noktası yalnız `127.0.0.1`'de dinler; "Ağımdaki diğer cihazlar erişebilsin" açıksa `0.0.0.0` (Windows güvenlik duvarı kuralı yalnız web portlarını kapsar; Tomcat portu için gerekirse elle izin verin). Port doluysa port çakışması penceresi 8081, 8082, 8180 ... önerir.
+- Kapatma portu (8005 / "SHUTDOWN") her başlatmada rastgele yerel bir porta ve rastgele bir komuta çevrilir; Portly durdururken bu komutu gönderir (uygulamalar düzgün kapanır), 20 saniyede kapanmazsa Ctrl+C, sonra süreç sonlandırılır.
+- Günlükler `logs\tomcat` (catalina, erişim günlüğü, `console.log`). Kart menüsü > **Günlüğü aç** `console.log`'u açar.
+- **Uygulama yayınlamak**: Hızlı erişim > **Tomcat** (ya da kart menüsü) > **webapps klasörünü aç**, `uygulama.war` dosyasını oraya bırakın; Tomcat onu açar ve `http://localhost:8080/uygulama/` adresinde yayınlar. **Tomcat sayfasını aç** `http://localhost:<port>/` adresini açar.
+- Manager uygulaması (`/manager`) için kullanıcı tanımlı değildir; gerekirse `data\tomcat\<dal>\conf\tomcat-users.xml` içine `manager-gui` rolüyle bir kullanıcı ekleyin (Tomcat bu dosyadaki şifreyi düz metin olarak tutar).
+- `server.xml`'de Portly yalnız HTTP bağlantı noktasının `port` / `address` değerini, kapatma portunu ve günlük klasörünü her başlatmada yeniden yazar; eklediğiniz diğer ayarlar kalır.
+
 ## Siteyi sunucuya göndermek / sunucudan çekmek
 
 Ayarlar > Özellikler'de **Sunucuya gönder / sunucudan çek** açılınca (yalnız Windows 10/11 sürümü; Windows'un kendi `ssh.exe` ve `tar.exe` programlarını kullanır) site kartındaki **⋯ > Sunucu...** penceresi çıkar. XAMPP/Laragon'daki bir WordPress sitesini hostinge taşımak ya da canlı siteyi yerele almak için düşünülmüştür.

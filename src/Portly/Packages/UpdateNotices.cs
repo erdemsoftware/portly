@@ -31,7 +31,7 @@ namespace Portly.Packages
     {
         public static List<UpdateNotice> Current = new List<UpdateNotice>();
         /// <summary>Types whose data folder needs a migration between branches.</summary>
-        public static readonly string[] DataTypes = { "mysql", "mariadb", "postgresql", "mongodb" };
+        public static readonly string[] DataTypes = { "mysql", "mariadb", "postgresql", "mongodb", "tomcat" }; // Tomcat: web apps live per branch (data\tomcat\<branch>), 9 -> 10 also moves javax.* to jakarta.*
         /// <summary>Tags of builds that are not meant as the next stable step.</summary>
         static readonly string[] NotStableTags = { "mainline", "current", "newest", "preview", "rc", "beta", "alpha", "old", "eol", "dev" };
         static readonly Regex PreRelease = new Regex(@"(alpha|beta|rc\d*|preview|dev|snapshot)", RegexOptions.IgnoreCase);

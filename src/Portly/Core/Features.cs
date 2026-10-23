@@ -38,6 +38,7 @@ namespace Portly.Core
             new Feature { Id = "deploy",      Default = false },  // push / pull a site to a server over SSH
             new Feature { Id = "serviceMode", Default = false },  // run web server and database as Windows services
             new Feature { Id = "customCerts", Default = false },  // own / wildcard certificate per site
+            new Feature { Id = "tomcat",      Default = false },  // Apache Tomcat (Java web apps, WAR files)
         };
 
         public static Feature Get(string id) { return All.FirstOrDefault(f => f.Id == id); }

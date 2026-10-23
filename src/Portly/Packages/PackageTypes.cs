@@ -52,6 +52,9 @@ namespace Portly.Packages
             new PackageType { Id = "mailhog", Category = "mail",    Name = "MailHog",    DetectFile = "MailHog.exe",      PathDirs = new string[0] },
             new PackageType { Id = "smtp4dev", Category = "mail",   Name = "smtp4dev",   DetectFile = "Rnwood.Smtp4dev.exe", PathDirs = new string[0] },
             new PackageType { Id = "cloudflared", Category = "share", Name = "Cloudflare Tunnel", DetectFile = "cloudflared.exe", PathDirs = new string[0] },
+            // Java web apps: Tomcat runs on the active Java (Temurin JRE / JDK)
+            new PackageType { Id = "tomcat", Category = "web",     Name = "Apache Tomcat", DetectFile = @"bin\bootstrap.jar", PathDirs = new string[0], Feature = "tomcat" },
+            new PackageType { Id = "java", Category = "runtime",   Name = "Java (Temurin)", DetectFile = @"bin\java.exe",   PathDirs = new[] { "bin" } },
             // more databases and caches
             new PackageType { Id = "mariadb", Category = "db",    Name = "MariaDB",    DetectFile = @"bin\mysqld.exe",  PathDirs = new[] { "bin" } },
             new PackageType { Id = "postgresql", Category = "db", Name = "PostgreSQL", DetectFile = @"bin\postgres.exe", PathDirs = new[] { "bin" } },
