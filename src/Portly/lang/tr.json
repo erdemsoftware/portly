@@ -997,5 +997,12 @@
   "sslfix.problem.custom": "Kendi sertifikanızda sorun var (site menüsünde Sertifika)",
   "sites.subCount": "{0} alt alan adı",
   "sites.subOf": "{0}, {1} adresinin alt alan adıdır",
-  "svc.dbTitle": "MySQL / MariaDB"
+  "svc.dbTitle": "MySQL / MariaDB",
+  "feature.tomcat": "Apache Tomcat",
+  "feature.tomcat.hint": "Java web uygulamalarını (WAR dosyaları) Tomcat ve indirilebilir Java (Eclipse Temurin) ile çalıştırır.",
+  "tomcat.noJava": "Tomcat için Java gerekli. Paketler penceresinden \"Java (Temurin)\" indirin.",
+  "tomcat.oldJava": "{0} için Java {1} veya daha yenisi gerekli, etkin Java sürümü {2}. Paketler penceresinden daha yeni bir Java seçin.",
+  "tomcat.openPage": "Tomcat sayfasını aç",
+  "tomcat.openWebapps": "webapps klasörünü aç (WAR dosyasını buraya bırakın)",
+  "settings.tomcatPort": "Tomcat portu"
 }
