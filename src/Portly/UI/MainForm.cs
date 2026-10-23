@@ -760,6 +760,8 @@ namespace Portly.UI
                     items.Add(I18n.T("share.stop"), null, (s, e) => { Share.Stop(site); FillSites(); });
                 }
             }
+            if (Deploy.IsAvailable)
+                items.Add(I18n.T("deploy.menu"), null, (s, e) => { ShowFromTray(); using (var f = new DeployForm(site)) f.ShowDialog(this); });
             items.Add(new ToolStripSeparator());
             items.Add(I18n.T("sites.delete"), null, async (s, e) =>
             {
