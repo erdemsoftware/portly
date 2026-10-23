@@ -176,3 +176,37 @@ Servisler sayfasında **Servisleri seç** ile ana ekranda görünecek servisler 
 ## Windows'ta zaten kurulu programlar
 
 VS Code, Notepad++, Git, HeidiSQL, DBeaver, Beekeeper Studio, DbGate ve DB Browser for SQLite bilgisayarda normal yolla kuruluysa Portly onları kullanır; Paketler penceresinde yeşil "Windows'ta kurulu" satırı görünür ve yeniden indirmek gerekmez. İsterseniz taşınabilir sürümü yine de kurabilirsiniz; o zaman Portly'nin kendi kopyası önceliklidir.
+
+## PHP eklentileri (redis, imagick, apcu ...)
+
+PECL artık Windows için kolay bir indirme sayfası sunmuyor; yanlış DLL (başka PHP dalı, TS/NTS, VS16/VS17, x86) PHP'nin açılmasını engeller. **PHP menüsü > PHP eklentileri...** (ya da Paketler penceresindeki aynı düğme) seçilen PHP sürümünün derlemesini (`php -i`: NTS, derleyici, x64, API sürümü) gösterir ve iki liste sunar:
+
+- **İndirilebilir:** `manifest/extensions.json` içindeki, tam o PHP derlemesine uyan ve SHA-256 değeri kayıtlı eklentiler (redis, apcu, imagick, mongodb, igbinary, memcached, xhprof, sqlsrv, pdo_sqlsrv, yaml, ast, pcov, msgpack, mailparse, ssh2, zstd, oauth). Kaynak: `downloads.php.net/~windows/pecl/releases`. Liste Windows 10/11 sürümünde pencere açılınca güncellenir; Legacy sürümü yalnız gömülü listeyi kullanır.
+- **PHP ile gelenler:** `ext` klasöründeki eklentiler; Aç/Kapat php.ini'yi değiştirir.
+
+**Kur** düğmesi: indirir, SHA-256'yı denetler, DLL'i `ext` klasörüne, gereken ek DLL'leri (ör. imagick için ImageMagick `CORE_RL_*`/`IM_MOD_RL_*`) `php.exe`'nin yanına koyar (PHP'nin kendi DLL'lerinin üzerine yazmaz), php.ini'de açar ve `php -m` ile yüklendiğini denetler. PHP açılmazsa php.ini ve kopyalanan dosyalar geri alınır, PHP'nin hata mesajı gösterilir. O PHP sürümü çalışıyorsa web sunucusu ve PHP yeniden başlatılır. Kurulan dosyalar `<php>\portly-extensions.ini` dosyasına yazılır; **Kaldır** yalnız bunları siler.
+
+Yeni bir PHP sürümü kurulduğunda ya da güncellendiğinde Portly, önceki sürüme kurduğu eklentileri yeni sürüme de kurmayı önerir ve o sürüm için derlemesi olmayanları söyler.
+
+Notlar: sqlsrv/pdo_sqlsrv için Windows'ta Microsoft ODBC Driver 17/18 kurulu olmalı; imagick için Visual C++ 2015-2022 x64 çalışma zamanı gerekir (Portly zaten önerir). excimer ve uuid'in Windows derlemesi yoktur.
+
+## Terminal her zaman projenin sürümlerini kullanır (shim'ler)
+
+UI'da PHP sürümü değiştirilince açık terminaller eski PHP'yi kullanmaya devam ediyordu. Artık Portly `bin\shims` klasörüne sabit komutlar yazar: `php`, `composer`, `wp`, `node`, `npm`, `npx` (cmd/PowerShell için `.cmd`, Git Bash için uzantısız bash betikleri). Klasör hiç değişmez; komut her çalıştığında içinde bulunulan klasöre göre sürümü seçer:
+
+1. Bulunulan klasörde ya da bir üst klasörde `.php-version` dosyası (`8.3`, `8.3.4` gibi)
+2. Klasörü içeren Portly sitesinin PHP seçimi (sites.ini `php=`)
+3. O sitenin `composer.json` içindeki `require.php` kısıtı (`^8.1`, `~8.2.0`, `>=8.1 <8.4` ...): kısıta uyan en yeni kurulu sürüm
+4. Portly'nin varsayılan PHP'si
+
+`.php-version` dosyasındaki sürüm kurulu değilse komut çalışmaz, hangi sürümün eksik olduğunu ve Paketler > PHP'den kurulacağını söyleyen tek satırlık bir mesaj yazar.
+
+Shim'ler hızlıdır: her çağrıda .NET başlatılmaz, Portly'nin site/sürüm/ayar değişince yazdığı küçük harita dosyalarını (`bin\shims\map`) okur. Portly'nin Terminal düğmesi shim klasörünü PATH'in başına koyar. Ayarlar'daki **PATH'e ekle** açıksa kullanıcı PATH'ine de önce shim klasörü, arkasında etkin paket klasörleri yazılır (php.exe/node.exe'yi doğrudan arayan editörler için yedek) ve yeni açılan pencereler oturumu kapatmadan görür.
+
+Bilinen sınırlar: proje yolunda `!` ya da konsol kod sayfasında olmayan harfler varsa cmd tarafında 2. ve 3. adım atlanır (varsayılan PHP kullanılır; `.php-version` yine çalışır). `composer.json` kısıtı yalnız Portly sitelerinde (www altındaki projeler) hesaplanır. `.cmd` komutunu Ctrl+C ile durdurunca Windows "Toplu iş sonlandırılsın mı?" diye sorabilir. Özellik Ayarlar > Özellikler'den kapatılabilir; o zaman `bin\shims` silinir.
+
+## Birden fazla Node.js sürümü
+
+Ayarlar > Özellikler > **Birden fazla Node.js sürümü** açıkken `node`, `npm`, `npx` shim'leri sürümü şuna göre seçer: bulunulan ya da üst klasördeki `.nvmrc` / `.node-version` (`22`, `v22.11.0`, `22.x`, `lts/*`, `lts/jod`, `node` ...), yoksa Portly sitesinin `package.json` içindeki `engines.node` kısıtı, yoksa etkin Node.js. Uyan sürüm kurulu değilse sürümü ve Paketler > Node.js'ten kurulacağını söyleyen tek satırlık mesaj yazılır. Node sürümleri Paketler penceresinden yan yana kurulur.
+
+npm'in global paketleri her ana sürüm için ayrı klasöre gider (`usr\npm\node22` ...); shim bu klasörü PATH'e ekler, böylece `npm i -g` ile kurulan araçlar kendi Node sürümüyle çalışmaya devam eder. Özellik kapalıyken shim'ler hep etkin Node.js'i kullanır ve npm'in global klasörüne dokunmaz.

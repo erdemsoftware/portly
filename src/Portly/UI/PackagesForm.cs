@@ -114,6 +114,12 @@ namespace Portly.UI
             var manual = Ui.Button(I18n.T("pkg.addManual"), (s, e) => AddManual(), false, "plus");
             var folder = Ui.Button(I18n.T("pkg.openBin"), (s, e) => WinUtil.OpenFolder(Paths.Bin), false, "folder");
             buttons.Controls.AddRange(new Control[] { _install, _activate, _remove, manual, folder, _close });
+            if (Features.IsOn("extensions"))
+            {
+                var exts = Ui.Button(I18n.T("ext.menu"), (s, e) => { using (var f = new PhpExtensionsForm()) f.ShowDialog(this); });
+                buttons.Controls.Add(exts);
+                buttons.Controls.SetChildIndex(exts, 4);
+            }
             bottom.Controls.Add(buttons);
             bottom.Controls.Add(_status);
             bottom.Controls.Add(_progress);
@@ -255,6 +261,7 @@ namespace Portly.UI
             UpdateButtons();
             _progress.Visible = true;
             int done = 0, failed = 0;
+            var phpCopies = new List<Tuple<string, string>>();   // (extensions from, to) for new / updated PHP versions
             foreach (var r in jobs)
             {
                 var entry = r.Installed ? r.Update : r.Entry;
@@ -269,8 +276,10 @@ namespace Portly.UI
                         var stage = I18n.T("pkg.stage." + p.Stage);
                         _status.Text = "[" + (done + failed + 1) + "/" + jobs.Count + "] " + label + " - " + stage + (p.Stage == "download" ? " " + (p.Percent >= 0 ? p.Percent + "%" : Ui.FormatBytes(p.Bytes)) : "");
                     }));
+                    var phpFrom = r.Installed ? r.Folder : PackageTypes.ActiveFolder("php");
                     if (r.Installed) await Installer.UpdateAsync(r.Folder, entry, report, _cts.Token);
                     else await Installer.InstallAsync(entry, report, _cts.Token);
+                    if (entry.Type == "php") phpCopies.Add(Tuple.Create(phpFrom, entry.Folder));
                     done++;
                 }
                 catch (OperationCanceledException)
@@ -290,6 +299,7 @@ namespace Portly.UI
             foreach (ListViewItem it in _list.Items) it.Checked = false;
             Fill();
             Terminal.ApplyUserPath();
+            foreach (var c in phpCopies) await PhpExtensionsForm.OfferCopyAsync(this, c.Item1, c.Item2);
             if (!_cts.IsCancellationRequested) _status.Text = I18n.T("pkg.finished", done, failed);
             if (_firstRun && done > 0 && failed == 0)
             {

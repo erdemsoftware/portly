@@ -36,7 +36,8 @@ namespace Portly.Tools
                 CreateNoWindow = false,
                 WorkingDirectory = Directory.Exists(workDir ?? "") ? workDir : Settings.Current.DocumentRoot,
             };
-            var path = string.Join(";", PathDirs()) + ";" + Environment.GetEnvironmentVariable("PATH");
+            // shims first: php / composer / node follow the project folder even after a version switch
+            var path = string.Join(";", Shims.PathDirs().Concat(PathDirs())) + ";" + Environment.GetEnvironmentVariable("PATH");
             psi.EnvironmentVariables["PATH"] = path;
             psi.EnvironmentVariables["PORTLY_ROOT"] = Paths.Root;
             // let Node, Python, curl and Git trust https://*.portly (Mozilla roots + Portly CA)
@@ -72,7 +73,11 @@ namespace Portly.Tools
         /// <summary>Keep the user PATH in sync with the active versions (only when enabled in Settings).</summary>
         public static void ApplyUserPath()
         {
-            if (Settings.Current.AddToPath) WinUtil.SetUserPath(PathDirs());
+            // also the moment to rewrite the shim maps: versions, sites or settings just changed
+            Shims.Hook();
+            Shims.Refresh();
+            // the shim folder goes first; the package folders stay behind it for programs that start php.exe / node.exe directly
+            if (Settings.Current.AddToPath) WinUtil.SetUserPath(Shims.PathDirs().Concat(PathDirs()).ToList());
             else WinUtil.SetUserPath(new string[0]);
         }
     }

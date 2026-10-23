@@ -942,6 +942,8 @@ namespace Portly.UI
                     ext.DropDownItems.Add(mi);
                 }
                 php.DropDownItems.Add(ext);
+                if (Features.IsOn("extensions"))
+                    php.DropDownItems.Add(I18n.T("ext.menu"), null, (s, e) => { using (var f = new PhpExtensionsForm()) f.ShowDialog(this); });
                 var xdebugOn = Xdebug.IsEnabled(phpDir);
                 var xd = new ToolStripMenuItem("Xdebug") { Checked = xdebugOn };
                 xd.Click += async (s2, e2) =>
