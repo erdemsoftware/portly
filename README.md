@@ -38,6 +38,13 @@ Portly; Apache ya da Nginx, PHP, MySQL ya da MariaDB, PostgreSQL, MongoDB, Redis
 | WordPress | Elle kurulum | **Tek tıkla kurulu WordPress** (WP-CLI ile; yönetici kullanıcısı ve şifresi hazır) |
 | Sorun önleme | — | OneDrive, Türkçe karakterli yol, uzun yol, başka PHP / PHPRC denetimi; root şifresi sıfırlama, kurtarma modu, Defender istisnası, hosts engeli uyarısı |
 | Diğer | — | Tek tıkla Xdebug, otomatik veritabanı yedeği; Laravel, Symfony, CodeIgniter, CakePHP, Drupal, Vue, React, Svelte, Nuxt, Next.js, Angular, Astro şablonları; Git, VS Code, Python, Go, Bun, Deno |
+| PHP eklentileri | Elle DLL arama | **Tek tıkla 17 PECL eklentisi** (redis, imagick, apcu, mongodb...) her PHP sürümüne uygun, doğrulanmış |
+| Terminal | Sürüm değişince eski PHP kalır | **Her terminalde projenin PHP / Node sürümü** (.php-version, composer.json, .nvmrc) |
+| Güncelleme bildirimi | — | "PHP 8.6 çıktı" gibi bildirim, **tek tıkla indir ve geç**; destek bitişi ve güvenlik açığı uyarısı |
+| Veritabanı güvenliği | — | **Denetle ve onar**, sürüm değişince veritabanlarını güvenle taşıma, büyük SQL içe aktarma, karakter seti / karşılaştırma seçimi |
+| Geliştirici araçları | — | Arka plan işleri (kuyruk, zamanlayıcı, Vite), site günlükleri, profil çıkarma, `portly` komut satırı, proje dosyası `portly.yml` |
+| Siteler | — | Ek ve joker alan adları, kendi sertifikan, arşivleme, Firefox/Java sertifika güveni, **Caddy** ve **FrankenPHP** (Octane) |
+| Diğer | — | Sunucuya gönder / sunucudan çek (SSH), Windows hizmeti modu, antivirüs/karantina denetimi, proxy, 4K ekran ve ekran okuyucu desteği. Az kullanılanlar Ayarlar > Özellikler'den açılır |
 | Dil | 34 dil (txt) | JSON, **31 dil** (Arapça, Farsça, Urduca sağdan sola), GitHub'dan katkıya açık |
 | Windows 7 / 8 / 8.1 | Belirsiz | **Ayrı Legacy sürümü** |
 
@@ -99,6 +106,11 @@ Portly runs Apache or Nginx, PHP, MySQL or MariaDB, PostgreSQL, MongoDB, Redis, 
 - **One-click WordPress** (installed with WP-CLI, admin user ready) and templates for Laravel, Symfony, CodeIgniter, CakePHP, Drupal, Vue, React, Svelte, Nuxt, Next.js, Angular and Astro. Git, VS Code, Python, Go, Bun and Deno as optional packages.
 - **Problem prevention**: checks for OneDrive folders, non-ASCII paths, long paths, a second PHP or PHPRC; forgotten root password reset, InnoDB recovery mode, optional Defender exclusion, warning when antivirus blocks the hosts file.
 - **Two editions**: Windows 10/11 (updates, latest packages) and Legacy for Windows 7 SP1 / 8 / 8.1 (frozen, compatible packages).
+- **PHP extensions** in one click (17 PECL extensions, verified builds per PHP version); **terminals follow the project's PHP / Node version** (.php-version, composer.json, .nvmrc).
+- **Update notices** ("PHP 8.6 is out" → install and switch in one click), end-of-life and CVE warnings, antivirus quarantine check, proxy support.
+- **Database safety**: check & repair, safe moves between MySQL / MariaDB versions, large SQL import, collation and storage engine defaults.
+- **Developer workflow**: background jobs (queue, scheduler, Vite), site logs, profiler, `portly` CLI with hooks, `portly.yml` project file.
+- **Sites**: extra and wildcard domains, own certificates, archive, Firefox/Java trust, **Caddy** and **FrankenPHP** (Octane). Push / pull over SSH, Windows service mode, per-monitor DPI and screen-reader support. Rarely used features are switched on in Settings > Features.
 - **macOS and Linux: coming soon.** The settings export is already platform-neutral, so your settings and package list will move over. Star the repo or donate to help it happen.
 - 31 languages (right-to-left for Arabic, Persian, Urdu), plain JSON files, contributions welcome.
 
