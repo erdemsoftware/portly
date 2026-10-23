@@ -21,6 +21,10 @@ namespace Portly
             if (args.Length >= 2 && args[0] == "--hosts-apply") return HostsFile.ApplyElevated(args[1]);
             if (args.Length >= 2 && args[0] == "--trust-ca") return Certs.TrustCaElevated(args[1]);
 
+            // "portly status", "portly start" ...: print into the calling console, talk to the running Portly
+            Tools.Cli.InstanceKey = "Portly-" + Fnv(Paths.Root.ToLowerInvariant());
+            if (Tools.Cli.IsCommand(args)) return Tools.Cli.RunClient(args);
+
             int i = Array.IndexOf(args, "--after-update");
             if (i >= 0 && i + 1 < args.Length)
             {
@@ -68,6 +72,8 @@ namespace Portly
                 }
             }) { IsBackground = true };
             listener.Start();
+            Tools.Cli.StartServer();
+            if (Features.IsOn("cli")) Tools.Cli.EnsureCmdFile(Paths.Root);
 
             Application.Run(form);
             GC.KeepAlive(_mutex);

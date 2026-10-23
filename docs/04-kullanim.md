@@ -259,3 +259,103 @@ Portly-<sürüm>-win10-setup.exe /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /DIR="
 ```
 
 Kaldırırken paketler, veritabanları, projeler ve ayarlar varsayılan olarak korunur; hepsini silmek için `unins000.exe /VERYSILENT /PURGE` kullanın (pencereli kaldırmada sorulur, varsayılan cevap "koru"dur). winget (`winget install ErdemSoftware.Portly`) ve Scoop paketleri yayın sürecinde hazırlanır (bkz. `docs/03-yayinlama.md`).
+
+## Arka plan işleri (kuyruk, zamanlayıcı, Vite)
+
+Ayarlar > Özellikler > **Arka plan işleri** (varsayılan kapalı). Site kartı **⋯** > **Arka plan işleri...** penceresinde her site için işler eklenir, başlatılır, durdurulur ve günlüğü canlı izlenir. Hazır şablonlar:
+
+| Şablon | Komut | Not |
+|---|---|---|
+| Laravel kuyruk işçisi | `php artisan queue:work --tries=3` | Kod değişince yeniden başlatın |
+| Laravel zamanlayıcı | `php artisan schedule:run` | Sürekli süreç değildir; Portly her dakikanın başında bir kez çalıştırır (cron gibi) |
+| Vite | `npm run dev` | Node.js paketi ve `npm install` gerekir |
+| Laravel Reverb | `php artisan reverb:start` | |
+| Özel komut | herhangi bir komut | |
+
+- İş proje klasöründe `cmd.exe` ile çalışır. PATH'te önce **sitenin PHP sürümü**, sonra Portly'nin Node, Composer vb. araçları vardır. `PORTLY_ROOT`, `PORTLY_SITE`, `PORTLY_SITE_DIR`, `PORTLY_SITE_URL` değişkenleri tanımlıdır.
+- İşler Portly'nin job object'i içindedir: Portly çökse bile Windows onları kapatır. "Tümünü durdur" ve çıkışta önce Ctrl+C gönderilir, 5 saniyede kapanmazsa süreç ağacı sonlandırılır.
+- "Durursa yeniden başlasın" seçiliyse kapanan iş 1, 2, 4, 8, 16 sn beklemelerle yeniden başlar; bir dakikada 5 kereden fazla kapanırsa **hata** durumuna geçer.
+- "Tümünü başlat ile başlasın" seçili işler "Tümünü başlat" (ve `portly start`) ile başlar. Çalışan iş sayısı site kartında yeşil rozetle görünür.
+- Günlükler: `logs\jobs\<site>-<iş>.log` (5 MB'ta `.1` olarak döner).
+- Tanımlar `usr\sites.ini` içinde durur: `job.queue=autostart,restart|php artisan queue:work`.
+- **Laravel Horizon** `pcntl` eklentisi ister, bu eklenti Windows'ta yoktur. Yerelde kuyruk işçisini (`queue:work`) kullanın.
+
+## Site günlükleri
+
+Site kartı **⋯** > **Günlükler...** (özellik: "logs", varsayılan açık). Sitede olan sekmeler görünür:
+
+| Sekme | Dosya |
+|---|---|
+| PHP hataları | `logs\php_errors.log`, yalnızca bu sitenin klasörünü ya da adresini içeren kayıtlar |
+| Apache / Nginx hataları | `logs\apache-error.log` / `logs\nginx-error.log`, aynı süzgeçle |
+| Laravel | `storage\logs\laravel*.log` içinde en yeni dosya (günlük kanal da olur) |
+| WordPress | `wp-content\debug.log` |
+| İş: … | arka plan işlerinin günlükleri |
+
+PHP ve web sunucusu tek ortak dosyaya yazar (php-cgi'de havuz başına `error_log` yoktur; projeye `.user.ini` koymak istemedik), bu yüzden bu iki sekme süzülmüş görünür. Pencere son ~2 MB'ı gösterir, saniyede bir yeni satırları ekler, dosya temizlenince ya da döndürülünce baştan okur. **Süz** kutusu satırları metne göre süzer. **Temizle** dosyayı boşaltır (ortak dosyada bunun tüm siteleri etkilediği sorulur).
+
+## Profilleyici (Xdebug)
+
+Ayarlar > Özellikler > **dump() sunucusu ve profilleme** (varsayılan kapalı). Site kartı **⋯** > **Profilleyici...**:
+
+1. **Aç**: sitenin PHP sürümünde Xdebug yoksa indirilir (sorulur) ve `xdebug.mode=debug,develop,profile`, `start_with_request=trigger` yapılır. Profil dosyaları `logs\profiles\cachegrind.out.*` olur.
+2. **Bir isteği profille**: siteyi `?XDEBUG_TRIGGER=1` ile açar. Tetikleyicisiz istekler profillenmez.
+3. Listeden bir profil seçilince en yavaş fonksiyonlar (toplam süre, kendi süresi, çağrı sayısı, yüzde) gösterilir. Dosyalar QCacheGrind / PhpStorm ile de açılabilir.
+4. İş bitince **Kapat**. Xdebug'ı profilleyici açtıysa onu da kapatır (Xdebug her isteği yavaşlatır).
+
+## Komut satırı: portly
+
+Özellik: "cli" (varsayılan açık). Portly klasöründe `portly.cmd` oluşur; klasör PATH'teyse her terminalde çalışır.
+
+```
+portly status                      servislerin durumu, portlar, çalışan işler
+portly start [servis]              hepsini ya da birini başlat (web, php, mysql, redis, mailpit, postgresql, mongodb, memcached)
+portly stop [servis]
+portly restart [servis]
+portly sites                       siteler, adresler, PHP sürümleri
+portly open <site>                 siteyi tarayıcıda aç
+portly share <site> --yes          siteyi internette paylaş (--yes olmadan yalnızca ne olacağını söyler)
+portly use php 8.3 [--site shop]   varsayılan ya da sitenin PHP sürümü ("8.3", "^8.2" ...)
+portly db backup                   tüm veritabanlarını yedekle
+portly version | help
+```
+
+Portly çalışıyorsa komut ona adlandırılmış kanal (named pipe, yalnızca aynı Windows kullanıcısı, ağdan erişilemez) ile gider; çalışmıyorsa önce sistem tepsisinde başlatılır. Çıkış kodu başarıda 0, hatada 1'dir.
+
+**Betikler (hooks):** `usr\hooks\before-start.cmd`, `after-start.cmd`, `before-stop.cmd`, `after-stop.cmd` varsa "Tümünü başlat / durdur" çevresinde çalışır. Gizli çalışır, en çok 120 sn (`usr\portly.ini` → `[devworkflow] HookTimeoutSeconds`), çıktısı Günlük sayfasına yazılır. Değişkenler: `PORTLY_ROOT`, `PORTLY_EVENT`. Siteye özel betikler portly.yml'den gelir (aşağıda; ek değişken `PORTLY_SITE`, klasör sitenin klasörüdür).
+
+## Proje dosyası: portly.yml
+
+Özellik: "projectFile" (varsayılan açık). Proje köküne konan `portly.yml` projeyi ekipteki herkes için aynı şekilde kurar (Herd'ün `herd.yml` dosyası gibi). Biçim platformdan bağımsızdır; ileride macOS / Linux sürümleri de aynı dosyayı okur.
+
+```yaml
+version: 1
+php: "8.3"                 # ya da "^8.2", ">=8.1 <8.4", "8.3.*"
+node: "22"                 # bilgi amaçlı; etkin sürüm farklıysa uyarır
+root: public               # site kökü (proje klasörüne göre)
+domains: [shop.test, "*.shop.portly"]
+services: [mysql, redis, mailpit]
+database: { name: shop, collation: utf8mb4_turkish_ci }
+jobs:
+  - name: queue
+    command: "php artisan queue:work"
+    autostart: true        # varsayılan false
+    restart: true          # varsayılan true
+  - name: schedule
+    command: "php artisan schedule:run"
+    schedule: true         # her dakika bir kez
+hooks:
+  after-start: "php artisan migrate --force"
+  before-stop: "php artisan queue:restart"
+```
+
+Desteklenen YAML alt kümesi: girintili eşlemeler ve listeler, `- ad: değer` liste öğeleri, tek satırda `[a, b]` ve `{ a: 1 }`, tırnaklı / tırnaksız metin, sayı, `true/false`, `null`, `#` açıklamaları. Çapa (`&`), takma ad (`*`), etiket (`!`), çok satırlı metin (`|`, `>`), sekme ile girinti ve birden çok belge satır numarasıyla reddedilir. Bilinmeyen anahtarlar uyarıyla atlanır.
+
+Akış:
+1. Portly uygulanmamış bir `portly.yml` görünce site kartında turuncu **portly.yml** rozeti çıkar (engellemez).
+2. Rozete ya da **⋯** > **portly.yml'yi uygula...** seçeneğine tıklayınca neyin değişeceği tek tek listelenir.
+3. Komutlar (jobs, hooks) ayrı bir bölümde gösterilir ve yalnızca **"Bu dosyadaki komutlara izin ver"** işaretlenirse kaydedilir. Bir depo dosyası hiçbir zaman sessizce komut çalıştırmaz; uygulama sırasında da komut çalışmaz, yalnızca kaydedilir.
+4. Uygulanınca: PHP için koşula uyan en yeni kurulu sürüm seçilir (yoksa katalogdan uygun sürüm indirilir), ek alan adları eklenir, `root=` yazılır, servisler "Tümünü başlat"a eklenir, veritabanı oluşturulur (karşılaştırma verilmişse `ALTER DATABASE ... COLLATE`), işler ve betikler kaydedilir.
+5. Dosyanın özeti `usr\sites.ini` içinde `projectfile=` olarak saklanır; dosya değişince rozet yeniden çıkar.
+
+**⋯** > **portly.yml oluştur** sitenin şu anki ayarlarından dosyayı yazar.
