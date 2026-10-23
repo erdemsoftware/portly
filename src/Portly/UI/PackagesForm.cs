@@ -79,6 +79,7 @@ namespace Portly.UI
             _list.Columns.Add(I18n.T("col.version"), Ui.S(110));
             _list.Columns.Add(I18n.T("col.note"), Ui.S(250));
             _list.Columns.Add(I18n.T("col.status"), Ui.S(220));
+            _list.ShowItemToolTips = true;
             // themed column headers (the native header stays light in dark mode)
             _list.OwnerDraw = true;
             _list.DrawItem += (s, e) => e.DrawDefault = true;
@@ -113,7 +114,8 @@ namespace Portly.UI
             _close = Ui.Button(I18n.T("common.close"), (s, e) => { if (_busy) { if (_cts != null) _cts.Cancel(); } else Close(); });
             var manual = Ui.Button(I18n.T("pkg.addManual"), (s, e) => AddManual(), false, "plus");
             var folder = Ui.Button(I18n.T("pkg.openBin"), (s, e) => WinUtil.OpenFolder(Paths.Bin), false, "folder");
-            buttons.Controls.AddRange(new Control[] { _install, _activate, _remove, manual, folder, _close });
+            var unused = Ui.Button(I18n.T("cleanup.button"), (s, e) => { if (_busy) return; using (var f = new CleanupForm()) f.ShowDialog(this); Fill(); });
+            buttons.Controls.AddRange(new Control[] { _install, _activate, _remove, unused, manual, folder, _close });
             bottom.Controls.Add(buttons);
             bottom.Controls.Add(_status);
             bottom.Controls.Add(_progress);
@@ -184,8 +186,12 @@ namespace Portly.UI
                     if (r.Update != null) status += " - " + I18n.T("pkg.updateTo", r.Update.Version);
                 }
                 else status = "";
+                // end of life / known vulnerabilities (security.json)
+                var sec = r.Installed ? SecurityInfo.StatusOf(r.Type, r.Folder) : null;
+                if (sec != null) status += " - " + sec.Long;
                 var it = new ListViewItem(new[] { name, version, note, status }) { Tag = r, Name = r.Type + "/" + r.Folder, Group = _list.Groups[PackageTypes.Get(r.Type).Category] };
                 if (r.Installed) it.ForeColor = r.Update != null ? Color.FromArgb(180, 83, 9) : Ui.Green;
+                if (sec != null) { it.ForeColor = sec.Advisories.Count > 0 ? Ui.Red : Ui.Orange; it.ToolTipText = sec.Long; }
                 if (checkedKeys.Contains(it.Name)) it.Checked = true;
                 _list.Items.Add(it);
             }
@@ -255,6 +261,7 @@ namespace Portly.UI
             UpdateButtons();
             _progress.Visible = true;
             int done = 0, failed = 0;
+            var replaced = new List<Tuple<string, string>>();
             foreach (var r in jobs)
             {
                 var entry = r.Installed ? r.Update : r.Entry;
@@ -269,7 +276,7 @@ namespace Portly.UI
                         var stage = I18n.T("pkg.stage." + p.Stage);
                         _status.Text = "[" + (done + failed + 1) + "/" + jobs.Count + "] " + label + " - " + stage + (p.Stage == "download" ? " " + (p.Percent >= 0 ? p.Percent + "%" : Ui.FormatBytes(p.Bytes)) : "");
                     }));
-                    if (r.Installed) await Installer.UpdateAsync(r.Folder, entry, report, _cts.Token);
+                    if (r.Installed) { await Installer.UpdateAsync(r.Folder, entry, report, _cts.Token); replaced.Add(Tuple.Create(r.Type, r.Folder)); }
                     else await Installer.InstallAsync(entry, report, _cts.Token);
                     done++;
                 }
@@ -291,6 +298,7 @@ namespace Portly.UI
             Fill();
             Terminal.ApplyUserPath();
             if (!_cts.IsCancellationRequested) _status.Text = I18n.T("pkg.finished", done, failed);
+            if (replaced.Count > 0) { UpdateNoticeBar.OfferRemoveOld(this, replaced); Fill(); }
             if (_firstRun && done > 0 && failed == 0)
             {
                 Ui.Info(this, I18n.T("pkg.firstRunDone"));

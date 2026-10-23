@@ -16,6 +16,7 @@ namespace Portly.UI
     public class SettingsForm : Form
     {
         ComboBox _lang, _terminal, _theme, _mailTool, _backup, _dbEngine;
+        ProxySettingsPanel _proxy;
         NumericUpDown _pgPort, _mongoPort, _memPort;
         NumericUpDown _backupKeep;
         TextBox _docRoot, _tld;
@@ -84,6 +85,8 @@ namespace Portly.UI
             _addToPath = Check(I18n.T("settings.addToPath"), s.AddToPath, g);
             _checkUpdates = Check(AppInfo.UpdatesSupported ? I18n.T("settings.checkUpdates") : I18n.T("settings.noUpdatesLegacy"), AppInfo.UpdatesSupported && s.CheckUpdates, g);
             _checkUpdates.Enabled = AppInfo.UpdatesSupported;
+            _proxy = new ProxySettingsPanel();
+            AddRow(g, I18n.T("proxy.title"), _proxy);
             Section(stack, I18n.T("settings.general"), g);
 
             // ---------------- services ----------------
@@ -264,6 +267,8 @@ namespace Portly.UI
                 Directory.CreateDirectory(root);
             }
             catch { Ui.Error(this, I18n.T("settings.badRoot")); return; }
+            var proxyError = _proxy.Validate();
+            if (proxyError != null) { Ui.Error(this, proxyError); return; }
             var ports = new[] { _http.Value, _https.Value, _mysql.Value, _redis.Value, _mailWeb.Value, _mailSmtp.Value, _pgPort.Value, _mongoPort.Value, _memPort.Value };
             if (ports.Distinct().Count() != ports.Length) { Ui.Error(this, I18n.T("settings.duplicatePorts")); return; }
             // the PHP FastCGI range must not overlap the other ports
@@ -304,6 +309,7 @@ namespace Portly.UI
             bool pathChanged = s.AddToPath != _addToPath.Checked;
             s.AddToPath = _addToPath.Checked;
             if (AppInfo.UpdatesSupported) s.CheckUpdates = _checkUpdates.Checked;
+            _proxy.Save(s);
             s.HttpPort = (int)_http.Value;
             s.HttpsPort = (int)_https.Value;
             s.MysqlPort = (int)_mysql.Value;

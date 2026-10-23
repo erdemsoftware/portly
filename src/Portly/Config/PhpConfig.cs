@@ -64,6 +64,8 @@ namespace Portly.Config
             Set(lines, "session.upload_progress.enabled", "Off");
             Set(lines, "allow_url_include", "Off");
             Set(lines, "expose_php", "Off");
+            // hotfixes from manifest/security.json (only whitelisted, stricter-only values)
+            SecurityInfo.ApplyIniHotfixes((k, v) => Set(lines, k, v));
 
             // ---- comfortable defaults (only for a brand new php.ini) ----
             if (fresh)

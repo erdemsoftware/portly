@@ -88,6 +88,7 @@ namespace Portly.Packages
 
             Report(progress, "configure", -1, 0);
             await Task.Run(() => PostInstall(e, copySettingsFrom));
+            await Task.Run(() => Integrity.Record(target)); // file list for the antivirus quarantine check
 
             if (PackageTypes.ActiveFolder(e.Type) == "" || Settings.Current.GetVersion(e.Type) == "")
             {
@@ -150,6 +151,7 @@ namespace Portly.Packages
             else CopyDir(root, target);
 
             PostInstall(new PackageEntry { Type = type, Folder = name, Version = PackageTypes.Label(name) }, null);
+            Integrity.Record(target);
             if (Settings.Current.GetVersion(type) == "") { Settings.Current.SetVersion(type, name); Settings.Current.Save(); }
             Log.Info(I18n.T("log.installed", t.Name + " " + PackageTypes.Label(name)));
             return name;
