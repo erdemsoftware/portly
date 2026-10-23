@@ -20,6 +20,14 @@ namespace Portly.Config
         const string End = "# <<< Portly <<<";
         static readonly Regex HostRx = new Regex(@"^[a-z0-9]([a-z0-9_.-]{0,250}[a-z0-9])?$", RegexOptions.IgnoreCase);
 
+        /// <summary>Must this name go into the hosts file? Not for wildcards (impossible) or *.localhost (browsers resolve it).</summary>
+        public static bool NeedsEntry(string host)
+        {
+            if (string.IsNullOrEmpty(host) || host.Contains("*")) return false;
+            var h = host.ToLowerInvariant();
+            return h != "localhost" && !h.EndsWith(".localhost") && HostRx.IsMatch(h);
+        }
+
         public static string FilePath
         {
             get { return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), @"drivers\etc\hosts"); }

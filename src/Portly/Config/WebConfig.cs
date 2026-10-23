@@ -24,13 +24,24 @@ namespace Portly.Config
         static string NginxAlias { get { return Path.Combine(Paths.Etc, "nginx", "alias"); } }
 
         /// <summary>Returns false when SSL could not be prepared (then HTTPS is skipped this time).</summary>
-        static bool PrepareSsl(List<Site> sites, Dictionary<string, Tuple<string, string>> certs)
+        internal static bool PrepareSsl(List<Site> sites, Dictionary<string, Tuple<string, string>> certs)
         {
             if (!Settings.Current.Ssl) return false;
             try
             {
                 certs["localhost"] = Certs.EnsureSite("localhost");
-                foreach (var s in sites.Where(x => x.Valid)) certs[s.Host] = Certs.EnsureSite(s.Host);
+                foreach (var s in sites.Where(x => x.Valid))
+                {
+                    // the site's own certificate (Site menu > Certificate...) wins over the one Portly signs
+                    var own = CustomCerts.For(s);
+                    if (own != null)
+                    {
+                        var problem = CustomCerts.Problem(s);
+                        if (problem != null) Log.Warn(s.Host + ": " + problem);
+                        certs[s.Host] = own;
+                    }
+                    else certs[s.Host] = Certs.EnsureSite(s.Host, s.AllNames);
+                }
                 return true;
             }
             catch (Exception ex)
@@ -87,17 +98,21 @@ namespace Portly.Config
             {
                 foreach (var site in sites.Where(x => x.Valid))
                 {
+                    // a FrankenPHP site runs as its own server: Apache only forwards to it
+                    int proxy = ProxyPort(site);
+                    // a group folder must not swallow the addresses of the projects inside it (AllNames leaves *.group out)
+                    var extra = site.AllNames.Where(n => n != site.Host).ToList();
                     var sv = Merge(v, new Dictionary<string, string>
                     {
                         { "HOST", site.Host },
-                        // a group folder must not swallow the addresses of the projects inside it
-                        { "ALIAS", site.IsGroup ? "" : "ServerAlias *." + site.Host },
+                        { "ALIAS", extra.Count == 0 ? "" : "ServerAlias " + string.Join(" ", extra) },
                         { "SITE_ROOT", Paths.Fwd(site.DocRoot) },
-                        { "PHP_HANDLER", site.PhpFolder == "" ? "" : ApachePhp(phpPort(site.PhpFolder)) },
+                        { "PHP_HANDLER", proxy > 0 ? ApacheProxy(proxy, false) : site.PhpFolder == "" ? "" : ApachePhp(phpPort(site.PhpFolder)) },
                     });
                     var text = Templates.Render("apache-site.conf.tpl", sv);
                     if (ssl && certs.ContainsKey(site.Host))
                     {
+                        if (proxy > 0) sv["PHP_HANDLER"] = ApacheProxy(proxy, true);
                         sv["CRT"] = Paths.Fwd(certs[site.Host].Item1);
                         sv["KEY"] = Paths.Fwd(certs[site.Host].Item2);
                         text += "\r\n" + Templates.Render("apache-site-ssl.conf.tpl", sv);
@@ -109,6 +124,15 @@ namespace Portly.Config
             }
             CleanAuto(ApacheSites, written);
             ToolApps.WriteDashboard(sites, ssl);
+        }
+
+        /// <summary>Port of the FrankenPHP server of a site (0 = served by the PHP FastCGI pool). Set by ServiceManager.</summary>
+        public static Func<Site, int> ProxyPort = site => 0;
+
+        static string ApacheProxy(int port, bool https)
+        {
+            return "ProxyPreserveHost On\r\n    ProxyPass / \"http://127.0.0.1:" + port + "/\"\r\n    ProxyPassReverse / \"http://127.0.0.1:" + port + "/\"" +
+                   (https ? "\r\n    RequestHeader set X-Forwarded-Proto \"https\"" : "\r\n    RequestHeader set X-Forwarded-Proto \"http\"");
         }
 
         static string ApachePhp(int port)
@@ -157,18 +181,20 @@ namespace Portly.Config
                 foreach (var site in sites.Where(x => x.Valid))
                 {
                     bool siteSsl = ssl && certs.ContainsKey(site.Host);
+                    int proxy = ProxyPort(site);
                     var sv = Merge(v, new Dictionary<string, string>
                     {
                         { "HOST", site.Host },
-                        { "SERVER_NAMES", site.IsGroup ? site.Host : site.Host + " *." + site.Host },
+                        { "SERVER_NAMES", string.Join(" ", site.AllNames) },
                         { "SITE_ROOT", Paths.Fwd(site.DocRoot) },
                         { "LISTEN_HTTPS", siteSsl ? "listen " + ip + s.HttpsPort + " ssl;" : "" },
                         { "LISTEN_V6", v6 ? "listen [::1]:" + s.HttpPort + ";" + (siteSsl ? " listen [::1]:" + s.HttpsPort + " ssl;" : "") : "" },
                         { "SSL_CERT", siteSsl ? NginxCert(certs[site.Host]) : "" },
                         { "PHP_LOCATION", site.PhpFolder == "" ? "" : NginxPhp(nginxDir, phpPort(site.PhpFolder)) },
+                        { "PROXY_PORT", proxy.ToString() },
                     });
                     var name = "auto." + site.Host + ".conf";
-                    Templates.WriteIfChanged(Path.Combine(NginxSites, name), Templates.Render("nginx-site.conf.tpl", sv));
+                    Templates.WriteIfChanged(Path.Combine(NginxSites, name), Templates.Render(proxy > 0 ? "nginx-site-proxy.conf.tpl" : "nginx-site.conf.tpl", sv));
                     written.Add(name);
                 }
             }

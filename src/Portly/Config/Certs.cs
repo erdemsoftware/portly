@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
@@ -116,20 +118,32 @@ namespace Portly.Config
         }
 
         /// <summary>Make sure host.crt / host.key exist and are valid. Returns (crt, key) paths.</summary>
-        public static Tuple<string, string> EnsureSite(string host)
+        public static Tuple<string, string> EnsureSite(string host) { return EnsureSite(host, null); }
+
+        /// <summary>
+        /// Same, with the full list of DNS names for the certificate (site aliases and wildcards).
+        /// null = host and *.host. The names are remembered in host.names; a changed list makes a new certificate.
+        /// </summary>
+        public static Tuple<string, string> EnsureSite(string host, IEnumerable<string> names)
         {
+            var list = (names ?? new[] { host, "*." + host }).Where(n => !string.IsNullOrEmpty(n)).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+            if (!list.Contains(host, StringComparer.OrdinalIgnoreCase)) list.Insert(0, host);
+            var namesText = string.Join(",", list).ToLowerInvariant();
             lock (Sync)
             {
                 Directory.CreateDirectory(SitesDir);
                 var crt = Path.Combine(SitesDir, host + ".crt");
                 var key = Path.Combine(SitesDir, host + ".key");
+                var namesFile = Path.Combine(SitesDir, host + ".names");
                 var ca = EnsureCa();
                 if (File.Exists(crt) && File.Exists(key))
                 {
                     try
                     {
+                        // certificates made before aliases existed cover host and *.host
+                        var had = File.Exists(namesFile) ? File.ReadAllText(namesFile).Trim() : (host + ",*." + host).ToLowerInvariant();
                         var existing = new X509Certificate2(Encoding.ASCII.GetBytes(FirstPem(File.ReadAllText(crt))));
-                        if (existing.NotAfter > DateTime.Now.AddDays(30) && existing.Issuer == ca.Subject) return Tuple.Create(crt, key);
+                        if (existing.NotAfter > DateTime.Now.AddDays(30) && existing.Issuer == ca.Subject && had == namesText) return Tuple.Create(crt, key);
                     }
                     catch { }
                 }
@@ -138,8 +152,7 @@ namespace Portly.Config
                 {
                     var req = new CertificateRequest(new X500DistinguishedName("CN=" + host + ", O=Portly"), rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
                     var san = new SubjectAlternativeNameBuilder();
-                    san.AddDnsName(host);
-                    san.AddDnsName("*." + host);
+                    foreach (var n in list) san.AddDnsName(n);
                     if (host == "localhost") { san.AddIpAddress(IPAddress.Loopback); san.AddIpAddress(IPAddress.IPv6Loopback); }
                     req.CertificateExtensions.Add(san.Build());
                     req.CertificateExtensions.Add(new X509BasicConstraintsExtension(false, false, 0, true));
@@ -158,6 +171,7 @@ namespace Portly.Config
                     var cert = req.Create(ca.SubjectName, signer, DateTimeOffset.Now.AddDays(-1), notAfter, serial);
                     File.WriteAllText(crt, Pem("CERTIFICATE", cert.RawData) + Pem("CERTIFICATE", ca.RawData));
                     File.WriteAllText(key, Pem("PRIVATE KEY", rsa.Key.Export(CngKeyBlobFormat.Pkcs8PrivateBlob)));
+                    File.WriteAllText(namesFile, namesText);
                 }
                 return Tuple.Create(crt, key);
             }
@@ -194,7 +208,7 @@ namespace Portly.Config
             {
                 EnsureCa();
                 var code = WinUtil.RunElevated(Paths.Exe, "--trust-ca \"" + CaCrt + "\"");
-                if (code == 0 && IsCaTrusted()) { Log.Info(I18n.T("log.caTrusted")); return true; }
+                if (code == 0 && IsCaTrusted()) { Log.Info(I18n.T("log.caTrusted")); Tools.FirefoxTrust.EnableAll(); return true; }
                 var ca = new X509Certificate2(Encoding.ASCII.GetBytes(File.ReadAllText(CaCrt)));
                 using (var store = new X509Store(StoreName.Root, StoreLocation.CurrentUser))
                 {
@@ -202,6 +216,8 @@ namespace Portly.Config
                     store.Add(ca);
                 }
                 Log.Info(I18n.T("log.caTrusted"));
+                // Firefox keeps its own list: let it read the Windows store too
+                Tools.FirefoxTrust.EnableAll();
                 return IsCaTrusted();
             }
             catch (Exception ex) { Log.Warn("Trust CA: " + ex.Message); return false; }

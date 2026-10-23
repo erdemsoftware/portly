@@ -25,6 +25,22 @@ namespace Portly.Config
         public string PhpOverride = "";
         /// <summary>Extra host names (sites.ini "aliases=", comma separated): "shop.test", "*.shop.portly" ...</summary>
         public List<string> Aliases = new List<string>();
+        /// <summary>sites.ini "archived=1": hidden, no vhost / hosts entry / certificate; files untouched.</summary>
+        public bool Archived;
+        /// <summary>"" = PHP FastCGI, "frankenphp" or "octane" (FrankenPHP worker for Laravel Octane).</summary>
+        public string Runtime = "";
+
+        /// <summary>Every name the site answers to: host, *.host (not for groups) and the aliases.</summary>
+        public List<string> AllNames
+        {
+            get
+            {
+                var list = new List<string> { Host };
+                if (!IsGroup) list.Add("*." + Host);
+                foreach (var a in Aliases) if (!list.Contains(a)) list.Add(a);
+                return list;
+            }
+        }
 
         public string ShortName { get { var i = Name.LastIndexOf('/'); return i < 0 ? Name : Name.Substring(i + 1); } }
 
@@ -77,10 +93,12 @@ namespace Portly.Config
         {
             string[] all;
             try { all = Directory.GetDirectories(dir); } catch { yield break; }
+            var excluded = ExcludedPatterns();
             foreach (var d in all.OrderBy(x => x, StringComparer.OrdinalIgnoreCase))
             {
                 var name = Path.GetFileName(d);
                 if (name.StartsWith(".") || name.StartsWith("$") || name.Equals("node_modules", StringComparison.OrdinalIgnoreCase) || name.Equals("vendor", StringComparison.OrdinalIgnoreCase)) continue;
+                if (excluded.Any(rx => rx.IsMatch(name))) continue;
                 try
                 {
                     var attr = File.GetAttributes(d);
@@ -101,7 +119,29 @@ namespace Portly.Config
             return Folders(dir).Any(LooksLikeProject);
         }
 
+        /// <summary>Settings > excluded folders ("_*", "backup*", "*.bak" ...) as regexes; only with the "archive" feature.</summary>
+        static List<Regex> ExcludedPatterns()
+        {
+            if (!Features.IsOn("archive")) return new List<Regex>();
+            return Settings.Current.ExcludedFolderPatterns
+                .Select(p => new Regex("^" + Regex.Escape(p).Replace(@"\*", ".*").Replace(@"\?", ".") + "$", RegexOptions.IgnoreCase))
+                .ToList();
+        }
+
+        /// <summary>Sites that are served (archived ones are left out).</summary>
         public static List<Site> Scan()
+        {
+            return ScanAll().Where(x => !x.Archived).ToList();
+        }
+
+        /// <summary>Archived projects (for the "Archived (N)" list on the Sites page).</summary>
+        public static List<Site> ArchivedSites()
+        {
+            return ScanAll().Where(x => x.Archived).ToList();
+        }
+
+        /// <summary>Every project folder, archived ones included (Site.Archived set).</summary>
+        public static List<Site> ScanAll()
         {
             var list = new List<Site>();
             var root = Settings.Current.DocumentRoot;
@@ -113,7 +153,8 @@ namespace Portly.Config
                 var name = Path.GetFileName(dir);
                 var site = Make(name, dir, name.ToLowerInvariant() + "." + tld, ini);
                 list.Add(site);
-                if (!site.Valid || !IsGroupFolder(dir, ini, name)) continue;
+                // an archived group hides the projects inside it too
+                if (site.Archived || !site.Valid || !IsGroupFolder(dir, ini, name)) continue;
                 site.IsGroup = true;
                 foreach (var sub in Folders(dir))
                 {
@@ -150,9 +191,42 @@ namespace Portly.Config
             }
 
             site.PhpOverride = ini.Get(name, "php", "");
-            site.Aliases = ini.Get(name, "aliases", "").Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim().ToLowerInvariant()).Where(x => x != "").Distinct().ToList();
+            // switched-off features leave the stored values alone but do not use them
+            if (Features.IsOn("aliases"))
+                site.Aliases = ini.Get(name, "aliases", "").Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim().ToLowerInvariant()).Where(IsValidAlias).Distinct().ToList();
+            site.Archived = Features.IsOn("archive") && ini.GetBool(name, "archived", false);
+            if (Features.IsOn("frankenphp") && !AppInfo.IsLegacy)
+            {
+                var rt = ini.Get(name, "runtime", "").ToLowerInvariant();
+                site.Runtime = rt == "frankenphp" || rt == "octane" ? rt : "";
+            }
             if (ini.GetBool(name, "disabled", false)) { site.Valid = false; site.Problem = I18n.T("sites.disabled"); }
             return site;
+        }
+
+        static readonly Regex AliasRx = new Regex(@"^(\*\.)?[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)+$");
+
+        /// <summary>"shop.test", "*.shop.test": letters, digits, dashes and dots, at least two labels, one leading "*." allowed.</summary>
+        public static bool IsValidAlias(string name)
+        {
+            return name != null && name.Length <= 253 && AliasRx.IsMatch(name);
+        }
+
+        public static void SetArchived(string siteName, bool archived)
+        {
+            var ini = new Ini(Paths.SitesFile);
+            if (archived) ini.Set(siteName, "archived", true);
+            else ini.Remove(siteName, "archived");
+            ini.Save();
+        }
+
+        /// <summary>"" (PHP FastCGI), "frankenphp" or "octane".</summary>
+        public static void SetRuntime(string siteName, string runtime)
+        {
+            var ini = new Ini(Paths.SitesFile);
+            if (string.IsNullOrEmpty(runtime)) ini.Remove(siteName, "runtime");
+            else ini.Set(siteName, "runtime", runtime);
+            ini.Save();
         }
 
         public static void SetPhp(string siteName, string phpFolder)

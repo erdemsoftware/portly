@@ -18,8 +18,10 @@ namespace Portly.Services
         public static readonly PostgresService Postgres = new PostgresService();
         public static readonly MongoService Mongo = new MongoService();
         public static readonly MemcachedService Memcached = new MemcachedService();
+        public static readonly CaddyService Caddy = new CaddyService();
+        public static readonly FrankenPhpService FrankenPhp = new FrankenPhpService();
 
-        static Service[] AllServices { get { return new Service[] { Php, Apache, Nginx, MySql, Postgres, Mongo, Redis, Memcached, Mailpit }; } }
+        static Service[] AllServices { get { return new Service[] { Php, Apache, Nginx, Caddy, FrankenPhp, MySql, Postgres, Mongo, Redis, Memcached, Mailpit }; } }
 
         public static event Action<Service> Changed;
         public static event Action SitesChanged;
@@ -30,9 +32,10 @@ namespace Portly.Services
         {
             foreach (var s in AllServices)
                 s.Changed += x => { var h = Changed; if (h != null) h(x); };
+            WebConfig.ProxyPort = FrankenPhp.PortOf;
         }
 
-        public static Service Web { get { return Settings.Current.WebServer == "nginx" ? (Service)Nginx : Apache; } }
+        public static Service Web { get { var w = Settings.Current.WebServer; return w == "nginx" ? (Service)Nginx : w == "caddy" ? (Service)Caddy : Apache; } }
 
         /// <summary>Rows shown in the main window.</summary>
         public static List<Service> Rows { get { return new List<Service> { Web, Php, MySql, Postgres, Mongo, Redis, Memcached, Mailpit }; } }
@@ -62,6 +65,9 @@ namespace Portly.Services
             }
             Apache.Sites = sites; Apache.PhpPort = Php.PortFor;
             Nginx.Sites = sites; Nginx.PhpPort = Php.PortFor;
+            Caddy.Sites = sites; Caddy.PhpPort = Php.PortFor;
+            // FrankenPHP sites first: the web server config forwards to their ports
+            await FrankenPhp.StartAsync(sites);
             await Web.StartAsync();
             if (Web.State == ServiceState.Running) SyncHostsInBackground(sites);
         }
@@ -70,6 +76,7 @@ namespace Portly.Services
         {
             await Web.StopAsync();
             await Php.StopAsync();
+            await FrankenPhp.StopAsync();
         }
 
         /// <summary>Re-generate configuration and restart the web server if it runs (new site, PHP switch ...).</summary>
@@ -86,8 +93,12 @@ namespace Portly.Services
         public static void SyncHostsInBackground(List<Site> sites)
         {
             var s = Settings.Current;
-            if (!s.AutoVhosts || s.Tld == "localhost") return;
-            var hosts = sites.Where(x => x.Valid).Select(x => x.Host).ToList();
+            if (!s.AutoVhosts) return;
+            // site names only when the ending needs hosts; aliases unless they end in .localhost (browsers resolve those).
+            // Wildcards cannot go into the hosts file at all.
+            var hosts = s.Tld == "localhost" ? new List<string>() : sites.Where(x => x.Valid).Select(x => x.Host).ToList();
+            hosts.AddRange(sites.Where(x => x.Valid).SelectMany(x => x.Aliases).Where(HostsFile.NeedsEntry));
+            if (s.Tld == "localhost" && hosts.Count == 0) return;
             var key = string.Join(",", hosts);
             if (key == _refusedHostsKey) return;
             Task.Run(() =>
@@ -124,7 +135,7 @@ namespace Portly.Services
 
         public static Task StopAllAsync()
         {
-            return Task.WhenAll(StopWebAsync(), Nginx.StopAsync(), Apache.StopAsync(), MySql.StopAsync(), Redis.StopAsync(), Mailpit.StopAsync(),
+            return Task.WhenAll(StopWebAsync(), Nginx.StopAsync(), Apache.StopAsync(), Caddy.StopAsync(), MySql.StopAsync(), Redis.StopAsync(), Mailpit.StopAsync(),
                 Postgres.StopAsync(), Mongo.StopAsync(), Memcached.StopAsync());
         }
 

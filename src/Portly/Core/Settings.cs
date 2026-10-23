@@ -74,8 +74,17 @@ namespace Portly.Core
         public string SkippedVersion { get { return _ini.Get("general", "SkippedVersion", ""); } set { _ini.Set("general", "SkippedVersion", value); } }
 
         // ---------- services ----------
-        /// <summary>"apache" or "nginx".</summary>
-        public string WebServer { get { var v = _ini.Get("services", "WebServer", "apache").ToLowerInvariant(); return v == "nginx" ? "nginx" : "apache"; } set { _ini.Set("services", "WebServer", value); } }
+        /// <summary>"apache", "nginx" or "caddy" (only while the "caddy" feature is on, Windows 10+ edition).</summary>
+        public string WebServer
+        {
+            get
+            {
+                var v = _ini.Get("services", "WebServer", "apache").ToLowerInvariant();
+                if (v == "caddy" && !AppInfo.IsLegacy && Features.IsOn("caddy")) return "caddy";
+                return v == "nginx" ? "nginx" : "apache";
+            }
+            set { _ini.Set("services", "WebServer", value); }
+        }
         /// <summary>Relaxed sql_mode for old applications (no STRICT_TRANS_TABLES / ONLY_FULL_GROUP_BY).</summary>
         public bool LegacySqlMode { get { return _ini.GetBool("mysql", "LegacySqlMode", false); } set { _ini.Set("mysql", "LegacySqlMode", value); } }
         /// <summary>Database engine: "mysql" or "mariadb".</summary>

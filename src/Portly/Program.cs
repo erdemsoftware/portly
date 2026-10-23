@@ -20,6 +20,7 @@ namespace Portly
             // elevated helper mode: only rewrites the Portly block of the hosts file
             if (args.Length >= 2 && args[0] == "--hosts-apply") return HostsFile.ApplyElevated(args[1]);
             if (args.Length >= 2 && args[0] == "--trust-ca") return Certs.TrustCaElevated(args[1]);
+            if (args.Length >= 2 && args[0] == "--firefox-policy") return Tools.FirefoxTrust.ApplyPolicyElevated(args[1]);
 
             int i = Array.IndexOf(args, "--after-update");
             if (i >= 0 && i + 1 < args.Length)
