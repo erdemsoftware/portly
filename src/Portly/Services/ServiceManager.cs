@@ -20,8 +20,9 @@ namespace Portly.Services
         public static readonly MemcachedService Memcached = new MemcachedService();
         public static readonly CaddyService Caddy = new CaddyService();
         public static readonly FrankenPhpService FrankenPhp = new FrankenPhpService();
+        public static readonly TomcatService Tomcat = new TomcatService();
 
-        static Service[] AllServices { get { return new Service[] { Php, Apache, Nginx, Caddy, FrankenPhp, MySql, Postgres, Mongo, Redis, Memcached, Mailpit }; } }
+        static Service[] AllServices { get { return new Service[] { Php, Apache, Nginx, Caddy, FrankenPhp, MySql, Postgres, Mongo, Redis, Memcached, Mailpit, Tomcat }; } }
 
         public static event Action<Service> Changed;
         public static event Action SitesChanged;
@@ -38,7 +39,15 @@ namespace Portly.Services
         public static Service Web { get { var w = Settings.Current.WebServer; return w == "nginx" ? (Service)Nginx : w == "caddy" ? (Service)Caddy : Apache; } }
 
         /// <summary>Rows shown in the main window.</summary>
-        public static List<Service> Rows { get { return new List<Service> { Web, Php, MySql, Postgres, Mongo, Redis, Memcached, Mailpit }; } }
+        public static List<Service> Rows
+        {
+            get
+            {
+                var rows = new List<Service> { Web, Php, MySql, Postgres, Mongo, Redis, Memcached, Mailpit };
+                if (TomcatService.Enabled) rows.Add(Tomcat); // optional feature
+                return rows;
+            }
+        }
 
         public static bool AnyActive
         {
@@ -150,6 +159,7 @@ namespace Portly.Services
             if (s.IsEnabled("postgresql")) tasks.Add(Postgres.StartAsync());
             if (s.IsEnabled("mongodb")) tasks.Add(Mongo.StartAsync());
             if (s.IsEnabled("memcached")) tasks.Add(Memcached.StartAsync());
+            if (TomcatService.Enabled && s.IsEnabled("tomcat")) tasks.Add(Tomcat.StartAsync());
             await Task.WhenAll(tasks);
             await Tools.Hooks.RunAsync("after-start");
             Tools.Jobs.StartAutostart(CurrentSites);
@@ -165,7 +175,7 @@ namespace Portly.Services
                 if (any) await Tools.Hooks.RunAsync("before-stop");
                 await Tools.Jobs.StopAllAsync();
                 await Task.WhenAll(StopWebAsync(), Nginx.StopAsync(), Apache.StopAsync(), Caddy.StopAsync(), MySql.StopAsync(), Redis.StopAsync(), Mailpit.StopAsync(),
-                    Postgres.StopAsync(), Mongo.StopAsync(), Memcached.StopAsync());
+                    Postgres.StopAsync(), Mongo.StopAsync(), Memcached.StopAsync(), Tomcat.StopAsync());
                 if (any) await Tools.Hooks.RunAsync("after-stop");
             });
         }

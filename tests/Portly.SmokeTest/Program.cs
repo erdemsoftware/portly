@@ -350,7 +350,7 @@ namespace Portly.SmokeTest
             catch (Exception ex) { Check("site shared on the internet", false, ex.Message); }
 
             // ---------- feature groups (one file each: Tests.<Group>.cs) ----------
-            foreach (var group in new Func<Settings, string, Task>[] { Tests_PhpTooling, Tests_Database, Tests_Updates, Tests_SitesWeb, Tests_DevWorkflow, Tests_Platform })
+            foreach (var group in new Func<Settings, string, Task>[] { Tests_PhpTooling, Tests_Database, Tests_Updates, Tests_SitesWeb, Tests_DevWorkflow, Tests_Platform, Tests_Tomcat })
             {
                 try { await group(s, www); }
                 catch (Exception ex) { Check(group.Method.Name, false, ex.GetType().Name + ": " + ex.Message); }

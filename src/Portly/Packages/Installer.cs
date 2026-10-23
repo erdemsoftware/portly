@@ -194,6 +194,9 @@ namespace Portly.Packages
             // windows.php.net moves superseded builds to /archives/
             if (e.Url.Contains("windows.php.net/downloads/releases/") && !e.Url.Contains("/archives/"))
                 yield return e.Url.Replace("/downloads/releases/", "/downloads/releases/archives/");
+            // the Apache CDN keeps only the newest releases; archive.apache.org keeps all of them
+            if (e.Url.StartsWith("https://dlcdn.apache.org/", StringComparison.OrdinalIgnoreCase))
+                yield return "https://archive.apache.org/dist/" + e.Url.Substring("https://dlcdn.apache.org/".Length);
         }
 
         static string UrlFileName(string url)

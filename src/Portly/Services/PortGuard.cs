@@ -34,6 +34,7 @@ namespace Portly.Services
             { "PostgresPort", new[] { 5433, 5434, 5435 } },
             { "MongoPort", new[] { 27018, 27019, 27020 } },
             { "MemcachedPort", new[] { 11212, 11213, 11214 } },
+            { "TomcatPort", new[] { 8081, 8082, 8180, 8280 } },
         };
 
         static int Get(string key) { return Settings.Current.Raw.GetInt("services", key, 0); }
@@ -54,6 +55,7 @@ namespace Portly.Services
                 case "postgresql": list.Add(Tuple.Create("PostgresPort", "PostgreSQL", st.PostgresPort)); break;
                 case "mongodb": list.Add(Tuple.Create("MongoPort", "MongoDB", st.MongoPort)); break;
                 case "memcached": list.Add(Tuple.Create("MemcachedPort", "Memcached", st.MemcachedPort)); break;
+                case "tomcat": list.Add(Tuple.Create("TomcatPort", "Tomcat", st.TomcatPort)); break;
                 case "mailpit":
                     list.Add(Tuple.Create("MailpitWebPort", "Mailpit web", st.MailpitWebPort));
                     list.Add(Tuple.Create("MailpitSmtpPort", "Mailpit SMTP", st.MailpitSmtpPort));
@@ -66,6 +68,7 @@ namespace Portly.Services
         {
             var conflicts = new List<PortConflict>();
             var used = new HashSet<int>(new[] { "HttpPort", "HttpsPort", "MysqlPort", "RedisPort", "MailpitWebPort", "MailpitSmtpPort", "PostgresPort", "MongoPort", "MemcachedPort" }.Select(k => Get(k) == 0 ? -1 : Get(k)));
+            used.Add(Settings.Current.TomcatPort); // its default is not written to the ini
             foreach (var s in services)
             {
                 if (s.IsActive || !s.IsInstalled) continue;

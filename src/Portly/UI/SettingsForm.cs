@@ -17,7 +17,7 @@ namespace Portly.UI
     {
         ComboBox _lang, _terminal, _theme, _mailTool, _backup, _dbEngine;
         ProxySettingsPanel _proxy;
-        NumericUpDown _pgPort, _mongoPort, _memPort;
+        NumericUpDown _pgPort, _mongoPort, _memPort, _tomcatPort;
         NumericUpDown _backupKeep;
         TextBox _docRoot, _tld;
         CheckBox _legacySql, _runAsService;
@@ -132,6 +132,8 @@ namespace Portly.UI
             _pgPort = Port(s.PostgresPort); AddRow(g2, "PostgreSQL port", _pgPort);
             _mongoPort = Port(s.MongoPort); AddRow(g2, "MongoDB port", _mongoPort);
             _memPort = Port(s.MemcachedPort); AddRow(g2, "Memcached port", _memPort);
+            _tomcatPort = Port(s.TomcatPort);
+            if (TomcatService.Enabled) AddRow(g2, I18n.T("settings.tomcatPort"), _tomcatPort);
             _mailWeb = Port(s.MailpitWebPort); AddRow(g2, I18n.T("settings.mailWebPort"), _mailWeb);
             _mailSmtp = Port(s.MailpitSmtpPort); AddRow(g2, I18n.T("settings.mailSmtpPort"), _mailSmtp);
             _phpPort = Port(s.PhpBasePort); AddRow(g2, I18n.T("settings.phpPort"), _phpPort);
@@ -333,6 +335,7 @@ namespace Portly.UI
             var proxyError = _proxy.Validate();
             if (proxyError != null) { Ui.Error(this, proxyError); return; }
             var ports = new[] { _http.Value, _https.Value, _mysql.Value, _redis.Value, _mailWeb.Value, _mailSmtp.Value, _pgPort.Value, _mongoPort.Value, _memPort.Value };
+            if (TomcatService.Enabled) ports = ports.Concat(new[] { _tomcatPort.Value }).ToArray();
             if (ports.Distinct().Count() != ports.Length) { Ui.Error(this, I18n.T("settings.duplicatePorts")); return; }
             // the PHP FastCGI range must not overlap the other ports
             var phpLow = (int)_phpPort.Value;
@@ -363,6 +366,7 @@ namespace Portly.UI
             bool pgRestart = (int)_pgPort.Value != s.PostgresPort || _allowLan.Checked != s.AllowLan;
             bool mongoRestart = (int)_mongoPort.Value != s.MongoPort || _allowLan.Checked != s.AllowLan;
             bool memRestart = (int)_memPort.Value != s.MemcachedPort || _allowLan.Checked != s.AllowLan;
+            bool tomcatRestart = (int)_tomcatPort.Value != s.TomcatPort || _allowLan.Checked != s.AllowLan;
             bool redisRestart = (int)_redis.Value != s.RedisPort || _allowLan.Checked != s.AllowLan;
             var mailTool = ((Item)_mailTool.SelectedItem).Value;
             bool mailRestart = (int)_mailWeb.Value != s.MailpitWebPort || (int)_mailSmtp.Value != s.MailpitSmtpPort || mailTool != s.MailTool;
@@ -422,6 +426,7 @@ namespace Portly.UI
             s.PostgresPort = (int)_pgPort.Value;
             s.MongoPort = (int)_mongoPort.Value;
             s.MemcachedPort = (int)_memPort.Value;
+            s.TomcatPort = (int)_tomcatPort.Value;
             s.AutoBackupHours = int.Parse(((Item)_backup.SelectedItem).Value);
             s.AutoBackupKeep = (int)_backupKeep.Value;
             s.Save();
@@ -454,6 +459,12 @@ namespace Portly.UI
                 if (pgRestart && ServiceManager.Postgres.IsActive) await ServiceManager.Postgres.RestartAsync();
                 if (mongoRestart && ServiceManager.Mongo.IsActive) await ServiceManager.Mongo.RestartAsync();
                 if (memRestart && ServiceManager.Memcached.IsActive) await ServiceManager.Memcached.RestartAsync();
+                // feature switched off: Tomcat no longer has a row, so stop it here
+                if (ServiceManager.Tomcat.IsActive && (!TomcatService.Enabled || tomcatRestart))
+                {
+                    if (TomcatService.Enabled) await ServiceManager.Tomcat.RestartAsync();
+                    else await ServiceManager.Tomcat.StopAsync();
+                }
                 if (redisRestart && ServiceManager.Redis.IsActive) await ServiceManager.Redis.RestartAsync();
                 if (mailRestart && mailWasActive)
                 {

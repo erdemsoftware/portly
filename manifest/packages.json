@@ -699,6 +699,75 @@
       "minOs": "10.0"
     },
     {
+      "type": "java",
+      "version": "21.0.12.1",
+      "folder": "temurin-jre-21.0.12.1",
+      "url": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.12.1%2B1/OpenJDK21U-jre_x64_windows_hotspot_21.0.12.1_1.zip",
+      "sha256": "d35f31e712f0fcf6ac5a093edc90204fbff22f720ba3950bd09d331d5e621636",
+      "tag": "LTS",
+      "note": "JRE (runs Tomcat)",
+      "recommended": true,
+      "minOs": "10.0"
+    },
+    {
+      "type": "java",
+      "version": "25.0.4.1",
+      "folder": "temurin-jre-25.0.4.1",
+      "url": "https://github.com/adoptium/temurin25-binaries/releases/download/jdk-25.0.4.1%2B1/OpenJDK25U-jre_x64_windows_hotspot_25.0.4.1_1.zip",
+      "sha256": "4c95451cea98556def2c54f7782933f52a26d4a36bd85e1d59f0364464828b07",
+      "tag": "LTS",
+      "note": "JRE",
+      "minOs": "10.0"
+    },
+    {
+      "type": "java",
+      "version": "21.0.12.1",
+      "folder": "temurin-jdk-21.0.12.1",
+      "url": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.12.1%2B1/OpenJDK21U-jdk_x64_windows_hotspot_21.0.12.1_1.zip",
+      "sha256": "f9d6e191ab098c0d416e7d588a24420a8621cd2f4720dab2459b8b7b2d2d8b4e",
+      "tag": "LTS",
+      "note": "JDK (javac, jar)",
+      "minOs": "10.0"
+    },
+    {
+      "type": "java",
+      "version": "25.0.4.1",
+      "folder": "temurin-jdk-25.0.4.1",
+      "url": "https://github.com/adoptium/temurin25-binaries/releases/download/jdk-25.0.4.1%2B1/OpenJDK25U-jdk_x64_windows_hotspot_25.0.4.1_1.zip",
+      "sha256": "00c847d804f4a78e9f04f2683faf14fed898535b177b7fc704486cb0284e9283",
+      "tag": "LTS",
+      "note": "JDK (javac, jar)",
+      "minOs": "10.0"
+    },
+    {
+      "type": "tomcat",
+      "version": "11.0.27",
+      "folder": "apache-tomcat-11.0.27",
+      "url": "https://dlcdn.apache.org/tomcat/tomcat-11/v11.0.27/bin/apache-tomcat-11.0.27-windows-x64.zip",
+      "sha256": "be327a6d1cc000ec7c7aff5b6e8ed538f22916583243114d142b2f92b43c99fb",
+      "note": "Jakarta EE 11, Java 17+",
+      "recommended": true,
+      "minOs": "10.0"
+    },
+    {
+      "type": "tomcat",
+      "version": "10.1.61",
+      "folder": "apache-tomcat-10.1.61",
+      "url": "https://dlcdn.apache.org/tomcat/tomcat-10/v10.1.61/bin/apache-tomcat-10.1.61-windows-x64.zip",
+      "sha256": "e1e8610f041ef40472b3791988f2e76fd25a13eca846ab0dc426614f16c314a8",
+      "note": "Jakarta EE 10, Java 11+",
+      "minOs": "10.0"
+    },
+    {
+      "type": "tomcat",
+      "version": "9.0.123",
+      "folder": "apache-tomcat-9.0.123",
+      "url": "https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.123/bin/apache-tomcat-9.0.123-windows-x64.zip",
+      "sha256": "79d237aa4993448da5f0922c632f7cb6f947b0b17cd7a03ceb9ad93a9e9526eb",
+      "note": "javax.* apps, Java 8+",
+      "minOs": "10.0"
+    },
+    {
       "type": "go",
       "version": "1.27.3",
       "folder": "go-1.27.3",
