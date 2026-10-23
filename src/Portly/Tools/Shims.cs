@@ -99,6 +99,8 @@ namespace Portly.Tools
                     Directory.CreateDirectory(LibDir);
                     if (sites == null) sites = Sites.Scan();
                     WriteScripts();
+                    // the shim folder is the one on PATH: "portly" should work from any terminal too
+                    if (Features.IsOn("cli")) Cli.EnsureCmdFile(Dir);
                     WritePhpMaps(sites);
                     WriteNodeMaps(sites);
                 }

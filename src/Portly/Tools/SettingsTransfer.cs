@@ -48,6 +48,12 @@ namespace Portly.Tools
             return list.Any(s => s[0].Equals(section, StringComparison.OrdinalIgnoreCase) && s[1].Equals(key, StringComparison.OrdinalIgnoreCase));
         }
 
+        /// <summary>Whole sections that describe this computer only (WSL network, its DPAPI password, firewall rule).</summary>
+        static bool MachineSection(string section)
+        {
+            return section.Equals("wsl", StringComparison.OrdinalIgnoreCase);
+        }
+
         static string Home { get { return Environment.GetFolderPath(Environment.SpecialFolder.UserProfile); } }
 
         /// <summary>C:\Users\ali\Sites\www -> ~/Sites/www (null when the folder is not under the home folder).</summary>
@@ -83,7 +89,7 @@ namespace Portly.Tools
                 var src = Settings.Current.Raw;
                 foreach (var section in src.Sections())
                     foreach (var kv in src.Section(section))
-                        if (!In(Skip, section, kv.Key)) ini.Set(section, kv.Key, kv.Value);
+                        if (!In(Skip, section, kv.Key) && !MachineSection(section)) ini.Set(section, kv.Key, kv.Value);
                 var home = ToHome(Settings.Current.DocumentRoot);
                 if (home != null) ini.Set("general", "DocumentRootHome", home);
                 ini.Save();
@@ -165,7 +171,7 @@ namespace Portly.Tools
                 foreach (var section in ini.Sections())
                     foreach (var kv in ini.Section(section))
                     {
-                        if (In(Skip, section, kv.Key)) continue;
+                        if (In(Skip, section, kv.Key) || MachineSection(section)) continue;
                         if (!samePlatform && In(PlatformOnly, section, kv.Key)) continue;
                         if (section.Equals("general", StringComparison.OrdinalIgnoreCase) && kv.Key.Equals("DocumentRoot", StringComparison.OrdinalIgnoreCase)) continue;
                         dst.Set(section, kv.Key, kv.Value);

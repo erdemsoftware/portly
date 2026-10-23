@@ -23,6 +23,13 @@ namespace Portly.Packages
         {
             var target = e.InstallDir;
             if (Directory.Exists(target)) { Log.Info(e.TypeName + " " + e.Version + " is already installed"); return; }
+            // a database without a pinned version follows the newest folder: installing a newer one would switch
+            // to an empty data dir silently ("my databases vanished"). Pin the current one; switching stays explicit.
+            if ((e.Type == "mysql" || e.Type == "mariadb" || e.Type == "postgresql" || e.Type == "mongodb") && Settings.Current.GetVersion(e.Type) == "")
+            {
+                var current = PackageTypes.ActiveFolder(e.Type);
+                if (current != "") { Settings.Current.SetVersion(e.Type, current); Settings.Current.Save(); }
+            }
             Directory.CreateDirectory(Paths.BinOf(e.Type));
 
             var fileName = e.Kind == "file" ? (e.FileName != "" ? e.FileName : UrlFileName(e.Url)) : e.Folder + ".zip";
