@@ -41,6 +41,9 @@ namespace Portly.UI
         /// </summary>
         protected override AccessibleObject CreateAccessibilityInstance() { return new ModernButtonAccessible(this); }
 
+        UiaProvider _uia;
+        protected override void WndProc(ref Message m) { if (!UiaProvider.Handle(this, UiaProvider.Kind.Button, ref _uia, ref m)) base.WndProc(ref m); }
+
         class ModernButtonAccessible : ButtonBaseAccessibleObject
         {
             readonly ModernButton _b;
@@ -169,6 +172,9 @@ namespace Portly.UI
             AccessibleRole = AccessibleRole.Grouping;
         }
 
+        UiaProvider _uia;
+        protected override void WndProc(ref Message m) { if (!UiaProvider.Handle(this, UiaProvider.Kind.Group, ref _uia, ref m)) base.WndProc(ref m); }
+
         /// <summary>A card is a named group for screen readers: its name is the first label inside (e.g. "Apache").</summary>
         protected override AccessibleObject CreateAccessibilityInstance() { return new CardAccessible(this); }
 
@@ -221,6 +227,12 @@ namespace Portly.UI
 
         /// <summary>UI Automation: CheckBox with the Toggle pattern; Toggle() runs the owner's Click (start / stop).</summary>
         protected override AccessibleObject CreateAccessibilityInstance() { return new ToggleAccessible(this); }
+
+        UiaProvider _uia;
+        protected override void WndProc(ref Message m) { if (!UiaProvider.Handle(this, UiaProvider.Kind.Toggle, ref _uia, ref m)) base.WndProc(ref m); }
+
+        /// <summary>Same as a mouse click (the owner's Click handler starts / stops), for keyboard-less automation.</summary>
+        public void PerformToggle() { OnClick(EventArgs.Empty); }
 
         class ToggleAccessible : CheckBoxAccessibleObject
         {
@@ -279,6 +291,9 @@ namespace Portly.UI
         /// <summary>Read as text ("Running"), not as an empty pane.</summary>
         protected override AccessibleObject CreateAccessibilityInstance() { return new TextAccessible(this); }
 
+        UiaProvider _uia;
+        protected override void WndProc(ref Message m) { if (!UiaProvider.Handle(this, UiaProvider.Kind.Text, ref _uia, ref m)) base.WndProc(ref m); }
+
         internal class TextAccessible : ControlAccessibleObject
         {
             readonly Control _c;
@@ -329,6 +344,9 @@ namespace Portly.UI
         }
 
         protected override AccessibleObject CreateAccessibilityInstance() { return new Pill.TextAccessible(this); }
+
+        UiaProvider _uia;
+        protected override void WndProc(ref Message m) { if (!UiaProvider.Handle(this, UiaProvider.Kind.Image, ref _uia, ref m)) base.WndProc(ref m); }
 
         protected override void OnPaint(PaintEventArgs e)
         {

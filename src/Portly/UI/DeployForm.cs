@@ -153,7 +153,8 @@ namespace Portly.UI
             scroll.BringToFront();
             AcceptButton = null;
             UpdateDbFields();
-            Shown += (s, e) => _pull.Focus();
+            // Pull is the highlighted (primary) action; focus stays on the first field so the window opens at the top
+            Shown += (s, e) => _host.Focus();
             if (_p.KeyFile != "" && Deploy.PublicKey(_p.KeyFile) != "") ShowPublicKey(Deploy.PublicKey(_p.KeyFile));
         }
 
