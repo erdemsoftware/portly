@@ -40,6 +40,7 @@ a.card:hover{border-color:var(--accent);transform:translateY(-1px)}
 .name{font-weight:600;word-break:break-all}
 .meta{color:var(--muted);font-size:12.5px;word-break:break-all}
 .bad .meta{color:var(--bad)}
+.alias{opacity:.85}
 .empty{color:var(--muted)}
 footer{max-width:1100px;margin:0 auto;padding:0 32px 32px;color:var(--muted);font-size:12.5px}
 footer a{color:var(--accent)}
@@ -64,6 +65,7 @@ footer a{color:var(--accent)}
         <a class="card" href="<?= e($s['url']) ?>">
           <div class="name"><?= e($s['name']) ?></div>
           <div class="meta"><?= e($s['url']) ?> · PHP <?= e($s['php']) ?></div>
+          <?php if (!empty($s['aliases']) && is_array($s['aliases'])): ?><div class="meta alias"><?= e(implode(', ', array_map('strval', $s['aliases']))) ?></div><?php endif; ?>
         </a>
       <?php else: ?>
         <div class="card bad">

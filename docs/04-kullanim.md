@@ -140,3 +140,59 @@ Servisler sayfasında **Servisleri seç** ile ana ekranda görünecek servisler 
 ## Windows'ta zaten kurulu programlar
 
 VS Code, Notepad++, Git, HeidiSQL, DBeaver, Beekeeper Studio, DbGate ve DB Browser for SQLite bilgisayarda normal yolla kuruluysa Portly onları kullanır; Paketler penceresinde yeşil "Windows'ta kurulu" satırı görünür ve yeniden indirmek gerekmez. İsterseniz taşınabilir sürümü yine de kurabilirsiniz; o zaman Portly'nin kendi kopyası önceliklidir.
+
+## Ek alan adları ve joker alt alan adları
+
+Siteler > site menüsü > **Alan adları...** (Ayarlar > Özellikler > "Site başına ek alan adları", varsayılan açık).
+
+- Her site zaten `ad.portly` ve `*.ad.portly` adreslerine yanıt verir. Buraya ek adlar yazılır: `magaza.test`, `*.magaza.test`, `magaza.localhost`.
+- İzin verilenler: harf, rakam, tire ve nokta; başta tek bir `*.` joker olabilir. Adlar `usr\sites.ini` içinde `aliases=` satırında saklanır.
+- Ek adlar Apache'de `ServerAlias`, Nginx ve Caddy'de `server_name` / site adresi olur ve sitenin HTTPS sertifikasına (jokerler dahil) eklenir.
+- hosts dosyasına yalnızca joker olmayan adlar yazılır. **hosts dosyası joker kabul etmez.** Her alt alan adının çalışması için `.localhost` ile biten bir ad kullanın (`*.magaza.localhost`): tarayıcılar `*.localhost` adreslerini hosts dosyası olmadan kendileri çözer. Portly sistem DNS ayarlarını değiştirmez.
+- Pano (`http://localhost`) ve site kartı ek adları gösterir (kartta `+2` rozeti, üzerine gelince liste).
+
+## Site için kendi sertifikası
+
+Ayarlar > Özellikler > "Kendi sertifikaları" açılınca site menüsünde **Sertifika** çıkar.
+
+- **Kendi sertifikamı kullan...**: `.pfx`/`.p12` (parolasıyla) ya da `.crt`/`.pem` + `.key` seçilir. Dosyalar `usr\ssl\custom\<site>.crt/.key` olarak kopyalanır; parola saklanmaz (`.pfx` bir kez PEM'e çevrilir, yalnızca RSA anahtarları).
+- Sertifika sitenin adlarını kapsamıyorsa ya da süresi dolmuşsa pencere bunu yazar; aynı düğmeye ikinci kez tıklayınca yine de kullanılır. Başlatırken de günlüğe uyarı düşer, kartta turuncu "Kendi sertifikası" rozeti görünür.
+- **Portly sertifikasına dön** kopyalanan dosyaları siler.
+
+## Projeyi arşivlemek ve klasör hariç tutmak
+
+Ayarlar > Özellikler > "Projeleri arşivle" (varsayılan açık).
+
+- Site menüsü > **Arşivle**: proje listeden gizlenir, web sunucusu kaydı, hosts kaydı ve sertifikası olmaz. Dosyalara dokunulmaz (`usr\sites.ini` → `archived=1`). Arşivlenen grup klasörü içindeki projeleri de gizler.
+- Siteler sayfasındaki **Arşiv (N)** düğmesi arşivlenenleri listeler; **Geri al** ile geri gelir.
+- `disabled=1` ayrı bir şeydir: site listede kırmızı görünür ama sunulmaz.
+- Ayarlar > Genel > **Site sayılmayan klasörler**: virgülle ayrılmış adlar ya da `*` / `?` kalıpları. Varsayılan: `node_modules, vendor, .git, _*, backup*, *.bak`.
+
+## Firefox ve Java'da HTTPS
+
+- Firefox kendi sertifika listesini kullanır. Portly sertifikası güvenilir yapıldığında (ve SSL / HTTPS menüsü > **Firefox'ta güvenilir yap** ile) her Firefox profilinin `user.js` dosyasına `user_pref("security.enterprise_roots.enabled", true);` satırı eklenir. Dosyadaki diğer satırlara dokunulmaz, satır ikinci kez eklenmez. Firefox'u yeniden başlatın.
+- Firefox Program Files'a kuruluysa **Firefox'ta tüm kullanıcılar için güvenilir yap (yönetici)** seçeneği `distribution\policies.json` içine `Certificates.ImportEnterpriseRoots` ilkesini yazar (onay ve yönetici izniyle; diğer ilkeler korunur).
+- Java: `JAVA_HOME` ya da PATH'te `keytool` bulunan bir Java varsa SSL menüsünde **Java'da güvenilir yap** çıkar. Onay penceresi çalıştırılacak `keytool -importcert ... -alias portly-local-ca` komutunu gösterir. `cacerts` Program Files içindeyse Windows yönetici izni ister. Yerel CA yeniden oluşturulursa eski kaydı `keytool -delete -alias portly-local-ca` ile silip yeniden ekleyin.
+
+## Caddy web sunucusu
+
+Ayarlar > Özellikler > "Caddy web sunucusu" açılınca Caddy paketi Paketler'de görünür ve Ayarlar > Servisler > Web sunucusu'nda Apache / Nginx yanında seçilebilir (yalnızca Windows 10/11 sürümü).
+
+- `etc\caddy\Caddyfile` şablondan (`templates\caddy-Caddyfile.tpl`, `caddy-site.tpl`; `usr\templates` kopyası önceliklidir) üretilir. Portly onu `caddy adapt` ile `caddy.json`'a çevirir ve Caddy'nin kendi otomatik sertifikalarını kapatır: Caddy kendi yerel CA'sını Windows'a kurmaya çalışmaz, HTTPS için Portly'nin site sertifikaları kullanılır.
+- PHP aynı FastCGI havuzuna `php_fastcgi` ile bağlanır. Yönetim API'si kapalıdır (`admin off`), Caddy verisi `tmp\caddy` içinde durur.
+
+## FrankenPHP (site başına çalışma ortamı)
+
+Ayarlar > Özellikler > "FrankenPHP çalışma ortamı" açılınca site menüsünde **Çalışma ortamı** çıkar:
+
+| Seçenek | Ne olur |
+|---|---|
+| PHP (FastCGI) | Varsayılan, klasik php-cgi havuzu |
+| FrankenPHP | Site kendi `frankenphp.exe` sürecinde, boş bir yerel portta (`php_server`) çalışır |
+| FrankenPHP worker (Laravel Octane) | `public\frankenphp-worker.php` worker olarak çalışır |
+
+- Apache / Nginx / Caddy sitenin adlarını (ek adlar dahil) bu porta yönlendirir; HTTPS, hosts ve ek adlar aynı kalır. Yapılandırma `etc\frankenphp\<site>.Caddyfile`, günlük `logs\frankenphp-<site>.log`.
+- FrankenPHP kendi PHP'sini taşır (menüde sürümü yazar, ör. "FrankenPHP 1.13.2 PHP 8.5.12"). FrankenPHP klasörüne Portly'nin `php.ini`'si yazılır (`session.upload_progress.enabled = Off`, `allow_url_include = Off` ...) ve `PHPRC` ile verilir.
+- Octane: `composer.json` içinde `laravel/octane` yoksa Portly komut çalıştırmaz, şu iki komutu gösterir: `composer require laravel/octane` ve `php artisan octane:install --server=frankenphp`.
+- FrankenPHP başlayamazsa site klasik PHP ile açılmaya devam eder, hata günlüğe yazılır.
+- Swoole / OpenSwoole'un Windows için yerel sürümü yoktur; Octane için FrankenPHP kullanın.

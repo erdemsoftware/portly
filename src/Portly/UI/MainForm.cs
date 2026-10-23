@@ -576,7 +576,8 @@ namespace Portly.UI
             var header = PageHeader(I18n.T("nav.sites"), out _sitesSub,
                 Ui.Button(I18n.T("main.newProject"), (s, e) => NewProject(), true, "plus"),
                 Ui.Button(I18n.T("sites.refresh"), async (s, e) => await ServiceManager.ReloadWebAsync(), false, "refresh"),
-                Ui.Button(I18n.T("sites.folder"), (s, e) => WinUtil.OpenFolder(Settings.Current.DocumentRoot), false, "folder"));
+                Ui.Button(I18n.T("sites.folder"), (s, e) => WinUtil.OpenFolder(Settings.Current.DocumentRoot), false, "folder"),
+                _archivedBtn = SitesWebUi.ArchivedButton(this));
             _siteFlow = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoScroll = true, BackColor = Ui.Bg, Padding = Ui.P(0, 4, 0, 0) };
             page.Controls.Add(_siteFlow);
             page.Controls.Add(header);
@@ -585,6 +586,7 @@ namespace Portly.UI
         }
 
         bool _caTrusted;
+        ModernButton _archivedBtn;
 
         void FillSites()
         {
@@ -593,6 +595,7 @@ namespace Portly.UI
             var s = Settings.Current;
             var sites = ServiceManager.CurrentSites;
             _sitesSub.Text = I18n.T("sites.count", sites.Count(x => x.Valid), s.DocumentRoot, s.Tld);
+            SitesWebUi.UpdateArchived(_archivedBtn);
             _siteFlow.SuspendLayout();
             foreach (Control c in _siteFlow.Controls.Cast<Control>().ToList()) c.Dispose();
             _siteFlow.Controls.Clear();
@@ -669,6 +672,7 @@ namespace Portly.UI
                 }
                 badges.Add(lockPill);
             }
+            badges.AddRange(SitesWebUi.CardBadges(site));
             int bx = Ui.S(64);
             foreach (var b in badges.Where(x => x.Visible || x != php))
             {
@@ -693,6 +697,7 @@ namespace Portly.UI
             var tip = new ToolTip();
             tip.SetToolTip(card, site.DocRoot);
             tip.SetToolTip(name, site.DocRoot);
+            if (site.Aliases.Count > 0) tip.SetToolTip(address, site.PreferredUrl + "\n" + SitesWebUi.AliasText(site));
             return card;
         }
 
@@ -734,6 +739,7 @@ namespace Portly.UI
                     items.Add(I18n.T("share.stop"), null, (s, e) => { Share.Stop(site); FillSites(); });
                 }
             }
+            SitesWebUi.AddSiteItems(this, items, site);
             items.Add(new ToolStripSeparator());
             items.Add(I18n.T("sites.delete"), null, async (s, e) =>
             {
@@ -960,6 +966,7 @@ namespace Portly.UI
             ssl.DropDownItems.Add(new ToolStripMenuItem(trusted ? I18n.T("ssl.trusted") : I18n.T("ssl.trust"), null, (s, e) => TrustCa()) { Enabled = !trusted });
             ssl.DropDownItems.Add(I18n.T("ssl.regenerate"), null, async (s, e) => { Certs.RegenerateSiteCertificates(); await ServiceManager.ReloadWebAsync(); });
             ssl.DropDownItems.Add(I18n.T("ssl.folder"), null, (s, e) => WinUtil.OpenFolder(Paths.UserSsl));
+            SitesWebUi.AddSslItems(this, ssl.DropDownItems);
             items.Add(ssl);
 
             var tools = new ToolStripMenuItem(I18n.T("menu.tools"));
