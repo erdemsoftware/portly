@@ -42,6 +42,15 @@ namespace Portly.Services
             var ver = PackageTypes.ParseVersion(dir);
             bool multi = IsMariaDb ? ver >= new Version(10, 11) : ver >= new Version(8, 0, 13);
             if (!Settings.Current.AllowLan && multi && Net.LoopbackV6) v["BIND"] = "127.0.0.1,::1";
+#if !LEGACY
+            // access from WSL: also listen on the WSL adapter (its address changes after a reboot)
+            var wsl = multi ? Tools.WslAccess.BindAddress() : null;
+            if (wsl != null) v["BIND"] = v["BIND"] + "," + wsl;
+#endif
+            var collation = Tools.DbOptions.EffectiveCollation(Settings.Current.DbEngine, ver);
+            v["CHARSET"] = Tools.DbOptions.CharsetOf(collation);
+            v["COLLATION"] = collation;
+            v["STORAGE_ENGINE"] = Tools.DbOptions.EffectiveStorageEngine(Settings.Current.DbEngine);
             v["SQL_MODE"] = Settings.Current.LegacySqlMode ? "sql_mode=NO_ENGINE_SUBSTITUTION" : "";
             // MySQL 8+: the X protocol would open port 33060 on all interfaces; not needed locally
             v["MYSQL_EXTRA"] = !IsMariaDb && PackageTypes.ParseVersion(dir).Major >= 8 ? "mysqlx=OFF" : "";
@@ -78,6 +87,7 @@ namespace Portly.Services
                 }
                 return null;
             });
+            if (error == null) error = Tools.DbVersionChange.BlockOlder(data, engine, folder);
             if (error != null) { SetState(ServiceState.Error, error); return; }
             if (!EnsurePortFree(port)) return;
 
@@ -85,6 +95,7 @@ namespace Portly.Services
             if (await WaitForPort(port, _p, 60000))
             {
                 SetState(ServiceState.Running);
+                Tools.DbVersionChange.WriteMarker(data, engine, folder);
                 Log.Info(I18n.T("log.started", Title + " " + VersionLabel));
             }
             else SetState(ServiceState.Error, (_p.HasExited ? ExitReason(_p) + " " + I18n.T("err.seeLog", "mysql-error.log") : I18n.T("err.timeout")) + RecoveryHint());
@@ -100,8 +111,8 @@ namespace Portly.Services
                 var log = Path.Combine(Paths.Logs, "mysql-error.log");
                 if (!File.Exists(log)) return "";
                 var tail = string.Join("\n", File.ReadAllLines(log).Reverse().Take(60));
-                foreach (var word in new[] { "corrupt", "Corrupt", "crash recovery", "init function returned error", "Aria recovery failed", "Database page corruption", "redo log", "ib_logfile" })
-                    if (tail.Contains(word)) return "\n" + I18n.T("err.mysqlRecover");
+                foreach (var word in new[] { "corrupt", "Corrupt", "crashed", "crash recovery", "init function returned error", "Aria recovery failed", "aria_log", "Database page corruption", "redo log", "ib_logfile" })
+                    if (tail.Contains(word)) return "\n" + I18n.T("repair.hint");
             }
             catch { }
             return "";
@@ -155,8 +166,11 @@ namespace Portly.Services
         void OnExit(Process p)
         {
             if (p != _p || StopRequested) return;
-            SetState(ServiceState.Error, ExitReason(p) + " " + I18n.T("err.seeLog", "mysql-error.log"));
+            SetState(ServiceState.Error, ExitReason(p) + " " + I18n.T("err.seeLog", "mysql-error.log") + RecoveryHint());
         }
+
+        /// <summary>The last stop was a clean shutdown (needed before copying the data folder to a new version).</summary>
+        public bool LastStopClean { get; private set; }
 
         public override async Task StopAsync()
         {
@@ -164,12 +178,14 @@ namespace Portly.Services
             var p = _p;
             if (p == null || p.HasExited) { _p = null; SetState(ServiceState.Stopped); return; }
             SetState(ServiceState.Stopping);
+            LastStopClean = false;
             await Task.Run(() =>
             {
                 // clean shutdown keeps InnoDB fast to start next time
                 var r = Tools.Database.Admin("shutdown", 20000);
                 // a wrong root password makes "shutdown" fail at once: do not wait the full 30 s then
-                if (!p.WaitForExit(r.Ok ? 30000 : 3000)) StopProcess(p, false, 0);
+                if (p.WaitForExit(r.Ok ? 30000 : 3000)) LastStopClean = r.Ok;
+                else StopProcess(p, false, 0);
                 p.WaitForExit(10000);
                 // the next start (reset root, recovery, engine switch) needs the port really free
                 for (int i = 0; i < 50 && ProcessUtil.IsPortInUse(Settings.Current.MysqlPort); i++) System.Threading.Thread.Sleep(200);

@@ -418,6 +418,12 @@ namespace Portly.UI
             row.Version.Tag = row.Version.SelectedIndex;
             var type = row.Svc.PackageType;
             if (string.Equals(PackageTypes.ActiveFolder(type), item.Value, StringComparison.OrdinalIgnoreCase)) return;
+            if (type == "mysql" || type == "mariadb")
+            {
+                // another line has its own data folder: offer to bring the databases along
+                var sw = DatabaseUi.BeforeSwitch(this, type, item.Value);
+                if (sw != DatabaseUi.SwitchResult.Continue) { RefreshVersions(); return; }
+            }
             Settings.Current.SetVersion(type, item.Value);
             Settings.Current.Save();
             Log.Info(I18n.T("log.switched", PackageTypes.Get(type).Name, PackageTypes.Label(item.Value)));
@@ -893,6 +899,12 @@ namespace Portly.UI
             BuildDatabaseToolItems(toolsMenu.DropDownItems);
             db.DropDownItems.Add(toolsMenu);
             db.DropDownItems.Add(I18n.T("db.create"), null, (s, e) => CreateDatabase(""));
+            db.DropDownItems.Add(I18n.T("sqlimp.menu"), null, (s, e) => { ShowFromTray(); DatabaseUi.ImportSql(this); });
+            db.DropDownItems.Add(I18n.T("repair.menu"), null, async (s, e) => { ShowFromTray(); await DatabaseUi.CheckAndRepair(this); });
+#if !LEGACY
+            if (Features.IsOn("wsl") && WslAccess.Supported)
+                db.DropDownItems.Add(I18n.T("wsl.menu"), null, async (s, e) => { ShowFromTray(); await DatabaseUi.WslAccessDialog(this); });
+#endif
             db.DropDownItems.Add(I18n.T("db.backup"), null, async (s, e) => await BackupDatabases());
             db.DropDownItems.Add(I18n.T("db.password"), null, (s, e) => ChangeRootPassword());
             db.DropDownItems.Add(I18n.T("db.resetRoot"), null, async (s, e) =>
@@ -1151,12 +1163,7 @@ namespace Portly.UI
         void CreateDatabase(string suggested)
         {
             ShowFromTray();
-            if (ServiceManager.MySql.State != ServiceState.Running) { Ui.Error(this, I18n.T("err.mysqlNotRunning")); return; }
-            var name = Ui.Prompt(this, I18n.T("db.create"), I18n.T("db.name"), suggested);
-            if (name == null) return;
-            var err = Database.CreateDatabase(name.Trim());
-            if (err != null) Ui.Error(this, err);
-            else Ui.Info(this, I18n.T("db.created", name.Trim()));
+            DatabaseUi.NewDatabase(this, suggested);
         }
 
         async Task BackupDatabases()

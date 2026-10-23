@@ -135,6 +135,14 @@ namespace Portly.UI
             AddRow(g3, I18n.T("settings.backupKeep"), _backupKeep);
             AddRow(g3, "", Hint(I18n.T("settings.backupHint")));
             _legacySql = Check(I18n.T("settings.legacySql"), s.LegacySqlMode, g3);
+            // database "language" and default table type: only what the chosen engine / version supports
+            _collation = new ThemedCombo { Width = Ui.S(260) };
+            AddRow(g3, I18n.T("dbui.collation"), _collation);
+            _storageEngine = new ThemedCombo { Width = Ui.S(160) };
+            AddRow(g3, I18n.T("dbui.storageEngine"), _storageEngine);
+            AddRow(g3, "", Hint(I18n.T("dbui.collationHint")));
+            FillDbDefaults(s.DbCollation, s.DbStorageEngine);
+            _dbEngine.SelectedIndexChanged += (o, e) => FillDbDefaults(((Item)_collation.SelectedItem).Value, ((Item)_storageEngine.SelectedItem).Value);
             Section(stack, "MySQL", g3);
 
             // optional features: rarely used ones start off and are switched on here
@@ -168,6 +176,20 @@ namespace Portly.UI
             Controls.Add(buttons);
             scroll.BringToFront();
             CancelButton = cancel;
+        }
+
+        ComboBox _collation, _storageEngine;
+
+        void FillDbDefaults(string collation, string storage)
+        {
+            var engine = ((Item)_dbEngine.SelectedItem).Value;
+            var v = PackageTypes.ParseVersion(PackageTypes.ActiveFolder(engine));
+            _collation.Items.Clear();
+            foreach (var c in DbOptions.Collations(engine, v)) _collation.Items.Add(new Item(c, c));
+            _collation.SelectedItem = _collation.Items.Cast<Item>().FirstOrDefault(i => i.Value == collation) ?? _collation.Items[0];
+            _storageEngine.Items.Clear();
+            foreach (var x in DbOptions.StorageEngines(engine)) _storageEngine.Items.Add(new Item(x, x));
+            _storageEngine.SelectedItem = _storageEngine.Items.Cast<Item>().FirstOrDefault(i => i.Value.Equals(storage, StringComparison.OrdinalIgnoreCase)) ?? _storageEngine.Items[0];
         }
 
         /// <summary>Set when settings were imported from a file; the main window then offers the missing packages.</summary>
@@ -276,7 +298,18 @@ namespace Portly.UI
                 || (int)_phpPort.Value != s.PhpBasePort || (int)_phpChildren.Value != s.PhpChildren
                 || (int)_mailSmtp.Value != s.MailpitSmtpPort || (int)_mysql.Value != s.MysqlPort;
             var dbEngine = ((Item)_dbEngine.SelectedItem).Value;
-            bool mysqlRestart = (int)_mysql.Value != s.MysqlPort || _allowLan.Checked != s.AllowLan || dbEngine != s.DbEngine;
+            if (dbEngine != s.DbEngine)
+            {
+                // the other engine has its own data folder: offer to bring the databases along (dump and load)
+                var sw = DatabaseUi.BeforeSwitch(this, dbEngine, PackageTypes.ActiveFolder(dbEngine));
+                if (sw == DatabaseUi.SwitchResult.Cancelled) return;
+            }
+            var collation = ((Item)_collation.SelectedItem).Value;
+            var storage = ((Item)_storageEngine.SelectedItem).Value;
+            bool dbDefaultsChanged = collation != s.DbCollation || storage != s.DbStorageEngine;
+            s.DbCollation = collation;
+            s.DbStorageEngine = storage;
+            bool mysqlRestart = (int)_mysql.Value != s.MysqlPort || _allowLan.Checked != s.AllowLan || dbEngine != s.DbEngine || dbDefaultsChanged;
             bool mysqlWasActive = ServiceManager.MySql.IsActive;
             bool pgRestart = (int)_pgPort.Value != s.PostgresPort || _allowLan.Checked != s.AllowLan;
             bool mongoRestart = (int)_mongoPort.Value != s.MongoPort || _allowLan.Checked != s.AllowLan;
@@ -316,6 +349,14 @@ namespace Portly.UI
             bool sqlModeChanged = s.LegacySqlMode != _legacySql.Checked;
             s.LegacySqlMode = _legacySql.Checked;
             foreach (var kv in _features) Features.Set(kv.Key, kv.Value.Checked);
+#if !LEGACY
+            // WSL access switched off: also remove its database user, firewall rule and bind address
+            if (!Features.IsOn("wsl") && s.WslAccess && Ui.Confirm(this, I18n.T("wsl.offConfirm")))
+            {
+                WslAccess.Disable();
+                mysqlRestart = true;
+            }
+#endif
             s.AllowLan = _allowLan.Checked;
             if (sqlModeChanged) mysqlRestart = true;
             // LAN access needs an inbound firewall rule for the web ports (removed again when switched off)
