@@ -71,6 +71,8 @@ namespace Portly.UI
                 _refresh = Ui.Button(I18n.T("pkg.refresh"), async (s, e) => await RefreshCatalog());
                 bar.Controls.Add(_refresh);
             }
+            // free disk space: versions nothing uses any more
+            bar.Controls.Add(Ui.Button(I18n.T("cleanup.button"), (s, e) => { if (_busy) return; using (var f = new CleanupForm()) f.ShowDialog(this); Fill(); }));
             top.Controls.Add(bar);
             top.Controls.Add(intro);
 
@@ -114,8 +116,7 @@ namespace Portly.UI
             _close = Ui.Button(I18n.T("common.close"), (s, e) => { if (_busy) { if (_cts != null) _cts.Cancel(); } else Close(); });
             var manual = Ui.Button(I18n.T("pkg.addManual"), (s, e) => AddManual(), false, "plus");
             var folder = Ui.Button(I18n.T("pkg.openBin"), (s, e) => WinUtil.OpenFolder(Paths.Bin), false, "folder");
-            var unused = Ui.Button(I18n.T("cleanup.button"), (s, e) => { if (_busy) return; using (var f = new CleanupForm()) f.ShowDialog(this); Fill(); });
-            buttons.Controls.AddRange(new Control[] { _install, _activate, _remove, unused, manual, folder, _close });
+            buttons.Controls.AddRange(new Control[] { _install, _activate, _remove, manual, folder, _close });
             bottom.Controls.Add(buttons);
             bottom.Controls.Add(_status);
             bottom.Controls.Add(_progress);

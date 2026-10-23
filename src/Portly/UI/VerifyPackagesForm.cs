@@ -71,6 +71,7 @@ namespace Portly.UI
             if (found != null) Show(found, -1, 0);
             else _summary.Text = I18n.T("verify.notRun");
             UpdateButtons();
+            Shown += (s, e) => { _out.SelectionLength = 0; ActiveControl = _problems.Count > 0 ? _repair : _full; };
         }
 
         void UpdateButtons()
