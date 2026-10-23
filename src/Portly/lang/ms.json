@@ -997,5 +997,12 @@
   "sslfix.problem.custom": "Sijil anda sendiri bermasalah (Sijil dalam menu laman)",
   "sites.subCount": "{0} subdomain",
   "sites.subOf": "{0} ialah subdomain bagi {1}",
-  "svc.dbTitle": "MySQL / MariaDB"
+  "svc.dbTitle": "MySQL / MariaDB",
+  "feature.tomcat": "Apache Tomcat",
+  "feature.tomcat.hint": "Jalankan aplikasi web Java (fail WAR) dengan Tomcat dan Java yang boleh dimuat turun (Eclipse Temurin).",
+  "tomcat.noJava": "Tomcat memerlukan Java. Muat turun \"Java (Temurin)\" dalam tetingkap Pakej.",
+  "tomcat.oldJava": "{0} memerlukan Java {1} atau lebih baharu, Java yang aktif ialah {2}. Pilih Java yang lebih baharu dalam tetingkap Pakej.",
+  "tomcat.openPage": "Buka halaman Tomcat",
+  "tomcat.openWebapps": "Buka folder webapps (letakkan fail WAR di sini)",
+  "settings.tomcatPort": "Port Tomcat"
 }

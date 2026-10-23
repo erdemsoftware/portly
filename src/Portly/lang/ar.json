@@ -998,5 +998,12 @@
   "sslfix.problem.custom": "شهادتك الخاصة بها مشكلة (الشهادة في قائمة الموقع)",
   "sites.subCount": "{0} نطاقات فرعية",
   "sites.subOf": "{0} نطاق فرعي من {1}",
-  "svc.dbTitle": "MySQL / MariaDB"
+  "svc.dbTitle": "MySQL / MariaDB",
+  "feature.tomcat": "Apache Tomcat",
+  "feature.tomcat.hint": "تشغيل تطبيقات ويب Java (ملفات WAR) باستخدام Tomcat وJava قابلة للتنزيل (Eclipse Temurin).",
+  "tomcat.noJava": "يحتاج Tomcat إلى Java. نزّل \"Java (Temurin)\" من نافذة الحزم.",
+  "tomcat.oldJava": "يحتاج {0} إلى Java {1} أو أحدث، وJava النشطة هي {2}. اختر Java أحدث من نافذة الحزم.",
+  "tomcat.openPage": "فتح صفحة Tomcat",
+  "tomcat.openWebapps": "فتح مجلد webapps (أفلت ملف WAR هنا)",
+  "settings.tomcatPort": "منفذ Tomcat"
 }

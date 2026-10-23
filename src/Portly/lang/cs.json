@@ -997,5 +997,12 @@
   "sslfix.problem.custom": "Váš vlastní certifikát má problém (Certifikát v nabídce webu)",
   "sites.subCount": "Subdomény: {0}",
   "sites.subOf": "{0} je subdoména {1}",
-  "svc.dbTitle": "MySQL / MariaDB"
+  "svc.dbTitle": "MySQL / MariaDB",
+  "feature.tomcat": "Apache Tomcat",
+  "feature.tomcat.hint": "Spouští webové aplikace Java (soubory WAR) pomocí Tomcat a stažitelné Javy (Eclipse Temurin).",
+  "tomcat.noJava": "Tomcat potřebuje Javu. Stáhněte „Java (Temurin)“ v okně Balíčky.",
+  "tomcat.oldJava": "{0} vyžaduje Java {1} nebo novější, aktivní Java je {2}. Vyberte novější Javu v okně Balíčky.",
+  "tomcat.openPage": "Otevřít stránku Tomcat",
+  "tomcat.openWebapps": "Otevřít složku webapps (sem přetáhněte soubor WAR)",
+  "settings.tomcatPort": "Port Tomcat"
 }

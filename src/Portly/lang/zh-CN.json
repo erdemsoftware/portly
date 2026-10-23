@@ -997,5 +997,12 @@
   "sslfix.problem.custom": "你自己的证书有问题（站点菜单中的“证书”）",
   "sites.subCount": "{0} 个子域名",
   "sites.subOf": "{0} 是 {1} 的子域名",
-  "svc.dbTitle": "MySQL / MariaDB"
+  "svc.dbTitle": "MySQL / MariaDB",
+  "feature.tomcat": "Apache Tomcat",
+  "feature.tomcat.hint": "使用 Tomcat 和可下载的 Java (Eclipse Temurin) 运行 Java Web 应用 (WAR 文件)。",
+  "tomcat.noJava": "Tomcat 需要 Java。请在软件包窗口中下载“Java (Temurin)”。",
+  "tomcat.oldJava": "{0} 需要 Java {1} 或更高版本，当前使用的 Java 为 {2}。请在软件包窗口中选择更新的 Java。",
+  "tomcat.openPage": "打开 Tomcat 页面",
+  "tomcat.openWebapps": "打开 webapps 文件夹 (将 WAR 文件放到这里)",
+  "settings.tomcatPort": "Tomcat 端口"
 }

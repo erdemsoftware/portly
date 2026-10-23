@@ -997,5 +997,12 @@
   "sslfix.problem.custom": "ใบรับรองของคุณเองมีปัญหา (ใบรับรอง ในเมนูของเว็บไซต์)",
   "sites.subCount": "{0} โดเมนย่อย",
   "sites.subOf": "{0} เป็นโดเมนย่อยของ {1}",
-  "svc.dbTitle": "MySQL / MariaDB"
+  "svc.dbTitle": "MySQL / MariaDB",
+  "feature.tomcat": "Apache Tomcat",
+  "feature.tomcat.hint": "เรียกใช้เว็บแอป Java (ไฟล์ WAR) ด้วย Tomcat และ Java ที่ดาวน์โหลดได้ (Eclipse Temurin)",
+  "tomcat.noJava": "Tomcat ต้องใช้ Java ดาวน์โหลด \"Java (Temurin)\" ในหน้าต่างแพ็กเกจ",
+  "tomcat.oldJava": "{0} ต้องใช้ Java {1} ขึ้นไป แต่ Java ที่ใช้งานอยู่คือ {2} เลือก Java ที่ใหม่กว่าในหน้าต่างแพ็กเกจ",
+  "tomcat.openPage": "เปิดหน้า Tomcat",
+  "tomcat.openWebapps": "เปิดโฟลเดอร์ webapps (วางไฟล์ WAR ที่นี่)",
+  "settings.tomcatPort": "พอร์ต Tomcat"
 }

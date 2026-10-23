@@ -997,5 +997,12 @@
   "sslfix.problem.custom": "Je eigen certificaat heeft een probleem (Certificaat in het sitemenu)",
   "sites.subCount": "{0} subdomeinen",
   "sites.subOf": "{0} is een subdomein van {1}",
-  "svc.dbTitle": "MySQL / MariaDB"
+  "svc.dbTitle": "MySQL / MariaDB",
+  "feature.tomcat": "Apache Tomcat",
+  "feature.tomcat.hint": "Java-webapps (WAR-bestanden) draaien met Tomcat en een downloadbare Java (Eclipse Temurin).",
+  "tomcat.noJava": "Tomcat heeft Java nodig. Download \"Java (Temurin)\" in het venster Pakketten.",
+  "tomcat.oldJava": "{0} heeft Java {1} of nieuwer nodig, de actieve Java is {2}. Kies een nieuwere Java in het venster Pakketten.",
+  "tomcat.openPage": "Tomcat-pagina openen",
+  "tomcat.openWebapps": "webapps-map openen (zet hier een WAR-bestand neer)",
+  "settings.tomcatPort": "Tomcat-poort"
 }

@@ -997,5 +997,12 @@
   "sslfix.problem.custom": "独自の証明書に問題があります (サイトメニューの「証明書」)",
   "sites.subCount": "{0} 個のサブドメイン",
   "sites.subOf": "{0} は {1} のサブドメインです",
-  "svc.dbTitle": "MySQL / MariaDB"
+  "svc.dbTitle": "MySQL / MariaDB",
+  "feature.tomcat": "Apache Tomcat",
+  "feature.tomcat.hint": "Tomcat とダウンロード可能な Java (Eclipse Temurin) で Java Web アプリ (WAR ファイル) を実行します。",
+  "tomcat.noJava": "Tomcat には Java が必要です。パッケージ画面で「Java (Temurin)」をダウンロードしてください。",
+  "tomcat.oldJava": "{0} には Java {1} 以降が必要ですが、有効な Java は {2} です。パッケージ画面で新しい Java を選んでください。",
+  "tomcat.openPage": "Tomcat ページを開く",
+  "tomcat.openWebapps": "webapps フォルダーを開く (ここに WAR ファイルを置きます)",
+  "settings.tomcatPort": "Tomcat ポート"
 }

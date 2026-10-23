@@ -997,5 +997,12 @@
   "sslfix.problem.custom": "A saját tanúsítványával probléma van (Tanúsítvány a webhely menüjében)",
   "sites.subCount": "{0} aldomain",
   "sites.subOf": "{0} a(z) {1} aldomainje",
-  "svc.dbTitle": "MySQL / MariaDB"
+  "svc.dbTitle": "MySQL / MariaDB",
+  "feature.tomcat": "Apache Tomcat",
+  "feature.tomcat.hint": "Java webalkalmazások (WAR fájlok) futtatása Tomcattel és letölthető Javával (Eclipse Temurin).",
+  "tomcat.noJava": "A Tomcathez Java kell. Töltsd le a „Java (Temurin)” csomagot a Csomagok ablakban.",
+  "tomcat.oldJava": "A(z) {0} Java {1} vagy újabb verziót igényel, az aktív Java {2}. Válassz újabb Javát a Csomagok ablakban.",
+  "tomcat.openPage": "Tomcat oldal megnyitása",
+  "tomcat.openWebapps": "webapps mappa megnyitása (ide húzd a WAR fájlt)",
+  "settings.tomcatPort": "Tomcat port"
 }

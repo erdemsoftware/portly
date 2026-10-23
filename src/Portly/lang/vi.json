@@ -997,5 +997,12 @@
   "sslfix.problem.custom": "Chứng chỉ riêng của bạn có vấn đề (Chứng chỉ trong menu của trang)",
   "sites.subCount": "{0} tên miền phụ",
   "sites.subOf": "{0} là tên miền phụ của {1}",
-  "svc.dbTitle": "MySQL / MariaDB"
+  "svc.dbTitle": "MySQL / MariaDB",
+  "feature.tomcat": "Apache Tomcat",
+  "feature.tomcat.hint": "Chạy ứng dụng web Java (tệp WAR) bằng Tomcat và Java có thể tải về (Eclipse Temurin).",
+  "tomcat.noJava": "Tomcat cần Java. Hãy tải \"Java (Temurin)\" trong cửa sổ Gói.",
+  "tomcat.oldJava": "{0} cần Java {1} trở lên, Java đang dùng là {2}. Hãy chọn Java mới hơn trong cửa sổ Gói.",
+  "tomcat.openPage": "Mở trang Tomcat",
+  "tomcat.openWebapps": "Mở thư mục webapps (thả tệp WAR vào đây)",
+  "settings.tomcatPort": "Cổng Tomcat"
 }

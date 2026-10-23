@@ -998,5 +998,12 @@
   "sslfix.problem.custom": "آپ کے اپنے سرٹیفکیٹ میں مسئلہ ہے (سائٹ مینو میں سرٹیفکیٹ)",
   "sites.subCount": "{0} سب ڈومینز",
   "sites.subOf": "{0}، {1} کا سب ڈومین ہے",
-  "svc.dbTitle": "MySQL / MariaDB"
+  "svc.dbTitle": "MySQL / MariaDB",
+  "feature.tomcat": "Apache Tomcat",
+  "feature.tomcat.hint": "Tomcat اور قابلِ ڈاؤن لوڈ Java (Eclipse Temurin) کے ساتھ Java ویب ایپس (WAR فائلیں) چلائیں۔",
+  "tomcat.noJava": "Tomcat کو Java درکار ہے۔ پیکجز کی ونڈو سے \"Java (Temurin)\" ڈاؤن لوڈ کریں۔",
+  "tomcat.oldJava": "{0} کو Java {1} یا نیا درکار ہے، فعال Java {2} ہے۔ پیکجز کی ونڈو میں نیا Java منتخب کریں۔",
+  "tomcat.openPage": "Tomcat صفحہ کھولیں",
+  "tomcat.openWebapps": "webapps فولڈر کھولیں (WAR فائل یہاں چھوڑیں)",
+  "settings.tomcatPort": "Tomcat پورٹ"
 }

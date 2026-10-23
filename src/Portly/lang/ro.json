@@ -997,5 +997,12 @@
   "sslfix.problem.custom": "Certificatul tău are o problemă (Certificat în meniul site-ului)",
   "sites.subCount": "{0} subdomenii",
   "sites.subOf": "{0} este un subdomeniu al {1}",
-  "svc.dbTitle": "MySQL / MariaDB"
+  "svc.dbTitle": "MySQL / MariaDB",
+  "feature.tomcat": "Apache Tomcat",
+  "feature.tomcat.hint": "Rulează aplicații web Java (fișiere WAR) cu Tomcat și un Java descărcabil (Eclipse Temurin).",
+  "tomcat.noJava": "Tomcat are nevoie de Java. Descarcă „Java (Temurin)” din fereastra Pachete.",
+  "tomcat.oldJava": "{0} necesită Java {1} sau mai nou, Java activ este {2}. Alege un Java mai nou în fereastra Pachete.",
+  "tomcat.openPage": "Deschide pagina Tomcat",
+  "tomcat.openWebapps": "Deschide folderul webapps (plasează aici un fișier WAR)",
+  "settings.tomcatPort": "Port Tomcat"
 }

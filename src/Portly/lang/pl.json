@@ -997,5 +997,12 @@
   "sslfix.problem.custom": "Twój własny certyfikat ma problem (Certyfikat w menu strony)",
   "sites.subCount": "Subdomeny: {0}",
   "sites.subOf": "{0} jest subdomeną {1}",
-  "svc.dbTitle": "MySQL / MariaDB"
+  "svc.dbTitle": "MySQL / MariaDB",
+  "feature.tomcat": "Apache Tomcat",
+  "feature.tomcat.hint": "Uruchamiaj aplikacje webowe Java (pliki WAR) za pomocą Tomcat i Javy do pobrania (Eclipse Temurin).",
+  "tomcat.noJava": "Tomcat wymaga Javy. Pobierz \"Java (Temurin)\" w oknie Pakiety.",
+  "tomcat.oldJava": "{0} wymaga Java {1} lub nowszej, aktywna Java to {2}. Wybierz nowszą Javę w oknie Pakiety.",
+  "tomcat.openPage": "Otwórz stronę Tomcat",
+  "tomcat.openWebapps": "Otwórz folder webapps (upuść tu plik WAR)",
+  "settings.tomcatPort": "Port Tomcat"
 }

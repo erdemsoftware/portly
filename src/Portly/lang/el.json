@@ -997,5 +997,12 @@
   "sslfix.problem.custom": "Το δικό σας πιστοποιητικό έχει πρόβλημα (Πιστοποιητικό στο μενού του ιστότοπου)",
   "sites.subCount": "{0} υποτομείς",
   "sites.subOf": "Το {0} είναι υποτομέας του {1}",
-  "svc.dbTitle": "MySQL / MariaDB"
+  "svc.dbTitle": "MySQL / MariaDB",
+  "feature.tomcat": "Apache Tomcat",
+  "feature.tomcat.hint": "Εκτέλεση εφαρμογών web Java (αρχεία WAR) με Tomcat και Java για λήψη (Eclipse Temurin).",
+  "tomcat.noJava": "Το Tomcat χρειάζεται Java. Κάντε λήψη του «Java (Temurin)» στο παράθυρο Πακέτα.",
+  "tomcat.oldJava": "Το {0} χρειάζεται Java {1} ή νεότερη, η ενεργή Java είναι {2}. Επιλέξτε νεότερη Java στο παράθυρο Πακέτα.",
+  "tomcat.openPage": "Άνοιγμα σελίδας Tomcat",
+  "tomcat.openWebapps": "Άνοιγμα φακέλου webapps (αφήστε εδώ ένα αρχείο WAR)",
+  "settings.tomcatPort": "Θύρα Tomcat"
 }

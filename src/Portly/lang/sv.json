@@ -997,5 +997,12 @@
   "sslfix.problem.custom": "Ditt eget certifikat har ett problem (Certifikat i webbplatsmenyn)",
   "sites.subCount": "{0} underdomäner",
   "sites.subOf": "{0} är en underdomän till {1}",
-  "svc.dbTitle": "MySQL / MariaDB"
+  "svc.dbTitle": "MySQL / MariaDB",
+  "feature.tomcat": "Apache Tomcat",
+  "feature.tomcat.hint": "Kör Java-webbappar (WAR-filer) med Tomcat och en nedladdningsbar Java (Eclipse Temurin).",
+  "tomcat.noJava": "Tomcat behöver Java. Ladda ner ”Java (Temurin)” i fönstret Paket.",
+  "tomcat.oldJava": "{0} kräver Java {1} eller nyare, aktiv Java är {2}. Välj en nyare Java i fönstret Paket.",
+  "tomcat.openPage": "Öppna Tomcat-sidan",
+  "tomcat.openWebapps": "Öppna mappen webapps (släpp en WAR-fil här)",
+  "settings.tomcatPort": "Tomcat-port"
 }

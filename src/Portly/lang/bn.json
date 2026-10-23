@@ -997,5 +997,12 @@
   "sslfix.problem.custom": "আপনার নিজের সার্টিফিকেটে সমস্যা আছে (সাইট মেনুতে সার্টিফিকেট)",
   "sites.subCount": "{0}টি সাবডোমেইন",
   "sites.subOf": "{0} হলো {1}-এর সাবডোমেইন",
-  "svc.dbTitle": "MySQL / MariaDB"
+  "svc.dbTitle": "MySQL / MariaDB",
+  "feature.tomcat": "Apache Tomcat",
+  "feature.tomcat.hint": "Tomcat এবং ডাউনলোডযোগ্য Java (Eclipse Temurin) দিয়ে Java ওয়েব অ্যাপ (WAR ফাইল) চালান।",
+  "tomcat.noJava": "Tomcat-এর জন্য Java দরকার। প্যাকেজ উইন্ডো থেকে \"Java (Temurin)\" ডাউনলোড করুন।",
+  "tomcat.oldJava": "{0}-এর জন্য Java {1} বা নতুন দরকার, সক্রিয় Java হলো {2}। প্যাকেজ উইন্ডোতে নতুন Java বেছে নিন।",
+  "tomcat.openPage": "Tomcat পেজ খুলুন",
+  "tomcat.openWebapps": "webapps ফোল্ডার খুলুন (এখানে WAR ফাইল রাখুন)",
+  "settings.tomcatPort": "Tomcat পোর্ট"
 }

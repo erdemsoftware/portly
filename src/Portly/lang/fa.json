@@ -998,5 +998,12 @@
   "sslfix.problem.custom": "گواهی خودتان مشکل دارد (گواهی در منوی سایت)",
   "sites.subCount": "{0} زیردامنه",
   "sites.subOf": "{0} زیردامنه {1} است",
-  "svc.dbTitle": "MySQL / MariaDB"
+  "svc.dbTitle": "MySQL / MariaDB",
+  "feature.tomcat": "Apache Tomcat",
+  "feature.tomcat.hint": "اجرای برنامه‌های وب Java (فایل‌های WAR) با Tomcat و یک Java قابل دانلود (Eclipse Temurin).",
+  "tomcat.noJava": "Tomcat به Java نیاز دارد. «Java (Temurin)» را از پنجره بسته‌ها دانلود کنید.",
+  "tomcat.oldJava": "{0} به Java {1} یا جدیدتر نیاز دارد، Java فعال {2} است. در پنجره بسته‌ها یک Java جدیدتر انتخاب کنید.",
+  "tomcat.openPage": "باز کردن صفحه Tomcat",
+  "tomcat.openWebapps": "باز کردن پوشه webapps (فایل WAR را اینجا رها کنید)",
+  "settings.tomcatPort": "پورت Tomcat"
 }

@@ -997,5 +997,12 @@
   "sslfix.problem.custom": "आपके अपने प्रमाणपत्र में समस्या है (साइट मेनू में प्रमाणपत्र)",
   "sites.subCount": "{0} सबडोमेन",
   "sites.subOf": "{0}, {1} का सबडोमेन है",
-  "svc.dbTitle": "MySQL / MariaDB"
+  "svc.dbTitle": "MySQL / MariaDB",
+  "feature.tomcat": "Apache Tomcat",
+  "feature.tomcat.hint": "Tomcat और डाउनलोड करने योग्य Java (Eclipse Temurin) के साथ Java वेब ऐप (WAR फ़ाइलें) चलाएँ।",
+  "tomcat.noJava": "Tomcat को Java चाहिए। पैकेज विंडो में \"Java (Temurin)\" डाउनलोड करें।",
+  "tomcat.oldJava": "{0} को Java {1} या नया चाहिए, सक्रिय Java {2} है। पैकेज विंडो में नया Java चुनें।",
+  "tomcat.openPage": "Tomcat पेज खोलें",
+  "tomcat.openWebapps": "webapps फ़ोल्डर खोलें (WAR फ़ाइल यहाँ छोड़ें)",
+  "settings.tomcatPort": "Tomcat पोर्ट"
 }
