@@ -401,6 +401,7 @@ namespace Portly.Tools
 portly_resolve() {
   local kind=$1 bindir=$2 exe=$3; shift 3
   local map=""$portly_shims/map"" folder="""" ver="""" src="""" d=$PWD f k v w
+  local label=PHP; [ ""$kind"" = node ] && label=Node.js
   PORTLY_PREFIX=""""; PORTLY_PREFIX_WIN=""""
   if [ ""$kind"" = php ] || [ -f ""$map/node-major.txt"" ]; then
     while :; do
@@ -419,7 +420,7 @@ portly_resolve() {
         if [ ""${k,,}"" = ""${ver,,}"" ]; then folder=$v; break; fi
       done < ""$map/$kind-versions.txt""
       if [ -z ""$folder"" ]; then
-        echo ""Portly: $kind \""$ver\"" from $src is not installed. Install it in Portly: Packages > $kind."" >&2
+        echo ""Portly: $label \""$ver\"" from $src is not installed. Install it in Portly: Packages > $label."" >&2
         return 1
       fi
     fi
@@ -435,7 +436,7 @@ portly_resolve() {
   fi
   PORTLY_DIR=""$portly_shims/../$bindir/$folder""
   if [ -z ""$folder"" ] || [ ! -f ""$PORTLY_DIR/$exe"" ]; then
-    echo ""Portly: no $kind version is installed. Install one in Portly: Packages > $kind."" >&2
+    echo ""Portly: no $label version is installed. Install one in Portly: Packages > $label."" >&2
     return 1
   fi
   if [ ""$kind"" = node ] && [ -f ""$map/node-major.txt"" ]; then
