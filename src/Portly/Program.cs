@@ -20,6 +20,10 @@ namespace Portly
             // elevated helper mode: only rewrites the Portly block of the hosts file
             if (args.Length >= 2 && args[0] == "--hosts-apply") return HostsFile.ApplyElevated(args[1]);
             if (args.Length >= 2 && args[0] == "--trust-ca") return Certs.TrustCaElevated(args[1]);
+            // service mode: the Windows service host and its elevated install / uninstall helpers (no window)
+            if (args.Length >= 1 && args[0] == "--service") return Services.ServiceMode.RunService();
+            if (args.Length >= 2 && args[0] == "--install-service") return Services.ServiceMode.InstallElevated(args[1]);
+            if (args.Length >= 1 && args[0] == "--uninstall-service") return Services.ServiceMode.UninstallElevated();
 
             int i = Array.IndexOf(args, "--after-update");
             if (i >= 0 && i + 1 < args.Length)

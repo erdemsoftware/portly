@@ -45,6 +45,7 @@
     <Reference Include="System.IO.Compression" />
     <Reference Include="System.IO.Compression.FileSystem" />
     <Reference Include="Microsoft.VisualBasic" />
+    <Reference Include="System.ServiceProcess" />
   </ItemGroup>
 
   <ItemGroup>

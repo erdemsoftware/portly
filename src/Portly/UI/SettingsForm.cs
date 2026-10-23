@@ -19,7 +19,7 @@ namespace Portly.UI
         NumericUpDown _pgPort, _mongoPort, _memPort;
         NumericUpDown _backupKeep;
         TextBox _docRoot, _tld;
-        CheckBox _legacySql;
+        CheckBox _legacySql, _runAsService;
         readonly Dictionary<string, CheckBox> _features = new Dictionary<string, CheckBox>();
         CheckBox _autoVhosts, _ssl, _runAtStartup, _startMin, _startServices, _closeToTray, _addToPath, _checkUpdates, _allowLan;
         RadioButton _apache, _nginx;
@@ -84,6 +84,11 @@ namespace Portly.UI
             _addToPath = Check(I18n.T("settings.addToPath"), s.AddToPath, g);
             _checkUpdates = Check(AppInfo.UpdatesSupported ? I18n.T("settings.checkUpdates") : I18n.T("settings.noUpdatesLegacy"), AppInfo.UpdatesSupported && s.CheckUpdates, g);
             _checkUpdates.Enabled = AppInfo.UpdatesSupported;
+            if (Features.IsOn("serviceMode"))
+            {
+                _runAsService = Check(I18n.T("service.setting"), s.RunAsService, g);
+                AddRow(g, "", Hint(I18n.T("service.settingHint")));
+            }
             Section(stack, I18n.T("settings.general"), g);
 
             // ---------------- services ----------------
@@ -168,6 +173,32 @@ namespace Portly.UI
             Controls.Add(buttons);
             scroll.BringToFront();
             CancelButton = cancel;
+        }
+
+        /// <summary>Install / remove the Portly Windows service (one UAC prompt). Runs after the window closed.</summary>
+        static async Task SwitchServiceModeAsync(bool on)
+        {
+            var s = Settings.Current;
+            if (on)
+            {
+                // the programs move from this window into the service
+                await ServiceManager.StopAllAsync();
+                int code = ServiceMode.Install();
+                if (code != 0) { Log.Error(I18n.T("service.installFailed", code)); return; }
+                s.RunAsService = true;
+                s.Save();
+                Log.Info(I18n.T("service.installed"));
+                ServiceMode.StartPolling();
+                await ServiceManager.StartAllAsync();
+            }
+            else
+            {
+                int code = ServiceMode.Uninstall();
+                if (code != 0) { Log.Error(I18n.T("service.installFailed", code)); Features.Set("serviceMode", true); s.Save(); return; }
+                s.RunAsService = false;
+                s.Save();
+                Log.Info(I18n.T("service.removed"));
+            }
         }
 
         /// <summary>Set when settings were imported from a file; the main window then offers the missing packages.</summary>
@@ -315,7 +346,12 @@ namespace Portly.UI
             bool lanChanged = s.AllowLan != _allowLan.Checked;
             bool sqlModeChanged = s.LegacySqlMode != _legacySql.Checked;
             s.LegacySqlMode = _legacySql.Checked;
+            // service mode: switching the feature off also removes the Windows service
+            bool serviceWanted = _features.ContainsKey("serviceMode") && _features["serviceMode"].Checked && (_runAsService == null ? s.RunAsService : _runAsService.Checked);
+            bool serviceChange = serviceWanted != s.RunAsService;
+            if (serviceChange && !Ui.Confirm(this, I18n.T(serviceWanted ? "service.confirmOn" : "service.confirmOff", Paths.Root))) serviceChange = false;
             foreach (var kv in _features) Features.Set(kv.Key, kv.Value.Checked);
+            if (!serviceChange && s.RunAsService && !_features["serviceMode"].Checked) Features.Set("serviceMode", true); // refused: keep it controllable
             s.AllowLan = _allowLan.Checked;
             if (sqlModeChanged) mysqlRestart = true;
             // LAN access needs an inbound firewall rule for the web ports (removed again when switched off)
@@ -337,6 +373,16 @@ namespace Portly.UI
 
             Task.Run(async () =>
             {
+                if (serviceChange) { await SwitchServiceModeAsync(serviceWanted); return; }
+                if (ServiceMode.IsController)
+                {
+                    // the Windows service runs everything: save what changed and let it restart with the new settings
+                    if (webChanged) Settings.Current.WebServer = _nginx.Checked ? "nginx" : "apache";
+                    Settings.Current.DbEngine = dbEngine;
+                    Settings.Current.Save();
+                    await ServiceMode.CommandAsync("reload");
+                    return;
+                }
                 if (webChanged) await ServiceManager.SwitchWebServerAsync(_nginx.Checked ? "nginx" : "apache");
                 if (mysqlRestart && mysqlWasActive)
                 {

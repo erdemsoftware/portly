@@ -455,6 +455,7 @@ namespace Portly.UI
         async Task ApplyVersionChange(string type)
         {
             CheckVcRuntime(false);
+            if (ServiceMode.IsController) { await ServiceMode.CommandAsync("reload"); return; }
             switch (type)
             {
                 case "php":
@@ -576,7 +577,7 @@ namespace Portly.UI
         {
             if (_startAll == null) return;
             bool any = ServiceManager.AnyActive;
-            UpdateShutdownBlock(any);
+            UpdateShutdownBlock(any && !ServiceMode.IsController);
             _startAll.Text = any ? I18n.T("main.stopAll") : I18n.T("main.startAll");
             _startAll.Glyph = any ? "stop" : "play";
             _startAll.Kind = any ? ButtonKind.Secondary : ButtonKind.Primary;
@@ -1420,6 +1421,7 @@ namespace Portly.UI
             await Task.Run(() => ServiceManager.RefreshSites());
             WatchDocRoot();
             Terminal.ApplyUserPath();
+            if (ServiceMode.IsController) ServiceMode.StartPolling(); // states come from the Portly Windows service
 
             var s = Settings.Current;
             if (!s.OsWarningShown)
@@ -1572,7 +1574,7 @@ namespace Portly.UI
             if (e.CloseReason == CloseReason.WindowsShutDown || e.CloseReason == CloseReason.TaskManagerClosing)
             {
                 _exiting = true;
-                try { ServiceManager.StopAllAsync().Wait(15000); } catch { }
+                if (!ServiceMode.IsController) try { ServiceManager.StopAllAsync().Wait(15000); } catch { }
                 _tray.Visible = false;
                 base.OnFormClosing(e);
                 return;
@@ -1599,7 +1601,8 @@ namespace Portly.UI
             Share.StopAll();
             SetStatus(I18n.T("main.stopping"));
             Enabled = false;
-            await Task.WhenAny(ServiceManager.StopAllAsync(), Task.Delay(30000));
+            // service mode: the Windows service keeps running without the window
+            if (!ServiceMode.IsController) await Task.WhenAny(ServiceManager.StopAllAsync(), Task.Delay(30000));
             _tray.Visible = false;
             _tray.Dispose();
             Application.Exit();
