@@ -22,6 +22,16 @@ namespace Portly.SmokeTest
             var http = "http://127.0.0.1:" + s.HttpPort + "/";
             var https = "https://127.0.0.1:" + s.HttpsPort + "/";
 
+            // ---------- Fix SSL: certificate checks ----------
+            var sslNames = new[] { "sslcheck.portly", "*.sslcheck.portly" };
+            Certs.RenewSite("sslcheck.portly", sslNames);
+            Check("fix ssl: a fresh certificate has no problem", Certs.SiteProblem("sslcheck.portly", sslNames) == null);
+            Check("fix ssl: changed names are found", Certs.SiteProblem("sslcheck.portly", new[] { "sslcheck.portly", "x.test" }) == "names");
+            Check("fix ssl: a missing certificate is found", Certs.SiteProblem("nocert.portly", null) == "missing");
+            var sslCheck = SslRepair.Check(ServiceManager.CurrentSites);
+            Check("fix ssl: every valid site is checked", sslCheck.Sites.Count == ServiceManager.CurrentSites.Count(x => x.Valid), sslCheck.Sites.Count.ToString());
+            foreach (var ext in new[] { ".crt", ".key", ".names" }) try { File.Delete(Path.Combine(Certs.SitesDir, "sslcheck.portly" + ext)); } catch { }
+
             // ---------- extra domains: same site via Host header, names in the certificate ----------
             Features.Set("aliases", true);
             Sites.SetAliases("demo", new[] { "demo-alias.localhost", "*.wild.localhost" });

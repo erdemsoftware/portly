@@ -131,11 +131,12 @@ namespace Portly.Config
             var namesText = string.Join(",", list).ToLowerInvariant();
             lock (Sync)
             {
+                // the CA first: making a new CA clears the site certificate folder
+                var ca = EnsureCa();
                 Directory.CreateDirectory(SitesDir);
                 var crt = Path.Combine(SitesDir, host + ".crt");
                 var key = Path.Combine(SitesDir, host + ".key");
                 var namesFile = Path.Combine(SitesDir, host + ".names");
-                var ca = EnsureCa();
                 if (File.Exists(crt) && File.Exists(key))
                 {
                     try
@@ -143,7 +144,8 @@ namespace Portly.Config
                         // certificates made before aliases existed cover host and *.host
                         var had = File.Exists(namesFile) ? File.ReadAllText(namesFile).Trim() : (host + ",*." + host).ToLowerInvariant();
                         var existing = new X509Certificate2(Encoding.ASCII.GetBytes(FirstPem(File.ReadAllText(crt))));
-                        if (existing.NotAfter > DateTime.Now.AddDays(30) && existing.Issuer == ca.Subject && had == namesText) return Tuple.Create(crt, key);
+                        // the issuer name alone also matches a recreated CA: check the signature too
+                        if (existing.NotAfter > DateTime.Now.AddDays(30) && existing.Issuer == ca.Subject && VerifiedBy(existing, ca) && had == namesText) return Tuple.Create(crt, key);
                     }
                     catch { }
                 }
@@ -175,6 +177,57 @@ namespace Portly.Config
                 }
                 return Tuple.Create(crt, key);
             }
+        }
+
+        /// <summary>
+        /// Why a site's certificate would show a browser warning, or null when it is fine: "missing", "expiring"
+        /// (under 30 days), "otherCa" (signed by an older Portly CA), "names" (not made for the site's current names),
+        /// "broken" (unreadable). Same rules as EnsureSite uses to decide on a new certificate.
+        /// </summary>
+        public static string SiteProblem(string host, IEnumerable<string> names)
+        {
+            var list = (names ?? new[] { host, "*." + host }).Where(n => !string.IsNullOrEmpty(n)).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+            if (!list.Contains(host, StringComparer.OrdinalIgnoreCase)) list.Insert(0, host);
+            var crt = Path.Combine(SitesDir, host + ".crt");
+            var key = Path.Combine(SitesDir, host + ".key");
+            var namesFile = Path.Combine(SitesDir, host + ".names");
+            if (!File.Exists(crt) || !File.Exists(key)) return "missing";
+            try
+            {
+                var ca = EnsureCa();
+                var cert = new X509Certificate2(Encoding.ASCII.GetBytes(FirstPem(File.ReadAllText(crt))));
+                if (cert.Issuer != ca.Subject || !VerifiedBy(cert, ca)) return "otherCa";
+                if (cert.NotAfter <= DateTime.Now.AddDays(30) || cert.NotBefore > DateTime.Now) return "expiring";
+                var had = File.Exists(namesFile) ? File.ReadAllText(namesFile).Trim() : (host + ",*." + host).ToLowerInvariant();
+                if (had != string.Join(",", list).ToLowerInvariant()) return "names";
+                return null;
+            }
+            catch { return "broken"; }
+        }
+
+        /// <summary>Signed by this CA's key (the subject alone matches a recreated CA too).</summary>
+        static bool VerifiedBy(X509Certificate2 cert, X509Certificate2 ca)
+        {
+            using (var chain = new X509Chain())
+            {
+                chain.ChainPolicy.RevocationMode = X509RevocationMode.NoCheck;
+                chain.ChainPolicy.VerificationFlags = X509VerificationFlags.AllowUnknownCertificateAuthority;
+                chain.ChainPolicy.ExtraStore.Add(ca);
+                if (!chain.Build(cert)) return false;
+                var root = chain.ChainElements[chain.ChainElements.Count - 1].Certificate;
+                return root.Thumbprint == ca.Thumbprint;
+            }
+        }
+
+        /// <summary>Throw the site's certificate away and make a new one (used by "Fix SSL").</summary>
+        public static void RenewSite(string host, IEnumerable<string> names)
+        {
+            lock (Sync)
+            {
+                foreach (var ext in new[] { ".crt", ".key", ".names" })
+                    try { File.Delete(Path.Combine(SitesDir, host + ext)); } catch { }
+            }
+            EnsureSite(host, names);
         }
 
         // ---------------- trust ----------------

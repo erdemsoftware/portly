@@ -621,8 +621,10 @@ namespace Portly.UI
                 Ui.Button(I18n.T("main.newProject"), (s, e) => NewProject(), true, "plus"),
                 Ui.Button(I18n.T("sites.refresh"), async (s, e) => await ServiceManager.ReloadWebAsync(), false, "refresh"),
                 Ui.Button(I18n.T("sites.folder"), (s, e) => WinUtil.OpenFolder(Settings.Current.DocumentRoot), false, "folder"),
-                _archivedBtn = SitesWebUi.ArchivedButton(this));
+                _archivedBtn = SitesWebUi.ArchivedButton(this),
+                _sslBtn = Ui.Button(I18n.T("sslfix.button"), (s, e) => OpenSslRepair(), false, "warning"));
             _siteFlow = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoScroll = true, BackColor = Ui.Bg, Padding = Ui.P(0, 4, 0, 0) };
+            _siteFlow.Resize += (s, e) => { foreach (var inner in _siteBlocks) inner.MaximumSize = new Size(BlockWidth(), 0); };
             page.Controls.Add(_siteFlow);
             page.Controls.Add(header);
             _siteFlow.BringToFront();
@@ -636,6 +638,7 @@ namespace Portly.UI
         {
             if (_siteFlow == null) return;
             _caTrusted = Certs.IsCaTrusted();
+            var p = Theme.Current;
             var s = Settings.Current;
             var sites = ServiceManager.CurrentSites;
             _sitesSub.Text = I18n.T("sites.count", sites.Count(x => x.Valid), s.DocumentRoot, s.Tld);
@@ -656,19 +659,87 @@ namespace Portly.UI
                 empty.Controls.AddRange(new Control[] { t, d, b });
                 _siteFlow.Controls.Add(empty);
             }
-            foreach (var site in sites) _siteFlow.Controls.Add(SiteCard(site));
+            // HTTPS problems per site (missing / expired / old CA / names changed), shown on the cards and the header button
+            var ssl = s.Ssl ? SslRepair.Check(sites) : null;
+            _sslProblems = ssl == null ? new Dictionary<string, string>() : ssl.Sites.Where(x => x.Problem != null).ToDictionary(x => x.Site.Host, x => x.Problem);
+            int sslIssues = _sslProblems.Count + (ssl != null && !ssl.CaTrusted && sites.Any(x => x.Valid) ? 1 : 0);
+            _sslBtn.Text = I18n.T("sslfix.button") + (sslIssues > 0 ? " (" + sslIssues + ")" : "");
+            _sslBtn.CustomColor = sslIssues > 0 ? (Color?)p.Orange : null;
+            _sslBtn.Visible = s.Ssl;
+
+            // a site whose address ends with another site's address is its subdomain: show it under that site
+            var parentOf = new Dictionary<Site, Site>();
+            foreach (var site in sites)
+            {
+                var parent = sites.Where(o => o != site && site.Host.EndsWith("." + o.Host, StringComparison.OrdinalIgnoreCase))
+                                  .OrderByDescending(o => o.Host.Length).FirstOrDefault();
+                if (parent != null) parentOf[site] = parent;
+            }
+            var roots = sites.Where(x => !parentOf.ContainsKey(x)).ToList();
+            _siteBlocks.Clear();
+            foreach (var site in roots.Where(x => !parentOf.ContainsValue(x))) _siteFlow.Controls.Add(SiteCard(site, null));
+            foreach (var site in roots.Where(x => parentOf.ContainsValue(x))) _siteFlow.Controls.Add(SiteBlock(site, parentOf));
             _siteFlow.ResumeLayout(true);
             Ui.StyleTree(_siteFlow);
         }
 
-        Control SiteCard(Site site)
+        Dictionary<string, string> _sslProblems = new Dictionary<string, string>();
+        ModernButton _sslBtn;
+        readonly List<FlowLayoutPanel> _siteBlocks = new List<FlowLayoutPanel>();
+
+        /// <summary>A site with its subdomains (group folders, "shop.example" folders): one row, joined by a line.</summary>
+        Control SiteBlock(Site root, Dictionary<Site, Site> parentOf)
+        {
+            var p = Theme.Current;
+            var all = new List<Site>();
+            Action<Site> add = null;
+            add = site =>
+            {
+                all.Add(site);
+                foreach (var kid in parentOf.Where(kv => kv.Value == site).Select(kv => kv.Key).OrderBy(k => k.Host)) add(kid);
+            };
+            add(root);
+            var block = new Panel { AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Margin = Ui.P(0, 2, 0, 14), Padding = Ui.P(14, 0, 0, 0), BackColor = Color.Transparent };
+            var head = Ui.Label(root.Host + "  ·  " + I18n.T("sites.subCount", all.Count - 1), Ui.Small, Ui.Muted);
+            head.Location = new Point(Ui.S(14), 0);
+            var inner = new FlowLayoutPanel { AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, WrapContents = true, BackColor = Color.Transparent, Margin = Padding.Empty, Padding = Padding.Empty };
+            inner.Location = new Point(Ui.S(14), head.PreferredHeight + Ui.S(6));
+            inner.MaximumSize = new Size(BlockWidth(), 0);
+            foreach (var site in all) inner.Controls.Add(SiteCard(site, site == root ? null : parentOf[site]));
+            block.Controls.Add(head);
+            block.Controls.Add(inner);
+            // the accent line on the left ties the subdomains to their site
+            block.Paint += (s, e) =>
+            {
+                using (var pen = new Pen(Color.FromArgb(150, p.Accent), Math.Max(2, Ui.S(3))))
+                    e.Graphics.DrawLine(pen, Ui.S(4), Ui.S(4), Ui.S(4), block.Height - Ui.S(14));
+            };
+            _siteBlocks.Add(inner);
+            _siteFlow.SetFlowBreak(block, true);
+            return block;
+        }
+
+        int BlockWidth() { return Math.Max(Ui.S(330), _siteFlow.ClientSize.Width - Ui.S(40)); }
+
+        void OpenSslRepair()
+        {
+            ShowFromTray();
+            using (var f = new SslRepairForm(ServiceManager.CurrentSites)) f.ShowDialog(this);
+            FillSites();
+        }
+
+        Control SiteCard(Site site, Site parent)
         {
             var p = Theme.Current;
             var card = new Card { Size = Ui.S(300, 104), Radius = 12, Margin = Ui.P(0, 0, 12, 12), Cursor = site.Valid ? Cursors.Hand : Cursors.Default };
             if (!site.Valid) card.BorderColor = Color.FromArgb(140, p.Red);
             var avatar = BrandTile.Avatar(site.Name);
             avatar.Location = new Point(Ui.S(16), Ui.S(16));
-            var name = Ui.Label(site.Group != "" ? site.Group + " / " + site.ShortName : site.Name, Ui.Subtitle);
+            // a subdomain shows only its own part ("shop" of shop.clients.portly), the block header names the parent
+            var title = parent != null ? "↳ " + site.Host.Substring(0, site.Host.Length - parent.Host.Length - 1)
+                      : site.Group != "" ? site.Group + " / " + site.ShortName : site.Name;
+            var name = Ui.Label(title, Ui.Subtitle);
+            if (parent != null) new ToolTip().SetToolTip(name, I18n.T("sites.subOf", site.Host, parent.Host));
             name.AutoSize = false;
             name.AutoEllipsis = true;
             name.Size = new Size(Ui.S(190), Ui.S(24));
@@ -707,12 +778,14 @@ namespace Portly.UI
             }
             if (site.Valid && Settings.Current.Ssl)
             {
-                bool trusted = _caTrusted;
-                var lockPill = new Pill { Text = trusted ? "HTTPS" : "HTTPS !", Color = trusted ? p.Green : p.Orange, Cursor = trusted ? Cursors.Default : Cursors.Hand };
-                if (!trusted)
+                string problem;
+                _sslProblems.TryGetValue(site.Host, out problem);
+                bool ok = _caTrusted && problem == null;
+                var lockPill = new Pill { Text = ok ? "HTTPS" : "HTTPS !", Color = ok ? p.Green : (problem != null ? p.Red : p.Orange), Cursor = ok ? Cursors.Default : Cursors.Hand };
+                if (!ok)
                 {
-                    lockPill.Click += (o, e) => { TrustCa(); FillSites(); };
-                    new ToolTip().SetToolTip(lockPill, I18n.T("sites.httpsUntrusted") + " - " + I18n.T("ssl.trust"));
+                    lockPill.Click += (o, e) => OpenSslRepair();
+                    new ToolTip().SetToolTip(lockPill, (problem != null ? SslRepair.ProblemText(problem) : I18n.T("sites.httpsUntrusted")) + " - " + I18n.T("sslfix.button"));
                 }
                 badges.Add(lockPill);
             }

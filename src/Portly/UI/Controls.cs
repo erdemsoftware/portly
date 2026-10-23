@@ -33,6 +33,13 @@ namespace Portly.UI
             UseVisualStyleBackColor = false;
             BackColor = Color.Transparent;
             TextChanged += (s, e) => { AccessibleName = Text; if (AutoSize) PerformLayout(); };
+            // a disabled button gets no mouse events: drop a stale hover look and the hand cursor
+            EnabledChanged += (s, e) => { _hover = _down = false; Cursor = Enabled ? Cursors.Hand : Cursors.Default; Invalidate(); };
+        }
+
+        static Color Mix(Color a, Color b, float t)
+        {
+            return Color.FromArgb((int)(a.R + (b.R - a.R) * t), (int)(a.G + (b.G - a.G) * t), (int)(a.B + (b.B - a.B) * t));
         }
 
         /// <summary>
@@ -126,7 +133,13 @@ namespace Portly.UI
                     border = p.Border;
                     break;
             }
-            if (!Enabled) { fore = Color.FromArgb(120, fore); if (_kind == ButtonKind.Primary) fill = Color.FromArgb(150, fill); }
+            if (!Enabled && _kind != ButtonKind.Nav)
+            {
+                // clearly "not clickable": flat grey whatever the kind (a faded blue still looks like a button to press)
+                fill = _kind == ButtonKind.Ghost ? parentBg : Mix(parentBg, p.Text, Theme.IsDark ? .07f : .05f);
+                fore = Mix(parentBg, p.Text, .38f);
+                border = _kind == ButtonKind.Ghost ? Color.Empty : Mix(parentBg, p.Text, .12f);
+            }
 
             var rect = new RectangleF(0.5f, 0.5f, Width - 1.5f, Height - 1.5f);
             using (var b = new SolidBrush(fill)) Glyphs.FillRound(g, b, rect, Ui.S(Radius));
@@ -140,7 +153,7 @@ namespace Portly.UI
                     Glyphs.DrawRound(g, pen, new RectangleF(inset, inset, Width - inset * 2 - 1, Height - inset * 2 - 1), Math.Max(2, Ui.S(Radius) - (int)inset + 1));
             }
 
-            var glyphColor = _kind == ButtonKind.Tile ? (CustomColor ?? p.Accent) : fore;
+            var glyphColor = _kind == ButtonKind.Tile && Enabled ? (CustomColor ?? p.Accent) : fore;
             if (_kind == ButtonKind.Tile)
             {
                 int gs = GlyphSize;

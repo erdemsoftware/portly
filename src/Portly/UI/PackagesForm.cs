@@ -44,7 +44,7 @@ namespace Portly.UI
             StartPosition = FormStartPosition.CenterParent;
             ShowInTaskbar = false;
             MinimizeBox = false;
-            Size = Ui.S(760, 560);
+            Size = Ui.S(900, 600);
             MinimumSize = Ui.S(640, 420);
 
             var top = new Panel { Dock = DockStyle.Top, AutoSize = true, Padding = Ui.P(14, 12, 14, 6), BackColor = Ui.Bg };
@@ -109,7 +109,7 @@ namespace Portly.UI
             var bottom = new Panel { Dock = DockStyle.Bottom, AutoSize = true, Padding = Ui.P(14, 8, 14, 12), BackColor = Ui.Bg };
             _progress = new ProgressBar { Dock = DockStyle.Top, Height = Ui.S(8), Visible = false, Style = ProgressBarStyle.Continuous };
             _status = new Label { Dock = DockStyle.Top, AutoSize = true, ForeColor = Ui.Muted, Padding = Ui.P(0, 6, 0, 6), MaximumSize = new Size(Ui.S(720), 0) };
-            var buttons = new FlowLayoutPanel { Dock = DockStyle.Top, AutoSize = true, WrapContents = false };
+            var buttons = new FlowLayoutPanel { Dock = DockStyle.Top, AutoSize = true, WrapContents = true };   // narrow windows / long translations: wrap instead of cutting the last button off
             _install = Ui.Button(I18n.T("pkg.installSelected"), async (s, e) => await InstallChecked(), true);
             _remove = Ui.Button(I18n.T("pkg.remove"), (s, e) => RemoveSelected());
             _activate = Ui.Button(I18n.T("pkg.activate"), async (s, e) => await ActivateSelected());
