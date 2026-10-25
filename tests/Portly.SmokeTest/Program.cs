@@ -113,6 +113,10 @@ namespace Portly.SmokeTest
             Directory.CreateDirectory(Path.Combine(www, "legacyapp", "public"));
             File.WriteAllText(Path.Combine(www, "legacyapp", "public", "index.php"), "<?php echo 'LEGACY php=' . PHP_VERSION;");
             Directory.CreateDirectory(Path.Combine(www, "Özel Proje"));
+            File.WriteAllText(Path.Combine(www, "Özel Proje", "index.php"), "<?php echo 'X';");   // web content but an invalid name
+            Directory.CreateDirectory(Path.Combine(www, "justtools"));   // no web content -> not a site
+            File.WriteAllText(Path.Combine(www, "justtools", "tool.exe"), "x");
+            File.WriteAllText(Path.Combine(www, "justtools", "notes.txt"), "x");
             // a group folder: clientscme -> acme.clients.localhost
             Directory.CreateDirectory(Path.Combine(www, "clients", "acme"));
             File.WriteAllText(Path.Combine(www, "clients", "acme", "index.php"), "<?php echo 'ACME-OK';");
@@ -123,6 +127,8 @@ namespace Portly.SmokeTest
             Check("group folder detected", sites.Any(x => x.Name == "clients" && x.IsGroup) && sites.Any(x => x.Host == "acme.clients.localhost" && x.Valid),
                 string.Join(", ", sites.Where(x => x.Group != "" || x.IsGroup).Select(x => x.Host)));
             Check("sites scanned", sites.Count(x => x.Valid && x.Group == "" && !x.IsGroup && x.Name != "wpdemo") == 3, string.Join(", ", sites.Select(x => x.Name + (x.Valid ? "" : "(invalid)"))));
+            Check("a folder with only tools is not a site", sites.All(x => x.Name != "justtools"), string.Join(", ", sites.Select(x => x.Name)));
+            Check("a web folder with an invalid name shows as invalid", sites.Any(x => x.Name == "Özel Proje" && !x.Valid));
             Check("Laravel-style public folder detected", sites.First(x => x.Name == "legacyapp").DocRoot.EndsWith("public"));
             var php84 = PackageTypes.Installed("php").First(f => PackageTypes.Branch(f) == "8.4");
             Sites.SetPhp("legacyapp", php84);

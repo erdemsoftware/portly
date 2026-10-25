@@ -83,9 +83,24 @@ namespace Portly.Config
         public static bool IsValidName(string name) { return name != null && NameRx.IsMatch(name); }
 
         /// <summary>Does the folder look like a web project by itself?</summary>
+        /// <summary>
+        /// A folder that can be served as a website: an index (php/html/htm) in the folder or in a front-controller
+        /// subfolder (public / web / webroot / public_html), or a framework file (composer.json, package.json,
+        /// artisan, wp-config.php). Folders with only tools, .exe files, scripts or notes are not sites.
+        /// </summary>
         public static bool LooksLikeProject(string dir)
         {
-            try { return ProjectMarkers.Any(m => File.Exists(Path.Combine(dir, m))); }
+            try
+            {
+                if (ProjectMarkers.Any(m => File.Exists(Path.Combine(dir, m)))) return true;
+                foreach (var sub in new[] { "public", "web", "webroot", "public_html" })
+                {
+                    var p = Path.Combine(dir, sub);
+                    if (Directory.Exists(p) && (File.Exists(Path.Combine(p, "index.php"))
+                        || File.Exists(Path.Combine(p, "index.html")) || File.Exists(Path.Combine(p, "index.htm")))) return true;
+                }
+                return false;
+            }
             catch { return false; }
         }
 
@@ -151,15 +166,22 @@ namespace Portly.Config
             foreach (var dir in Folders(root))
             {
                 var name = Path.GetFileName(dir);
+                bool group = IsGroupFolder(dir, ini, name);
+                // only real web projects and groups become sites; a folder with just tools / .exe / notes is skipped
+                // (a sites.ini entry forces it to show, so a manual override always wins)
+                if (!group && !LooksLikeProject(dir) && ini.Section(name).Count == 0) continue;
                 var site = Make(name, dir, name.ToLowerInvariant() + "." + tld, ini);
                 list.Add(site);
                 // an archived group hides the projects inside it too
-                if (site.Archived || !site.Valid || !IsGroupFolder(dir, ini, name)) continue;
+                if (site.Archived || !site.Valid || !group) continue;
                 site.IsGroup = true;
                 foreach (var sub in Folders(dir))
                 {
                     var subName = Path.GetFileName(sub);
-                    var child = Make(name + "/" + subName, sub, subName.ToLowerInvariant() + "." + site.Host, ini);
+                    var childName = name + "/" + subName;
+                    // inside a group, list only the web projects, not the tool folders next to them
+                    if (!LooksLikeProject(sub) && ini.Section(childName).Count == 0) continue;
+                    var child = Make(childName, sub, subName.ToLowerInvariant() + "." + site.Host, ini);
                     child.Group = name;
                     if (!IsValidName(subName)) { child.Valid = false; child.Problem = I18n.T("sites.invalidName"); }
                     list.Add(child);
