@@ -117,7 +117,21 @@ namespace Portly.Tools
             var r = Sql(sb.ToString());
             if (!r.Ok) return Clean(r);
             Log.Info(I18n.T("log.dbUserCreated", user, db));
+            Config.ToolApps.RefreshPhpMyAdmin();   // more than root now: phpMyAdmin shows its login page
             return null;
+        }
+
+        /// <summary>
+        /// MySQL / MariaDB accounts besides root and the built-in system ones (mysql.sys, mariadb.sys ...).
+        /// -1 when the server cannot be asked (not running).
+        /// </summary>
+        public static int OtherUserCount()
+        {
+            if (ServiceManager.MySql.State != ServiceState.Running) return -1;
+            var r = Sql("SELECT COUNT(DISTINCT User) FROM mysql.user WHERE User NOT IN " +
+                        "('root','mysql.sys','mysql.session','mysql.infoschema','mariadb.sys','PUBLIC','');", 10000);
+            int n;
+            return r.Ok && int.TryParse(Clean(r).Trim(), out n) ? n : -1;
         }
 
         /// <summary>Random password from letters and digits (no quoting trouble in connection strings).</summary>

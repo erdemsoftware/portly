@@ -197,6 +197,8 @@ namespace Portly.Services
             if (s.IsEnabled("memcached")) tasks.Add(Memcached.StartAsync());
             if (TomcatService.Enabled && s.IsEnabled("tomcat")) tasks.Add(Tomcat.StartAsync());
             await Task.WhenAll(tasks);
+            // the database is up now: phpMyAdmin can count the accounts (auto login only with root alone and no password)
+            Config.ToolApps.RefreshPhpMyAdmin();
             await Tools.Hooks.RunAsync("after-start");
             Tools.Jobs.StartAutostart(CurrentSites);
         }

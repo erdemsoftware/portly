@@ -276,6 +276,14 @@ namespace Portly.SmokeTest
                 Database.ChangeRootPassword("");
                 var pmaOpen = Get("http://127.0.0.1:" + s.HttpPort + "/phpmyadmin/", "localhost");
                 Check("phpMyAdmin logs in by itself again without a password", !pmaOpen.Contains("pma_username") && !pmaOpen.Contains("input_username"), pmaOpen.Length + " bytes");
+                // another account besides root: the login page, so you can choose who logs in
+                var userErr = Database.CreateUser("pma_test_db", "pmauser", "Pma-User-1");
+                var pmaMulti = Get("http://127.0.0.1:" + s.HttpPort + "/phpmyadmin/", "localhost");
+                Check("phpMyAdmin shows its login page when there are other accounts", userErr == null && (pmaMulti.Contains("pma_username") || pmaMulti.Contains("input_username")), userErr ?? (pmaMulti.Length + " bytes"));
+                foreach (var host in new[] { "localhost", "127.0.0.1", "::1" }) Database.Sql("DROP USER IF EXISTS 'pmauser'@'" + host + "';");
+                ToolApps.RefreshPhpMyAdmin();
+                var pmaSingle = Get("http://127.0.0.1:" + s.HttpPort + "/phpmyadmin/", "localhost");
+                Check("phpMyAdmin logs in by itself again with root alone", !pmaSingle.Contains("pma_username") && !pmaSingle.Contains("input_username"), pmaSingle.Length + " bytes");
             }
             catch (Exception ex) { Check("phpMyAdmin login mode", false, ex.Message); }
 
