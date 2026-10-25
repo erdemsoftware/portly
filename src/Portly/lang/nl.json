@@ -1008,5 +1008,20 @@
   "pkg.onSystemTomcat": "Op Windows geïnstalleerd (draait als eigen Windows-service); Portly gebruikt een eigen kopie",
   "svc.bulk": "Bulk",
   "svc.bulkHint": "Vergrendeld (groen): \"Alles starten\" en \"Alles stoppen\" nemen deze service mee. Open (rood): ze laten hem met rust; gebruik de schakelaar ernaast.",
-  "main.databaseHint": "Opent phpMyAdmin (ingelogd zolang root geen wachtwoord heeft). Klik met de rechtermuisknop voor de andere databasetools."
+  "main.databaseHint": "Opent phpMyAdmin (ingelogd zolang root geen wachtwoord heeft). Klik met de rechtermuisknop voor de andere databasetools.",
+  "main.more": "Meer",
+  "project.isSub": "Dit is een subproject (gemaakt in een eigen map binnen een hoofdproject)",
+  "project.pickParent": "Kies het hoofdproject waarin het subproject komt.",
+  "share.button": "Delen",
+  "lan.start": "Delen op het lokale netwerk (zelfde router / wifi)",
+  "lan.copy": "Netwerkadres kopiëren ({0})",
+  "lan.stop": "Delen op het netwerk stoppen",
+  "lan.badge": "Op netwerk",
+  "lan.copied": "Adres gekopieerd: {0}",
+  "lan.confirm": "{0} delen met de apparaten in je lokale netwerk?\n\nTelefoons, tablets en andere computers die met dezelfde router of wifi verbonden zijn, kunnen de site openen met een adres als http://192.168.1.20:8900. Het gaat niet naar internet.\n\n- Alleen deze site wordt gedeeld. Je andere sites, de database en de tools (phpMyAdmin, Adminer) blijven privé.\n- Als Windows Firewall erom vraagt, sta Portly toe op particuliere netwerken.\n- Het loopt tot je het delen stopt of Portly sluit.\n\nDoorgaan?",
+  "lan.ready": "Open dit adres in de browser van je telefoon of het andere apparaat:\n{0}\n\nHet adres is gekopieerd. Het apparaat moet op dezelfde router of wifi zitten. Opent het niet, sta Portly dan toe in Windows Firewall (particuliere netwerken) en controleer of het netwerk op Particulier staat.",
+  "lan.started": "{0} is gedeeld op het lokale netwerk op {1}",
+  "lan.stopped": "Delen van {0} op het lokale netwerk gestopt",
+  "lan.noNetwork": "Deze computer is niet verbonden met een lokaal netwerk (geen router gevonden).",
+  "lan.noPort": "Geen vrije poort gevonden om te delen (8900-8999)."
 }

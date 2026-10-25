@@ -1008,5 +1008,20 @@
   "pkg.onSystemTomcat": "Zainstalowany w Windows (działa jako własna usługa Windows); Portly używa własnej kopii",
   "svc.bulk": "Zbiorczo",
   "svc.bulkHint": "Zablokowane (zielone): „Uruchom wszystko” i „Zatrzymaj wszystko” obejmują tę usługę. Otwarte (czerwone): pomijają ją; użyj przełącznika obok.",
-  "main.databaseHint": "Otwiera phpMyAdmin (z zalogowaniem, dopóki root nie ma hasła). Kliknij prawym przyciskiem myszy, aby zobaczyć pozostałe narzędzia baz danych."
+  "main.databaseHint": "Otwiera phpMyAdmin (z zalogowaniem, dopóki root nie ma hasła). Kliknij prawym przyciskiem myszy, aby zobaczyć pozostałe narzędzia baz danych.",
+  "main.more": "Więcej",
+  "project.isSub": "To jest podprojekt (tworzony we własnym folderze wewnątrz projektu głównego)",
+  "project.pickParent": "Wybierz projekt główny, do którego trafi podprojekt.",
+  "share.button": "Udostępnij",
+  "lan.start": "Udostępnij w sieci lokalnej (ten sam router / Wi-Fi)",
+  "lan.copy": "Kopiuj adres sieciowy ({0})",
+  "lan.stop": "Zatrzymaj udostępnianie w sieci",
+  "lan.badge": "W sieci",
+  "lan.copied": "Skopiowano adres: {0}",
+  "lan.confirm": "Udostępnić {0} urządzeniom w Twojej sieci lokalnej?\n\nTelefony, tablety i inne komputery podłączone do tego samego routera lub Wi-Fi mogą ją otworzyć pod adresem w rodzaju http://192.168.1.20:8900. Nie trafia do internetu.\n\n- Udostępniana jest tylko ta witryna. Inne witryny, baza danych i narzędzia (phpMyAdmin, Adminer) pozostają prywatne.\n- Jeśli Zapora systemu Windows zapyta, zezwól Portly w sieciach prywatnych.\n- Działa, dopóki nie zatrzymasz udostępniania lub nie zamkniesz Portly.\n\nKontynuować?",
+  "lan.ready": "Otwórz ten adres w przeglądarce telefonu lub innego urządzenia:\n{0}\n\nAdres został skopiowany. Urządzenie musi być podłączone do tego samego routera lub Wi-Fi. Jeśli strona się nie otwiera, zezwól Portly w Zaporze systemu Windows (sieci prywatne) i sprawdź, czy sieć jest ustawiona jako Prywatna.",
+  "lan.started": "{0} jest udostępniona w sieci lokalnej pod adresem {1}",
+  "lan.stopped": "Zatrzymano udostępnianie {0} w sieci lokalnej",
+  "lan.noNetwork": "Ten komputer nie jest podłączony do sieci lokalnej (nie znaleziono routera).",
+  "lan.noPort": "Nie znaleziono wolnego portu do udostępniania (8900-8999)."
 }

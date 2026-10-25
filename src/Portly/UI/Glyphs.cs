@@ -104,6 +104,14 @@ namespace Portly.UI
                     case "more":
                         for (int i = 0; i < 3; i++) g.FillEllipse(b, X(.16f + i * .28f), Y(.44f), s * .12f, s * .12f);
                         break;
+                    case "share":
+                        // three connected dots
+                        g.DrawLine(p, X(.3f), Y(.5f), X(.72f), Y(.24f));
+                        g.DrawLine(p, X(.3f), Y(.5f), X(.72f), Y(.76f));
+                        g.FillEllipse(b, X(.14f), Y(.34f), s * .32f, s * .32f);
+                        g.FillEllipse(b, X(.58f), Y(.1f), s * .28f, s * .28f);
+                        g.FillEllipse(b, X(.58f), Y(.62f), s * .28f, s * .28f);
+                        break;
                     case "update":
                         g.DrawLine(p, X(.5f), Y(.15f), X(.5f), Y(.68f));
                         g.DrawLines(p, new[] { new PointF(X(.28f), Y(.46f)), new PointF(X(.5f), Y(.68f)), new PointF(X(.72f), Y(.46f)) });

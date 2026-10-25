@@ -74,11 +74,64 @@ namespace Portly.Config
     public static class Sites
     {
         static readonly Regex NameRx = new Regex(@"^[a-z0-9]([a-z0-9_-]{0,61}[a-z0-9])?$", RegexOptions.IgnoreCase);
+        // package.json alone is not a marker: Node scripts and app sources (Next, Nuxt ...) are not served by the
+        // web server. Node projects Portly creates are marked in sites.ini instead (MarkNodeProject).
         static readonly string[] ProjectMarkers =
         {
-            "index.php", "index.html", "index.htm", "composer.json", "package.json", "artisan", "wp-config.php", "wp-config-sample.php",
+            "index.php", "index.html", "index.htm", "composer.json", "artisan", "wp-config.php", "wp-config-sample.php",
             @"public\index.php", @"public\index.html", @"web\index.php", @"webroot\index.php", @"public_html\index.php",
         };
+
+        /// <summary>Apps of other platforms (Python, Flutter, Go, Rust, Java): not web sites, and not groups either.</summary>
+        static readonly string[] OtherAppMarkers =
+        {
+            "app.py", "manage.py", "requirements.txt", "pyproject.toml", "Pipfile", "pubspec.yaml", "go.mod", "Cargo.toml", "pom.xml", "build.gradle",
+        };
+
+        /// <summary>Parts of an app that sit next to the real projects in a group folder; never sub-projects themselves.</summary>
+        static readonly HashSet<string> NotProjectFolders = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "templates", "views", "partials", "layouts", "components", "includes", "assets", "static", "css", "js", "img", "images", "fonts",
+        };
+
+        /// <summary>An app of another platform with no PHP entry point (a Flask app, a Flutter app ...).</summary>
+        public static bool IsOtherApp(string dir)
+        {
+            try
+            {
+                if (!OtherAppMarkers.Any(m => File.Exists(Path.Combine(dir, m)))) return false;
+                return !File.Exists(Path.Combine(dir, "index.php")) && !File.Exists(Path.Combine(dir, "public", "index.php"));
+            }
+            catch { return false; }
+        }
+
+        /// <summary>A project created inside another project's folder (New project > sub-project).</summary>
+        public static void MarkSubProject(string parent, string name)
+        {
+            var ini = new Ini(Paths.SitesFile);
+            ini.Set(parent + "/" + name, "sub", "1");
+            ini.Save();
+        }
+
+        /// <summary>A Node project: made by Portly as one, or a package.json without a PHP entry point.</summary>
+        public static bool IsNodeProject(Site site)
+        {
+            try
+            {
+                if (new Ini(Paths.SitesFile).Get(site.Name, "kind", "") == "node") return true;
+                return File.Exists(Path.Combine(site.Folder, "package.json")) && !File.Exists(Path.Combine(site.Folder, "index.php"))
+                    && !File.Exists(Path.Combine(site.Folder, "composer.json"));
+            }
+            catch { return false; }
+        }
+
+        /// <summary>A Node project made by Portly (no index file to recognise it by).</summary>
+        public static void MarkNodeProject(string siteName)
+        {
+            var ini = new Ini(Paths.SitesFile);
+            ini.Set(siteName, "kind", "node");
+            ini.Save();
+        }
 
         public static bool IsValidName(string name) { return name != null && NameRx.IsMatch(name); }
 
@@ -92,6 +145,7 @@ namespace Portly.Config
         {
             try
             {
+                if (IsOtherApp(dir)) return false;
                 if (ProjectMarkers.Any(m => File.Exists(Path.Combine(dir, m)))) return true;
                 foreach (var sub in new[] { "public", "web", "webroot", "public_html" })
                 {
@@ -130,8 +184,8 @@ namespace Portly.Config
             var forced = ini.Get(name, "group", "");
             if (forced == "1") return true;
             if (forced == "0") return false;
-            if (LooksLikeProject(dir)) return false;
-            return Folders(dir).Any(LooksLikeProject);
+            if (LooksLikeProject(dir) || IsOtherApp(dir)) return false;
+            return Folders(dir).Any(d => !NotProjectFolders.Contains(Path.GetFileName(d)) && LooksLikeProject(d));
         }
 
         /// <summary>Settings > excluded folders ("_*", "backup*", "*.bak" ...) as regexes; only with the "archive" feature.</summary>
@@ -173,14 +227,18 @@ namespace Portly.Config
                 var site = Make(name, dir, name.ToLowerInvariant() + "." + tld, ini);
                 list.Add(site);
                 // an archived group hides the projects inside it too
-                if (site.Archived || !site.Valid || !group) continue;
+                if (site.Archived || !site.Valid) continue;
+                // a project can also hold sub-projects made with "New project > sub-project" (sites.ini "sub=1")
+                var declared = Folders(dir).Where(d => ini.GetBool(name + "/" + Path.GetFileName(d), "sub", false)).ToList();
+                if (!group && declared.Count == 0) continue;
                 site.IsGroup = true;
-                foreach (var sub in Folders(dir))
+                foreach (var sub in group ? Folders(dir) : declared)
                 {
                     var subName = Path.GetFileName(sub);
                     var childName = name + "/" + subName;
-                    // inside a group, list only the web projects, not the tool folders next to them
-                    if (!LooksLikeProject(sub) && ini.Section(childName).Count == 0) continue;
+                    // inside a group, list only the web projects, not the tool folders / app parts next to them
+                    bool configured = ini.Section(childName).Count > 0;
+                    if (!configured && (NotProjectFolders.Contains(subName) || !LooksLikeProject(sub))) continue;
                     var child = Make(childName, sub, subName.ToLowerInvariant() + "." + site.Host, ini);
                     child.Group = name;
                     if (!IsValidName(subName)) { child.Valid = false; child.Problem = I18n.T("sites.invalidName"); }

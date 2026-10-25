@@ -1008,5 +1008,20 @@
   "pkg.onSystemTomcat": "Windows'ta kurulu (kendi Windows hizmetiyle çalışır); Portly kendi kopyasını kullanır",
   "svc.bulk": "Toplu",
   "svc.bulkHint": "Kilitli (yeşil): \"Hepsini başlat\" ve \"Hepsini durdur\" bu servisi de açıp kapatır. Açık (kırmızı): toplu işlem dokunmaz; yanındaki anahtarla kendin açıp kapatırsın.",
-  "main.databaseHint": "phpMyAdmin'i açar (root şifresi yokken giriş yapılmış olarak). Diğer veritabanı araçları için sağ tıklayın."
+  "main.databaseHint": "phpMyAdmin'i açar (root şifresi yokken giriş yapılmış olarak). Diğer veritabanı araçları için sağ tıklayın.",
+  "main.more": "Daha fazla",
+  "project.isSub": "Bu bir alt projedir (bir ana projenin içinde ayrı klasörde oluşturulur)",
+  "project.pickParent": "Alt projenin gireceği ana projeyi seçin.",
+  "share.button": "Paylaş",
+  "lan.start": "Yerel ağda paylaş (aynı modem / Wi-Fi)",
+  "lan.copy": "Ağ adresini kopyala ({0})",
+  "lan.stop": "Yerel ağ paylaşımını durdur",
+  "lan.badge": "Ağda",
+  "lan.copied": "Adres kopyalandı: {0}",
+  "lan.confirm": "{0} yerel ağınızdaki cihazlarla paylaşılsın mı?\n\nAynı modeme ya da Wi-Fi'ye bağlı telefon, tablet ve diğer bilgisayarlar siteyi http://192.168.1.20:8900 gibi bir adresle açabilir. İnternete çıkmaz.\n\n- Yalnızca bu site paylaşılır. Diğer siteleriniz, veritabanı ve araçlar (phpMyAdmin, Adminer) kapalı kalır.\n- Windows Güvenlik Duvarı sorarsa Portly'ye özel ağlarda izin verin.\n- Paylaşımı durdurana ya da Portly'yi kapatana kadar açık kalır.\n\nDevam edilsin mi?",
+  "lan.ready": "Telefonunuzun ya da diğer cihazın tarayıcısında bu adresi açın:\n{0}\n\nAdres kopyalandı. Cihaz aynı modeme ya da Wi-Fi'ye bağlı olmalı. Açılmazsa Windows Güvenlik Duvarı'nda Portly'ye (özel ağlar) izin verin ve ağın Özel olarak ayarlı olduğunu kontrol edin.",
+  "lan.started": "{0} yerel ağda şu adreste paylaşılıyor: {1}",
+  "lan.stopped": "{0} yerel ağ paylaşımı durduruldu",
+  "lan.noNetwork": "Bu bilgisayar bir yerel ağa bağlı değil (modem bulunamadı).",
+  "lan.noPort": "Paylaşım için boş port bulunamadı (8900-8999)."
 }

@@ -131,6 +131,26 @@ namespace Portly.SmokeTest
             Check("a folder with only tools is not a site", sites.All(x => x.Name != "justtools"), string.Join(", ", sites.Select(x => x.Name)));
             Check("a web folder with an invalid name shows as invalid", sites.Any(x => x.Name == "Özel Proje" && !x.Valid));
             Check("Laravel-style public folder detected", sites.First(x => x.Name == "legacyapp").DocRoot.EndsWith("public"));
+
+            // a Python app and a folder of templates are not web projects; a sub-project goes inside its main project
+            Directory.CreateDirectory(Path.Combine(www, "pyapp", "templates"));
+            File.WriteAllText(Path.Combine(www, "pyapp", "app.py"), "print(1)");
+            File.WriteAllText(Path.Combine(www, "pyapp", "templates", "index.html"), "<html></html>");
+            Directory.CreateDirectory(Path.Combine(www, "mainapp", "views", "x"));
+            File.WriteAllText(Path.Combine(www, "mainapp", "index.php"), "<?php echo 'MAIN';");
+            File.WriteAllText(Path.Combine(www, "mainapp", "views", "x", "index.php"), "<?php echo 'V';");
+            File.WriteAllText(Path.Combine(www, "mainapp", ".env"), "APP_NAME=x\nDB_CONNECTION=mysql\nDB_DATABASE=main_db\nDB_PASSWORD=secret\n");
+            File.WriteAllText(Path.Combine(www, "mainapp", "composer.json"), "{\"require\":{\"laravel/framework\":\"^12.0\"}}");
+            await ProjectCreator.CreateAsync("blogx", "blank", false, false, "mainapp", m => { }, CancellationToken.None);
+            var sub = Sites.Scan();
+            Check("a Python app is not a web project", sub.All(x => !x.Name.StartsWith("pyapp")), string.Join(", ", sub.Select(x => x.Name)));
+            Check("sub-project created inside the main project", File.Exists(Path.Combine(www, "mainapp", "blogx", "index.php"))
+                && sub.Any(x => x.Name == "mainapp/blogx" && x.Host == "blogx.mainapp.localhost" && x.Valid) && sub.Any(x => x.Name == "mainapp" && x.IsGroup && x.Valid)
+                && !sub.Any(x => x.Name == "mainapp/views"), string.Join(", ", sub.Where(x => x.Name.StartsWith("mainapp")).Select(x => x.Name + "=" + x.Host)));
+            var info = ProjectInfo.For(sub.First(x => x.Name == "mainapp"));
+            Check("project info: framework and database from .env (no password)", info.Tech == "Laravel" && info.DbText == "MySQL: main_db" && !info.DbText.Contains("secret"), info.Tech + " | " + info.DbText);
+            Directory.Delete(Path.Combine(www, "pyapp"), true);
+            Directory.Delete(Path.Combine(www, "mainapp"), true);
             var php84 = PackageTypes.Installed("php").First(f => PackageTypes.Branch(f) == "8.4");
             Sites.SetPhp("legacyapp", php84);
 
@@ -362,7 +382,7 @@ namespace Portly.SmokeTest
                 var publicUrl = await Share.StartAsync(demoSite, t => Console.WriteLine("    | " + t));
                 string page = "";
                 for (int i = 0; i < 24 && !page.Contains("DEMO-OK"); i++) { await Task.Delay(5000); page = Get(publicUrl, null); }
-                Check("site shared on the internet", page.Contains("DEMO-OK"), publicUrl);
+                Check("site shared on the internet", page.Contains("DEMO-OK"), publicUrl + " " + Short(page));
                 Share.Stop(demoSite);
                 var wpSite = Sites.Scan().FirstOrDefault(x => x.Name == "wpdemo");
                 if (wpSite != null)
@@ -375,6 +395,25 @@ namespace Portly.SmokeTest
                 }
             }
             catch (Exception ex) { Check("site shared on the internet", false, ex.Message); }
+
+            // local network share: a port of Portly's own, the request reaches the site by its Host name
+            try
+            {
+                var demoSite = Sites.Scan().First(x => x.Name == "demo");
+                if (LanShare.LocalIp() == null) Console.WriteLine("  SKIP local network share (no network)");
+                else
+                {
+                    var lanUrl = LanShare.Start(demoSite);
+                    var lanPage = Get(lanUrl, null);
+                    var tools = Get(lanUrl.TrimEnd('/') + "/phpmyadmin/", null);
+                    Check("site shared on the local network", lanPage.Contains("DEMO-OK") && LanShare.Start(demoSite) == lanUrl && !tools.Contains("phpMyAdmin"), lanUrl + " " + Short(lanPage));
+                    LanShare.Stop(demoSite);
+                    string after;
+                    try { after = Get(lanUrl, null); } catch (Exception ex) { after = ex.Message; }
+                    Check("local network share stops", !after.Contains("DEMO-OK") && LanShare.UrlOf(demoSite) == null, Short(after));
+                }
+            }
+            catch (Exception ex) { Check("site shared on the local network", false, ex.Message); }
 
             // ---------- feature groups (one file each: Tests.<Group>.cs) ----------
             foreach (var group in new Func<Settings, string, Task>[] { Tests_PhpTooling, Tests_Database, Tests_Updates, Tests_SitesWeb, Tests_DevWorkflow, Tests_Platform, Tests_Tomcat })

@@ -1008,5 +1008,20 @@
   "pkg.onSystemTomcat": "Unter Windows installiert (läuft als eigener Windows-Dienst); Portly verwendet eine eigene Kopie",
   "svc.bulk": "Sammelaktion",
   "svc.bulkHint": "Gesperrt (grün): „Alle starten“ und „Alle stoppen“ schließen diesen Dienst ein. Offen (rot): Beide lassen ihn aus; nutzen Sie den Schalter daneben.",
-  "main.databaseHint": "Öffnet phpMyAdmin (angemeldet, solange root kein Passwort hat). Rechtsklick für die anderen Datenbank-Tools."
+  "main.databaseHint": "Öffnet phpMyAdmin (angemeldet, solange root kein Passwort hat). Rechtsklick für die anderen Datenbank-Tools.",
+  "main.more": "Mehr",
+  "project.isSub": "Dies ist ein Unterprojekt (wird in einem eigenen Ordner innerhalb eines Hauptprojekts angelegt)",
+  "project.pickParent": "Wählen Sie das Hauptprojekt, in das das Unterprojekt kommt.",
+  "share.button": "Teilen",
+  "lan.start": "Im lokalen Netzwerk teilen (gleicher Router / WLAN)",
+  "lan.copy": "Netzwerkadresse kopieren ({0})",
+  "lan.stop": "Teilen im Netzwerk beenden",
+  "lan.badge": "Im Netzwerk",
+  "lan.copied": "Adresse kopiert: {0}",
+  "lan.confirm": "{0} mit den Geräten in Ihrem lokalen Netzwerk teilen?\n\nHandys, Tablets und andere Computer, die mit demselben Router oder WLAN verbunden sind, können die Website mit einer Adresse wie http://192.168.1.20:8900 öffnen. Sie geht nicht ins Internet.\n\n- Nur diese Website wird geteilt. Andere Websites, die Datenbank und die Tools (phpMyAdmin, Adminer) bleiben privat.\n- Wenn die Windows-Firewall fragt, erlauben Sie Portly in privaten Netzwerken.\n- Läuft, bis Sie das Teilen beenden oder Portly schließen.\n\nFortfahren?",
+  "lan.ready": "Öffnen Sie diese Adresse im Browser Ihres Handys oder des anderen Geräts:\n{0}\n\nDie Adresse wurde kopiert. Das Gerät muss mit demselben Router oder WLAN verbunden sein. Wenn sie sich nicht öffnet, erlauben Sie Portly in der Windows-Firewall (private Netzwerke) und prüfen Sie, ob das Netzwerk auf Privat eingestellt ist.",
+  "lan.started": "{0} ist im lokalen Netzwerk unter {1} geteilt",
+  "lan.stopped": "Teilen von {0} im lokalen Netzwerk beendet",
+  "lan.noNetwork": "Dieser Computer ist mit keinem lokalen Netzwerk verbunden (kein Router gefunden).",
+  "lan.noPort": "Kein freier Port zum Teilen gefunden (8900-8999)."
 }

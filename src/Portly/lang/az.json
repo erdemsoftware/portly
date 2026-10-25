@@ -1008,5 +1008,20 @@
   "pkg.onSystemTomcat": "Windows-da quraşdırılıb (öz Windows xidməti kimi işləyir); Portly öz nüsxəsindən istifadə edir",
   "svc.bulk": "Toplu",
   "svc.bulkHint": "Kilidli (yaşıl): \"Hamısını başlat\" və \"Hamısını dayandır\" bu xidməti də əhatə edir. Açıq (qırmızı): ona toxunmur; yanındakı açarı istifadə edin.",
-  "main.databaseHint": "phpMyAdmin-i açır (root-un şifrəsi olmadıqda daxil olunmuş şəkildə). Digər verilənlər bazası alətləri üçün sağ klikləyin."
+  "main.databaseHint": "phpMyAdmin-i açır (root-un şifrəsi olmadıqda daxil olunmuş şəkildə). Digər verilənlər bazası alətləri üçün sağ klikləyin.",
+  "main.more": "Daha çox",
+  "project.isSub": "Bu alt layihədir (əsas layihənin içində ayrıca qovluqda yaradılır)",
+  "project.pickParent": "Alt layihənin daxil olacağı əsas layihəni seçin.",
+  "share.button": "Paylaş",
+  "lan.start": "Yerli şəbəkədə paylaş (eyni modem / Wi-Fi)",
+  "lan.copy": "Şəbəkə ünvanını kopyala ({0})",
+  "lan.stop": "Yerli şəbəkədə paylaşmanı dayandır",
+  "lan.badge": "Şəbəkədə",
+  "lan.copied": "Ünvan kopyalandı: {0}",
+  "lan.confirm": "{0} yerli şəbəkənizdəki cihazlarla paylaşılsın?\n\nEyni modemə və ya Wi-Fi-a qoşulmuş telefon, planşet və digər kompüterlər onu http://192.168.1.20:8900 kimi ünvanla aça bilər. İnternetə çıxmır.\n\n- Yalnız bu sayt paylaşılır. Digər saytlarınız, verilənlər bazası və alətlər (phpMyAdmin, Adminer) gizli qalır.\n- Windows Firewall soruşsa, Portly-yə şəxsi şəbəkələrdə icazə verin.\n- Paylaşmanı dayandırana və ya Portly-ni bağlayana qədər işləyir.\n\nDavam edilsin?",
+  "lan.ready": "Bu ünvanı telefonunuzun və ya digər cihazın brauzerində açın:\n{0}\n\nÜnvan kopyalandı. Cihaz eyni modemə və ya Wi-Fi-a qoşulmalıdır. Açılmasa, Windows Firewall-da Portly-yə (şəxsi şəbəkələr) icazə verin və şəbəkənin Şəxsi olaraq qurulduğunu yoxlayın.",
+  "lan.started": "{0} yerli şəbəkədə {1} ünvanında paylaşılır",
+  "lan.stopped": "{0} yerli şəbəkədə paylaşması dayandırıldı",
+  "lan.noNetwork": "Bu kompüter yerli şəbəkəyə qoşulmayıb (modem tapılmadı).",
+  "lan.noPort": "Paylaşma üçün boş port tapılmadı (8900-8999)."
 }

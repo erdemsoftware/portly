@@ -173,8 +173,11 @@ namespace Portly.UI
             nav.Controls.Add(NavButton(I18n.T("main.packages"), "box", (s, e) => OpenPackages(null)));
             nav.Controls.Add(NavButton(I18n.T("nav.import"), "import", (s, e) => OpenImport(true)));
             nav.Controls.Add(NavButton(I18n.T("main.settings"), "gear", (s, e) => OpenSettings()));
-            var more = NavButton(I18n.T("main.menu"), "more", null);
-            more.Click += (s, e) => { BuildMenu(_menu.Items); _menu.Show(more, new Point(more.Width, 0)); };
+            var more = NavButton(I18n.T("main.more"), "more", null);
+            // its own menu: the tray menu also carries "Show Portly", Start all, Packages, Settings ... which the window already has
+            var windowMenu = new ContextMenuStrip();
+            StyleMenu(windowMenu);
+            more.Click += (s, e) => { BuildMenu(windowMenu.Items, false); windowMenu.Show(more, new Point(more.Width, 0)); };
             nav.Controls.Add(more);
 
             var sideBottom = new FlowLayoutPanel { Dock = DockStyle.Bottom, AutoSize = true, FlowDirection = FlowDirection.TopDown, WrapContents = false, BackColor = Color.Transparent };
@@ -831,7 +834,7 @@ namespace Portly.UI
         Control SiteCard(Site site, Site parent)
         {
             var p = Theme.Current;
-            var card = new Card { Size = Ui.S(300, 104), Radius = 12, Margin = Ui.P(0, 0, 12, 12), Cursor = site.Valid ? Cursors.Hand : Cursors.Default };
+            var card = new Card { Size = Ui.S(300, 122), Radius = 12, Margin = Ui.P(0, 0, 12, 12), Cursor = site.Valid ? Cursors.Hand : Cursors.Default };
             if (!site.Valid) card.BorderColor = Color.FromArgb(140, p.Red);
             var avatar = BrandTile.Avatar(site.Name);
             avatar.Location = new Point(Ui.S(16), Ui.S(16));
@@ -862,8 +865,18 @@ namespace Portly.UI
                 address = bad;
             }
             address.Location = new Point(Ui.S(64), Ui.S(40));
+            // what it is built with and its database ("Laravel 12  ·  MySQL: shop"), read from the project's files
+            var info = site.Valid ? ProjectInfo.For(site) : new ProjectInfo();
+            var infoText = string.Join("  ·  ", new[] { info.Tech, info.DbText }.Where(x => x != ""));
+            var infoLabel = Ui.Label(infoText, Ui.Small, Ui.Muted);
+            infoLabel.AutoSize = false;
+            infoLabel.AutoEllipsis = true;
+            infoLabel.Size = new Size(Ui.S(220), Ui.S(18));
+            infoLabel.Location = new Point(Ui.S(64), Ui.S(63));
+            if (infoText != "") new ToolTip().SetToolTip(infoLabel, infoText);
+            card.Controls.Add(infoLabel);
             var php = new Pill { Text = "PHP " + PackageTypes.Label(site.PhpFolder) + (site.PhpOverride != "" ? " •" : ""), Color = ColorTranslator.FromHtml("#777BB4"), Dot = false };
-            php.Location = new Point(Ui.S(64), Ui.S(70));
+            php.Location = new Point(Ui.S(64), Ui.S(88));
             php.Visible = site.Valid;
             var badges = new List<Control> { php };
             if (site.IsGroup)
@@ -875,6 +888,14 @@ namespace Portly.UI
                 sp.Click += (o, e) => WinUtil.Open(shared);
                 new ToolTip().SetToolTip(sp, shared);
                 badges.Add(sp);
+            }
+            var lan = LanShare.UrlOf(site);
+            if (lan != null)
+            {
+                var lp = new Pill { Text = I18n.T("lan.badge"), Color = p.Green, Cursor = Cursors.Hand };
+                lp.Click += (o, e) => { try { Clipboard.SetText(lan); } catch { } SetStatus(I18n.T("lan.copied", lan)); };
+                new ToolTip().SetToolTip(lp, lan);
+                badges.Add(lp);
             }
             if (site.Valid && Settings.Current.Ssl)
             {
@@ -894,7 +915,7 @@ namespace Portly.UI
             int bx = Ui.S(64);
             foreach (var b in badges.Where(x => x.Visible || x != php))
             {
-                b.Location = new Point(bx, Ui.S(70));
+                b.Location = new Point(bx, Ui.S(88));
                 bx += b.Width + Ui.S(6);
                 if (b != php) card.Controls.Add(b);
             }
@@ -905,6 +926,18 @@ namespace Portly.UI
             moreBtn.Click += (s, e) => cm.Show(moreBtn, new Point(0, moreBtn.Height));
             card.ContextMenuStrip = cm;
             card.Controls.AddRange(new Control[] { avatar, name, address, php, moreBtn });
+            if (site.Valid)
+            {
+                // Share: on the local network (phone / another PC on the same router) or on the internet (Cloudflare)
+                var shareBtn = new ModernButton { Glyph = "share", Kind = ButtonKind.Ghost, AutoSize = false, Size = Ui.S(32, 32), Location = new Point(Ui.S(222), Ui.S(10)), AccessibleName = I18n.T("share.button") };
+                var sm = new ContextMenuStrip();
+                StyleMenu(sm);
+                sm.Opening += (s, e) => BuildShareMenu(sm.Items, site);
+                shareBtn.Click += (s, e) => sm.Show(shareBtn, new Point(0, shareBtn.Height));
+                new ToolTip().SetToolTip(shareBtn, I18n.T("share.button"));
+                name.Width = Ui.S(156);
+                card.Controls.Add(shareBtn);
+            }
             if (site.Valid)
             {
                 EventHandler open = (s, e) => OpenSite(site, Settings.Current.Ssl);
@@ -948,14 +981,11 @@ namespace Portly.UI
             }
             items.Add(php);
             items.Add(I18n.T("sites.createDb"), null, (s, e) => CreateDatabase(ProjectCreator.DbNameFor(site.Name)));
-            if (site.Valid && Share.IsAvailable)
+            if (site.Valid)
             {
-                if (Share.UrlOf(site) == null) items.Add(I18n.T("share.start"), null, (s, e) => ShareSite(site));
-                else
-                {
-                    items.Add(I18n.T("share.copy"), null, (s, e) => { try { Clipboard.SetText(Share.UrlOf(site)); } catch { } });
-                    items.Add(I18n.T("share.stop"), null, (s, e) => { Share.Stop(site); FillSites(); });
-                }
+                var share = new ToolStripMenuItem(I18n.T("share.button"));
+                BuildShareMenu(share.DropDownItems, site);
+                items.Add(share);
             }
             DevWorkflowUi.AddSiteMenuItems(items, site, this, FillSites);
             SitesWebUi.AddSiteItems(this, items, site);
@@ -969,6 +999,41 @@ namespace Portly.UI
                 catch (Exception ex) { Ui.Error(this, ex.Message); return; }
                 await ServiceManager.ReloadWebAsync();
             });
+        }
+
+        void BuildShareMenu(ToolStripItemCollection items, Site site)
+        {
+            items.Clear();
+            // 1. offline: devices on the same router / Wi-Fi (testing on a phone)
+            if (LanShare.UrlOf(site) == null) items.Add(I18n.T("lan.start"), null, (s, e) => LanShareSite(site));
+            else
+            {
+                items.Add(I18n.T("lan.copy", LanShare.UrlOf(site)), null, (s, e) => { try { Clipboard.SetText(LanShare.UrlOf(site)); } catch { } });
+                items.Add(I18n.T("lan.stop"), null, (s, e) => { LanShare.Stop(site); FillSites(); });
+            }
+            items.Add(new ToolStripSeparator());
+            // 2. online: a random public Cloudflare address
+            if (!Share.IsAvailable) items.Add(new ToolStripMenuItem(I18n.T("share.start")) { Enabled = false });
+            else if (Share.UrlOf(site) == null) items.Add(I18n.T("share.start"), null, (s, e) => ShareSite(site));
+            else
+            {
+                items.Add(I18n.T("share.copy"), null, (s, e) => { try { Clipboard.SetText(Share.UrlOf(site)); } catch { } });
+                items.Add(I18n.T("share.stop"), null, (s, e) => { Share.Stop(site); FillSites(); });
+            }
+        }
+
+        void LanShareSite(Site site)
+        {
+            if (ServiceManager.Web.State != ServiceState.Running) { Ui.Error(this, I18n.T("main.webNotRunning")); return; }
+            if (!Ui.Confirm(this, I18n.T("lan.confirm", site.Host))) return;
+            try
+            {
+                var url = LanShare.Start(site);
+                try { Clipboard.SetText(url); } catch { }
+                FillSites();
+                Ui.Info(this, I18n.T("lan.ready", url));
+            }
+            catch (Exception ex) { Ui.Error(this, ex.Message); }
         }
 
         async void ShareSite(Site site)
@@ -1094,14 +1159,19 @@ namespace Portly.UI
             foreach (ToolStripItem sub in mi.DropDownItems) StyleItem(sub);
         }
 
-        void BuildMenu(ToolStripItemCollection items)
+        /// <param name="tray">The tray icon's menu (with "Show Portly", Start all, Packages, Settings ...);
+        /// false = the window's "More" menu, without what the window itself already shows.</param>
+        void BuildMenu(ToolStripItemCollection items, bool tray = true)
         {
             items.Clear();
-            var bold = new ToolStripMenuItem(I18n.T("tray.show")) { Font = Ui.Bold };
-            bold.Click += (s, e) => ShowFromTray();
-            items.Add(bold);
-            items.Add(new ToolStripSeparator());
-            items.Add(ServiceManager.AnyActive ? I18n.T("main.stopAll") : I18n.T("main.startAll"), null, async (s, e) => await ToggleAll());
+            if (tray)
+            {
+                var bold = new ToolStripMenuItem(I18n.T("tray.show")) { Font = Ui.Bold };
+                bold.Click += (s, e) => ShowFromTray();
+                items.Add(bold);
+                items.Add(new ToolStripSeparator());
+                items.Add(ServiceManager.AnyBulkActive ? I18n.T("main.stopAll") : I18n.T("main.startAll"), null, async (s, e) => await ToggleAll());
+            }
             items.Add(I18n.T("main.web") + " (localhost)", null, (s, e) => OpenLocalhost());
 
             var sites = new ToolStripMenuItem(I18n.T("nav.sites"));
@@ -1115,7 +1185,7 @@ namespace Portly.UI
             sites.DropDownItems.Add(I18n.T("main.newProject"), null, (s, e) => NewProject());
             items.Add(sites);
 
-            var db = new ToolStripMenuItem(PackageTypes.Get(Settings.Current.DbEngine).Name);
+            var db = new ToolStripMenuItem(I18n.T("svc.dbTitle"));
             var toolsMenu = new ToolStripMenuItem(I18n.T("main.database"));
             BuildDatabaseToolItems(toolsMenu.DropDownItems);
             db.DropDownItems.Add(toolsMenu);
@@ -1223,15 +1293,21 @@ namespace Portly.UI
             items.Add(tools);
 
             items.Add(new ToolStripSeparator());
-            items.Add(I18n.T("main.packages"), null, (s, e) => OpenPackages(null));
-            items.Add(I18n.T("main.settings"), null, (s, e) => OpenSettings());
+            if (tray)
+            {
+                items.Add(I18n.T("main.packages"), null, (s, e) => OpenPackages(null));
+                items.Add(I18n.T("main.settings"), null, (s, e) => OpenSettings());
+            }
             if (AppInfo.UpdatesSupported)
                 items.Add(I18n.T("menu.checkUpdates"), null, async (s, e) => await BackgroundChecks(true, true));
             items.Add(I18n.T("menu.about"), null, (s, e) => { ShowFromTray(); using (var f = new AboutForm()) f.ShowDialog(this); });
-            var don = new ToolStripMenuItem("♥ " + I18n.T("main.donate"));
-            don.Click += (s, e) => ShowDonate();
-            items.Add(don);
-            don.ForeColor = Ui.Heart;
+            if (tray)
+            {
+                var don = new ToolStripMenuItem("♥ " + I18n.T("main.donate"));
+                don.Click += (s, e) => ShowDonate();
+                items.Add(don);
+                don.ForeColor = Ui.Heart;
+            }
             items.Add(new ToolStripSeparator());
             items.Add(I18n.T("menu.exit"), null, async (s, e) => await ExitAsync());
         }
@@ -1878,6 +1954,7 @@ namespace Portly.UI
             _exiting = true;
             SystemEvents.UserPreferenceChanged -= OnSystemThemeChanged;
             Share.StopAll();
+            LanShare.StopAll();
             SetStatus(I18n.T("main.stopping"));
             Enabled = false;
             // service mode: the Windows service keeps running without the window

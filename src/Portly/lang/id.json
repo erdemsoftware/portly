@@ -1008,5 +1008,20 @@
   "pkg.onSystemTomcat": "Terpasang di Windows (berjalan sebagai layanan Windows sendiri); Portly memakai salinannya sendiri",
   "svc.bulk": "Massal",
   "svc.bulkHint": "Terkunci (hijau): \"Jalankan semua\" dan \"Hentikan semua\" ikut mencakup layanan ini. Terbuka (merah): layanan ini dibiarkan; gunakan sakelar di sebelahnya.",
-  "main.databaseHint": "Membuka phpMyAdmin (sudah masuk selama root tidak memiliki kata sandi). Klik kanan untuk alat database lainnya."
+  "main.databaseHint": "Membuka phpMyAdmin (sudah masuk selama root tidak memiliki kata sandi). Klik kanan untuk alat database lainnya.",
+  "main.more": "Lainnya",
+  "project.isSub": "Ini adalah subproyek (dibuat di foldernya sendiri di dalam proyek utama)",
+  "project.pickParent": "Pilih proyek utama tempat subproyek akan dimasukkan.",
+  "share.button": "Bagikan",
+  "lan.start": "Bagikan di jaringan lokal (router / Wi-Fi yang sama)",
+  "lan.copy": "Salin alamat jaringan ({0})",
+  "lan.stop": "Hentikan berbagi di jaringan",
+  "lan.badge": "Di jaringan",
+  "lan.copied": "Alamat disalin: {0}",
+  "lan.confirm": "Bagikan {0} ke perangkat di jaringan lokal Anda?\n\nPonsel, tablet, dan komputer lain yang terhubung ke router atau Wi-Fi yang sama dapat membukanya dengan alamat seperti http://192.168.1.20:8900. Tidak keluar ke internet.\n\n- Hanya situs ini yang dibagikan. Situs lain, basis data, dan alat (phpMyAdmin, Adminer) tetap privat.\n- Jika Windows Firewall bertanya, izinkan Portly di jaringan pribadi.\n- Berjalan sampai Anda menghentikan berbagi atau menutup Portly.\n\nLanjutkan?",
+  "lan.ready": "Buka alamat ini di browser ponsel Anda atau perangkat lain:\n{0}\n\nAlamat sudah disalin. Perangkat harus terhubung ke router atau Wi-Fi yang sama. Jika tidak terbuka, izinkan Portly di Windows Firewall (jaringan pribadi) dan pastikan jaringan diatur ke Pribadi.",
+  "lan.started": "{0} dibagikan di jaringan lokal di {1}",
+  "lan.stopped": "Berbagi {0} di jaringan lokal dihentikan",
+  "lan.noNetwork": "Komputer ini tidak terhubung ke jaringan lokal (router tidak ditemukan).",
+  "lan.noPort": "Tidak ada port kosong untuk berbagi (8900-8999)."
 }

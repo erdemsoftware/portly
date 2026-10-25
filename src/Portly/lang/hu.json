@@ -1008,5 +1008,20 @@
   "pkg.onSystemTomcat": "Windowsra telepítve (saját Windows-szolgáltatásként fut); a Portly saját példányt használ",
   "svc.bulk": "Csoportos",
   "svc.bulkHint": "Zárva (zöld): az „Összes indítása” és az „Összes leállítása” ezt a szolgáltatást is kezeli. Nyitva (piros): ezt kihagyják; használja a mellette lévő kapcsolót.",
-  "main.databaseHint": "Megnyitja a phpMyAdmint (bejelentkezve, amíg a root felhasználónak nincs jelszava). A többi adatbázis-eszközért kattintson jobb gombbal."
+  "main.databaseHint": "Megnyitja a phpMyAdmint (bejelentkezve, amíg a root felhasználónak nincs jelszava). A többi adatbázis-eszközért kattintson jobb gombbal.",
+  "main.more": "Továbbiak",
+  "project.isSub": "Ez egy alprojekt (egy főprojekten belül, saját mappában jön létre)",
+  "project.pickParent": "Válaszd ki a főprojektet, amelybe az alprojekt kerül.",
+  "share.button": "Megosztás",
+  "lan.start": "Megosztás a helyi hálózaton (ugyanaz a router / Wi-Fi)",
+  "lan.copy": "Hálózati cím másolása ({0})",
+  "lan.stop": "Hálózati megosztás leállítása",
+  "lan.badge": "Hálózaton",
+  "lan.copied": "Cím másolva: {0}",
+  "lan.confirm": "Megosztod a(z) {0} webhelyet a helyi hálózatod eszközeivel?\n\nAz ugyanahhoz a routerhez vagy Wi-Fi-hez csatlakozó telefonok, tabletek és más számítógépek egy http://192.168.1.20:8900-hoz hasonló címen nyithatják meg. Nem kerül ki az internetre.\n\n- Csak ez a webhely lesz megosztva. A többi webhely, az adatbázis és az eszközök (phpMyAdmin, Adminer) privátak maradnak.\n- Ha a Windows tűzfal rákérdez, engedélyezd a Portlyt a magánhálózatokon.\n- Addig fut, amíg le nem állítod a megosztást vagy be nem zárod a Portlyt.\n\nFolytatod?",
+  "lan.ready": "Nyisd meg ezt a címet a telefonod vagy a másik eszköz böngészőjében:\n{0}\n\nA címet kimásoltuk. Az eszköznek ugyanahhoz a routerhez vagy Wi-Fi-hez kell csatlakoznia. Ha nem nyílik meg, engedélyezd a Portlyt a Windows tűzfalban (magánhálózatok), és ellenőrizd, hogy a hálózat Magánhálózat típusra van-e állítva.",
+  "lan.started": "{0} megosztva a helyi hálózaton itt: {1}",
+  "lan.stopped": "{0} helyi hálózati megosztása leállítva",
+  "lan.noNetwork": "Ez a számítógép nem csatlakozik helyi hálózathoz (nem található router).",
+  "lan.noPort": "Nem található szabad port a megosztáshoz (8900-8999)."
 }

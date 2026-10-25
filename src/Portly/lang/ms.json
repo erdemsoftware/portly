@@ -1008,5 +1008,20 @@
   "pkg.onSystemTomcat": "Dipasang dalam Windows (berjalan sebagai perkhidmatan Windows sendiri); Portly menggunakan salinannya sendiri",
   "svc.bulk": "Pukal",
   "svc.bulkHint": "Dikunci (hijau): \"Mulakan semua\" dan \"Hentikan semua\" turut merangkumi perkhidmatan ini. Terbuka (merah): perkhidmatan ini dibiarkan; gunakan suis di sebelahnya.",
-  "main.databaseHint": "Membuka phpMyAdmin (sudah log masuk selagi root tiada kata laluan). Klik kanan untuk alat pangkalan data yang lain."
+  "main.databaseHint": "Membuka phpMyAdmin (sudah log masuk selagi root tiada kata laluan). Klik kanan untuk alat pangkalan data yang lain.",
+  "main.more": "Lagi",
+  "project.isSub": "Ini ialah subprojek (dicipta dalam foldernya sendiri di dalam projek utama)",
+  "project.pickParent": "Pilih projek utama yang akan menempatkan subprojek ini.",
+  "share.button": "Kongsi",
+  "lan.start": "Kongsi di rangkaian setempat (penghala / Wi-Fi yang sama)",
+  "lan.copy": "Salin alamat rangkaian ({0})",
+  "lan.stop": "Henti berkongsi di rangkaian",
+  "lan.badge": "Di rangkaian",
+  "lan.copied": "Alamat disalin: {0}",
+  "lan.confirm": "Kongsi {0} dengan peranti dalam rangkaian setempat anda?\n\nTelefon, tablet dan komputer lain yang bersambung ke penghala atau Wi-Fi yang sama boleh membukanya dengan alamat seperti http://192.168.1.20:8900. Ia tidak keluar ke internet.\n\n- Hanya laman ini dikongsi. Laman lain, pangkalan data dan alatan (phpMyAdmin, Adminer) kekal peribadi.\n- Jika Windows Firewall bertanya, benarkan Portly pada rangkaian peribadi.\n- Ia berjalan sehingga anda menghentikan perkongsian atau menutup Portly.\n\nTeruskan?",
+  "lan.ready": "Buka alamat ini dalam pelayar telefon anda atau peranti lain:\n{0}\n\nAlamat telah disalin. Peranti mesti berada pada penghala atau Wi-Fi yang sama. Jika tidak terbuka, benarkan Portly dalam Windows Firewall (rangkaian peribadi) dan pastikan rangkaian ditetapkan sebagai Peribadi.",
+  "lan.started": "{0} dikongsi di rangkaian setempat di {1}",
+  "lan.stopped": "Perkongsian {0} di rangkaian setempat dihentikan",
+  "lan.noNetwork": "Komputer ini tidak bersambung ke rangkaian setempat (tiada penghala ditemui).",
+  "lan.noPort": "Tiada port kosong ditemui untuk berkongsi (8900-8999)."
 }

@@ -1008,5 +1008,20 @@
   "pkg.onSystemTomcat": "已安装在 Windows 上(作为独立的 Windows 服务运行);Portly 使用自己的副本",
   "svc.bulk": "批量",
   "svc.bulkHint": "锁定（绿色）：“全部启动”和“全部停止”包含此服务。打开（红色）：不会操作此服务；请使用旁边的开关。",
-  "main.databaseHint": "打开 phpMyAdmin（root 没有密码时自动登录）。右键单击可使用其他数据库工具。"
+  "main.databaseHint": "打开 phpMyAdmin（root 没有密码时自动登录）。右键单击可使用其他数据库工具。",
+  "main.more": "更多",
+  "project.isSub": "这是一个子项目（在主项目内的单独文件夹中创建）",
+  "project.pickParent": "选择子项目所属的主项目。",
+  "share.button": "分享",
+  "lan.start": "在局域网中分享（同一路由器 / Wi-Fi）",
+  "lan.copy": "复制网络地址（{0}）",
+  "lan.stop": "停止局域网分享",
+  "lan.badge": "局域网中",
+  "lan.copied": "地址已复制：{0}",
+  "lan.confirm": "要与局域网中的设备分享 {0} 吗？\n\n连接到同一路由器或 Wi-Fi 的手机、平板和其他电脑可以通过类似 http://192.168.1.20:8900 的地址打开它。不会公开到互联网。\n\n- 只分享此网站。其他网站、数据库和工具（phpMyAdmin、Adminer）保持私密。\n- 如果 Windows 防火墙询问，请允许 Portly 在专用网络上通信。\n- 一直运行到你停止分享或关闭 Portly。\n\n继续吗？",
+  "lan.ready": "在手机或其他设备的浏览器中打开此地址：\n{0}\n\n地址已复制。设备必须连接到同一路由器或 Wi-Fi。如果打不开，请在 Windows 防火墙中允许 Portly（专用网络），并检查网络是否设置为专用。",
+  "lan.started": "{0} 已在局域网中分享，地址为 {1}",
+  "lan.stopped": "已停止在局域网中分享 {0}",
+  "lan.noNetwork": "此电脑未连接到局域网（未找到路由器）。",
+  "lan.noPort": "没有找到可用于分享的空闲端口（8900-8999）。"
 }

@@ -1008,5 +1008,20 @@
   "pkg.onSystemTomcat": "Instalat în Windows (rulează ca serviciu Windows propriu); Portly folosește propria copie",
   "svc.bulk": "În bloc",
   "svc.bulkHint": "Blocat (verde): „Pornește tot” și „Oprește tot” includ acest serviciu. Deschis (roșu): îl lasă neatins; folosește comutatorul de lângă el.",
-  "main.databaseHint": "Deschide phpMyAdmin (autentificat cât timp root nu are parolă). Clic dreapta pentru celelalte instrumente de baze de date."
+  "main.databaseHint": "Deschide phpMyAdmin (autentificat cât timp root nu are parolă). Clic dreapta pentru celelalte instrumente de baze de date.",
+  "main.more": "Mai multe",
+  "project.isSub": "Acesta este un subproiect (creat în propriul folder în interiorul unui proiect principal)",
+  "project.pickParent": "Alege proiectul principal în care intră subproiectul.",
+  "share.button": "Partajează",
+  "lan.start": "Partajează în rețeaua locală (același router / Wi-Fi)",
+  "lan.copy": "Copiază adresa de rețea ({0})",
+  "lan.stop": "Oprește partajarea în rețea",
+  "lan.badge": "În rețea",
+  "lan.copied": "Adresă copiată: {0}",
+  "lan.confirm": "Partajezi {0} cu dispozitivele din rețeaua ta locală?\n\nTelefoanele, tabletele și alte computere conectate la același router sau Wi-Fi îl pot deschide cu o adresă precum http://192.168.1.20:8900. Nu ajunge pe internet.\n\n- Doar acest site este partajat. Celelalte site-uri, baza de date și instrumentele (phpMyAdmin, Adminer) rămân private.\n- Dacă Paravanul de protecție Windows întreabă, permite Portly în rețelele private.\n- Rulează până oprești partajarea sau închizi Portly.\n\nContinui?",
+  "lan.ready": "Deschide această adresă în browserul telefonului tău sau al celuilalt dispozitiv:\n{0}\n\nAdresa a fost copiată. Dispozitivul trebuie să fie conectat la același router sau Wi-Fi. Dacă nu se deschide, permite Portly în Paravanul de protecție Windows (rețele private) și verifică dacă rețeaua este setată ca Privată.",
+  "lan.started": "{0} este partajat în rețeaua locală la {1}",
+  "lan.stopped": "Partajarea {0} în rețeaua locală a fost oprită",
+  "lan.noNetwork": "Acest computer nu este conectat la o rețea locală (nu s-a găsit niciun router).",
+  "lan.noPort": "Nu s-a găsit niciun port liber pentru partajare (8900-8999)."
 }

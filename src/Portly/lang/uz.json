@@ -1008,5 +1008,20 @@
   "pkg.onSystemTomcat": "Windows'da o'rnatilgan (o'z Windows xizmati sifatida ishlaydi); Portly o'z nusxasidan foydalanadi",
   "svc.bulk": "Ommaviy",
   "svc.bulkHint": "Qulflangan (yashil): \"Hammasini ishga tushirish\" va \"Hammasini toʻxtatish\" bu xizmatni ham qamrab oladi. Ochiq (qizil): unga tegmaydi; yonidagi kalitdan foydalaning.",
-  "main.databaseHint": "phpMyAdmin'ni ochadi (root parolsiz ekan, tizimga kirilgan holda). Boshqa ma'lumotlar bazasi vositalari uchun o'ng tugmani bosing."
+  "main.databaseHint": "phpMyAdmin'ni ochadi (root parolsiz ekan, tizimga kirilgan holda). Boshqa ma'lumotlar bazasi vositalari uchun o'ng tugmani bosing.",
+  "main.more": "Yana",
+  "project.isSub": "Bu quyi loyiha (asosiy loyiha ichida alohida jildda yaratiladi)",
+  "project.pickParent": "Quyi loyiha joylashadigan asosiy loyihani tanlang.",
+  "share.button": "Ulashish",
+  "lan.start": "Mahalliy tarmoqda ulashish (bitta router / Wi-Fi)",
+  "lan.copy": "Tarmoq manzilini nusxalash ({0})",
+  "lan.stop": "Tarmoqda ulashishni toʻxtatish",
+  "lan.badge": "Tarmoqda",
+  "lan.copied": "Manzil nusxalandi: {0}",
+  "lan.confirm": "{0} mahalliy tarmogʻingizdagi qurilmalar bilan ulashilsinmi?\n\nBitta router yoki Wi-Fi ga ulangan telefon, planshet va boshqa kompyuterlar uni http://192.168.1.20:8900 kabi manzil bilan ocha oladi. Internetga chiqmaydi.\n\n- Faqat shu sayt ulashiladi. Boshqa saytlaringiz, maʼlumotlar bazasi va vositalar (phpMyAdmin, Adminer) yopiq qoladi.\n- Windows brandmaueri soʻrasa, Portly ga xususiy tarmoqlarda ruxsat bering.\n- Ulashishni toʻxtatguningizcha yoki Portly ni yopguningizcha ishlaydi.\n\nDavom etilsinmi?",
+  "lan.ready": "Bu manzilni telefoningiz yoki boshqa qurilma brauzerida oching:\n{0}\n\nManzil nusxalandi. Qurilma bitta router yoki Wi-Fi ga ulangan boʻlishi kerak. Ochilmasa, Windows brandmauerida Portly ga ruxsat bering (xususiy tarmoqlar) va tarmoq Xususiy deb sozlanganini tekshiring.",
+  "lan.started": "{0} mahalliy tarmoqda {1} manzilida ulashildi",
+  "lan.stopped": "{0} mahalliy tarmoqda ulashish toʻxtatildi",
+  "lan.noNetwork": "Bu kompyuter mahalliy tarmoqqa ulanmagan (router topilmadi).",
+  "lan.noPort": "Ulashish uchun boʻsh port topilmadi (8900-8999)."
 }

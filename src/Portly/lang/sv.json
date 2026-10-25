@@ -1008,5 +1008,20 @@
   "pkg.onSystemTomcat": "Installerat i Windows (körs som egen Windows-tjänst); Portly använder en egen kopia",
   "svc.bulk": "Gruppvis",
   "svc.bulkHint": "Låst (grön): ”Starta alla” och ”Stoppa alla” omfattar den här tjänsten. Öppen (röd): de lämnar den orörd; använd reglaget bredvid.",
-  "main.databaseHint": "Öppnar phpMyAdmin (inloggad så länge root saknar lösenord). Högerklicka för de andra databasverktygen."
+  "main.databaseHint": "Öppnar phpMyAdmin (inloggad så länge root saknar lösenord). Högerklicka för de andra databasverktygen.",
+  "main.more": "Mer",
+  "project.isSub": "Det här är ett delprojekt (skapas i en egen mapp i ett huvudprojekt)",
+  "project.pickParent": "Välj huvudprojektet som delprojektet ska ligga i.",
+  "share.button": "Dela",
+  "lan.start": "Dela på det lokala nätverket (samma router / Wi-Fi)",
+  "lan.copy": "Kopiera nätverksadressen ({0})",
+  "lan.stop": "Sluta dela på nätverket",
+  "lan.badge": "På nätverket",
+  "lan.copied": "Adressen kopierad: {0}",
+  "lan.confirm": "Dela {0} med enheterna i ditt lokala nätverk?\n\nTelefoner, surfplattor och andra datorer som är anslutna till samma router eller Wi-Fi kan öppna den med en adress som http://192.168.1.20:8900. Den går inte ut på internet.\n\n- Bara den här webbplatsen delas. Dina andra webbplatser, databasen och verktygen (phpMyAdmin, Adminer) förblir privata.\n- Om Windows-brandväggen frågar, tillåt Portly i privata nätverk.\n- Den körs tills du slutar dela eller stänger Portly.\n\nFortsätta?",
+  "lan.ready": "Öppna den här adressen i webbläsaren på din telefon eller den andra enheten:\n{0}\n\nAdressen är kopierad. Enheten måste vara ansluten till samma router eller Wi-Fi. Om den inte öppnas, tillåt Portly i Windows-brandväggen (privata nätverk) och kontrollera att nätverket är inställt på Privat.",
+  "lan.started": "{0} delas på det lokala nätverket på {1}",
+  "lan.stopped": "Delning av {0} på det lokala nätverket stoppades",
+  "lan.noNetwork": "Den här datorn är inte ansluten till något lokalt nätverk (ingen router hittades).",
+  "lan.noPort": "Ingen ledig port hittades för delning (8900-8999)."
 }

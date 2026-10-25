@@ -14,7 +14,8 @@ namespace Portly.UI
     public class NewProjectForm : Form
     {
         readonly TextBox _name;
-        readonly CheckBox _db, _open, _wpFull;
+        readonly CheckBox _db, _open, _wpFull, _sub;
+        readonly ThemedCombo _parent;
         readonly Label _status, _url;
         readonly ModernButton _create, _cancel;
         readonly List<ModernButton> _tiles = new List<ModernButton>();
@@ -44,6 +45,18 @@ namespace Portly.UI
             _url = Ui.Label(" ", Ui.Small, Ui.Muted);
             t.Controls.Add(_url);
             _name.TextChanged += (s, e) => UpdateUrl();
+
+            // sub-project: created in its own folder inside the chosen project (name.parent.tld)
+            _sub = new CheckBox { Text = I18n.T("project.isSub"), AutoSize = true, Margin = Ui.P(0, 6, 0, 2) };
+            _parent = new ThemedCombo { Width = Ui.S(400), Margin = Ui.P(20, 2, 0, 2), Enabled = false };
+            foreach (var p in Config.Sites.Scan().Where(x => x.Name.IndexOf('/') < 0 && x.Valid && !x.Archived).OrderBy(x => x.Name, StringComparer.OrdinalIgnoreCase))
+                _parent.Items.Add(p.Name);
+            if (_parent.Items.Count == 0) _sub.Enabled = false;
+            else _parent.SelectedIndex = 0;
+            _sub.CheckedChanged += (s, e) => { _parent.Enabled = _sub.Checked; UpdateUrl(); };
+            _parent.SelectedIndexChanged += (s, e) => UpdateUrl();
+            t.Controls.Add(_sub);
+            t.Controls.Add(_parent);
 
             t.Controls.Add(Section("PHP"));
             var php = Flow();
@@ -151,14 +164,19 @@ namespace Portly.UI
         {
             var n = _name.Text.Trim();
             var s = Settings.Current;
-            _url.Text = n == "" ? I18n.T("project.urlHint", s.Tld) : (s.Ssl ? "https://" : "http://") + n.ToLowerInvariant() + "." + s.Tld;
+            _url.Text = n == "" ? I18n.T("project.urlHint", s.Tld) : (s.Ssl ? "https://" : "http://") + ProjectCreator.HostFor(n, ParentProject);
             _url.ForeColor = n == "" || Config.Sites.IsValidName(n) ? Ui.Muted : Ui.Red;
         }
+
+        /// <summary>The chosen main project when "This is a sub-project" is ticked, otherwise null.</summary>
+        string ParentProject { get { return _sub != null && _sub.Checked ? _parent.SelectedItem as string : null; } }
 
         async void Create()
         {
             var name = _name.Text.Trim();
-            var err = ProjectCreator.ValidateName(name);
+            var parent = ParentProject;
+            if (_sub.Checked && parent == null) { Ui.Error(this, I18n.T("project.pickParent")); return; }
+            var err = ProjectCreator.ValidateName(name, parent);
             if (err != null) { Ui.Error(this, err); return; }
             var template = _template;
             bool wantDb = _db.Enabled && _db.Checked;
@@ -171,8 +189,8 @@ namespace Portly.UI
             _cts = new CancellationTokenSource();
             try
             {
-                var msg = await ProjectCreator.CreateAsync(name, template, wantDb, _wpFull.Visible && _wpFull.Checked, s => BeginInvoke((Action)(() => _status.Text = s)), _cts.Token);
-                CreatedName = name;
+                var msg = await ProjectCreator.CreateAsync(name, template, wantDb, _wpFull.Visible && _wpFull.Checked, parent, s => BeginInvoke((Action)(() => _status.Text = s)), _cts.Token);
+                CreatedName = parent == null ? name : parent + "/" + name;
                 Ui.Info(this, msg);
                 DialogResult = DialogResult.OK;
                 Close();

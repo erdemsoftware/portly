@@ -1008,5 +1008,20 @@
   "pkg.onSystemTomcat": "Instalado no Windows (roda como seu próprio serviço do Windows); o Portly usa a própria cópia",
   "svc.bulk": "Em lote",
   "svc.bulkHint": "Bloqueado (verde): \"Iniciar tudo\" e \"Parar tudo\" incluem este serviço. Aberto (vermelho): eles não mexem nele; use o botão ao lado.",
-  "main.databaseHint": "Abre o phpMyAdmin (já conectado enquanto o root não tiver senha). Clique com o botão direito para as outras ferramentas de banco de dados."
+  "main.databaseHint": "Abre o phpMyAdmin (já conectado enquanto o root não tiver senha). Clique com o botão direito para as outras ferramentas de banco de dados.",
+  "main.more": "Mais",
+  "project.isSub": "Este é um subprojeto (criado em uma pasta própria dentro de um projeto principal)",
+  "project.pickParent": "Escolha o projeto principal em que o subprojeto vai ficar.",
+  "share.button": "Compartilhar",
+  "lan.start": "Compartilhar na rede local (mesmo roteador / Wi-Fi)",
+  "lan.copy": "Copiar o endereço de rede ({0})",
+  "lan.stop": "Parar de compartilhar na rede",
+  "lan.badge": "Na rede",
+  "lan.copied": "Endereço copiado: {0}",
+  "lan.confirm": "Compartilhar {0} com os dispositivos da sua rede local?\n\nCelulares, tablets e outros computadores conectados ao mesmo roteador ou Wi-Fi podem abri-lo com um endereço como http://192.168.1.20:8900. Ele não vai para a internet.\n\n- Só este site é compartilhado. Seus outros sites, o banco de dados e as ferramentas (phpMyAdmin, Adminer) continuam privados.\n- Se o Firewall do Windows perguntar, permita o Portly em redes privadas.\n- Funciona até você parar o compartilhamento ou fechar o Portly.\n\nContinuar?",
+  "lan.ready": "Abra este endereço no navegador do seu celular ou do outro dispositivo:\n{0}\n\nO endereço foi copiado. O dispositivo precisa estar no mesmo roteador ou Wi-Fi. Se não abrir, permita o Portly no Firewall do Windows (redes privadas) e verifique se a rede está definida como Privada.",
+  "lan.started": "{0} está compartilhado na rede local em {1}",
+  "lan.stopped": "Compartilhamento de {0} na rede local parado",
+  "lan.noNetwork": "Este computador não está conectado a uma rede local (nenhum roteador encontrado).",
+  "lan.noPort": "Nenhuma porta livre foi encontrada para compartilhar (8900-8999)."
 }

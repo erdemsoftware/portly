@@ -1008,5 +1008,20 @@
   "pkg.onSystemTomcat": "Installed on Windows (runs as its own Windows service); Portly uses its own copy",
   "svc.bulk": "Bulk",
   "svc.bulkHint": "Locked (green): \"Start all\" and \"Stop all\" include this service. Open (red): they leave it alone; use the switch next to it.",
-  "main.databaseHint": "Opens phpMyAdmin (logged in while root has no password). Right-click for the other database tools."
+  "main.databaseHint": "Opens phpMyAdmin (logged in while root has no password). Right-click for the other database tools.",
+  "main.more": "More",
+  "project.isSub": "This is a sub-project (created in its own folder inside a main project)",
+  "project.pickParent": "Pick the main project the sub-project goes into.",
+  "share.button": "Share",
+  "lan.start": "Share on the local network (same router / Wi-Fi)",
+  "lan.copy": "Copy the network address ({0})",
+  "lan.stop": "Stop sharing on the network",
+  "lan.badge": "On the network",
+  "lan.copied": "Address copied: {0}",
+  "lan.confirm": "Share {0} with the devices on your local network?\n\nPhones, tablets and other computers connected to the same router or Wi-Fi can open it with an address like http://192.168.1.20:8900. It does not go to the internet.\n\n- Only this site is shared. Your other sites, the database and the tools (phpMyAdmin, Adminer) stay private.\n- If Windows Firewall asks, allow Portly on private networks.\n- It runs until you stop sharing or close Portly.\n\nContinue?",
+  "lan.ready": "Open this address in the browser of your phone or the other device:\n{0}\n\nThe address is copied. The device must be on the same router or Wi-Fi. If it does not open, allow Portly in Windows Firewall (private networks) and check that the network is set to Private.",
+  "lan.started": "{0} is shared on the local network at {1}",
+  "lan.stopped": "Sharing of {0} on the local network stopped",
+  "lan.noNetwork": "This computer is not connected to a local network (no router found).",
+  "lan.noPort": "No free port was found for sharing (8900-8999)."
 }

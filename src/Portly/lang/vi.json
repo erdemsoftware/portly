@@ -1008,5 +1008,20 @@
   "pkg.onSystemTomcat": "Đã cài trên Windows (chạy như dịch vụ Windows riêng); Portly dùng bản sao của riêng mình",
   "svc.bulk": "Hàng loạt",
   "svc.bulkHint": "Khóa (xanh lá): \"Chạy tất cả\" và \"Dừng tất cả\" bao gồm cả dịch vụ này. Mở (đỏ): hai lệnh này bỏ qua nó; hãy dùng công tắc bên cạnh.",
-  "main.databaseHint": "Mở phpMyAdmin (đã đăng nhập khi root chưa có mật khẩu). Nhấp chuột phải để xem các công cụ cơ sở dữ liệu khác."
+  "main.databaseHint": "Mở phpMyAdmin (đã đăng nhập khi root chưa có mật khẩu). Nhấp chuột phải để xem các công cụ cơ sở dữ liệu khác.",
+  "main.more": "Thêm",
+  "project.isSub": "Đây là dự án con (được tạo trong thư mục riêng bên trong một dự án chính)",
+  "project.pickParent": "Chọn dự án chính để đặt dự án con vào.",
+  "share.button": "Chia sẻ",
+  "lan.start": "Chia sẻ trong mạng cục bộ (cùng router / Wi-Fi)",
+  "lan.copy": "Sao chép địa chỉ mạng ({0})",
+  "lan.stop": "Dừng chia sẻ trong mạng",
+  "lan.badge": "Trong mạng",
+  "lan.copied": "Đã sao chép địa chỉ: {0}",
+  "lan.confirm": "Chia sẻ {0} với các thiết bị trong mạng cục bộ của bạn?\n\nĐiện thoại, máy tính bảng và máy tính khác kết nối cùng router hoặc Wi-Fi có thể mở trang bằng địa chỉ như http://192.168.1.20:8900. Không ra internet.\n\n- Chỉ trang này được chia sẻ. Các trang khác, cơ sở dữ liệu và công cụ (phpMyAdmin, Adminer) vẫn riêng tư.\n- Nếu Windows Firewall hỏi, hãy cho phép Portly trên mạng riêng.\n- Chạy cho đến khi bạn dừng chia sẻ hoặc đóng Portly.\n\nTiếp tục?",
+  "lan.ready": "Mở địa chỉ này trong trình duyệt của điện thoại hoặc thiết bị khác:\n{0}\n\nĐã sao chép địa chỉ. Thiết bị phải kết nối cùng router hoặc Wi-Fi. Nếu không mở được, hãy cho phép Portly trong Windows Firewall (mạng riêng) và kiểm tra mạng đã được đặt là Riêng tư.",
+  "lan.started": "{0} được chia sẻ trong mạng cục bộ tại {1}",
+  "lan.stopped": "Đã dừng chia sẻ {0} trong mạng cục bộ",
+  "lan.noNetwork": "Máy tính này không kết nối với mạng cục bộ nào (không tìm thấy router).",
+  "lan.noPort": "Không tìm thấy cổng trống để chia sẻ (8900-8999)."
 }

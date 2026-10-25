@@ -1008,5 +1008,20 @@
   "pkg.onSystemTomcat": "Installato su Windows (funziona come servizio Windows proprio); Portly usa la sua copia",
   "svc.bulk": "In blocco",
   "svc.bulkHint": "Bloccato (verde): \"Avvia tutto\" e \"Ferma tutto\" includono questo servizio. Aperto (rosso): lo lasciano com’è; usa l’interruttore accanto.",
-  "main.databaseHint": "Apre phpMyAdmin (con accesso già effettuato finché root non ha una password). Clic destro per gli altri strumenti database."
+  "main.databaseHint": "Apre phpMyAdmin (con accesso già effettuato finché root non ha una password). Clic destro per gli altri strumenti database.",
+  "main.more": "Altro",
+  "project.isSub": "Questo è un sottoprogetto (creato in una propria cartella dentro un progetto principale)",
+  "project.pickParent": "Scegli il progetto principale in cui va il sottoprogetto.",
+  "share.button": "Condividi",
+  "lan.start": "Condividi sulla rete locale (stesso router / Wi-Fi)",
+  "lan.copy": "Copia l'indirizzo di rete ({0})",
+  "lan.stop": "Interrompi condivisione in rete",
+  "lan.badge": "In rete",
+  "lan.copied": "Indirizzo copiato: {0}",
+  "lan.confirm": "Condividere {0} con i dispositivi della tua rete locale?\n\nTelefoni, tablet e altri computer collegati allo stesso router o Wi-Fi possono aprirlo con un indirizzo come http://192.168.1.20:8900. Non esce su Internet.\n\n- Viene condiviso solo questo sito. Gli altri siti, il database e gli strumenti (phpMyAdmin, Adminer) restano privati.\n- Se Windows Firewall lo chiede, consenti Portly sulle reti private.\n- Resta attivo finché non interrompi la condivisione o chiudi Portly.\n\nContinuare?",
+  "lan.ready": "Apri questo indirizzo nel browser del tuo telefono o dell'altro dispositivo:\n{0}\n\nL'indirizzo è stato copiato. Il dispositivo deve essere sullo stesso router o Wi-Fi. Se non si apre, consenti Portly in Windows Firewall (reti private) e controlla che la rete sia impostata come Privata.",
+  "lan.started": "{0} è condiviso sulla rete locale su {1}",
+  "lan.stopped": "Condivisione di {0} sulla rete locale interrotta",
+  "lan.noNetwork": "Questo computer non è collegato a una rete locale (nessun router trovato).",
+  "lan.noPort": "Nessuna porta libera trovata per la condivisione (8900-8999)."
 }

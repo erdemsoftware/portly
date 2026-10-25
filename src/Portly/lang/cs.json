@@ -1008,5 +1008,20 @@
   "pkg.onSystemTomcat": "Nainstalováno ve Windows (běží jako vlastní služba Windows); Portly používá vlastní kopii",
   "svc.bulk": "Hromadně",
   "svc.bulkHint": "Zamčeno (zelená): „Spustit vše“ a „Zastavit vše“ zahrnují i tuto službu. Odemčeno (červená): tuto službu vynechají; použijte přepínač vedle ní.",
-  "main.databaseHint": "Otevře phpMyAdmin (přihlášený, dokud root nemá heslo). Pro další databázové nástroje klikněte pravým tlačítkem."
+  "main.databaseHint": "Otevře phpMyAdmin (přihlášený, dokud root nemá heslo). Pro další databázové nástroje klikněte pravým tlačítkem.",
+  "main.more": "Další",
+  "project.isSub": "Toto je podprojekt (vytvoří se ve vlastní složce uvnitř hlavního projektu)",
+  "project.pickParent": "Vyberte hlavní projekt, do kterého podprojekt patří.",
+  "share.button": "Sdílet",
+  "lan.start": "Sdílet v místní síti (stejný router / Wi-Fi)",
+  "lan.copy": "Kopírovat síťovou adresu ({0})",
+  "lan.stop": "Zastavit sdílení v síti",
+  "lan.badge": "V síti",
+  "lan.copied": "Adresa zkopírována: {0}",
+  "lan.confirm": "Sdílet {0} se zařízeními ve vaší místní síti?\n\nTelefony, tablety a další počítače připojené ke stejnému routeru nebo Wi-Fi ho mohou otevřít na adrese jako http://192.168.1.20:8900. Na internet se nedostane.\n\n- Sdílí se jen tento web. Ostatní weby, databáze a nástroje (phpMyAdmin, Adminer) zůstávají soukromé.\n- Pokud se Brána firewall systému Windows zeptá, povolte Portly v privátních sítích.\n- Běží, dokud sdílení nezastavíte nebo nezavřete Portly.\n\nPokračovat?",
+  "lan.ready": "Otevřete tuto adresu v prohlížeči telefonu nebo jiného zařízení:\n{0}\n\nAdresa je zkopírována. Zařízení musí být připojeno ke stejnému routeru nebo Wi-Fi. Pokud se neotevře, povolte Portly v Bráně firewall systému Windows (privátní sítě) a zkontrolujte, že je síť nastavená jako Privátní.",
+  "lan.started": "{0} je sdílen v místní síti na {1}",
+  "lan.stopped": "Sdílení {0} v místní síti zastaveno",
+  "lan.noNetwork": "Tento počítač není připojen k místní síti (nebyl nalezen žádný router).",
+  "lan.noPort": "Pro sdílení nebyl nalezen žádný volný port (8900-8999)."
 }

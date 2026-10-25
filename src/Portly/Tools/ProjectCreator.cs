@@ -39,11 +39,28 @@ namespace Portly.Tools
 
         public static Tuple<string, string, string, string> TerminalTemplate(string key) { return TerminalTemplates.FirstOrDefault(t => t.Item1 == key); }
 
-        public static string ValidateName(string name)
+        public static string ValidateName(string name) { return ValidateName(name, null); }
+
+        /// <param name="parent">Name of the project the new one goes into (a sub-project), or null.</param>
+        public static string ValidateName(string name, string parent)
         {
             if (!Sites.IsValidName(name)) return I18n.T("err.projectName");
-            if (Directory.Exists(Path.Combine(Settings.Current.DocumentRoot, name))) return I18n.T("err.projectExists", name);
+            if (Directory.Exists(Path.Combine(BaseDir(parent), name))) return I18n.T("err.projectExists", name);
             return null;
+        }
+
+        /// <summary>Folder the project is created in: the projects folder, or the parent project's folder.</summary>
+        public static string BaseDir(string parent)
+        {
+            var root = Settings.Current.DocumentRoot;
+            return string.IsNullOrEmpty(parent) ? root : Path.Combine(root, parent);
+        }
+
+        /// <summary>Address of a new project: name.tld, or name.parent.tld for a sub-project.</summary>
+        public static string HostFor(string name, string parent)
+        {
+            var host = name.ToLowerInvariant() + "." + (string.IsNullOrEmpty(parent) ? "" : parent.ToLowerInvariant() + ".");
+            return host + Settings.Current.Tld;
         }
 
         public static string DbNameFor(string project) { return project.Replace('-', '_').Replace('/', '_').ToLowerInvariant(); }
@@ -55,27 +72,36 @@ namespace Portly.Tools
         }
 
         /// <param name="wpFullInstall">WordPress: also run the installer (site title, admin account) with WP-CLI.</param>
-        public static async Task<string> CreateAsync(string name, string template, bool createDb, bool wpFullInstall, Action<string> status, CancellationToken ct)
+        public static Task<string> CreateAsync(string name, string template, bool createDb, bool wpFullInstall, Action<string> status, CancellationToken ct)
         {
-            var err = ValidateName(name);
+            return CreateAsync(name, template, createDb, wpFullInstall, null, status, ct);
+        }
+
+        /// <param name="parent">Create it as a sub-project inside this project's folder (address name.parent.tld).</param>
+        public static async Task<string> CreateAsync(string name, string template, bool createDb, bool wpFullInstall, string parent, Action<string> status, CancellationToken ct)
+        {
+            var err = ValidateName(name, parent);
             if (err != null) throw new Exception(err);
-            var root = Settings.Current.DocumentRoot;
+            var root = BaseDir(parent);
             Directory.CreateDirectory(root);
             var dir = Path.Combine(root, name);
+            // "shop/blog" for a sub-project: its sites.ini section and database name (shop_blog)
+            var siteName = string.IsNullOrEmpty(parent) ? name : parent + "/" + name;
+            if (!string.IsNullOrEmpty(parent)) Sites.MarkSubProject(parent, name);
             string dbMsg = "";
             if (createDb && template == "wordpress" || createDb && template == "blank")
             {
-                var dbErr = Database.CreateDatabase(DbNameFor(name));
-                dbMsg = dbErr == null ? "\n" + I18n.T("project.dbCreated", DbNameFor(name)) : "\n" + I18n.T("project.dbFailed", dbErr);
+                var dbErr = Database.CreateDatabase(DbNameFor(siteName));
+                dbMsg = dbErr == null ? "\n" + I18n.T("project.dbCreated", DbNameFor(siteName)) : "\n" + I18n.T("project.dbFailed", dbErr);
             }
 
             switch (template)
             {
                 case "wordpress":
-                    await CreateWordPress(dir, name, status, ct);
-                    if (wpFullInstall && createDb && dbMsg.Contains(DbNameFor(name)) && ServiceManager.MySql.State == ServiceState.Running)
+                    await CreateWordPress(dir, siteName, status, ct);
+                    if (wpFullInstall && createDb && dbMsg.Contains(DbNameFor(siteName)) && ServiceManager.MySql.State == ServiceState.Running)
                     {
-                        var creds = await InstallWordPress(dir, name, status, ct);
+                        var creds = await InstallWordPress(dir, name, HostFor(name, parent), status, ct);
                         Log.Info(I18n.T("log.projectCreated", name));
                         return I18n.T("project.created", name) + dbMsg + "\n\n" + creds;
                     }
@@ -99,9 +125,11 @@ namespace Portly.Tools
                         throw new Exception(I18n.T("err.needNode"));
                     if (createDb && tt.Item3 == "composer")
                     {
-                        var dbErr2 = Database.CreateDatabase(DbNameFor(name));
-                        dbMsg = dbErr2 == null ? "\n" + I18n.T("project.dbCreated", DbNameFor(name)) : "";
+                        var dbErr2 = Database.CreateDatabase(DbNameFor(siteName));
+                        dbMsg = dbErr2 == null ? "\n" + I18n.T("project.dbCreated", DbNameFor(siteName)) : "";
                     }
+                    // Node apps (Next, Nuxt, Angular ...) have no index file to recognise them by: keep them listed
+                    if (tt.Item3 == "node") Sites.MarkNodeProject(siteName);
                     var after = tt.Item3 == "node" ? " && echo. && echo " + I18n.T("project.nodeDone", name) : " && echo. && echo " + I18n.T("project.laravelDone");
                     Terminal.Run(root, string.Format(tt.Item4, name) + after);
                     return I18n.T("project.composerStarted", tt.Item2) + dbMsg;
@@ -140,7 +168,7 @@ namespace Portly.Tools
         }
 
         /// <summary>Runs "wp core install" so the site is ready to use (no setup wizard). Returns the login text.</summary>
-        static async Task<string> InstallWordPress(string dir, string name, Action<string> status, CancellationToken ct)
+        static async Task<string> InstallWordPress(string dir, string name, string host, Action<string> status, CancellationToken ct)
         {
             if (PackageTypes.ActiveDir("wpcli") == null)
             {
@@ -152,7 +180,6 @@ namespace Portly.Tools
             status(I18n.T("project.wpInstalling"));
             var php = Path.Combine(PackageTypes.ActiveDir("php"), "php.exe");
             var phar = Path.Combine(PackageTypes.ActiveDir("wpcli"), "wp-cli.phar");
-            var host = name.ToLowerInvariant() + "." + Settings.Current.Tld;
             var url = new Config.Site { Host = host }.PreferredUrl.TrimEnd('/');
             var password = RandomSalt().Replace("\"", "").Replace("'", "").Replace("%", "").Replace("^", "").Replace("&", "").Replace("<", "").Replace(">", "").Replace("|", "").Substring(0, 16);
             // WP-CLI bundles libraries that print PHP 8.5 deprecation notices: keep them out of the result
@@ -183,13 +210,18 @@ namespace Portly.Tools
                 php.AppendLine("    if (is_file($bundle)) { $args['sslcertificates'] = $bundle; }");
                 php.AppendLine("    return $args;");
                 php.AppendLine("});");
-                php.AppendLine("// Shared with \"Share on the internet\": answer with the public address instead of redirecting to ." + Settings.Current.Tld);
+                php.AppendLine("// Shared with \"Share on the internet\" or on the local network: answer with the public address instead of redirecting to ." + Settings.Current.Tld);
                 php.AppendLine("$portlyHost = isset($_SERVER['HTTP_X_FORWARDED_HOST']) ? $_SERVER['HTTP_X_FORWARDED_HOST'] : '';");
                 php.AppendLine("if (preg_match('/^[a-z0-9-]+\\.trycloudflare\\.com$/i', $portlyHost)) {");
                 php.AppendLine("    $portlyUrl = 'https://' . $portlyHost;");
                 php.AppendLine("    add_filter('option_home', function () use ($portlyUrl) { return $portlyUrl; });");
                 php.AppendLine("    add_filter('option_siteurl', function () use ($portlyUrl) { return $portlyUrl; });");
                 php.AppendLine("    $_SERVER['HTTPS'] = 'on';");
+                php.AppendLine("} elseif (preg_match('/^(?=(10|172\\.(1[6-9]|2[0-9]|3[01])|192\\.168)\\.)[0-9]{1,3}(\\.[0-9]{1,3}){3}:[0-9]+$/', $portlyHost)) {");
+                php.AppendLine("    // shared on the local network (phone, tablet): http://192.168.x.x:port");
+                php.AppendLine("    $portlyUrl = 'http://' . $portlyHost;");
+                php.AppendLine("    add_filter('option_home', function () use ($portlyUrl) { return $portlyUrl; });");
+                php.AppendLine("    add_filter('option_siteurl', function () use ($portlyUrl) { return $portlyUrl; });");
                 php.AppendLine("}");
                 File.WriteAllText(Path.Combine(mu, "portly-local-ca.php"), php.ToString(), new UTF8Encoding(false));
             }
