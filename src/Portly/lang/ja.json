@@ -1005,5 +1005,7 @@
   "tomcat.openPage": "Tomcat ページを開く",
   "tomcat.openWebapps": "webapps フォルダーを開く (ここに WAR ファイルを置きます)",
   "settings.tomcatPort": "Tomcat ポート",
-  "pkg.onSystemTomcat": "Windows にインストール済み (独自の Windows サービスとして動作)。Portly は自身のコピーを使用します"
+  "pkg.onSystemTomcat": "Windows にインストール済み (独自の Windows サービスとして動作)。Portly は自身のコピーを使用します",
+  "svc.bulk": "一括",
+  "svc.bulkHint": "ロック（緑）：「すべて起動」と「すべて停止」の対象にこのサービスを含めます。解除（赤）：このサービスは対象外です。横のスイッチで操作してください。"
 }

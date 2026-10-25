@@ -1005,5 +1005,7 @@
   "tomcat.openPage": "Tomcat oldal megnyitása",
   "tomcat.openWebapps": "webapps mappa megnyitása (ide húzd a WAR fájlt)",
   "settings.tomcatPort": "Tomcat port",
-  "pkg.onSystemTomcat": "Windowsra telepítve (saját Windows-szolgáltatásként fut); a Portly saját példányt használ"
+  "pkg.onSystemTomcat": "Windowsra telepítve (saját Windows-szolgáltatásként fut); a Portly saját példányt használ",
+  "svc.bulk": "Csoportos",
+  "svc.bulkHint": "Zárva (zöld): az „Összes indítása” és az „Összes leállítása” ezt a szolgáltatást is kezeli. Nyitva (piros): ezt kihagyják; használja a mellette lévő kapcsolót."
 }

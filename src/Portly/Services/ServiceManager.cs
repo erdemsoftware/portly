@@ -54,6 +54,42 @@ namespace Portly.Services
             get { return AllServices.Any(s => s.State != ServiceState.Stopped && s.State != ServiceState.Error); }
         }
 
+        /// <summary>Services on the main window with their "Bulk" switch on (what Start all / Stop all act on).</summary>
+        public static List<Service> BulkRows
+        {
+            get { var s = Settings.Current; return Rows.Where(x => x.Id != "php" && s.IsEnabled(x.Id)).ToList(); }
+        }
+
+        /// <summary>Is any service of the bulk group running? Decides between "Start all" and "Stop all".</summary>
+        public static bool AnyBulkActive
+        {
+            get { return BulkRows.Any(x => x.State != ServiceState.Stopped && x.State != ServiceState.Error); }
+        }
+
+        /// <summary>
+        /// Stop all: only the services in the bulk group; ones the user started by hand with "Bulk" off keep running.
+        /// (Closing Portly or Windows shutting down still stops everything through StopAllAsync.)
+        /// </summary>
+        public static Task StopBulkAsync()
+        {
+            if (ServiceMode.IsController) return ServiceMode.StopAllAsync();
+            return Task.Run(async () =>
+            {
+                var list = BulkRows.Where(x => x.State != ServiceState.Stopped && x.State != ServiceState.Error).ToList();
+                if (list.Count == 0) return;
+                await Tools.Hooks.RunAsync("before-stop");
+                var tasks = new List<Task>();
+                foreach (var svc in list)
+                {
+                    // the web server takes its PHP pools and the site jobs with it
+                    if (svc.Id == "web") { await Tools.Jobs.StopAllAsync(); tasks.Add(StopWebAsync()); }
+                    else tasks.Add(svc.StopAsync());
+                }
+                await Task.WhenAll(tasks);
+                await Tools.Hooks.RunAsync("after-stop");
+            });
+        }
+
         public static List<Site> RefreshSites()
         {
             CurrentSites = Sites.Scan();

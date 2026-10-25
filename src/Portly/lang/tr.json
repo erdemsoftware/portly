@@ -1005,5 +1005,7 @@
   "tomcat.openPage": "Tomcat sayfasını aç",
   "tomcat.openWebapps": "webapps klasörünü aç (WAR dosyasını buraya bırakın)",
   "settings.tomcatPort": "Tomcat portu",
-  "pkg.onSystemTomcat": "Windows'ta kurulu (kendi Windows hizmetiyle çalışır); Portly kendi kopyasını kullanır"
+  "pkg.onSystemTomcat": "Windows'ta kurulu (kendi Windows hizmetiyle çalışır); Portly kendi kopyasını kullanır",
+  "svc.bulk": "Toplu",
+  "svc.bulkHint": "Kilitli (yeşil): \"Hepsini başlat\" ve \"Hepsini durdur\" bu servisi de açıp kapatır. Açık (kırmızı): toplu işlem dokunmaz; yanındaki anahtarla kendin açıp kapatırsın."
 }

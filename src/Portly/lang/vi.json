@@ -1005,5 +1005,7 @@
   "tomcat.openPage": "Mở trang Tomcat",
   "tomcat.openWebapps": "Mở thư mục webapps (thả tệp WAR vào đây)",
   "settings.tomcatPort": "Cổng Tomcat",
-  "pkg.onSystemTomcat": "Đã cài trên Windows (chạy như dịch vụ Windows riêng); Portly dùng bản sao của riêng mình"
+  "pkg.onSystemTomcat": "Đã cài trên Windows (chạy như dịch vụ Windows riêng); Portly dùng bản sao của riêng mình",
+  "svc.bulk": "Hàng loạt",
+  "svc.bulkHint": "Khóa (xanh lá): \"Chạy tất cả\" và \"Dừng tất cả\" bao gồm cả dịch vụ này. Mở (đỏ): hai lệnh này bỏ qua nó; hãy dùng công tắc bên cạnh."
 }

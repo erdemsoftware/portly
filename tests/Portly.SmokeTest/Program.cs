@@ -372,6 +372,17 @@ namespace Portly.SmokeTest
             await WebChecks("Nginx", php, php84);
             await ServiceManager.SwitchWebServerAsync("apache");
 
+            // ---------- "Bulk" switch: Stop all leaves a service started by hand (Bulk off) running ----------
+            s.SetEnabled("redis", false); s.Save();
+            await ServiceManager.Redis.StartAsync();
+            Check("bulk: Redis started by hand", ServiceManager.Redis.State == ServiceState.Running, ServiceManager.Redis.LastError ?? "");
+            Check("bulk: Redis is not in the bulk group", !ServiceManager.BulkRows.Contains(ServiceManager.Redis));
+            await ServiceManager.StopBulkAsync();
+            Check("bulk: Stop all stopped the web server", ServiceManager.Web.State == ServiceState.Stopped, ServiceManager.Web.State.ToString());
+            Check("bulk: Stop all left Redis running", ServiceManager.Redis.State == ServiceState.Running, ServiceManager.Redis.State.ToString());
+            Check("bulk: button now says Start all", !ServiceManager.AnyBulkActive);
+            s.SetEnabled("redis", true); s.Save();
+
             // ---------- stop ----------
             await ServiceManager.StopAllAsync();
             await Task.Delay(1000);

@@ -1005,5 +1005,7 @@
   "tomcat.openPage": "Öppna Tomcat-sidan",
   "tomcat.openWebapps": "Öppna mappen webapps (släpp en WAR-fil här)",
   "settings.tomcatPort": "Tomcat-port",
-  "pkg.onSystemTomcat": "Installerat i Windows (körs som egen Windows-tjänst); Portly använder en egen kopia"
+  "pkg.onSystemTomcat": "Installerat i Windows (körs som egen Windows-tjänst); Portly använder en egen kopia",
+  "svc.bulk": "Gruppvis",
+  "svc.bulkHint": "Låst (grön): ”Starta alla” och ”Stoppa alla” omfattar den här tjänsten. Öppen (röd): de lämnar den orörd; använd reglaget bredvid."
 }

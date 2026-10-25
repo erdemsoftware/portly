@@ -28,6 +28,7 @@ namespace Portly.UI
             public Pill Sec;       // end of life / security fix available (security.json)
             public ComboBox Version;
             public ToggleSwitch Toggle;
+            public LockToggle Bulk;   // padlock: part of Start all / Stop all
             public ModernButton Get;
             public bool ShowGet;   // Control.Visible is false while the page is hidden, so keep our own flag
         }
@@ -381,6 +382,16 @@ namespace Portly.UI
 
             row.Toggle = new ToggleSwitch { Anchor = AnchorStyles.Top | AnchorStyles.Right, AccessibleName = svc.Title };
             row.Toggle.Click += async (s, e) => await OnToggle(row);
+            // under the run switch: is this service part of "Start all" / "Stop all"?
+            row.Bulk = new LockToggle { Checked = Settings.Current.IsEnabled(svc.Id), Anchor = AnchorStyles.Top | AnchorStyles.Right, AccessibleName = I18n.T("svc.bulk") + " - " + svc.Title };
+            new ToolTip().SetToolTip(row.Bulk, I18n.T("svc.bulkHint"));
+            row.Bulk.CheckedChanged += (s, e) =>
+            {
+                if (_syncingBulk) return;
+                Settings.Current.SetEnabled(svc.Id, row.Bulk.Checked);
+                Settings.Current.Save();
+                UpdateGlobal();
+            };
             row.Status = new Pill { Anchor = AnchorStyles.Top | AnchorStyles.Right };
             row.Sec = new Pill { Anchor = AnchorStyles.Top | AnchorStyles.Right, Visible = false, Cursor = Cursors.Hand };
             row.Sec.Click += async (s, e) => await OnSecurityPill(row);
@@ -399,7 +410,7 @@ namespace Portly.UI
             card.ContextMenuStrip = cm;
             row.Name.ContextMenuStrip = cm;
 
-            card.Controls.AddRange(new Control[] { row.Tile, row.Name, row.Detail, row.Error, row.Fix, row.Toggle, row.Status, row.Version, row.Get, row.Sec });
+            card.Controls.AddRange(new Control[] { row.Tile, row.Name, row.Detail, row.Error, row.Fix, row.Toggle, row.Bulk, row.Status, row.Version, row.Get, row.Sec });
             card.Resize += (s, e) => LayoutCard(row);
             card.Width = Ui.S(700);
             LayoutCard(row);
@@ -410,9 +421,13 @@ namespace Portly.UI
         {
             int w = row.Card.Width, right = w - Ui.S(18), top = Ui.S(23);
             row.Toggle.Location = new Point(right - row.Toggle.Width, top);
+            // the padlock sits just left of the run switch, on the same line
+            var bulkSize = row.Bulk.Size;
+            row.Bulk.Location = new Point(row.Toggle.Left - Ui.S(12) - bulkSize.Width, top + (row.Toggle.Height - bulkSize.Height) / 2);
             row.Get.Location = new Point(right - row.Get.Width, top - Ui.S(3));
-            // keep the status pills of all cards in one column (PHP has no switch)
-            int edge = (row.ShowGet ? row.Get.Left : row.Toggle.Left) - Ui.S(14);
+            // keep the status pills of all cards in one column (PHP has no switch; the column leaves room for "Bulk")
+            int switchLeft = row.Toggle.Left - Ui.S(12) - bulkSize.Width;
+            int edge = (row.ShowGet ? row.Get.Left : switchLeft) - Ui.S(14);
             row.Status.Location = new Point(edge - row.Status.Width, top + 1);
             row.Version.Location = new Point(row.Status.Left - Ui.S(12) - row.Version.Width, top - Ui.S(1));
             if (row.Sec != null) row.Sec.Location = new Point(row.Version.Left - Ui.S(8) - row.Sec.Width, top + 1);
@@ -427,7 +442,7 @@ namespace Portly.UI
             if (svc.Id != "php")
             {
                 var auto = new ToolStripMenuItem(I18n.T("svc.includeInAll")) { Checked = Settings.Current.IsEnabled(svc.Id) };
-                auto.Click += (s, e) => { Settings.Current.SetEnabled(svc.Id, !auto.Checked); Settings.Current.Save(); UpdateRow(svc); };
+                auto.Click += (s, e) => { Settings.Current.SetEnabled(svc.Id, !auto.Checked); Settings.Current.Save(); UpdateRow(svc); UpdateGlobal(); };
                 cm.Items.Add(auto);
             }
             cm.Items.Add(I18n.T("svc.getVersions"), null, (s, e) => OpenPackages(svc.PackageType));
@@ -614,14 +629,20 @@ namespace Portly.UI
             row.Status.Color = statusColor;
             row.Toggle.Checked = svc.State == ServiceState.Running || svc.State == ServiceState.Starting;
             row.Toggle.Busy = svc.State == ServiceState.Starting || svc.State == ServiceState.Stopping;
-            row.Toggle.Visible = installed && svc.Id != "php";
+            // Control.Visible reads false while the page is hidden: set both from the same value, never copy it
+            bool showSwitch = installed && svc.Id != "php";
+            row.Toggle.Visible = showSwitch;
+            row.Bulk.Visible = showSwitch;
+            _syncingBulk = true;
+            row.Bulk.Checked = Settings.Current.IsEnabled(svc.Id);   // also changed from the card menu
+            _syncingBulk = false;
             row.ShowGet = !installed;
             row.Get.Visible = !installed;
 
             var version = PackageTypes.Label(PackageTypes.ActiveFolder(svc.PackageType));
             string ports = svc.Id == "php" ? (svc.IsActive ? "127.0.0.1:" + svc.PortText : I18n.T("svc.withWeb")) : (Settings.Current.AllowLan ? "0.0.0.0:" : "127.0.0.1:") + svc.PortText;
             var detail = installed ? svc.Title + " " + version + "  ·  " + ports : I18n.T("svc.notInstalledHint");
-            if (svc.Id != "php" && installed && !Settings.Current.IsEnabled(svc.Id)) detail += "  ·  " + I18n.T("svc.notInAll");
+            // "not in Start all" is shown by the open padlock now; the text pushed the line under the version box
             row.Detail.Text = detail;
             UpdateSecurityPill(row);
 
@@ -663,8 +684,10 @@ namespace Portly.UI
         void UpdateGlobal()
         {
             if (_startAll == null) return;
-            bool any = ServiceManager.AnyActive;
-            UpdateShutdownBlock(any && !ServiceMode.IsController);
+            // the button follows the bulk group only: a service started by hand with "Bulk" off does not turn it into "Stop all"
+            bool any = ServiceManager.AnyBulkActive;
+            // a clean stop at Windows shutdown covers every running service, bulk or not
+            UpdateShutdownBlock(ServiceManager.AnyActive && !ServiceMode.IsController);
             _startAll.Text = any ? I18n.T("main.stopAll") : I18n.T("main.startAll");
             _startAll.Glyph = any ? "stop" : "play";
             _startAll.Kind = any ? ButtonKind.Secondary : ButtonKind.Primary;
@@ -702,6 +725,7 @@ namespace Portly.UI
         }
 
         bool _caTrusted;
+        bool _syncingBulk;
         ModernButton _archivedBtn;
 
         void FillSites()
@@ -1264,7 +1288,7 @@ namespace Portly.UI
             _startAll.Enabled = false;
             try
             {
-                if (ServiceManager.AnyActive) await ServiceManager.StopAllAsync();
+                if (ServiceManager.AnyBulkActive) await ServiceManager.StopBulkAsync();
                 else
                 {
                     if (!PackageTypes.Installed("apache").Any() && !PackageTypes.Installed("nginx").Any() && !PackageTypes.Installed(Settings.Current.DbEngine).Any())

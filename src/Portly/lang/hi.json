@@ -1005,5 +1005,7 @@
   "tomcat.openPage": "Tomcat पेज खोलें",
   "tomcat.openWebapps": "webapps फ़ोल्डर खोलें (WAR फ़ाइल यहाँ छोड़ें)",
   "settings.tomcatPort": "Tomcat पोर्ट",
-  "pkg.onSystemTomcat": "Windows पर इंस्टॉल है (अपनी Windows सेवा के रूप में चलता है); Portly अपनी कॉपी इस्तेमाल करता है"
+  "pkg.onSystemTomcat": "Windows पर इंस्टॉल है (अपनी Windows सेवा के रूप में चलता है); Portly अपनी कॉपी इस्तेमाल करता है",
+  "svc.bulk": "सामूहिक",
+  "svc.bulkHint": "लॉक (हरा): \"सभी शुरू करें\" और \"सभी रोकें\" इस सेवा को भी शामिल करते हैं। खुला (लाल): ये इसे नहीं छूते; इसके पास वाले स्विच का उपयोग करें।"
 }

@@ -1005,5 +1005,7 @@
   "tomcat.openPage": "Tomcat 페이지 열기",
   "tomcat.openWebapps": "webapps 폴더 열기 (여기에 WAR 파일을 놓으세요)",
   "settings.tomcatPort": "Tomcat 포트",
-  "pkg.onSystemTomcat": "Windows에 설치됨 (자체 Windows 서비스로 실행). Portly는 자체 사본을 사용합니다"
+  "pkg.onSystemTomcat": "Windows에 설치됨 (자체 Windows 서비스로 실행). Portly는 자체 사본을 사용합니다",
+  "svc.bulk": "일괄",
+  "svc.bulkHint": "잠김(초록): \"모두 시작\"과 \"모두 중지\"에 이 서비스가 포함됩니다. 열림(빨강): 이 서비스는 건드리지 않습니다. 옆의 스위치를 사용하세요."
 }

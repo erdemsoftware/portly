@@ -1005,5 +1005,7 @@
   "tomcat.openPage": "Tomcat-pagina openen",
   "tomcat.openWebapps": "webapps-map openen (zet hier een WAR-bestand neer)",
   "settings.tomcatPort": "Tomcat-poort",
-  "pkg.onSystemTomcat": "Op Windows geïnstalleerd (draait als eigen Windows-service); Portly gebruikt een eigen kopie"
+  "pkg.onSystemTomcat": "Op Windows geïnstalleerd (draait als eigen Windows-service); Portly gebruikt een eigen kopie",
+  "svc.bulk": "Bulk",
+  "svc.bulkHint": "Vergrendeld (groen): \"Alles starten\" en \"Alles stoppen\" nemen deze service mee. Open (rood): ze laten hem met rust; gebruik de schakelaar ernaast."
 }

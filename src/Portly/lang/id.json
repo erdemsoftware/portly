@@ -1005,5 +1005,7 @@
   "tomcat.openPage": "Buka halaman Tomcat",
   "tomcat.openWebapps": "Buka folder webapps (letakkan file WAR di sini)",
   "settings.tomcatPort": "Port Tomcat",
-  "pkg.onSystemTomcat": "Terpasang di Windows (berjalan sebagai layanan Windows sendiri); Portly memakai salinannya sendiri"
+  "pkg.onSystemTomcat": "Terpasang di Windows (berjalan sebagai layanan Windows sendiri); Portly memakai salinannya sendiri",
+  "svc.bulk": "Massal",
+  "svc.bulkHint": "Terkunci (hijau): \"Jalankan semua\" dan \"Hentikan semua\" ikut mencakup layanan ini. Terbuka (merah): layanan ini dibiarkan; gunakan sakelar di sebelahnya."
 }

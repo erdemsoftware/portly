@@ -221,6 +221,61 @@ namespace Portly.UI
         }
     }
 
+    /// <summary>
+    /// Padlock switch for "part of Start all / Stop all": closed and green = linked to the bulk actions,
+    /// open and red = left alone by them. A CheckBox underneath, so keyboard and screen readers still work.
+    /// </summary>
+    public class LockToggle : CheckBox
+    {
+        public LockToggle()
+        {
+            SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.SupportsTransparentBackColor, true);
+            AutoSize = false;
+            Size = Ui.S(26, 26);
+            BackColor = Color.Transparent;
+            Cursor = Cursors.Hand;
+            AccessibleRole = AccessibleRole.CheckButton;
+            CheckedChanged += (s, e) => Invalidate();
+        }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            var g = e.Graphics;
+            g.Clear(Ui.BackOf(Parent));
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+            var color = Checked ? Theme.Current.Green : Theme.Current.Red;
+            if (!Enabled) color = Color.FromArgb(110, color);
+            float w = Width, h = Height, sw = Math.Max(1.6f, Ui.S(2));
+            // body: lower half, rounded
+            var body = new RectangleF(w * 0.18f, h * 0.46f, w * 0.64f, h * 0.44f);
+            using (var b = new SolidBrush(color)) Glyphs.FillRound(g, b, body, Ui.S(3));
+            // keyhole
+            using (var hole = new SolidBrush(Ui.BackOf(Parent)))
+                g.FillEllipse(hole, w / 2 - Ui.S(2), body.Top + body.Height * 0.32f, Ui.S(4), Ui.S(4));
+            // shackle: closed sits in the body, open is lifted and swung to the right
+            using (var pen = new Pen(color, sw) { StartCap = LineCap.Round, EndCap = LineCap.Round })
+            {
+                float sx = w * 0.30f, sWidth = w * 0.40f, top = h * 0.10f;
+                if (Checked)
+                {
+                    g.DrawArc(pen, sx, top, sWidth, h * 0.46f, 180, 180);
+                    g.DrawLine(pen, sx, top + h * 0.23f, sx, body.Top);
+                    g.DrawLine(pen, sx + sWidth, top + h * 0.23f, sx + sWidth, body.Top);
+                }
+                else
+                {
+                    float lift = h * 0.06f, shift = w * 0.18f;
+                    g.DrawArc(pen, sx + shift, top - lift, sWidth, h * 0.46f, 180, 180);
+                    g.DrawLine(pen, sx + shift, top - lift + h * 0.23f, sx + shift, top + h * 0.26f);
+                    g.DrawLine(pen, sx + shift + sWidth, top - lift + h * 0.23f, sx + shift + sWidth, body.Top);
+                }
+            }
+            if (Focused && ShowFocusCues)
+                using (var pen = new Pen(Theme.Current.Accent, 1) { DashStyle = DashStyle.Dot })
+                    g.DrawRectangle(pen, 0, 0, Width - 1, Height - 1);
+        }
+    }
+
     /// <summary>On/off switch. AutoCheck is off: the owner decides what a click does (start / stop).</summary>
     public class ToggleSwitch : CheckBox
     {

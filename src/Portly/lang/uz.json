@@ -1005,5 +1005,7 @@
   "tomcat.openPage": "Tomcat sahifasini ochish",
   "tomcat.openWebapps": "webapps papkasini ochish (WAR faylni shu yerga tashlang)",
   "settings.tomcatPort": "Tomcat porti",
-  "pkg.onSystemTomcat": "Windows'da o'rnatilgan (o'z Windows xizmati sifatida ishlaydi); Portly o'z nusxasidan foydalanadi"
+  "pkg.onSystemTomcat": "Windows'da o'rnatilgan (o'z Windows xizmati sifatida ishlaydi); Portly o'z nusxasidan foydalanadi",
+  "svc.bulk": "Ommaviy",
+  "svc.bulkHint": "Qulflangan (yashil): \"Hammasini ishga tushirish\" va \"Hammasini toʻxtatish\" bu xizmatni ham qamrab oladi. Ochiq (qizil): unga tegmaydi; yonidagi kalitdan foydalaning."
 }

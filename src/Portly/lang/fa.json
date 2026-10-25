@@ -1006,5 +1006,7 @@
   "tomcat.openPage": "باز کردن صفحه Tomcat",
   "tomcat.openWebapps": "باز کردن پوشه webapps (فایل WAR را اینجا رها کنید)",
   "settings.tomcatPort": "پورت Tomcat",
-  "pkg.onSystemTomcat": "روی Windows نصب است (به‌عنوان سرویس Windows خودش اجرا می‌شود)؛ Portly از نسخه خودش استفاده می‌کند"
+  "pkg.onSystemTomcat": "روی Windows نصب است (به‌عنوان سرویس Windows خودش اجرا می‌شود)؛ Portly از نسخه خودش استفاده می‌کند",
+  "svc.bulk": "گروهی",
+  "svc.bulkHint": "قفل (سبز): «اجرای همه» و «توقف همه» این سرویس را هم شامل می‌شوند. باز (قرمز): به آن کاری ندارند؛ از کلید کنار آن استفاده کنید."
 }

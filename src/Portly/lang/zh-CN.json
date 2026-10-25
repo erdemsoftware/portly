@@ -1005,5 +1005,7 @@
   "tomcat.openPage": "打开 Tomcat 页面",
   "tomcat.openWebapps": "打开 webapps 文件夹 (将 WAR 文件放到这里)",
   "settings.tomcatPort": "Tomcat 端口",
-  "pkg.onSystemTomcat": "已安装在 Windows 上(作为独立的 Windows 服务运行);Portly 使用自己的副本"
+  "pkg.onSystemTomcat": "已安装在 Windows 上(作为独立的 Windows 服务运行);Portly 使用自己的副本",
+  "svc.bulk": "批量",
+  "svc.bulkHint": "锁定（绿色）：“全部启动”和“全部停止”包含此服务。打开（红色）：不会操作此服务；请使用旁边的开关。"
 }

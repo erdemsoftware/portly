@@ -1005,5 +1005,7 @@
   "tomcat.openPage": "Open Tomcat page",
   "tomcat.openWebapps": "Open webapps folder (drop a WAR file here)",
   "settings.tomcatPort": "Tomcat port",
-  "pkg.onSystemTomcat": "Installed on Windows (runs as its own Windows service); Portly uses its own copy"
+  "pkg.onSystemTomcat": "Installed on Windows (runs as its own Windows service); Portly uses its own copy",
+  "svc.bulk": "Bulk",
+  "svc.bulkHint": "Locked (green): \"Start all\" and \"Stop all\" include this service. Open (red): they leave it alone; use the switch next to it."
 }

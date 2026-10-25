@@ -1005,5 +1005,7 @@
   "tomcat.openPage": "Tomcat səhifəsini aç",
   "tomcat.openWebapps": "webapps qovluğunu aç (WAR faylını bura atın)",
   "settings.tomcatPort": "Tomcat portu",
-  "pkg.onSystemTomcat": "Windows-da quraşdırılıb (öz Windows xidməti kimi işləyir); Portly öz nüsxəsindən istifadə edir"
+  "pkg.onSystemTomcat": "Windows-da quraşdırılıb (öz Windows xidməti kimi işləyir); Portly öz nüsxəsindən istifadə edir",
+  "svc.bulk": "Toplu",
+  "svc.bulkHint": "Kilidli (yaşıl): \"Hamısını başlat\" və \"Hamısını dayandır\" bu xidməti də əhatə edir. Açıq (qırmızı): ona toxunmur; yanındakı açarı istifadə edin."
 }

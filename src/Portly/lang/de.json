@@ -1005,5 +1005,7 @@
   "tomcat.openPage": "Tomcat-Seite öffnen",
   "tomcat.openWebapps": "webapps-Ordner öffnen (WAR-Datei hier ablegen)",
   "settings.tomcatPort": "Tomcat-Port",
-  "pkg.onSystemTomcat": "Unter Windows installiert (läuft als eigener Windows-Dienst); Portly verwendet eine eigene Kopie"
+  "pkg.onSystemTomcat": "Unter Windows installiert (läuft als eigener Windows-Dienst); Portly verwendet eine eigene Kopie",
+  "svc.bulk": "Sammelaktion",
+  "svc.bulkHint": "Gesperrt (grün): „Alle starten“ und „Alle stoppen“ schließen diesen Dienst ein. Offen (rot): Beide lassen ihn aus; nutzen Sie den Schalter daneben."
 }
