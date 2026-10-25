@@ -41,7 +41,7 @@ namespace Portly.UI
                 t.Controls.Add(Ui.Link("GitHub", () => WinUtil.Open(AppInfo.GitHubUrl)));
             }
             // the list scrolls when there are many methods
-            var list = new FlowLayoutPanel { FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoScroll = true, Width = Ui.S(530), Margin = Padding.Empty };
+            var list = new ScrollFlow { FlowDirection = FlowDirection.TopDown, WrapContents = false, Width = Ui.S(530), Margin = Padding.Empty };
             int listHeight = 0;
             foreach (var m in methods)
             {

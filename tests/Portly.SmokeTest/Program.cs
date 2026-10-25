@@ -411,6 +411,14 @@ namespace Portly.SmokeTest
                     string after;
                     try { after = Get(lanUrl, null); } catch (Exception ex) { after = ex.Message; }
                     Check("local network share stops", !after.Contains("DEMO-OK") && LanShare.UrlOf(demoSite) == null, Short(after));
+                    // remembered while stopped: same port, same address after a new start
+                    var kept = ShareStore.Get(demoSite.Host);
+                    var again = LanShare.Start(demoSite);
+                    Check("stopped share is remembered with its address", kept.Lan && LanShare.AddressFor(kept.LanPort) == lanUrl && again == lanUrl
+                        && ShareStore.All().Any(x => x.Host == demoSite.Host), again + " / " + LanShare.AddressFor(kept.LanPort));
+                    LanShare.Stop(demoSite);
+                    ShareStore.Update(demoSite.Host, x => { x.Lan = false; x.LanPort = 0; });
+                    Check("removed share leaves the list", !ShareStore.All().Any(x => x.Host == demoSite.Host && x.Lan));
                 }
             }
             catch (Exception ex) { Check("site shared on the local network", false, ex.Message); }

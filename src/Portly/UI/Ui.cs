@@ -244,9 +244,10 @@ namespace Portly.UI
         }
 
         // ---------------- dialogs ----------------
-        public static void Info(IWin32Window owner, string text) { MessageBox.Show(owner, text, "Portly", MessageBoxButtons.OK, MessageBoxIcon.Information); }
-        public static void Error(IWin32Window owner, string text) { MessageBox.Show(owner, text, "Portly", MessageBoxButtons.OK, MessageBoxIcon.Warning); }
-        public static bool Confirm(IWin32Window owner, string text) { return MessageBox.Show(owner, text, "Portly", MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2) == DialogResult.Yes; }
+        // Portly's own themed window (MessageDialog), not the plain Windows message box
+        public static void Info(IWin32Window owner, string text) { MessageDialog.Info(owner, text); }
+        public static void Error(IWin32Window owner, string text) { MessageDialog.Warning(owner, text); }
+        public static bool Confirm(IWin32Window owner, string text) { return MessageDialog.Confirm(owner, text); }
 
         /// <summary>Simple text input. Returns null when cancelled.</summary>
         public static string Prompt(IWin32Window owner, string title, string label, string value = "", bool password = false)

@@ -24,9 +24,11 @@ namespace Portly.Tools
 
         public static bool IsAvailable { get { return PackageTypes.ActiveDir("cloudflared") != null || Catalog.Recommended("cloudflared") != null; } }
 
-        public static string UrlOf(Site site)
+        public static string UrlOf(Site site) { return UrlOf(site.Host); }
+
+        public static string UrlOf(string host)
         {
-            lock (Tunnels) { string u; return Urls.TryGetValue(site.Host, out u) ? u : null; }
+            lock (Tunnels) { string u; return Urls.TryGetValue(host, out u) ? u : null; }
         }
 
         /// <summary>Starts the tunnel (installs cloudflared first when needed) and returns the public URL.</summary>
@@ -67,7 +69,9 @@ namespace Portly.Tools
             p.Exited += (s, e) =>
             {
                 found.TrySetResult(null);
-                lock (Tunnels) { Tunnels.Remove(site.Host); Urls.Remove(site.Host); }
+                bool was;
+                lock (Tunnels) { was = Tunnels.Remove(site.Host); Urls.Remove(site.Host); }
+                if (was) ShareStore.Notify(); // the tunnel ended by itself
             };
             status(I18n.T("share.starting"));
             p.Start();
@@ -82,22 +86,29 @@ namespace Portly.Tools
                 throw new Exception(I18n.T("share.failed") + " " + I18n.T("err.seeLog", "cloudflared.log"));
             }
             lock (Tunnels) { Tunnels[site.Host] = p; Urls[site.Host] = url; }
+            // remembered for "Shared projects" (Cloudflare gives a new random address at every start)
+            ShareStore.Update(site.Host, e => { e.Online = true; e.OnlineUrl = url; });
             Log.Info(I18n.T("share.started", site.Host, url));
             return url;
         }
 
-        public static void Stop(Site site)
+        public static void Stop(Site site) { Stop(site.Host); }
+
+        public static void Stop(string host)
         {
             Process p;
             lock (Tunnels)
             {
-                if (!Tunnels.TryGetValue(site.Host, out p)) return;
-                Tunnels.Remove(site.Host);
-                Urls.Remove(site.Host);
+                if (!Tunnels.TryGetValue(host, out p)) return;
+                Tunnels.Remove(host);
+                Urls.Remove(host);
             }
             try { if (!p.HasExited) ProcessUtil.KillTree(p.Id); } catch { }
-            Log.Info(I18n.T("share.stopped", site.Host));
+            Log.Info(I18n.T("share.stopped", host));
+            ShareStore.Notify();
         }
+
+        public static bool IsRunning(string host) { lock (Tunnels) return Tunnels.ContainsKey(host); }
 
         public static void StopAll()
         {

@@ -225,6 +225,23 @@ namespace Portly.UI
     /// Padlock switch for "part of Start all / Stop all": closed and green = linked to the bulk actions,
     /// open and red = left alone by them. A CheckBox underneath, so keyboard and screen readers still work.
     /// </summary>
+    /// <summary>
+    /// Scrolling panel that does not jump to a control when it gets the focus. WinForms scrolls a pressed button
+    /// "into view" on mouse down; the mouse is then no longer over it on mouse up and the click is lost.
+    /// </summary>
+    public class ScrollPanel : Panel
+    {
+        public ScrollPanel() { AutoScroll = true; }
+        protected override Point ScrollToControl(Control activeControl) { return DisplayRectangle.Location; }
+    }
+
+    /// <summary>FlowLayoutPanel version of <see cref="ScrollPanel"/>.</summary>
+    public class ScrollFlow : FlowLayoutPanel
+    {
+        public ScrollFlow() { AutoScroll = true; }
+        protected override Point ScrollToControl(Control activeControl) { return DisplayRectangle.Location; }
+    }
+
     public class LockToggle : CheckBox
     {
         public LockToggle()

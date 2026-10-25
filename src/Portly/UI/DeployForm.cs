@@ -44,7 +44,7 @@ namespace Portly.UI
             ClientSize = Ui.S(720, 720);
             MinimumSize = Ui.S(600, 520);
 
-            var scroll = new Panel { Dock = DockStyle.Fill, AutoScroll = true, BackColor = Ui.Bg, Padding = Ui.P(22, 14, 22, 8) };
+            var scroll = new ScrollPanel { Dock = DockStyle.Fill, BackColor = Ui.Bg, Padding = Ui.P(22, 14, 22, 8) };
             var stack = new TableLayoutPanel { Dock = DockStyle.Top, AutoSize = true, ColumnCount = 1, BackColor = Color.Transparent };
             stack.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
 

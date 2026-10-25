@@ -27,9 +27,11 @@ namespace Portly.Tools
         class Entry { public TcpListener Listener; public string Url; public string Public; }
         static readonly Dictionary<string, Entry> Shares = new Dictionary<string, Entry>(StringComparer.OrdinalIgnoreCase);
 
-        public static string UrlOf(Site site)
+        public static string UrlOf(Site site) { return UrlOf(site.Host); }
+
+        public static string UrlOf(string host)
         {
-            lock (Shares) { Entry e; return Shares.TryGetValue(site.Host, out e) ? e.Url : null; }
+            lock (Shares) { Entry e; return Shares.TryGetValue(host, out e) ? e.Url : null; }
         }
 
         /// <summary>IPv4 address of this PC on the local network (the adapter with a gateway, private range first), or null.</summary>
@@ -65,32 +67,69 @@ namespace Portly.Tools
             var ip = LocalIp();
             if (ip == null) throw new Exception(I18n.T("lan.noNetwork"));
             TcpListener listener = null;
-            int port = FirstPort;
-            for (; port < FirstPort + 100; port++)
+            // the remembered port first: the address on the phone stays the same
+            int port = ShareStore.Get(site.Host).LanPort;
+            if (port > 0)
             {
-                lock (Shares) if (Shares.Values.Any(x => ((IPEndPoint)x.Listener.LocalEndpoint).Port == port)) continue;
-                try { listener = new TcpListener(IPAddress.Any, port); listener.Start(); break; }
+                try { listener = new TcpListener(IPAddress.Any, port); listener.Start(); }
                 catch (SocketException) { listener = null; }
             }
+            if (listener == null)
+            {
+                var taken = new HashSet<int>(ShareStore.All().Where(x => x.Host != site.Host).Select(x => x.LanPort));
+                for (port = FirstPort; port < FirstPort + 100; port++)
+                {
+                    if (taken.Contains(port)) continue;
+                    try { listener = new TcpListener(IPAddress.Any, port); listener.Start(); break; }
+                    catch (SocketException) { listener = null; }
+                }
+            }
             if (listener == null) throw new Exception(I18n.T("lan.noPort"));
+            int chosen = port;
+            ShareStore.Update(site.Host, e => { e.Lan = true; e.LanPort = chosen; });
             var pub = ip + ":" + port;
             var entry = new Entry { Listener = listener, Public = pub, Url = "http://" + pub + "/" };
             lock (Shares) Shares[site.Host] = entry;
             Task.Run(() => AcceptLoop(entry, site.Host));
             Log.Info(I18n.T("lan.started", site.Host, entry.Url));
+            ShareStore.Notify();
             return entry.Url;
         }
 
-        public static void Stop(Site site)
+        public static void Stop(Site site) { Stop(site.Host); }
+
+        /// <summary>Stops sharing; the entry (port, note) stays in "Shared projects".</summary>
+        public static void Stop(string host)
         {
             Entry e;
             lock (Shares)
             {
-                if (!Shares.TryGetValue(site.Host, out e)) return;
-                Shares.Remove(site.Host);
+                if (!Shares.TryGetValue(host, out e)) return;
+                Shares.Remove(host);
             }
             try { e.Listener.Stop(); } catch { }
-            Log.Info(I18n.T("lan.stopped", site.Host));
+            Log.Info(I18n.T("lan.stopped", host));
+            ShareStore.Notify();
+        }
+
+        public static bool IsRunning(string host) { lock (Shares) return Shares.ContainsKey(host); }
+
+        /// <summary>The address a port has on this network (also for a stopped share), or "" without a network.</summary>
+        public static string AddressFor(int port)
+        {
+            var ip = LocalIp();
+            return ip == null || port <= 0 ? "" : "http://" + ip + ":" + port + "/";
+        }
+
+        /// <summary>Is the port free to listen on (not used by another program or another share)?</summary>
+        public static bool PortFree(int port, string forHost)
+        {
+            if (port < 1024 || port > 65535) return false;
+            if (ShareStore.All().Any(x => x.Host != forHost && x.LanPort == port)) return false;
+            lock (Shares) if (Shares.Any(x => x.Key != forHost && ((IPEndPoint)x.Value.Listener.LocalEndpoint).Port == port)) return false;
+            if (IsRunning(forHost) && ShareStore.Get(forHost).LanPort == port) return true;
+            try { var l = new TcpListener(IPAddress.Any, port); l.Start(); l.Stop(); return true; }
+            catch (SocketException) { return false; }
         }
 
         public static void StopAll()

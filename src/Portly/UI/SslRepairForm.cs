@@ -41,7 +41,7 @@ namespace Portly.UI
             _summary.MaximumSize = new Size(Ui.S(540), 0);
             _summary.Margin = Ui.P(0, 0, 0, 8);
             t.Controls.Add(_summary);
-            _list = new FlowLayoutPanel { FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoScroll = true, Width = Ui.S(560), Margin = Padding.Empty };
+            _list = new ScrollFlow { FlowDirection = FlowDirection.TopDown, WrapContents = false, Width = Ui.S(560), Margin = Padding.Empty };
             t.Controls.Add(_list);
 
             var buttons = new FlowLayoutPanel { AutoSize = true, FlowDirection = FlowDirection.RightToLeft, Dock = DockStyle.Fill, Margin = Ui.P(0, 12, 0, 0) };

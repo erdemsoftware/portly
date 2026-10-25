@@ -70,6 +70,7 @@ namespace Portly.UI
 
             ServiceManager.Changed += svc => SafeInvoke(() => { UpdateRow(svc); UpdateGlobal(); });
             ServiceManager.SitesChanged += () => SafeInvoke(FillSites);
+            ShareStore.Changed += () => SafeInvoke(FillSites); // a share started, stopped or ended by itself
             int jobsShown = 0;
             Jobs.Changed += () => SafeInvoke(() => { var n = Jobs.ActiveCountAll(); if (n != jobsShown) { jobsShown = n; FillSites(); } });
             Log.Written += line => SafeInvoke(() => AppendLog(line));
@@ -274,7 +275,7 @@ namespace Portly.UI
         // ---------------- services page ----------------
         Panel BuildServicesPage()
         {
-            var page = new Panel { Dock = DockStyle.Fill, BackColor = Ui.Bg, AutoScroll = true };
+            var page = new ScrollPanel { Dock = DockStyle.Fill, BackColor = Ui.Bg };
             _startAll = Ui.Button(I18n.T("main.startAll"), async (s, e) => await ToggleAll(), true, "play");
             _startAll.MinimumSize = new Size(Ui.S(170), Ui.S(40));
             _startAll.Font = Ui.Bold;
@@ -723,9 +724,10 @@ namespace Portly.UI
                 Ui.Button(I18n.T("main.newProject"), (s, e) => NewProject(), true, "plus"),
                 Ui.Button(I18n.T("sites.refresh"), async (s, e) => await ServiceManager.ReloadWebAsync(), false, "refresh"),
                 Ui.Button(I18n.T("sites.folder"), (s, e) => WinUtil.OpenFolder(Settings.Current.DocumentRoot), false, "folder"),
+                Ui.Button(I18n.T("shares.title"), (s, e) => OpenShares(), false, "share"),
                 _archivedBtn = SitesWebUi.ArchivedButton(this),
                 _sslBtn = Ui.Button(I18n.T("sslfix.button"), (s, e) => OpenSslRepair(), false, "warning"));
-            _siteFlow = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoScroll = true, BackColor = Ui.Bg, Padding = Ui.P(0, 4, 0, 0) };
+            _siteFlow = new ScrollFlow { Dock = DockStyle.Fill, BackColor = Ui.Bg, Padding = Ui.P(0, 4, 0, 0) };
             _siteFlow.Resize += (s, e) => { foreach (var inner in _siteBlocks) inner.MaximumSize = new Size(BlockWidth(), 0); };
             page.Controls.Add(_siteFlow);
             page.Controls.Add(header);
@@ -1020,35 +1022,22 @@ namespace Portly.UI
                 items.Add(I18n.T("share.copy"), null, (s, e) => { try { Clipboard.SetText(Share.UrlOf(site)); } catch { } });
                 items.Add(I18n.T("share.stop"), null, (s, e) => { Share.Stop(site); FillSites(); });
             }
+            items.Add(new ToolStripSeparator());
+            items.Add(I18n.T("shares.menu"), null, (s, e) => OpenShares());
         }
 
-        void LanShareSite(Site site)
-        {
-            if (ServiceManager.Web.State != ServiceState.Running) { Ui.Error(this, I18n.T("main.webNotRunning")); return; }
-            if (!Ui.Confirm(this, I18n.T("lan.confirm", site.Host))) return;
-            try
-            {
-                var url = LanShare.Start(site);
-                try { Clipboard.SetText(url); } catch { }
-                FillSites();
-                Ui.Info(this, I18n.T("lan.ready", url));
-            }
-            catch (Exception ex) { Ui.Error(this, ex.Message); }
-        }
+        void LanShareSite(Site site) { ShareUi.StartLan(this, site); }
 
         async void ShareSite(Site site)
         {
-            if (ServiceManager.Web.State != ServiceState.Running) { Ui.Error(this, I18n.T("main.webNotRunning")); return; }
-            // the site becomes public: say exactly what happens before anything is downloaded or opened
-            if (!Ui.Confirm(this, I18n.T("share.confirm", site.Host))) return;
-            try
-            {
-                var url = await Share.StartAsync(site, s => SafeInvoke(() => SetStatus(s)));
-                try { Clipboard.SetText(url); } catch { }
-                FillSites();
-                Ui.Info(this, I18n.T("share.ready", url));
-            }
-            catch (Exception ex) { Ui.Error(this, ex.Message); }
+            // the site becomes public: ShareUi says exactly what happens before anything is downloaded or opened
+            await ShareUi.StartOnline(this, site, s => SafeInvoke(() => SetStatus(s)));
+        }
+
+        void OpenShares()
+        {
+            ShowFromTray();
+            using (var f = new SharesForm()) f.ShowDialog(this);
         }
 
         void OpenSite(Site site, bool https)
