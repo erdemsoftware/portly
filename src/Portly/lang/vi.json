@@ -1007,5 +1007,6 @@
   "settings.tomcatPort": "Cổng Tomcat",
   "pkg.onSystemTomcat": "Đã cài trên Windows (chạy như dịch vụ Windows riêng); Portly dùng bản sao của riêng mình",
   "svc.bulk": "Hàng loạt",
-  "svc.bulkHint": "Khóa (xanh lá): \"Chạy tất cả\" và \"Dừng tất cả\" bao gồm cả dịch vụ này. Mở (đỏ): hai lệnh này bỏ qua nó; hãy dùng công tắc bên cạnh."
+  "svc.bulkHint": "Khóa (xanh lá): \"Chạy tất cả\" và \"Dừng tất cả\" bao gồm cả dịch vụ này. Mở (đỏ): hai lệnh này bỏ qua nó; hãy dùng công tắc bên cạnh.",
+  "main.databaseHint": "Mở phpMyAdmin (đã đăng nhập khi root chưa có mật khẩu). Nhấp chuột phải để xem các công cụ cơ sở dữ liệu khác."
 }

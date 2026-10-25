@@ -1007,5 +1007,6 @@
   "settings.tomcatPort": "Port Tomcat",
   "pkg.onSystemTomcat": "Nainstalováno ve Windows (běží jako vlastní služba Windows); Portly používá vlastní kopii",
   "svc.bulk": "Hromadně",
-  "svc.bulkHint": "Zamčeno (zelená): „Spustit vše“ a „Zastavit vše“ zahrnují i tuto službu. Odemčeno (červená): tuto službu vynechají; použijte přepínač vedle ní."
+  "svc.bulkHint": "Zamčeno (zelená): „Spustit vše“ a „Zastavit vše“ zahrnují i tuto službu. Odemčeno (červená): tuto službu vynechají; použijte přepínač vedle ní.",
+  "main.databaseHint": "Otevře phpMyAdmin (přihlášený, dokud root nemá heslo). Pro další databázové nástroje klikněte pravým tlačítkem."
 }

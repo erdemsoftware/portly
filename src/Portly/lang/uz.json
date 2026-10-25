@@ -1007,5 +1007,6 @@
   "settings.tomcatPort": "Tomcat porti",
   "pkg.onSystemTomcat": "Windows'da o'rnatilgan (o'z Windows xizmati sifatida ishlaydi); Portly o'z nusxasidan foydalanadi",
   "svc.bulk": "Ommaviy",
-  "svc.bulkHint": "Qulflangan (yashil): \"Hammasini ishga tushirish\" va \"Hammasini toʻxtatish\" bu xizmatni ham qamrab oladi. Ochiq (qizil): unga tegmaydi; yonidagi kalitdan foydalaning."
+  "svc.bulkHint": "Qulflangan (yashil): \"Hammasini ishga tushirish\" va \"Hammasini toʻxtatish\" bu xizmatni ham qamrab oladi. Ochiq (qizil): unga tegmaydi; yonidagi kalitdan foydalaning.",
+  "main.databaseHint": "phpMyAdmin'ni ochadi (root parolsiz ekan, tizimga kirilgan holda). Boshqa ma'lumotlar bazasi vositalari uchun o'ng tugmani bosing."
 }

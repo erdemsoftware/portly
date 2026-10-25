@@ -1007,5 +1007,6 @@
   "settings.tomcatPort": "Port Tomcat",
   "pkg.onSystemTomcat": "Dipasang dalam Windows (berjalan sebagai perkhidmatan Windows sendiri); Portly menggunakan salinannya sendiri",
   "svc.bulk": "Pukal",
-  "svc.bulkHint": "Dikunci (hijau): \"Mulakan semua\" dan \"Hentikan semua\" turut merangkumi perkhidmatan ini. Terbuka (merah): perkhidmatan ini dibiarkan; gunakan suis di sebelahnya."
+  "svc.bulkHint": "Dikunci (hijau): \"Mulakan semua\" dan \"Hentikan semua\" turut merangkumi perkhidmatan ini. Terbuka (merah): perkhidmatan ini dibiarkan; gunakan suis di sebelahnya.",
+  "main.databaseHint": "Membuka phpMyAdmin (sudah log masuk selagi root tiada kata laluan). Klik kanan untuk alat pangkalan data yang lain."
 }

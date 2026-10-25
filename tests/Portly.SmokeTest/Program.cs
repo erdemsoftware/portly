@@ -46,6 +46,7 @@ namespace Portly.SmokeTest
             Net.Init();
             Paths.EnsureAll();
             Settings.Load();
+            Settings.RootPasswordChanged += ToolApps.RefreshPhpMyAdmin;   // as Portly.exe does at start
             var s = Settings.Current;
             s.HttpPort = 8781; s.HttpsPort = 8744; s.MysqlPort = 3377; s.RedisPort = 6377;
             s.MailpitWebPort = 8727; s.MailpitSmtpPort = 1727; s.PhpBasePort = 9277;
@@ -266,6 +267,18 @@ namespace Portly.SmokeTest
             }
             catch (Exception ex) { Check("reset forgotten root password", false, ex.Message); }
 
+            // ---------- phpMyAdmin: login page while root has a password, logged in again without one ----------
+            try
+            {
+                var setErr = Database.ChangeRootPassword("Pma-Test-1");
+                var pmaLocked = Get("http://127.0.0.1:" + s.HttpPort + "/phpmyadmin/", "localhost");
+                Check("phpMyAdmin shows its login page when root has a password", setErr == null && (pmaLocked.Contains("pma_username") || pmaLocked.Contains("input_username")), setErr ?? (pmaLocked.Length + " bytes"));
+                Database.ChangeRootPassword("");
+                var pmaOpen = Get("http://127.0.0.1:" + s.HttpPort + "/phpmyadmin/", "localhost");
+                Check("phpMyAdmin logs in by itself again without a password", !pmaOpen.Contains("pma_username") && !pmaOpen.Contains("input_username"), pmaOpen.Length + " bytes");
+            }
+            catch (Exception ex) { Check("phpMyAdmin login mode", false, ex.Message); }
+
             // ---------- MariaDB as the database engine ----------
             try
             {
@@ -485,6 +498,9 @@ namespace Portly.SmokeTest
             Check(server + ": /adminer works", adminer.Contains("Adminer"), adminer.Length + " bytes");
             var pma = Get("http://127.0.0.1:" + s.HttpPort + "/phpmyadmin/", "localhost");
             Check(server + ": /phpmyadmin works (PHP " + PackageTypes.Label(PackageTypes.ActiveFolder("php")) + ")", pma.Contains("phpMyAdmin") && !pma.Contains("Fatal error"), pma.Length + " bytes");
+            // root has no password: phpMyAdmin opens logged in, without its login form
+            if (Settings.Current.MysqlRootPassword == "")
+                Check(server + ": phpMyAdmin opens logged in (no root password)", !pma.Contains("pma_username") && !pma.Contains("input_username"), pma.Length + " bytes");
         }
 
         static string _lastIssuer = "";

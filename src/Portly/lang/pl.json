@@ -1007,5 +1007,6 @@
   "settings.tomcatPort": "Port Tomcat",
   "pkg.onSystemTomcat": "Zainstalowany w Windows (działa jako własna usługa Windows); Portly używa własnej kopii",
   "svc.bulk": "Zbiorczo",
-  "svc.bulkHint": "Zablokowane (zielone): „Uruchom wszystko” i „Zatrzymaj wszystko” obejmują tę usługę. Otwarte (czerwone): pomijają ją; użyj przełącznika obok."
+  "svc.bulkHint": "Zablokowane (zielone): „Uruchom wszystko” i „Zatrzymaj wszystko” obejmują tę usługę. Otwarte (czerwone): pomijają ją; użyj przełącznika obok.",
+  "main.databaseHint": "Otwiera phpMyAdmin (z zalogowaniem, dopóki root nie ma hasła). Kliknij prawym przyciskiem myszy, aby zobaczyć pozostałe narzędzia baz danych."
 }

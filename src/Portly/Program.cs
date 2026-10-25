@@ -59,6 +59,7 @@ namespace Portly
             try { SetProcessShutdownParameters(0x3FF, 0); } catch { }
             Paths.EnsureAll();
             Settings.Load();
+            Settings.RootPasswordChanged += Config.ToolApps.RefreshPhpMyAdmin;
             I18n.Load(Settings.Current.Language);
             Theme.Load(Settings.Current.Theme);
             Updater.CleanupOldFiles();

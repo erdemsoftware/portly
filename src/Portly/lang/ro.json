@@ -1007,5 +1007,6 @@
   "settings.tomcatPort": "Port Tomcat",
   "pkg.onSystemTomcat": "Instalat în Windows (rulează ca serviciu Windows propriu); Portly folosește propria copie",
   "svc.bulk": "În bloc",
-  "svc.bulkHint": "Blocat (verde): „Pornește tot” și „Oprește tot” includ acest serviciu. Deschis (roșu): îl lasă neatins; folosește comutatorul de lângă el."
+  "svc.bulkHint": "Blocat (verde): „Pornește tot” și „Oprește tot” includ acest serviciu. Deschis (roșu): îl lasă neatins; folosește comutatorul de lângă el.",
+  "main.databaseHint": "Deschide phpMyAdmin (autentificat cât timp root nu are parolă). Clic dreapta pentru celelalte instrumente de baze de date."
 }

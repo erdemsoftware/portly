@@ -1007,5 +1007,6 @@
   "settings.tomcatPort": "Tomcat-poort",
   "pkg.onSystemTomcat": "Op Windows geïnstalleerd (draait als eigen Windows-service); Portly gebruikt een eigen kopie",
   "svc.bulk": "Bulk",
-  "svc.bulkHint": "Vergrendeld (groen): \"Alles starten\" en \"Alles stoppen\" nemen deze service mee. Open (rood): ze laten hem met rust; gebruik de schakelaar ernaast."
+  "svc.bulkHint": "Vergrendeld (groen): \"Alles starten\" en \"Alles stoppen\" nemen deze service mee. Open (rood): ze laten hem met rust; gebruik de schakelaar ernaast.",
+  "main.databaseHint": "Opent phpMyAdmin (ingelogd zolang root geen wachtwoord heeft). Klik met de rechtermuisknop voor de andere databasetools."
 }

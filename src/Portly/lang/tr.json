@@ -1007,5 +1007,6 @@
   "settings.tomcatPort": "Tomcat portu",
   "pkg.onSystemTomcat": "Windows'ta kurulu (kendi Windows hizmetiyle çalışır); Portly kendi kopyasını kullanır",
   "svc.bulk": "Toplu",
-  "svc.bulkHint": "Kilitli (yeşil): \"Hepsini başlat\" ve \"Hepsini durdur\" bu servisi de açıp kapatır. Açık (kırmızı): toplu işlem dokunmaz; yanındaki anahtarla kendin açıp kapatırsın."
+  "svc.bulkHint": "Kilitli (yeşil): \"Hepsini başlat\" ve \"Hepsini durdur\" bu servisi de açıp kapatır. Açık (kırmızı): toplu işlem dokunmaz; yanındaki anahtarla kendin açıp kapatırsın.",
+  "main.databaseHint": "phpMyAdmin'i açar (root şifresi yokken giriş yapılmış olarak). Diğer veritabanı araçları için sağ tıklayın."
 }

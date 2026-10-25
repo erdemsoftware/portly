@@ -148,9 +148,15 @@ namespace Portly.Core
             }
             set
             {
-                if (string.IsNullOrEmpty(value)) { _ini.Set("mysql", "RootPassword", ""); return; }
-                _ini.Set("mysql", "RootPassword", Convert.ToBase64String(ProtectedData.Protect(Encoding.UTF8.GetBytes(value), null, DataProtectionScope.CurrentUser)));
+                bool wasEmpty = MysqlRootPassword == "";
+                if (string.IsNullOrEmpty(value)) _ini.Set("mysql", "RootPassword", "");
+                else _ini.Set("mysql", "RootPassword", Convert.ToBase64String(ProtectedData.Protect(Encoding.UTF8.GetBytes(value), null, DataProtectionScope.CurrentUser)));
+                // phpMyAdmin logs in by itself only while there is no password: tell it when that changes
+                if (wasEmpty != string.IsNullOrEmpty(value)) { var h = RootPasswordChanged; if (h != null) h(); }
             }
         }
+
+        /// <summary>The MySQL root password went from empty to set or back.</summary>
+        public static event Action RootPasswordChanged;
     }
 }

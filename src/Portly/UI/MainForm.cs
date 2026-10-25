@@ -296,7 +296,13 @@ namespace Portly.UI
             var tiles = new FlowLayoutPanel { Dock = DockStyle.Top, AutoSize = true, BackColor = Color.Transparent, Padding = Ui.P(0, 0, 0, 8) };
             tiles.Controls.Add(Tile(I18n.T("main.web"), "globe", (s, e) => OpenLocalhost()));
             ModernButton dbTile = null;
-            dbTile = Tile(I18n.T("main.database"), "database", (s, e) => OpenDatabaseTool(dbTile));
+            dbTile = Tile(I18n.T("main.database"), "database", (s, e) => OpenDatabaseQuick(dbTile));
+            // right-click: every database tool (Adminer, HeidiSQL, DBeaver ...)
+            var dbMenu = new ContextMenuStrip();
+            StyleMenu(dbMenu);
+            dbMenu.Opening += (s, e) => { dbMenu.Items.Clear(); BuildDatabaseToolItems(dbMenu.Items); };
+            dbTile.ContextMenuStrip = dbMenu;
+            new ToolTip().SetToolTip(dbTile, I18n.T("main.databaseHint"));
             tiles.Controls.Add(dbTile);
             tiles.Controls.Add(Tile(I18n.T("main.mail"), "mail", (s, e) => OpenMailpit()));
             tiles.Controls.Add(Tile(I18n.T("main.terminal"), "terminal", (s, e) => Terminal.Open()));
@@ -1329,6 +1335,18 @@ namespace Portly.UI
         }
 
         /// <summary>All database tools: phpMyAdmin / Adminer (web), HeidiSQL, DBeaver, Beekeeper, DbGate, DB Browser, pgAdmin.</summary>
+        /// <summary>
+        /// Database tile: straight into phpMyAdmin (logged in when root has no password, else its login page);
+        /// without phpMyAdmin the list of installed tools.
+        /// </summary>
+        void OpenDatabaseQuick(Control anchor)
+        {
+            if (PackageTypes.ActiveDir("phpmyadmin") == null) { OpenDatabaseTool(anchor); return; }
+            Config.ToolApps.RefreshPhpMyAdmin();   // the login mode follows the current root password
+            var port = Settings.Current.HttpPort;
+            WinUtil.Open("http://localhost" + (port == 80 ? "" : ":" + port) + "/phpmyadmin/");
+        }
+
         void OpenDatabaseTool(Control anchor = null)
         {
             var m = new ContextMenuStrip();
