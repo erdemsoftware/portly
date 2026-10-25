@@ -179,6 +179,50 @@ namespace Portly.Config
             }
         }
 
+        static readonly Dictionary<string, X509Certificate2> LanCerts = new Dictionary<string, X509Certificate2>();
+
+        /// <summary>
+        /// Certificate (with its private key, for SslStream) for this PC's local network address, signed by the Portly CA:
+        /// https://192.168.1.20:8900 for "Share on the local network". Made once per address and run.
+        /// </summary>
+        public static X509Certificate2 LanCertificate(IPAddress ip)
+        {
+            lock (Sync)
+            {
+                X509Certificate2 have;
+                var ca = EnsureCa();
+                if (LanCerts.TryGetValue(ip.ToString(), out have) && have.Issuer == ca.Subject) return have;
+                using (var caKey = CaKeyRsa())
+                using (var rsa = new RSACryptoServiceProvider(2048)) // a CSP key: CopyWithPrivateKey works with it on .NET Framework
+                {
+                    var req = new CertificateRequest(new X500DistinguishedName("CN=" + ip + ", O=Portly"), rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+                    var san = new SubjectAlternativeNameBuilder();
+                    san.AddIpAddress(ip);
+                    req.CertificateExtensions.Add(san.Build());
+                    req.CertificateExtensions.Add(new X509BasicConstraintsExtension(false, false, 0, true));
+                    req.CertificateExtensions.Add(new X509KeyUsageExtension(X509KeyUsageFlags.DigitalSignature | X509KeyUsageFlags.KeyEncipherment, true));
+                    req.CertificateExtensions.Add(new X509EnhancedKeyUsageExtension(new OidCollection { new Oid("1.3.6.1.5.5.7.3.1") }, false));
+                    var aki = AuthorityKeyId(ca);
+                    if (aki != null) req.CertificateExtensions.Add(aki);
+                    var serial = new byte[16];
+                    using (var rng = RandomNumberGenerator.Create()) rng.GetBytes(serial);
+                    serial[0] &= 0x7f;
+                    var signer = X509SignatureGenerator.CreateForRSA(caKey, RSASignaturePadding.Pkcs1);
+                    var notAfter = DateTimeOffset.Now.AddDays(825);
+                    if (notAfter > ca.NotAfter) notAfter = ca.NotAfter.AddDays(-1);
+                    using (var cert = req.Create(ca.SubjectName, signer, DateTimeOffset.Now.AddDays(-1), notAfter, serial))
+                    using (var withKey = cert.CopyWithPrivateKey(rsa))
+                    {
+                        // through a PFX: SChannel (SslStream) needs a key it can open itself
+                        var pfx = withKey.Export(X509ContentType.Pkcs12, "portly");
+                        have = new X509Certificate2(pfx, "portly", X509KeyStorageFlags.UserKeySet);
+                    }
+                }
+                LanCerts[ip.ToString()] = have;
+                return have;
+            }
+        }
+
         /// <summary>
         /// Why a site's certificate would show a browser warning, or null when it is fine: "missing", "expiring"
         /// (under 30 days), "otherCa" (signed by an older Portly CA), "names" (not made for the site's current names),

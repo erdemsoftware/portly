@@ -1046,5 +1046,7 @@
   "shares.portLabel": "Port",
   "shares.portHint": "Od 1024 do 65535. Działające udostępnienie przejdzie na nowy port; otwórz nowy adres na urządzeniu.",
   "shares.noteLabel": "Uwaga (tylko dla Ciebie)",
-  "shares.portBad": "Nie można użyć portu {0}: musi to być liczba od 1024 do 65535, której nie używa żaden inny program ani udostępnienie."
+  "shares.portBad": "Nie można użyć portu {0}: musi to być liczba od 1024 do 65535, której nie używa żaden inny program ani udostępnienie.",
+  "share.active": "Udostępniony - kliknij, aby zarządzać",
+  "lan.readyHttps": "Otwórz ten adres w przeglądarce telefonu lub innego urządzenia:\n{0}\n\nAdres został skopiowany. Urządzenie musi być podłączone do tego samego routera lub Wi-Fi.\n\nJeśli telefon ostrzega, że połączenie nie jest prywatne, zainstaluj na nim jednorazowo certyfikat Portly: otwórz {1} w telefonie i zainstaluj go (iPhone: Ustawienia > Ogólne > VPN i zarządzanie urządzeniem, potem To urządzenie > Ustawienia zaufania certyfikatów). Możesz też użyć zwykłego adresu: {2}"
 }

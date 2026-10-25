@@ -1046,5 +1046,7 @@
   "shares.portLabel": "Port",
   "shares.portHint": "Mezi 1024 a 65535. Běžící sdílení se přesune na nový port; na zařízení otevřete novou adresu.",
   "shares.noteLabel": "Poznámka (jen pro vás)",
-  "shares.portBad": "Port {0} nelze použít: musí to být číslo mezi 1024 a 65535, které nepoužívá žádný jiný program ani sdílení."
+  "shares.portBad": "Port {0} nelze použít: musí to být číslo mezi 1024 a 65535, které nepoužívá žádný jiný program ani sdílení.",
+  "share.active": "Sdíleno - kliknutím spravujte",
+  "lan.readyHttps": "Otevřete tuto adresu v prohlížeči telefonu nebo jiného zařízení:\n{0}\n\nAdresa je zkopírována. Zařízení musí být připojeno ke stejnému routeru nebo Wi-Fi.\n\nPokud telefon upozorní, že připojení není soukromé, nainstalujte do něj jednou certifikát Portly: otevřete v telefonu {1} a nainstalujte ho (iPhone: Nastavení > Obecné > VPN a správa zařízení, potom Informace > Nastavení důvěryhodnosti certifikátů). Nebo použijte běžnou adresu: {2}"
 }

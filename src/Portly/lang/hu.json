@@ -1046,5 +1046,7 @@
   "shares.portLabel": "Port",
   "shares.portHint": "1024 és 65535 között. A futó megosztás átkerül az új portra; nyisd meg az új címet az eszközön.",
   "shares.noteLabel": "Megjegyzés (csak neked)",
-  "shares.portBad": "A(z) {0} port nem használható: 1024 és 65535 közötti számnak kell lennie, amelyet más program vagy megosztás nem használ."
+  "shares.portBad": "A(z) {0} port nem használható: 1024 és 65535 közötti számnak kell lennie, amelyet más program vagy megosztás nem használ.",
+  "share.active": "Megosztva - kattints a kezeléshez",
+  "lan.readyHttps": "Nyisd meg ezt a címet a telefonod vagy a másik eszköz böngészőjében:\n{0}\n\nA címet kimásoltuk. Az eszköznek ugyanahhoz a routerhez vagy Wi-Fi-hez kell csatlakoznia.\n\nHa a telefon figyelmeztet, hogy a kapcsolat nem privát, telepítsd rá egyszer a Portly tanúsítványát: nyisd meg a telefonon a(z) {1} címet, és telepítsd (iPhone: Beállítások > Általános > VPN és eszközkezelés, majd Névjegy > Tanúsítványmegbízhatósági beállítások). Vagy használd a sima címet: {2}"
 }

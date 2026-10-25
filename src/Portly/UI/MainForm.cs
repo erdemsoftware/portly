@@ -932,11 +932,14 @@ namespace Portly.UI
             {
                 // Share: on the local network (phone / another PC on the same router) or on the internet (Cloudflare)
                 var shareBtn = new ModernButton { Glyph = "share", Kind = ButtonKind.Ghost, AutoSize = false, Size = Ui.S(32, 32), Location = new Point(Ui.S(222), Ui.S(10)), AccessibleName = I18n.T("share.button") };
+                // green while the project is shared (local network or internet)
+                bool sharing = LanShare.UrlOf(site) != null || Share.UrlOf(site) != null;
+                if (sharing) { shareBtn.Kind = ButtonKind.Primary; shareBtn.CustomColor = p.Green; }
                 var sm = new ContextMenuStrip();
                 StyleMenu(sm);
                 sm.Opening += (s, e) => BuildShareMenu(sm.Items, site);
                 shareBtn.Click += (s, e) => sm.Show(shareBtn, new Point(0, shareBtn.Height));
-                new ToolTip().SetToolTip(shareBtn, I18n.T("share.button"));
+                new ToolTip().SetToolTip(shareBtn, sharing ? I18n.T("share.active") : I18n.T("share.button"));
                 name.Width = Ui.S(156);
                 card.Controls.Add(shareBtn);
             }

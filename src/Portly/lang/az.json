@@ -1046,5 +1046,7 @@
   "shares.portLabel": "Port",
   "shares.portHint": "1024 ilə 65535 arası. İşləyən paylaşım yeni porta keçir; cihazda yeni ünvanı açın.",
   "shares.noteLabel": "Qeyd (yalnız sizin üçün)",
-  "shares.portBad": "{0} portu istifadə edilə bilməz: 1024 ilə 65535 arasında, başqa proqramın və ya paylaşımın istifadə etmədiyi bir rəqəm olmalıdır."
+  "shares.portBad": "{0} portu istifadə edilə bilməz: 1024 ilə 65535 arasında, başqa proqramın və ya paylaşımın istifadə etmədiyi bir rəqəm olmalıdır.",
+  "share.active": "Paylaşılır - idarə etmək üçün klikləyin",
+  "lan.readyHttps": "Bu ünvanı telefonunuzun və ya digər cihazın brauzerində açın:\n{0}\n\nÜnvan kopyalandı. Cihaz eyni modemə və ya Wi-Fi-a qoşulmalıdır.\n\nTelefon bağlantının məxfi olmadığını bildirsə, Portly sertifikatını ona bir dəfə quraşdırın: telefonda {1} ünvanını açın və sertifikatı quraşdırın (iPhone: Parametrlər > Ümumi > VPN və cihaz idarəetməsi, sonra Haqqında > Sertifikat etibar parametrləri). Və ya adi ünvandan istifadə edin: {2}"
 }

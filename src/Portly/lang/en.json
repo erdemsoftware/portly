@@ -1046,5 +1046,7 @@
   "shares.noteLabel": "Note (only for you)",
   "shares.portBad": "Port {0} cannot be used: it must be a number between 1024 and 65535 that no other program or share uses.",
   "common.yes": "Yes",
-  "common.no": "No"
+  "common.no": "No",
+  "share.active": "Shared - click to manage",
+  "lan.readyHttps": "Open this address in the browser of your phone or the other device:\n{0}\n\nThe address is copied. The device must be on the same router or Wi-Fi.\n\nIf the phone warns that the connection is not private, install the Portly certificate on it once: open {1} on the phone and install it (iPhone: Settings > General > VPN & Device Management, then About > Certificate Trust Settings). Or use the plain address: {2}"
 }

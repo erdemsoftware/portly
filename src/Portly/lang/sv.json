@@ -1046,5 +1046,7 @@
   "shares.portLabel": "Port",
   "shares.portHint": "Mellan 1024 och 65535. En aktiv delning flyttas till den nya porten; öppna den nya adressen på enheten.",
   "shares.noteLabel": "Anteckning (bara för dig)",
-  "shares.portBad": "Port {0} kan inte användas: det måste vara ett tal mellan 1024 och 65535 som inget annat program eller delning använder."
+  "shares.portBad": "Port {0} kan inte användas: det måste vara ett tal mellan 1024 och 65535 som inget annat program eller delning använder.",
+  "share.active": "Delad - klicka för att hantera",
+  "lan.readyHttps": "Öppna den här adressen i webbläsaren på din telefon eller den andra enheten:\n{0}\n\nAdressen är kopierad. Enheten måste vara ansluten till samma router eller Wi-Fi.\n\nOm telefonen varnar för att anslutningen inte är privat installerar du Portly-certifikatet på den en gång: öppna {1} på telefonen och installera det (iPhone: Inställningar > Allmänt > VPN och enhetshantering, sedan Om > Certifikatbetrodda inställningar). Eller använd den vanliga adressen: {2}"
 }

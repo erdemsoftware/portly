@@ -1046,5 +1046,7 @@
   "shares.portLabel": "Porta",
   "shares.portHint": "Tra 1024 e 65535. Una condivisione attiva passa alla nuova porta; apri il nuovo indirizzo sul dispositivo.",
   "shares.noteLabel": "Nota (solo per te)",
-  "shares.portBad": "La porta {0} non può essere usata: deve essere un numero tra 1024 e 65535 che nessun altro programma o condivisione usa."
+  "shares.portBad": "La porta {0} non può essere usata: deve essere un numero tra 1024 e 65535 che nessun altro programma o condivisione usa.",
+  "share.active": "Condiviso - fai clic per gestire",
+  "lan.readyHttps": "Apri questo indirizzo nel browser del tuo telefono o dell'altro dispositivo:\n{0}\n\nL'indirizzo è stato copiato. Il dispositivo deve essere sullo stesso router o Wi-Fi.\n\nSe il telefono avvisa che la connessione non è privata, installa una volta il certificato di Portly: apri {1} sul telefono e installalo (iPhone: Impostazioni > Generali > VPN e gestione dispositivi, poi Info > Impostazioni attendibilità certificati). Oppure usa l'indirizzo semplice: {2}"
 }

@@ -1046,5 +1046,7 @@
   "shares.noteLabel": "Not (yalnız sizin için)",
   "shares.portBad": "{0} portu kullanılamaz: 1024 ile 65535 arasında, başka bir program ya da paylaşımın kullanmadığı bir sayı olmalı.",
   "common.yes": "Evet",
-  "common.no": "Hayır"
+  "common.no": "Hayır",
+  "share.active": "Paylaşılıyor - yönetmek için tıklayın",
+  "lan.readyHttps": "Telefonunuzun ya da diğer cihazın tarayıcısında bu adresi açın:\n{0}\n\nAdres kopyalandı. Cihaz aynı modeme ya da Wi-Fi'ye bağlı olmalı.\n\nTelefon \"bağlantı gizli değil\" uyarısı verirse Portly sertifikasını bir kez kurun: telefonda {1} adresini açıp sertifikayı yükleyin (iPhone: Ayarlar > Genel > VPN ve Aygıt Yönetimi, sonra Hakkında > Sertifika Güven Ayarları). Ya da şifresiz adresi kullanın: {2}"
 }

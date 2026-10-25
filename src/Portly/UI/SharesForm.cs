@@ -24,7 +24,10 @@ namespace Portly.UI
             {
                 var url = LanShare.Start(site);
                 try { Clipboard.SetText(url); } catch { }
-                Ui.Info(owner, I18n.T("lan.ready", url));
+                // https: the phone does not know the Portly CA yet; say where to get it (served by the share itself)
+                Ui.Info(owner, url.StartsWith("https://")
+                    ? I18n.T("lan.readyHttps", url, "http" + url.Substring(5) + "portly-ca.crt", "http" + url.Substring(5))
+                    : I18n.T("lan.ready", url));
                 return url;
             }
             catch (Exception ex) { Ui.Error(owner, ex.Message); return null; }
@@ -160,10 +163,10 @@ namespace Portly.UI
             }
 
             // actions on the right
-            var actions = new FlowLayoutPanel { AutoSize = true, FlowDirection = FlowDirection.LeftToRight, WrapContents = false, BackColor = Color.Transparent };
+            var actions = new List<Control>(); // placed straight on the card, right-aligned (a panel in between painted over them)
             if (site != null)
             {
-                actions.Controls.Add(Small(running ? I18n.T("shares.stop") : I18n.T("shares.start"), running ? "stop" : "play", async () =>
+                actions.Add(Small(running ? I18n.T("shares.stop") : I18n.T("shares.start"), running ? "stop" : "play", async () =>
                 {
                     if (running) { if (lan) LanShare.Stop(e.Host); else Share.Stop(e.Host); }
                     else if (lan) ShareUi.StartLan(this, site);
@@ -172,25 +175,33 @@ namespace Portly.UI
                 }));
             }
             if (url != "" && url != null && (lan || running))
-                actions.Controls.Add(Small(I18n.T("shares.copy"), null, () => { try { Clipboard.SetText(url); } catch { } _status.Text = I18n.T("lan.copied", url); return Task.FromResult(0); }));
-            actions.Controls.Add(Small(I18n.T("shares.edit"), null, () => { Edit(e, lan); return Task.FromResult(0); }));
-            actions.Controls.Add(Small(I18n.T("shares.remove"), null, () =>
+                actions.Add(Small(I18n.T("shares.copy"), null, () => { try { Clipboard.SetText(url); } catch { } _status.Text = I18n.T("lan.copied", url); return Task.FromResult(0); }));
+            actions.Add(Small(I18n.T("shares.edit"), null, () => { Edit(e, lan); return Task.FromResult(0); }));
+            actions.Add(Small(I18n.T("shares.remove"), null, () =>
             {
                 if (!Ui.Confirm(this, I18n.T("shares.removeConfirm", e.Host))) return Task.FromResult(0);
                 if (lan) { LanShare.Stop(e.Host); ShareStore.Update(e.Host, x => { x.Lan = false; x.LanPort = 0; }); }
                 else { Share.Stop(e.Host); ShareStore.Update(e.Host, x => { x.Online = false; x.OnlineUrl = ""; }); }
                 return Task.FromResult(0);
             }));
-            card.Controls.Add(actions);
-            actions.PerformLayout();
-            actions.Location = new Point(card.Width - actions.PreferredSize.Width - Ui.S(10), card.Height - actions.PreferredSize.Height - Ui.S(8));
+            int x = card.Width - Ui.S(12);
+            foreach (var b in Enumerable.Reverse(actions))
+            {
+                b.Location = new Point(x - b.Width, card.Height - b.Height - Ui.S(10));
+                x = b.Left - Ui.S(6);
+                card.Controls.Add(b);
+            }
+            // texts stop before the buttons
+            foreach (Control c in card.Controls)
+                if (c.Top >= Ui.S(36) && !actions.Contains(c)) c.Width = Math.Min(c.Width, x - c.Left - Ui.S(6));
             return card;
         }
 
         static ModernButton Small(string text, string glyph, Func<Task> click)
         {
             var b = Ui.Button(text, async (s, e) => await click(), false, glyph);
-            b.Margin = Ui.P(6, 0, 0, 0);
+            b.Margin = Padding.Empty;
+            b.Size = b.GetPreferredSize(Size.Empty); // known before it is placed on the card
             return b;
         }
 

@@ -1046,5 +1046,7 @@
   "shares.portLabel": "Poort",
   "shares.portHint": "Tussen 1024 en 65535. Een actieve deling gaat over naar de nieuwe poort; open het nieuwe adres op het apparaat.",
   "shares.noteLabel": "Opmerking (alleen voor jou)",
-  "shares.portBad": "Poort {0} kan niet worden gebruikt: het moet een getal tussen 1024 en 65535 zijn dat geen ander programma of andere deling gebruikt."
+  "shares.portBad": "Poort {0} kan niet worden gebruikt: het moet een getal tussen 1024 en 65535 zijn dat geen ander programma of andere deling gebruikt.",
+  "share.active": "Gedeeld - klik om te beheren",
+  "lan.readyHttps": "Open dit adres in de browser van je telefoon of het andere apparaat:\n{0}\n\nHet adres is gekopieerd. Het apparaat moet op dezelfde router of wifi zitten.\n\nWaarschuwt de telefoon dat de verbinding niet privé is, installeer dan eenmalig het Portly-certificaat erop: open {1} op de telefoon en installeer het (iPhone: Instellingen > Algemeen > VPN en apparaatbeheer, daarna Info > Certificaatvertrouwensinstellingen). Of gebruik het gewone adres: {2}"
 }

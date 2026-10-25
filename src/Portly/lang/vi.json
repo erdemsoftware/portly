@@ -1046,5 +1046,7 @@
   "shares.portLabel": "Cổng",
   "shares.portHint": "Từ 1024 đến 65535. Chia sẻ đang chạy sẽ chuyển sang cổng mới; hãy mở địa chỉ mới trên thiết bị.",
   "shares.noteLabel": "Ghi chú (chỉ mình bạn thấy)",
-  "shares.portBad": "Không thể dùng cổng {0}: phải là một số từ 1024 đến 65535 mà không chương trình hay chia sẻ nào khác đang dùng."
+  "shares.portBad": "Không thể dùng cổng {0}: phải là một số từ 1024 đến 65535 mà không chương trình hay chia sẻ nào khác đang dùng.",
+  "share.active": "Đang chia sẻ - nhấp để quản lý",
+  "lan.readyHttps": "Mở địa chỉ này trong trình duyệt của điện thoại hoặc thiết bị khác:\n{0}\n\nĐã sao chép địa chỉ. Thiết bị phải kết nối cùng router hoặc Wi-Fi.\n\nNếu điện thoại cảnh báo kết nối không riêng tư, hãy cài chứng chỉ Portly lên điện thoại một lần: mở {1} trên điện thoại và cài đặt (iPhone: Cài đặt > Cài đặt chung > VPN & Quản lý thiết bị, sau đó Giới thiệu > Cài đặt tin cậy chứng nhận). Hoặc dùng địa chỉ thường: {2}"
 }

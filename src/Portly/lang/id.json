@@ -1046,5 +1046,7 @@
   "shares.portLabel": "Port",
   "shares.portHint": "Antara 1024 dan 65535. Pembagian yang sedang berjalan pindah ke port baru; buka alamat baru di perangkat.",
   "shares.noteLabel": "Catatan (hanya untuk Anda)",
-  "shares.portBad": "Port {0} tidak dapat digunakan: harus berupa angka antara 1024 dan 65535 yang tidak dipakai program atau pembagian lain."
+  "shares.portBad": "Port {0} tidak dapat digunakan: harus berupa angka antara 1024 dan 65535 yang tidak dipakai program atau pembagian lain.",
+  "share.active": "Dibagikan - klik untuk mengelola",
+  "lan.readyHttps": "Buka alamat ini di browser ponsel Anda atau perangkat lain:\n{0}\n\nAlamat sudah disalin. Perangkat harus terhubung ke router atau Wi-Fi yang sama.\n\nJika ponsel memperingatkan bahwa koneksi tidak pribadi, pasang sertifikat Portly di ponsel sekali saja: buka {1} di ponsel lalu pasang (iPhone: Pengaturan > Umum > VPN & Manajemen Perangkat, lalu Mengenai > Pengaturan Kepercayaan Sertifikat). Atau gunakan alamat biasa: {2}"
 }

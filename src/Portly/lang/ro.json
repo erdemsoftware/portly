@@ -1046,5 +1046,7 @@
   "shares.portLabel": "Port",
   "shares.portHint": "Între 1024 și 65535. O partajare pornită trece pe noul port; deschide noua adresă pe dispozitiv.",
   "shares.noteLabel": "Notă (doar pentru tine)",
-  "shares.portBad": "Portul {0} nu poate fi folosit: trebuie să fie un număr între 1024 și 65535 pe care nu îl folosește alt program sau altă partajare."
+  "shares.portBad": "Portul {0} nu poate fi folosit: trebuie să fie un număr între 1024 și 65535 pe care nu îl folosește alt program sau altă partajare.",
+  "share.active": "Partajat - fă clic pentru a gestiona",
+  "lan.readyHttps": "Deschide această adresă în browserul telefonului tău sau al celuilalt dispozitiv:\n{0}\n\nAdresa a fost copiată. Dispozitivul trebuie să fie conectat la același router sau Wi-Fi.\n\nDacă telefonul avertizează că conexiunea nu este privată, instalează o dată certificatul Portly pe el: deschide {1} pe telefon și instalează-l (iPhone: Configurări > General > VPN și gestionare dispozitiv, apoi Informații > Configurări încredere certificate). Sau folosește adresa simplă: {2}"
 }

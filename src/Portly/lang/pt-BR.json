@@ -1046,5 +1046,7 @@
   "shares.portLabel": "Porta",
   "shares.portHint": "Entre 1024 e 65535. Um compartilhamento ativo passa para a nova porta; abra o novo endereço no dispositivo.",
   "shares.noteLabel": "Observação (só para você)",
-  "shares.portBad": "A porta {0} não pode ser usada: precisa ser um número entre 1024 e 65535 que nenhum outro programa ou compartilhamento use."
+  "shares.portBad": "A porta {0} não pode ser usada: precisa ser um número entre 1024 e 65535 que nenhum outro programa ou compartilhamento use.",
+  "share.active": "Compartilhado - clique para gerenciar",
+  "lan.readyHttps": "Abra este endereço no navegador do seu celular ou do outro dispositivo:\n{0}\n\nO endereço foi copiado. O dispositivo precisa estar no mesmo roteador ou Wi-Fi.\n\nSe o celular avisar que a conexão não é particular, instale nele o certificado do Portly uma vez: abra {1} no celular e instale-o (iPhone: Ajustes > Geral > VPN e Gerenciamento de Dispositivo, depois Sobre > Ajustes de Confiança de Certificados). Ou use o endereço simples: {2}"
 }

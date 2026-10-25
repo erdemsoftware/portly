@@ -1046,5 +1046,7 @@
   "shares.portLabel": "Port",
   "shares.portHint": "1024 dan 65535 gacha. Ishlayotgan ulashish yangi portga oʻtadi; qurilmada yangi manzilni oching.",
   "shares.noteLabel": "Izoh (faqat siz uchun)",
-  "shares.portBad": "{0} portidan foydalanib boʻlmaydi: u 1024 dan 65535 gacha boʻlgan, boshqa dastur yoki ulashish ishlatmayotgan son boʻlishi kerak."
+  "shares.portBad": "{0} portidan foydalanib boʻlmaydi: u 1024 dan 65535 gacha boʻlgan, boshqa dastur yoki ulashish ishlatmayotgan son boʻlishi kerak.",
+  "share.active": "Ulashilgan - boshqarish uchun bosing",
+  "lan.readyHttps": "Bu manzilni telefoningiz yoki boshqa qurilma brauzerida oching:\n{0}\n\nManzil nusxalandi. Qurilma bitta router yoki Wi-Fi ga ulangan boʻlishi kerak.\n\nTelefon ulanish maxfiy emasligi haqida ogohlantirsa, unga Portly sertifikatini bir marta oʻrnating: telefonda {1} manzilini oching va uni oʻrnating (iPhone: Sozlamalar > Umumiy > VPN va qurilmalarni boshqarish, soʻng Haqida > Sertifikat ishonchi sozlamalari). Yoki oddiy manzildan foydalaning: {2}"
 }

@@ -1046,5 +1046,7 @@
   "shares.portLabel": "Port",
   "shares.portHint": "Antara 1024 dan 65535. Perkongsian yang sedang berjalan berpindah ke port baharu; buka alamat baharu pada peranti.",
   "shares.noteLabel": "Nota (hanya untuk anda)",
-  "shares.portBad": "Port {0} tidak boleh digunakan: ia mesti nombor antara 1024 dan 65535 yang tidak digunakan oleh program atau perkongsian lain."
+  "shares.portBad": "Port {0} tidak boleh digunakan: ia mesti nombor antara 1024 dan 65535 yang tidak digunakan oleh program atau perkongsian lain.",
+  "share.active": "Dikongsi - klik untuk mengurus",
+  "lan.readyHttps": "Buka alamat ini dalam pelayar telefon anda atau peranti lain:\n{0}\n\nAlamat telah disalin. Peranti mesti berada pada penghala atau Wi-Fi yang sama.\n\nJika telefon memberi amaran bahawa sambungan tidak peribadi, pasang sijil Portly padanya sekali: buka {1} pada telefon dan pasangkannya (iPhone: Seting > Umum > VPN & Pengurusan Peranti, kemudian Perihal > Seting Kepercayaan Sijil). Atau gunakan alamat biasa: {2}"
 }

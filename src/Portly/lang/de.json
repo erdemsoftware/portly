@@ -1046,5 +1046,7 @@
   "shares.portLabel": "Port",
   "shares.portHint": "Zwischen 1024 und 65535. Eine laufende Freigabe wechselt auf den neuen Port; öffnen Sie die neue Adresse auf dem Gerät.",
   "shares.noteLabel": "Hinweis (nur für Sie)",
-  "shares.portBad": "Port {0} kann nicht verwendet werden: Es muss eine Zahl zwischen 1024 und 65535 sein, die kein anderes Programm und keine andere Freigabe nutzt."
+  "shares.portBad": "Port {0} kann nicht verwendet werden: Es muss eine Zahl zwischen 1024 und 65535 sein, die kein anderes Programm und keine andere Freigabe nutzt.",
+  "share.active": "Geteilt - klicken zum Verwalten",
+  "lan.readyHttps": "Öffnen Sie diese Adresse im Browser Ihres Handys oder des anderen Geräts:\n{0}\n\nDie Adresse wurde kopiert. Das Gerät muss mit demselben Router oder WLAN verbunden sein.\n\nWenn das Handy warnt, dass die Verbindung nicht privat ist, installieren Sie einmalig das Portly-Zertifikat darauf: Öffnen Sie {1} auf dem Handy und installieren Sie es (iPhone: Einstellungen > Allgemein > VPN und Geräteverwaltung, dann Info > Zertifikatsvertrauenseinstellungen). Oder verwenden Sie die normale Adresse: {2}"
 }

@@ -219,7 +219,7 @@ namespace Portly.Tools
                 php.AppendLine("    $_SERVER['HTTPS'] = 'on';");
                 php.AppendLine("} elseif (preg_match('/^(?=(10|172\\.(1[6-9]|2[0-9]|3[01])|192\\.168)\\.)[0-9]{1,3}(\\.[0-9]{1,3}){3}:[0-9]+$/', $portlyHost)) {");
                 php.AppendLine("    // shared on the local network (phone, tablet): http://192.168.x.x:port");
-                php.AppendLine("    $portlyUrl = 'http://' . $portlyHost;");
+                php.AppendLine("    $portlyUrl = (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https' ? 'https://' : 'http://') . $portlyHost;");
                 php.AppendLine("    add_filter('option_home', function () use ($portlyUrl) { return $portlyUrl; });");
                 php.AppendLine("    add_filter('option_siteurl', function () use ($portlyUrl) { return $portlyUrl; });");
                 php.AppendLine("}");
