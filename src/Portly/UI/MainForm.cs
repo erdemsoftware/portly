@@ -35,7 +35,7 @@ namespace Portly.UI
 
         readonly bool _startHidden;
         readonly bool _startServices;
-        bool _exiting, _trayHintShown, _busyAll;
+        bool _exiting, _busyAll;
         NotifyIcon _tray;
         ContextMenuStrip _menu;
         Panel _content, _pageServices, _pageSites, _pageLog;
@@ -1938,9 +1938,11 @@ namespace Portly.UI
             if (Settings.Current.CloseToTray && e.CloseReason == CloseReason.UserClosing)
             {
                 Hide();
-                if (!_trayHintShown)
+                // only the very first time: later it would sit over the tray icon right when the user wants to use it
+                if (!Settings.Current.TrayHintShown)
                 {
-                    _trayHintShown = true;
+                    Settings.Current.TrayHintShown = true;
+                    Settings.Current.Save();
                     _tray.ShowBalloonTip(3000, "Portly", I18n.T("tray.hint"), ToolTipIcon.Info);
                 }
                 return;
