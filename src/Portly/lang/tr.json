@@ -1004,5 +1004,6 @@
   "tomcat.oldJava": "{0} için Java {1} veya daha yenisi gerekli, etkin Java sürümü {2}. Paketler penceresinden daha yeni bir Java seçin.",
   "tomcat.openPage": "Tomcat sayfasını aç",
   "tomcat.openWebapps": "webapps klasörünü aç (WAR dosyasını buraya bırakın)",
-  "settings.tomcatPort": "Tomcat portu"
+  "settings.tomcatPort": "Tomcat portu",
+  "pkg.onSystemTomcat": "Windows'ta kurulu (kendi Windows hizmetiyle çalışır); Portly kendi kopyasını kullanır"
 }

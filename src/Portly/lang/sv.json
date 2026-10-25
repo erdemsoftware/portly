@@ -1004,5 +1004,6 @@
   "tomcat.oldJava": "{0} kräver Java {1} eller nyare, aktiv Java är {2}. Välj en nyare Java i fönstret Paket.",
   "tomcat.openPage": "Öppna Tomcat-sidan",
   "tomcat.openWebapps": "Öppna mappen webapps (släpp en WAR-fil här)",
-  "settings.tomcatPort": "Tomcat-port"
+  "settings.tomcatPort": "Tomcat-port",
+  "pkg.onSystemTomcat": "Installerat i Windows (körs som egen Windows-tjänst); Portly använder en egen kopia"
 }

@@ -41,7 +41,10 @@ namespace Portly.Tools
                 string found;
                 if (SystemCache.TryGetValue(type, out found)) return found;
                 string[] list;
-                if (SystemCandidates.TryGetValue(type, out list))
+                // Java / Tomcat live in versioned folders: found by their own search
+                if (type == "java") { var h = SystemJava.Newest(); found = h == null ? null : Path.Combine(h, "bin", "java.exe"); }
+                else if (type == "tomcat") { var t = SystemJava.Tomcat(); found = t == null ? null : Path.Combine(t, "bin", "bootstrap.jar"); }
+                else if (SystemCandidates.TryGetValue(type, out list))
                 {
                     found = list.Select(Environment.ExpandEnvironmentVariables).FirstOrDefault(File.Exists);
                     if (found == null) found = AppPath(Path.GetFileName(list[0]));

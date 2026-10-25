@@ -1004,5 +1004,6 @@
   "tomcat.oldJava": "{0} precisa do Java {1} ou mais recente, o Java ativo é {2}. Escolha um Java mais recente na janela Pacotes.",
   "tomcat.openPage": "Abrir página do Tomcat",
   "tomcat.openWebapps": "Abrir pasta webapps (solte um arquivo WAR aqui)",
-  "settings.tomcatPort": "Porta do Tomcat"
+  "settings.tomcatPort": "Porta do Tomcat",
+  "pkg.onSystemTomcat": "Instalado no Windows (roda como seu próprio serviço do Windows); o Portly usa a própria cópia"
 }

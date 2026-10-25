@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -178,7 +179,9 @@ namespace Portly.UI
                 var name = PackageTypes.Get(r.Type).Name;
                 if (r.SystemExe != null)
                 {
-                    var sysItem = new ListViewItem(new[] { name, SystemVersion(r.SystemExe), I18n.T("pkg.onSystem"), I18n.T("pkg.inUse", r.SystemExe) })
+                    // a Windows Tomcat runs as its own Windows service: shown for information, Portly runs its own copy
+                    var sysNote = r.Type == "tomcat" ? I18n.T("pkg.onSystemTomcat") : I18n.T("pkg.onSystem");
+                    var sysItem = new ListViewItem(new[] { name, SystemVersion(r.SystemExe), sysNote, r.Type == "tomcat" ? r.SystemExe : I18n.T("pkg.inUse", r.SystemExe) })
                         { Tag = r, Name = r.Type + "/system", Group = _list.Groups[PackageTypes.Get(r.Type).Category], ForeColor = Ui.Green };
                     _list.Items.Add(sysItem);
                     continue;
@@ -208,6 +211,19 @@ namespace Portly.UI
 
         static string SystemVersion(string exe)
         {
+            // Java: JAVA_VERSION from the "release" file (1.8.0_491, 21.0.4); Tomcat: its folder ("Tomcat 10.1")
+            var home = Path.GetDirectoryName(Path.GetDirectoryName(exe));
+            if (exe.EndsWith("java.exe", StringComparison.OrdinalIgnoreCase))
+            {
+                try
+                {
+                    var m = System.Text.RegularExpressions.Regex.Match(File.ReadAllText(Path.Combine(home, "release")), "JAVA_VERSION=\"([^\"]+)\"");
+                    if (m.Success) return m.Groups[1].Value;
+                }
+                catch { }
+            }
+            if (exe.EndsWith("bootstrap.jar", StringComparison.OrdinalIgnoreCase))
+                return System.Text.RegularExpressions.Regex.Match(Path.GetFileName(home), "[\\d.]+").Value;
             try { var v = System.Diagnostics.FileVersionInfo.GetVersionInfo(exe); return (v.ProductVersion ?? v.FileVersion ?? "").Split(' ', '+')[0]; }
             catch { return ""; }
         }

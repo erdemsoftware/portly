@@ -1004,5 +1004,6 @@
   "tomcat.oldJava": "Для {0} нужна Java {1} или новее, активная Java — {2}. Выберите более новую Java в окне «Пакеты».",
   "tomcat.openPage": "Открыть страницу Tomcat",
   "tomcat.openWebapps": "Открыть папку webapps (перетащите сюда файл WAR)",
-  "settings.tomcatPort": "Порт Tomcat"
+  "settings.tomcatPort": "Порт Tomcat",
+  "pkg.onSystemTomcat": "Установлено в Windows (работает как отдельная служба Windows); Portly использует свою копию"
 }

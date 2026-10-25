@@ -1004,5 +1004,6 @@
   "tomcat.oldJava": "{0}에는 Java {1} 이상이 필요하지만 활성 Java는 {2}입니다. 패키지 창에서 더 새로운 Java를 선택하세요.",
   "tomcat.openPage": "Tomcat 페이지 열기",
   "tomcat.openWebapps": "webapps 폴더 열기 (여기에 WAR 파일을 놓으세요)",
-  "settings.tomcatPort": "Tomcat 포트"
+  "settings.tomcatPort": "Tomcat 포트",
+  "pkg.onSystemTomcat": "Windows에 설치됨 (자체 Windows 서비스로 실행). Portly는 자체 사본을 사용합니다"
 }

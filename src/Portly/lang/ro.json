@@ -1004,5 +1004,6 @@
   "tomcat.oldJava": "{0} necesită Java {1} sau mai nou, Java activ este {2}. Alege un Java mai nou în fereastra Pachete.",
   "tomcat.openPage": "Deschide pagina Tomcat",
   "tomcat.openWebapps": "Deschide folderul webapps (plasează aici un fișier WAR)",
-  "settings.tomcatPort": "Port Tomcat"
+  "settings.tomcatPort": "Port Tomcat",
+  "pkg.onSystemTomcat": "Instalat în Windows (rulează ca serviciu Windows propriu); Portly folosește propria copie"
 }

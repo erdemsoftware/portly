@@ -1004,5 +1004,6 @@
   "tomcat.oldJava": "{0} memerlukan Java {1} atau lebih baru, Java yang aktif adalah {2}. Pilih Java yang lebih baru di jendela Paket.",
   "tomcat.openPage": "Buka halaman Tomcat",
   "tomcat.openWebapps": "Buka folder webapps (letakkan file WAR di sini)",
-  "settings.tomcatPort": "Port Tomcat"
+  "settings.tomcatPort": "Port Tomcat",
+  "pkg.onSystemTomcat": "Terpasang di Windows (berjalan sebagai layanan Windows sendiri); Portly memakai salinannya sendiri"
 }

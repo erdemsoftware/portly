@@ -1004,5 +1004,6 @@
   "tomcat.oldJava": "{0} vyžaduje Java {1} nebo novější, aktivní Java je {2}. Vyberte novější Javu v okně Balíčky.",
   "tomcat.openPage": "Otevřít stránku Tomcat",
   "tomcat.openWebapps": "Otevřít složku webapps (sem přetáhněte soubor WAR)",
-  "settings.tomcatPort": "Port Tomcat"
+  "settings.tomcatPort": "Port Tomcat",
+  "pkg.onSystemTomcat": "Nainstalováno ve Windows (běží jako vlastní služba Windows); Portly používá vlastní kopii"
 }

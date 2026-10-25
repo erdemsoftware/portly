@@ -1004,5 +1004,6 @@
   "tomcat.oldJava": "{0} 需要 Java {1} 或更高版本，当前使用的 Java 为 {2}。请在软件包窗口中选择更新的 Java。",
   "tomcat.openPage": "打开 Tomcat 页面",
   "tomcat.openWebapps": "打开 webapps 文件夹 (将 WAR 文件放到这里)",
-  "settings.tomcatPort": "Tomcat 端口"
+  "settings.tomcatPort": "Tomcat 端口",
+  "pkg.onSystemTomcat": "已安装在 Windows 上(作为独立的 Windows 服务运行);Portly 使用自己的副本"
 }

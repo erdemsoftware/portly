@@ -1005,5 +1005,6 @@
   "tomcat.oldJava": "يحتاج {0} إلى Java {1} أو أحدث، وJava النشطة هي {2}. اختر Java أحدث من نافذة الحزم.",
   "tomcat.openPage": "فتح صفحة Tomcat",
   "tomcat.openWebapps": "فتح مجلد webapps (أفلت ملف WAR هنا)",
-  "settings.tomcatPort": "منفذ Tomcat"
+  "settings.tomcatPort": "منفذ Tomcat",
+  "pkg.onSystemTomcat": "مثبّت على Windows (يعمل كخدمة Windows خاصة به)؛ يستخدم Portly نسخته الخاصة"
 }

@@ -47,13 +47,13 @@ namespace Portly.Services
 
         public static string Url { get { return "http://localhost:" + Settings.Current.TomcatPort + "/"; } }
 
-        /// <summary>Java for Tomcat: the active Portly Java package, else JAVA_HOME. Null when there is none.</summary>
+        /// <summary>Java for Tomcat: the active Portly Java package, else the newest Java installed on Windows
+        /// (JAVA_HOME, registry, vendor folders). Null when there is none.</summary>
         public static string FindJavaHome()
         {
             var dir = PackageTypes.ActiveDir("java");
             if (dir != null) return dir;
-            var jh = (Environment.GetEnvironmentVariable("JAVA_HOME") ?? "").Trim().Trim('"').TrimEnd('\\');
-            return jh != "" && File.Exists(Path.Combine(jh, "bin", "java.exe")) ? jh : null;
+            return Tools.SystemJava.Newest();
         }
 
         /// <summary>Feature version of a Java home from its "release" file (JAVA_VERSION="21.0.12.1" -> 21, "1.8.0_x" -> 8).</summary>

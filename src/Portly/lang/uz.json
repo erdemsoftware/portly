@@ -1004,5 +1004,6 @@
   "tomcat.oldJava": "{0} uchun Java {1} yoki yangisi kerak, faol Java {2}. Paketlar oynasida yangiroq Java tanlang.",
   "tomcat.openPage": "Tomcat sahifasini ochish",
   "tomcat.openWebapps": "webapps papkasini ochish (WAR faylni shu yerga tashlang)",
-  "settings.tomcatPort": "Tomcat porti"
+  "settings.tomcatPort": "Tomcat porti",
+  "pkg.onSystemTomcat": "Windows'da o'rnatilgan (o'z Windows xizmati sifatida ishlaydi); Portly o'z nusxasidan foydalanadi"
 }

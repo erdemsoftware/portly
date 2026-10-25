@@ -1004,5 +1004,6 @@
   "tomcat.oldJava": "{0} ต้องใช้ Java {1} ขึ้นไป แต่ Java ที่ใช้งานอยู่คือ {2} เลือก Java ที่ใหม่กว่าในหน้าต่างแพ็กเกจ",
   "tomcat.openPage": "เปิดหน้า Tomcat",
   "tomcat.openWebapps": "เปิดโฟลเดอร์ webapps (วางไฟล์ WAR ที่นี่)",
-  "settings.tomcatPort": "พอร์ต Tomcat"
+  "settings.tomcatPort": "พอร์ต Tomcat",
+  "pkg.onSystemTomcat": "ติดตั้งอยู่ใน Windows (ทำงานเป็นบริการ Windows ของตัวเอง) Portly ใช้สำเนาของตัวเอง"
 }

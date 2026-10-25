@@ -1004,5 +1004,6 @@
   "tomcat.oldJava": "A(z) {0} Java {1} vagy újabb verziót igényel, az aktív Java {2}. Válassz újabb Javát a Csomagok ablakban.",
   "tomcat.openPage": "Tomcat oldal megnyitása",
   "tomcat.openWebapps": "webapps mappa megnyitása (ide húzd a WAR fájlt)",
-  "settings.tomcatPort": "Tomcat port"
+  "settings.tomcatPort": "Tomcat port",
+  "pkg.onSystemTomcat": "Windowsra telepítve (saját Windows-szolgáltatásként fut); a Portly saját példányt használ"
 }

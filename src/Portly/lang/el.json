@@ -1004,5 +1004,6 @@
   "tomcat.oldJava": "Το {0} χρειάζεται Java {1} ή νεότερη, η ενεργή Java είναι {2}. Επιλέξτε νεότερη Java στο παράθυρο Πακέτα.",
   "tomcat.openPage": "Άνοιγμα σελίδας Tomcat",
   "tomcat.openWebapps": "Άνοιγμα φακέλου webapps (αφήστε εδώ ένα αρχείο WAR)",
-  "settings.tomcatPort": "Θύρα Tomcat"
+  "settings.tomcatPort": "Θύρα Tomcat",
+  "pkg.onSystemTomcat": "Εγκατεστημένο στα Windows (εκτελείται ως δική του υπηρεσία Windows)· το Portly χρησιμοποιεί δικό του αντίγραφο"
 }

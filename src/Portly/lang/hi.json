@@ -1004,5 +1004,6 @@
   "tomcat.oldJava": "{0} को Java {1} या नया चाहिए, सक्रिय Java {2} है। पैकेज विंडो में नया Java चुनें।",
   "tomcat.openPage": "Tomcat पेज खोलें",
   "tomcat.openWebapps": "webapps फ़ोल्डर खोलें (WAR फ़ाइल यहाँ छोड़ें)",
-  "settings.tomcatPort": "Tomcat पोर्ट"
+  "settings.tomcatPort": "Tomcat पोर्ट",
+  "pkg.onSystemTomcat": "Windows पर इंस्टॉल है (अपनी Windows सेवा के रूप में चलता है); Portly अपनी कॉपी इस्तेमाल करता है"
 }
