@@ -4,7 +4,7 @@
     { "kind": "link", "name": "Buy Me a Coffee", "url": "https://buymeacoffee.com/erdemsoftware", "note": { "en": "Card, worldwide, one-time or monthly", "tr": "Kredi kartı, tüm dünya, tek seferlik ya da aylık" } },
     { "kind": "link", "name": "GitHub Sponsors", "url": "", "note": { "en": "Card, worldwide", "tr": "Kredi kartı, tüm dünya" } },
     { "kind": "link", "name": "Kredi kartı (Türkiye)", "url": "", "note": { "en": "Turkish cards (Shopier / iyzico link)", "tr": "Türk kredi/banka kartları (Shopier / iyzico linki)" } },
-    { "kind": "copy", "name": "Binance Pay ID", "value": "", "note": { "en": "Binance app > Pay > Send, no fee", "tr": "Binance uygulaması > Pay > Gönder, ücretsiz" } },
+    { "kind": "copy", "name": "Binance Pay ID", "value": "50018297", "note": { "en": "Binance app > Pay > Send, no fee", "tr": "Binance uygulaması > Pay > Gönder, ücretsiz" } },
     { "kind": "copy", "name": "USDT · TRC-20 (Tron)", "value": "TWPzXu77aJFc2YUUBA3CCe5tw6D79xPakm", "note": { "en": "Send only USDT on the Tron (TRC-20) network", "tr": "Yalnızca Tron (TRC-20) ağında USDT gönderin" } },
     { "kind": "copy", "name": "USDT · BEP-20 (BNB Smart Chain)", "value": "0xdc4ed272b9f0d1f9f5a4b167e3eb3ecfcf3e89f3", "note": { "en": "Send only on BNB Smart Chain (BEP-20)", "tr": "Yalnızca BNB Smart Chain (BEP-20) ağından gönderin" } },
     { "kind": "copy", "name": "USDT · Polygon", "value": "0xdc4ed272b9f0d1f9f5a4b167e3eb3ecfcf3e89f3", "note": { "en": "Send only on the Polygon network", "tr": "Yalnızca Polygon ağından gönderin" } },
