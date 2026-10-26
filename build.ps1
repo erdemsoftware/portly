@@ -31,13 +31,33 @@ if (-not $dotnet) { throw ".NET SDK not found. Install it from https://dot.net (
 $env:DOTNET_CLI_TELEMETRY_OPTOUT = '1'
 $env:DOTNET_NOLOGO = '1'
 
-# Optional code signing: set PORTLY_SIGN_PFX (path to a .pfx) and PORTLY_SIGN_PASSWORD, e.g. from CI secrets.
-# Without them nothing is signed and the build works as before.
-function Sign-File([string]$file) {
-    if (-not $env:PORTLY_SIGN_PFX -or -not (Test-Path $env:PORTLY_SIGN_PFX)) { return }
+# Optional code signing. Without these settings nothing is signed and the build works as before.
+#   Certificate in the Windows certificate store (Certum SimplySign cloud key, a USB token ...):
+#     PORTLY_SIGN_THUMBPRINT = the certificate's SHA1 thumbprint (SimplySign Desktop must be logged in)
+#   Or a .pfx file (CI secrets): PORTLY_SIGN_PFX + PORTLY_SIGN_PASSWORD
+#   PORTLY_SIGN_TIMESTAMP overrides the timestamp server (default: Certum's for a thumbprint, DigiCert's for a .pfx)
+function Sign-Args {
+    if ($env:PORTLY_SIGN_THUMBPRINT) {
+        $ts = if ($env:PORTLY_SIGN_TIMESTAMP) { $env:PORTLY_SIGN_TIMESTAMP } else { 'http://time.certum.pl' }
+        return @('/sha1', $env:PORTLY_SIGN_THUMBPRINT.Replace(' ', ''), '/fd', 'SHA256', '/tr', $ts, '/td', 'SHA256', '/d', 'Portly')
+    }
+    if ($env:PORTLY_SIGN_PFX -and (Test-Path $env:PORTLY_SIGN_PFX)) {
+        $ts = if ($env:PORTLY_SIGN_TIMESTAMP) { $env:PORTLY_SIGN_TIMESTAMP } else { 'http://timestamp.digicert.com' }
+        return @('/f', $env:PORTLY_SIGN_PFX, '/p', $env:PORTLY_SIGN_PASSWORD, '/fd', 'SHA256', '/tr', $ts, '/td', 'SHA256', '/d', 'Portly')
+    }
+    return $null
+}
+
+$signArgs = Sign-Args
+$signtool = $null
+if ($signArgs) {
     $signtool = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin\*\x64\signtool.exe" -ErrorAction SilentlyContinue | Sort-Object FullName -Descending | Select-Object -First 1
-    if (-not $signtool) { throw "signtool.exe not found (Windows SDK)" }
-    & $signtool.FullName sign /f $env:PORTLY_SIGN_PFX /p $env:PORTLY_SIGN_PASSWORD /fd SHA256 /tr 'http://timestamp.digicert.com' /td SHA256 /d 'Portly' $file
+    if (-not $signtool) { throw "signtool.exe not found: install the Windows SDK (signing tools)" }
+}
+
+function Sign-File([string]$file) {
+    if (-not $signArgs) { return }
+    & $signtool.FullName sign @signArgs $file
     if ($LASTEXITCODE -ne 0) { throw "Signing failed: $file" }
     Write-Host "  signed $file" -ForegroundColor Green
 }
@@ -73,9 +93,16 @@ foreach ($e in $editions) {
     $sums += "$hash  $(Split-Path $zip -Leaf)"
     Write-Host "  $zip" -ForegroundColor Green
 
-    $iscc = @("${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe", "$env:ProgramFiles\Inno Setup 6\ISCC.exe", "$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe") | Where-Object { Test-Path $_ } | Select-Object -First 1
+    $iscc = foreach ($v in '7', '6') { "${env:ProgramFiles(x86)}\Inno Setup $v\ISCC.exe", "$env:ProgramFiles\Inno Setup $v\ISCC.exe", "$env:LOCALAPPDATA\Programs\Inno Setup $v\ISCC.exe" }
+    $iscc = $iscc | Where-Object { Test-Path $_ } | Select-Object -First 1
     if ($iscc) {
-        & $iscc /Q "/DAppVersion=$Version" "/DEdition=$($e.Suffix)" "/DSourceDir=$stage" "/DOutputDir=$dist" (Join-Path $root 'installer\portly.iss')
+        # with signing on, Inno Setup signs the uninstaller inside the setup too ($f = the file, $q = a quote)
+        $isccSign = @()
+        if ($signArgs) {
+            $quoted = ($signArgs | ForEach-Object { if ($_ -match '\s') { '$q' + $_ + '$q' } else { $_ } }) -join ' '
+            $isccSign = @('/DSign=1', "/Sportly=`$q$($signtool.FullName)`$q sign $quoted `$q`$f`$q")
+        }
+        & $iscc /Q @isccSign "/DAppVersion=$Version" "/DEdition=$($e.Suffix)" "/DSourceDir=$stage" "/DOutputDir=$dist" (Join-Path $root 'installer\portly.iss')
         if ($LASTEXITCODE -ne 0) { throw "Installer failed: $($e.Name)" }
         $setup = Join-Path $dist "Portly-$Version-$($e.Suffix)-setup.exe"
         Sign-File $setup

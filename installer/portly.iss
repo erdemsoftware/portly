@@ -38,6 +38,11 @@ DefaultDirName={sd}\Portly
 DisableProgramGroupPage=yes
 PrivilegesRequired=lowest
 PrivilegesRequiredOverridesAllowed=dialog
+#ifdef Sign
+; build.ps1 passes the "portly" sign tool when code signing is set up: the uninstaller is signed too
+SignTool=portly
+SignedUninstaller=yes
+#endif
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 #if Edition == "win7"
