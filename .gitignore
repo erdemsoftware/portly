@@ -10,5 +10,3 @@ obj/
 # a Portly folder used for testing next to the sources
 portable/
 
-# agent worktrees
-.claude/
