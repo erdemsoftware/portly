@@ -25,7 +25,8 @@ namespace Portly.UI
         public string CreatedName { get; private set; }
         public bool OpenAfter { get { return _open.Checked; } }
 
-        public NewProjectForm(string template = null)
+        /// <param name="parent">Opened from a project's "Add sub-project": that project is already picked.</param>
+        public NewProjectForm(string template = null, string parent = null)
         {
             Ui.Apply(this);
             Text = I18n.T("project.title");
@@ -53,6 +54,12 @@ namespace Portly.UI
                 _parent.Items.Add(p.Name);
             if (_parent.Items.Count == 0) _sub.Enabled = false;
             else _parent.SelectedIndex = 0;
+            if (parent != null && _parent.Items.Contains(parent))
+            {
+                _parent.SelectedItem = parent;
+                _sub.Checked = true;
+                _parent.Enabled = true;
+            }
             _sub.CheckedChanged += (s, e) => { _parent.Enabled = _sub.Checked; UpdateUrl(); };
             _parent.SelectedIndexChanged += (s, e) => UpdateUrl();
             t.Controls.Add(_sub);

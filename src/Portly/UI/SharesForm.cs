@@ -24,13 +24,29 @@ namespace Portly.UI
             {
                 var url = LanShare.Start(site);
                 try { Clipboard.SetText(url); } catch { }
-                // https: the phone does not know the Portly CA yet; say where to get it (served by the share itself)
-                Ui.Info(owner, url.StartsWith("https://")
-                    ? I18n.T("lan.readyHttps", url, "http" + url.Substring(5) + "portly-ca.crt", "http" + url.Substring(5))
-                    : I18n.T("lan.ready", url));
+                ShowLanQr(owner, site.Host);
                 return url;
             }
             catch (Exception ex) { Ui.Error(owner, ex.Message); return null; }
+        }
+
+        /// <summary>QR code + explanation for a running local network share (https: also the certificate code).</summary>
+        public static void ShowLanQr(IWin32Window owner, string host)
+        {
+            var url = LanShare.UrlOf(host);
+            if (url == null) return;
+            bool https = url.StartsWith("https://");
+            var text = I18n.T("lan.qrText");
+            if (ShareStore.Get(host).LanPassword != "") text += "\n\n" + I18n.T("lan.qrPassword");
+            if (https) text += "\n\n" + I18n.T("lan.qrHttps", "http" + url.Substring(5));
+            QrDialog.ShowFor(owner, I18n.T("lan.qrTitle", host), text, url, https ? "http" + url.Substring(5) + "portly-ca.crt" : null);
+        }
+
+        /// <summary>The QR window of whatever share of the project runs (local network first).</summary>
+        public static void ShowQr(IWin32Window owner, string host)
+        {
+            if (LanShare.UrlOf(host) != null) ShowLanQr(owner, host);
+            else if (Share.UrlOf(host) != null) QrDialog.ShowFor(owner, I18n.T("share.qrTitle"), I18n.T("share.qrText"), Share.UrlOf(host));
         }
 
         /// <summary>Internet share with a Cloudflare quick tunnel (asks every time: the site becomes public).</summary>
@@ -42,7 +58,7 @@ namespace Portly.UI
             {
                 var url = await Share.StartAsync(site, status);
                 try { Clipboard.SetText(url); } catch { }
-                Ui.Info(owner, I18n.T("share.ready", url));
+                QrDialog.ShowFor(owner, I18n.T("share.qrTitle"), I18n.T("share.qrText"), url);
                 return url;
             }
             catch (Exception ex) { Ui.Error(owner, ex.Message); return null; }
@@ -132,7 +148,13 @@ namespace Portly.UI
             name.Location = new Point(Ui.S(14), Ui.S(10));
             var kind = new Pill { Text = lan ? I18n.T("shares.lan") : I18n.T("shares.online"), Color = lan ? p.Accent : ColorTranslator.FromHtml("#F38020"), Dot = false };
             kind.Location = new Point(Ui.S(270), Ui.S(11));
-            var state = new Pill { Text = site == null ? I18n.T("shares.noProject") : running ? I18n.T("shares.on") : I18n.T("shares.off"), Color = site == null ? p.Red : running ? p.Green : p.Gray };
+            // running but the web server is stopped: devices get a "start the web server" page
+            bool webDown = running && LanShare.WebDown;
+            var state = new Pill
+            {
+                Text = site == null ? I18n.T("shares.noProject") : webDown ? I18n.T("shares.webDown") : running ? I18n.T("shares.on") : I18n.T("shares.off"),
+                Color = site == null ? p.Red : webDown ? p.Orange : running ? p.Green : p.Gray,
+            };
             state.Location = new Point(kind.Right + Ui.S(6), Ui.S(11));
             card.Controls.AddRange(new Control[] { name, kind, state });
 
@@ -150,7 +172,8 @@ namespace Portly.UI
             card.Controls.Add(address);
             // a stopped internet share: the old address will not work again, the next start gives a new one
             var detail = !lan && !running && e.OnlineUrl != "" ? I18n.T("shares.oldUrl") : lan && e.LanPort > 0 ? I18n.T("shares.port", e.LanPort) : "";
-            var note = string.Join("  ·  ", new[] { detail, e.Note }.Where(x => x != ""));
+            var flags = lan ? string.Join("  ·  ", new[] { e.LanPassword != "" ? I18n.T("shares.hasPassword") : "", e.LanAuto ? I18n.T("shares.autoOn") : "" }.Where(x => x != "")) : "";
+            var note = string.Join("  ·  ", new[] { detail, flags, e.Note }.Where(x => x != ""));
             if (note != "")
             {
                 var n = Ui.Label(note, Ui.Small, Ui.Muted);
@@ -174,6 +197,8 @@ namespace Portly.UI
                     Fill();
                 }));
             }
+            if (running)
+                actions.Add(Small("QR", null, () => { ShareUi.ShowQr(this, e.Host); return Task.FromResult(0); }));
             if (url != "" && url != null && (lan || running))
                 actions.Add(Small(I18n.T("shares.copy"), null, () => { try { Clipboard.SetText(url); } catch { } _status.Text = I18n.T("lan.copied", url); return Task.FromResult(0); }));
             actions.Add(Small(I18n.T("shares.edit"), null, () => { Edit(e, lan); return Task.FromResult(0); }));
@@ -233,6 +258,24 @@ namespace Portly.UI
                     hint.MaximumSize = new Size(Ui.S(400), 0);
                     t.Controls.Add(hint);
                 }
+                TextBox password = null;
+                CheckBox auto = null;
+                if (lan)
+                {
+                    var wl = Ui.Label(I18n.T("shares.passwordLabel"), Ui.Bold);
+                    wl.Margin = Ui.P(0, 12, 0, 2);
+                    t.Controls.Add(wl);
+                    password = new TextBox { Width = Ui.S(220), Text = e.LanPassword, UseSystemPasswordChar = true, MaxLength = 64 };
+                    t.Controls.Add(password);
+                    var show = new CheckBox { Text = I18n.T("common.show"), AutoSize = true };
+                    show.CheckedChanged += (s, a) => password.UseSystemPasswordChar = !show.Checked;
+                    t.Controls.Add(show);
+                    var ph = Ui.Label(I18n.T("shares.passwordHint"), Ui.Small, Ui.Muted);
+                    ph.MaximumSize = new Size(Ui.S(400), 0);
+                    t.Controls.Add(ph);
+                    auto = new CheckBox { Text = I18n.T("shares.autoStart"), AutoSize = true, Checked = e.LanAuto, Margin = Ui.P(0, 12, 0, 0) };
+                    t.Controls.Add(auto);
+                }
                 var nl = Ui.Label(I18n.T("shares.noteLabel"), Ui.Bold);
                 nl.Margin = Ui.P(0, 12, 0, 2);
                 t.Controls.Add(nl);
@@ -263,7 +306,13 @@ namespace Portly.UI
                 int chosen = lan ? int.Parse(port.Text.Trim()) : e.LanPort;
                 bool moved = lan && chosen != e.LanPort && LanShare.IsRunning(e.Host);
                 if (moved) LanShare.Stop(e.Host);
-                ShareStore.Update(e.Host, x => { x.Note = note.Text.Trim(); if (lan) x.LanPort = chosen; });
+                ShareStore.Update(e.Host, x =>
+                {
+                    x.Note = note.Text.Trim();
+                    if (lan) { x.LanPort = chosen; x.LanPassword = password.Text; x.LanAuto = auto.Checked; }
+                });
+                // a running share asks for the new password at once (devices log in again)
+                if (lan && !moved) LanShare.SetPassword(e.Host, password.Text);
                 if (moved)
                 {
                     var site = SiteOf(e.Host);

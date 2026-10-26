@@ -68,7 +68,13 @@ namespace Portly.UI
             _debounce = new System.Windows.Forms.Timer { Interval = 2000 };
             _debounce.Tick += async (s, e) => { _debounce.Stop(); await OnDocRootChanged(); };
 
-            ServiceManager.Changed += svc => SafeInvoke(() => { UpdateRow(svc); UpdateGlobal(); });
+            ServiceManager.Changed += svc => SafeInvoke(() =>
+            {
+                UpdateRow(svc);
+                UpdateGlobal();
+                // the "On the network" badge turns orange / green with the web server
+                if (svc == ServiceManager.Web && ShareStore.All().Any(x => LanShare.IsRunning(x.Host))) FillSites();
+            });
             ServiceManager.SitesChanged += () => SafeInvoke(FillSites);
             ShareStore.Changed += () => SafeInvoke(FillSites); // a share started, stopped or ended by itself
             int jobsShown = 0;
@@ -894,9 +900,11 @@ namespace Portly.UI
             var lan = LanShare.UrlOf(site);
             if (lan != null)
             {
-                var lp = new Pill { Text = I18n.T("lan.badge"), Color = p.Green, Cursor = Cursors.Hand };
-                lp.Click += (o, e) => { try { Clipboard.SetText(lan); } catch { } SetStatus(I18n.T("lan.copied", lan)); };
-                new ToolTip().SetToolTip(lp, lan);
+                // orange while the web server is stopped: the device gets a "start the web server" page
+                bool down = LanShare.WebDown;
+                var lp = new Pill { Text = I18n.T("lan.badge"), Color = down ? p.Orange : p.Green, Cursor = Cursors.Hand };
+                lp.Click += (o, e) => ShareUi.ShowLanQr(this, site.Host);
+                new ToolTip().SetToolTip(lp, lan + (down ? "\n" + I18n.T("lan.webDownTitle") : ""));
                 badges.Add(lp);
             }
             if (site.Valid && Settings.Current.Ssl)
@@ -986,6 +994,9 @@ namespace Portly.UI
             }
             items.Add(php);
             items.Add(I18n.T("sites.createDb"), null, (s, e) => CreateDatabase(ProjectCreator.DbNameFor(site.Name)));
+            // a sub-project in its own folder inside this project (name.project.tld)
+            if (site.Valid && site.Name.IndexOf('/') < 0)
+                items.Add(I18n.T("sites.addSub"), null, (s, e) => NewProject(null, site.Name));
             if (site.Valid)
             {
                 var share = new ToolStripMenuItem(I18n.T("share.button"));
@@ -1026,6 +1037,8 @@ namespace Portly.UI
                 items.Add(I18n.T("share.stop"), null, (s, e) => { Share.Stop(site); FillSites(); });
             }
             items.Add(new ToolStripSeparator());
+            if (LanShare.UrlOf(site) != null || Share.UrlOf(site) != null)
+                items.Add(I18n.T("share.showQr"), null, (s, e) => ShareUi.ShowQr(this, site.Host));
             items.Add(I18n.T("shares.menu"), null, (s, e) => OpenShares());
         }
 
@@ -1445,10 +1458,10 @@ namespace Portly.UI
             items.Add(I18n.T("db.moreTools"), null, (s, e) => OpenPackages("heidisql"));
         }
 
-        void NewProject(string template = null)
+        void NewProject(string template = null, string parent = null)
         {
             ShowFromTray();
-            using (var f = new NewProjectForm(template))
+            using (var f = new NewProjectForm(template, parent))
             {
                 if (f.ShowDialog(this) != DialogResult.OK) return;
                 var created = f.CreatedName;
@@ -1761,6 +1774,21 @@ namespace Portly.UI
         // =====================================================================
         // Window lifecycle
         // =====================================================================
+        /// <summary>
+        /// Local network shares marked "start when Portly starts": listening right away on their own port (until the web
+        /// server runs, the device gets a "start the web server" page).
+        /// </summary>
+        void StartAutoShares()
+        {
+            foreach (var e in ShareStore.All().Where(x => x.Lan && x.LanAuto))
+            {
+                var site = ServiceManager.CurrentSites.FirstOrDefault(x => x.Valid && string.Equals(x.Host, e.Host, StringComparison.OrdinalIgnoreCase));
+                if (site == null) continue;
+                try { LanShare.Start(site); }
+                catch (Exception ex) { Log.Warn(I18n.T("lan.autoFailed", e.Host, ex.Message)); }
+            }
+        }
+
         async void Startup()
         {
             Log.Info(I18n.T("log.welcome", AppInfo.VersionText, AppInfo.EditionName, OsInfo.DisplayName));
@@ -1768,6 +1796,7 @@ namespace Portly.UI
             WatchDocRoot();
             Terminal.ApplyUserPath();
             if (ServiceMode.IsController) ServiceMode.StartPolling(); // states come from the Portly Windows service
+            StartAutoShares();
 
             var s = Settings.Current;
             if (!s.OsWarningShown)

@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 using Portly.Core;
 
 namespace Portly.Tools
@@ -15,6 +17,8 @@ namespace Portly.Tools
         public bool Online;         // has been shared on the internet
         public string OnlineUrl = ""; // last Cloudflare address (a new random one is given at every start)
         public string Note = "";    // the user's own note ("for the customer", "phone test" ...)
+        public string LanPassword = ""; // asked on the device before the site opens ("" = none)
+        public bool LanAuto;        // start the local network share again when Portly starts
     }
 
     /// <summary>Remembered shares (usr\shares.ini): listed and managed in "Shared projects", also while they are stopped.</summary>
@@ -48,6 +52,8 @@ namespace Portly.Tools
                 Online = ini.GetBool(host, "online", false),
                 OnlineUrl = ini.Get(host, "onlineUrl", ""),
                 Note = ini.Get(host, "note", ""),
+                LanPassword = Unprotect(ini.Get(host, "lanPassword", "")),
+                LanAuto = ini.GetBool(host, "lanAuto", false),
             };
         }
 
@@ -66,10 +72,25 @@ namespace Portly.Tools
                     ini.Set(host, "online", e.Online);
                     if (e.OnlineUrl != "") ini.Set(host, "onlineUrl", e.OnlineUrl);
                     if (e.Note != "") ini.Set(host, "note", e.Note.Replace("\r", " ").Replace("\n", " "));
+                    if (e.LanPassword != "") ini.Set(host, "lanPassword", Protect(e.LanPassword));
+                    if (e.LanAuto) ini.Set(host, "lanAuto", true);
                 }
                 ini.Save();
             }
             Notify();
+        }
+
+        // the share password is kept with Windows DPAPI (readable only by this Windows user)
+        static string Protect(string s)
+        {
+            return Convert.ToBase64String(ProtectedData.Protect(Encoding.UTF8.GetBytes(s), null, DataProtectionScope.CurrentUser));
+        }
+
+        static string Unprotect(string s)
+        {
+            if (s == "") return "";
+            try { return Encoding.UTF8.GetString(ProtectedData.Unprotect(Convert.FromBase64String(s), null, DataProtectionScope.CurrentUser)); }
+            catch { return ""; }
         }
 
         /// <summary>A share started or stopped: the cards and the list refresh.</summary>

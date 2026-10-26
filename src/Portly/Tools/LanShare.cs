@@ -27,15 +27,36 @@ namespace Portly.Tools
         const int FirstPort = 8900;
         static readonly Encoding Latin1 = Encoding.GetEncoding(28591); // header bytes kept as they are
 
-        class Entry { public TcpListener Listener; public string Url; public string Public; public volatile bool Tls; public X509Certificate2 Cert; }
+        class Entry
+        {
+            public TcpListener Listener;
+            public int Port;
+            public bool Https;           // the site has HTTPS: shared with https (certificate made for the address in use)
+            public volatile bool Tls;    // the site sends http to https: reach it on the local HTTPS port
+            public string Password = ""; // "" = no password
+            public string Token;         // cookie value after the password was given (new at every start)
+        }
         static readonly Dictionary<string, Entry> Shares = new Dictionary<string, Entry>(StringComparer.OrdinalIgnoreCase);
+
+        static LanShare()
+        {
+            // a new IP from the router (or another Wi-Fi): the cards and the list show the new address
+            try { NetworkChange.NetworkAddressChanged += (s, e) => { if (Shares.Count > 0) ShareStore.Notify(); }; } catch { }
+        }
 
         public static string UrlOf(Site site) { return UrlOf(site.Host); }
 
+        /// <summary>Address of a running share with the PC's current network address, or null when it is not shared.</summary>
         public static string UrlOf(string host)
         {
-            lock (Shares) { Entry e; return Shares.TryGetValue(host, out e) ? e.Url : null; }
+            Entry e;
+            lock (Shares) if (!Shares.TryGetValue(host, out e)) return null;
+            var ip = LocalIp();
+            return (e.Https ? "https://" : "http://") + (ip != null ? ip.ToString() : "localhost") + ":" + e.Port + "/";
         }
+
+        /// <summary>The share is running but the web server is not: devices get a "start the web server" page.</summary>
+        public static bool WebDown { get { return Services.ServiceManager.Web.State != Services.ServiceState.Running; } }
 
         /// <summary>IPv4 address of this PC on the local network (the adapter with a gateway, private range first), or null.</summary>
         public static IPAddress LocalIp()
@@ -90,20 +111,21 @@ namespace Portly.Tools
             if (listener == null) throw new Exception(I18n.T("lan.noPort"));
             int chosen = port;
             ShareStore.Update(site.Host, e => { e.Lan = true; e.LanPort = chosen; });
-            var pub = ip + ":" + port;
-            // a site with HTTPS is shared with HTTPS too (certificate for this address, signed by the Portly CA)
-            X509Certificate2 cert = null;
+            // a site with HTTPS is shared with HTTPS too (certificate for the address, signed by the Portly CA)
+            bool https = false;
             if (Settings.Current.Ssl)
             {
-                try { cert = Certs.LanCertificate(ip); }
+                try { Certs.LanCertificate(ip); https = true; }
                 catch (Exception ex) { Log.Warn("LAN certificate: " + ex.Message); }
             }
-            var entry = new Entry { Listener = listener, Public = pub, Cert = cert, Url = (cert != null ? "https://" : "http://") + pub + "/" };
+            var token = Guid.NewGuid().ToString("N");
+            var entry = new Entry { Listener = listener, Port = port, Https = https, Password = ShareStore.Get(site.Host).LanPassword, Token = token };
             lock (Shares) Shares[site.Host] = entry;
             Task.Run(() => AcceptLoop(entry, site.Host));
-            Log.Info(I18n.T("lan.started", site.Host, entry.Url));
+            var url = UrlOf(site.Host);
+            Log.Info(I18n.T("lan.started", site.Host, url));
             ShareStore.Notify();
-            return entry.Url;
+            return url;
         }
 
         public static void Stop(Site site) { Stop(site.Host); }
@@ -122,6 +144,18 @@ namespace Portly.Tools
             ShareStore.Notify();
         }
 
+        /// <summary>New password for a running share; devices that logged in before must log in again.</summary>
+        public static void SetPassword(string host, string password)
+        {
+            lock (Shares)
+            {
+                Entry e;
+                if (!Shares.TryGetValue(host, out e) || e.Password == (password ?? "")) return;
+                e.Password = password ?? "";
+                e.Token = Guid.NewGuid().ToString("N");
+            }
+        }
+
         public static bool IsRunning(string host) { lock (Shares) return Shares.ContainsKey(host); }
 
         /// <summary>The address a port has on this network (also for a stopped share), or "" without a network.</summary>
@@ -136,7 +170,7 @@ namespace Portly.Tools
         {
             if (port < 1024 || port > 65535) return false;
             if (ShareStore.All().Any(x => x.Host != forHost && x.LanPort == port)) return false;
-            lock (Shares) if (Shares.Any(x => x.Key != forHost && ((IPEndPoint)x.Value.Listener.LocalEndpoint).Port == port)) return false;
+            lock (Shares) if (Shares.Any(x => x.Key != forHost && x.Value.Port == port)) return false;
             if (IsRunning(forHost) && ShareStore.Get(forHost).LanPort == port) return true;
             try { var l = new TcpListener(IPAddress.Any, port); l.Start(); l.Stop(); return true; }
             catch (SocketException) { return false; }
@@ -176,20 +210,31 @@ namespace Portly.Tools
                     client.NoDelay = true;
                     client.ReceiveTimeout = 30000;   // a device that connects and sends nothing
                     Stream cs = client.GetStream();
+                    // the address the device used (follows a new IP from the router, and the right adapter)
+                    var localIp = ((IPEndPoint)client.Client.LocalEndPoint).Address;
+                    if (localIp.IsIPv4MappedToIPv6) localIp = localIp.MapToIPv4();
+                    var pub = localIp + ":" + entry.Port;
                     // the same port answers https and http: a TLS handshake starts with 0x16
                     var first = new byte[1];
                     if (client.Client.Receive(first, 1, SocketFlags.Peek) < 1) return;
-                    bool secure = first[0] == 0x16 && entry.Cert != null;
+                    bool secure = first[0] == 0x16 && entry.Https;
                     if (secure)
                     {
                         var ssl = new SslStream(cs, false);
-                        await ssl.AuthenticateAsServerAsync(entry.Cert, false, SslProtocols.Tls12, false);
+                        await ssl.AuthenticateAsServerAsync(Certs.LanCertificate(localIp), false, SslProtocols.Tls12, false);
                         cs = ssl;
                     }
                     byte[] rest;
                     var head = ReadHead(cs, out rest);
                     if (head == null) return;
                     if (await ServeCa(cs, head)) return;
+                    // a share with a password: a small login page first, then a cookie
+                    if (entry.Password != "")
+                    {
+                        var allowed = await CheckPassword(cs, head, rest, entry, host, secure);
+                        if (allowed == null) return;
+                        head = allowed;
+                    }
                     var lines = head.Split(new[] { "\r\n" }, StringSplitOptions.None).ToList();
                     bool upgrade = lines.Any(l => l.StartsWith("Upgrade:", StringComparison.OrdinalIgnoreCase));
                     var method = lines[0].Split(' ')[0].ToUpperInvariant();
@@ -204,7 +249,13 @@ namespace Portly.Tools
                     {
                         using (var server = new TcpClient())
                         {
-                            await server.ConnectAsync(IPAddress.Loopback, tls ? Settings.Current.HttpsPort : Settings.Current.HttpPort);
+                            try { await server.ConnectAsync(IPAddress.Loopback, tls ? Settings.Current.HttpsPort : Settings.Current.HttpPort); }
+                            catch (SocketException)
+                            {
+                                // the web server is stopped: tell the device what to do instead of a blank error
+                                await SendPage(cs, "503 Service Unavailable", I18n.T("lan.webDownTitle"), I18n.T("lan.webDownText"));
+                                return;
+                            }
                             server.NoDelay = true;
                             server.ReceiveTimeout = 300000;  // a slow PHP page
                             Stream ss = server.GetStream();
@@ -215,7 +266,7 @@ namespace Portly.Tools
                                 await ssl.AuthenticateAsClientAsync(host, null, SslProtocols.Tls12, false);
                                 ss = ssl;
                             }
-                            var req = Latin1.GetBytes(string.Join("\r\n", RequestLines(lines, upgrade, tls, secure, host, entry.Public, remote)) + "\r\n\r\n");
+                            var req = Latin1.GetBytes(string.Join("\r\n", RequestLines(lines, upgrade, tls, secure, host, pub, remote)) + "\r\n\r\n");
                             await ss.WriteAsync(req, 0, req.Length);
                             if (rest.Length > 0) await ss.WriteAsync(rest, 0, rest.Length);
                             var up = moreBody ? cs.CopyToAsync(ss) : null;
@@ -230,7 +281,7 @@ namespace Portly.Tools
                                 entry.Tls = tls = true;
                                 continue;
                             }
-                            await Answer(cs, ss, resp, body, upgrade, method == "HEAD", secure, host, entry.Public);
+                            await Answer(cs, ss, resp, body, upgrade, method == "HEAD", secure, host, pub);
                             if (up != null && upgrade) await up;
                             return;
                         }
@@ -254,6 +305,105 @@ namespace Portly.Tools
             if (!head.StartsWith("HEAD", StringComparison.OrdinalIgnoreCase)) await cs.WriteAsync(crt, 0, crt.Length);
             return true;
         }
+
+        static string CookieName(Entry e) { return "portly_share_" + e.Port; }
+
+        /// <summary>
+        /// Password check for a protected share. Returns the request head to pass on (without Portly's own cookie),
+        /// or null when Portly already answered (login page, wrong password, redirect after the right one).
+        /// </summary>
+        static async Task<string> CheckPassword(Stream cs, string head, byte[] rest, Entry entry, string host, bool secure)
+        {
+            var lines = head.Split(new[] { "\r\n" }, StringSplitOptions.None).ToList();
+            var parts = lines[0].Split(' ');
+            var path = parts.Length > 1 ? parts[1] : "/";
+            var cookie = CookieName(entry) + "=" + entry.Token;
+            if (parts[0].Equals("POST", StringComparison.OrdinalIgnoreCase) && path.StartsWith("/__portly/login"))
+            {
+                // the form: password=...&next=...
+                long len = 0;
+                var cl = lines.FirstOrDefault(l => Is(Name(l), "Content-Length"));
+                if (cl != null) long.TryParse(cl.Substring(cl.IndexOf(':') + 1).Trim(), out len);
+                var body = new MemoryStream();
+                body.Write(rest, 0, rest.Length);
+                var buf = new byte[1024];
+                while (body.Length < Math.Min(len, 4096))
+                {
+                    int n = cs.Read(buf, 0, buf.Length);
+                    if (n <= 0) break;
+                    body.Write(buf, 0, n);
+                }
+                var form = ParseForm(Encoding.UTF8.GetString(body.ToArray()));
+                string next, given;
+                if (!form.TryGetValue("next", out next)) next = "/";
+                form.TryGetValue("password", out given);
+                if (!next.StartsWith("/") || next.StartsWith("//")) next = "/";
+                if (given == entry.Password)
+                {
+                    var h = Latin1.GetBytes("HTTP/1.1 303 See Other\r\nLocation: " + next + "\r\nSet-Cookie: " + cookie + "; Path=/; HttpOnly; SameSite=Lax" + (secure ? "; Secure" : "") +
+                        "\r\nContent-Length: 0\r\nCache-Control: no-store\r\nConnection: close\r\n\r\n");
+                    await cs.WriteAsync(h, 0, h.Length);
+                    return null;
+                }
+                await Task.Delay(800); // slows down guessing
+                await SendLogin(cs, host, next, true);
+                return null;
+            }
+            var cookieLine = lines.FirstOrDefault(l => Is(Name(l), "Cookie"));
+            if (cookieLine == null || !Regex.IsMatch(cookieLine, @"(^|[;:\s])" + Regex.Escape(cookie) + @"(;|\s|$)"))
+            {
+                await SendLogin(cs, host, path, false);
+                return null;
+            }
+            // the site never sees Portly's cookie
+            var others = Regex.Replace(cookieLine.Substring(cookieLine.IndexOf(':') + 1), @"\s*" + Regex.Escape(cookie) + @";?", "").Trim().TrimEnd(';');
+            var i = lines.IndexOf(cookieLine);
+            if (others == "") lines.RemoveAt(i); else lines[i] = "Cookie: " + others;
+            return string.Join("\r\n", lines);
+        }
+
+        static Task SendLogin(Stream cs, string host, string next, bool wrong)
+        {
+            var form = "<form method=\"post\" action=\"/__portly/login\"><input type=\"hidden\" name=\"next\" value=\"" + Html(next) + "\">" +
+                "<input type=\"password\" name=\"password\" placeholder=\"" + Html(I18n.T("lan.loginPassword")) + "\" autofocus required>" +
+                (wrong ? "<p class=\"err\">" + Html(I18n.T("lan.loginWrong")) + "</p>" : "") +
+                "<button type=\"submit\">" + Html(I18n.T("lan.loginButton")) + "</button></form>";
+            return SendPage(cs, wrong ? "401 Unauthorized" : "200 OK", I18n.T("lan.loginTitle", host), null, form);
+        }
+
+        /// <summary>Small page answered by Portly itself (login, web server stopped), readable on a phone.</summary>
+        static async Task SendPage(Stream cs, string status, string title, string text, string formHtml = null)
+        {
+            var html = "<!doctype html><html lang=\"" + Html(I18n.Code) + "\"" + (I18n.IsRtl ? " dir=\"rtl\"" : "") + "><head><meta charset=\"utf-8\">" +
+                "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>" + Html(title) + "</title><style>" +
+                "body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:#f3f4f8;color:#1f2330}" +
+                "@media(prefers-color-scheme:dark){body{background:#15171e;color:#e7e9f0}.c{background:#1f2230!important}input{background:#15171e;color:#e7e9f0;border-color:#3a3f52!important}}" +
+                ".c{background:#fff;border-radius:16px;padding:28px 24px;max-width:360px;width:calc(100% - 32px);box-shadow:0 8px 30px rgba(0,0,0,.08)}" +
+                ".b{display:inline-block;background:#4f6bff;color:#fff;border-radius:10px;padding:4px 10px;font-weight:700;font-size:13px}" +
+                "h1{font-size:19px;margin:14px 0 8px}p{margin:0 0 12px;line-height:1.5;opacity:.85}" +
+                "input{box-sizing:border-box;width:100%;font-size:17px;padding:12px;border:1px solid #d7dbe7;border-radius:10px;margin:8px 0}" +
+                "button{width:100%;font-size:17px;padding:12px;border:0;border-radius:10px;background:#4f6bff;color:#fff;font-weight:600}" +
+                ".err{color:#e5484d;font-size:14px}</style></head><body><div class=\"c\"><span class=\"b\">Portly</span><h1>" + Html(title) + "</h1>" +
+                (text != null ? "<p>" + Html(text) + "</p>" : "") + (formHtml ?? "") + "</div></body></html>";
+            var bytes = Encoding.UTF8.GetBytes(html);
+            var h = Latin1.GetBytes("HTTP/1.1 " + status + "\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: " + bytes.Length +
+                "\r\nCache-Control: no-store\r\nConnection: close\r\n\r\n");
+            await cs.WriteAsync(h, 0, h.Length);
+            await cs.WriteAsync(bytes, 0, bytes.Length);
+        }
+
+        static Dictionary<string, string> ParseForm(string body)
+        {
+            var d = new Dictionary<string, string>();
+            foreach (var pair in body.Split('&'))
+            {
+                var kv = pair.Split(new[] { '=' }, 2);
+                if (kv.Length == 2) d[Uri.UnescapeDataString(kv[0].Replace('+', ' '))] = Uri.UnescapeDataString(kv[1].Replace('+', ' '));
+            }
+            return d;
+        }
+
+        static string Html(string s) { return System.Net.WebUtility.HtmlEncode(s ?? ""); }
 
         static bool Is(string a, string b) { return string.Equals(a, b, StringComparison.OrdinalIgnoreCase); }
         static string Name(string headerLine) { var i = headerLine.IndexOf(':'); return i < 0 ? "" : headerLine.Substring(0, i).Trim(); }

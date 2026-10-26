@@ -416,8 +416,17 @@ namespace Portly.SmokeTest
                     var again = LanShare.Start(demoSite);
                     Check("stopped share is remembered with its address", kept.Lan && LanShare.AddressFor(kept.LanPort) == lanUrl && again == lanUrl
                         && ShareStore.All().Any(x => x.Host == demoSite.Host), again + " / " + LanShare.AddressFor(kept.LanPort));
+                    // a password: login page first, the right password gives a cookie and the site
+                    ShareStore.Update(demoSite.Host, x => x.LanPassword = "pin123");
+                    LanShare.SetPassword(demoSite.Host, "pin123");
+                    var locked = Get(again, null);
+                    var jar = new CookieContainer();
+                    string wrongPage = PostForm(again + "__portly/login", "password=nope&next=%2F", jar);
+                    string opened = PostForm(again + "__portly/login", "password=pin123&next=%2F", jar);
+                    Check("local network share with a password", !locked.Contains("DEMO-OK") && locked.Contains("__portly/login") && wrongPage.Contains("401")
+                        && opened.Contains("DEMO-OK") && ShareStore.Get(demoSite.Host).LanPassword == "pin123", Short(opened));
                     LanShare.Stop(demoSite);
-                    ShareStore.Update(demoSite.Host, x => { x.Lan = false; x.LanPort = 0; });
+                    ShareStore.Update(demoSite.Host, x => { x.Lan = false; x.LanPort = 0; x.LanPassword = ""; });
                     Check("removed share leaves the list", !ShareStore.All().Any(x => x.Host == demoSite.Host && x.Lan));
                 }
             }
@@ -559,6 +568,31 @@ namespace Portly.SmokeTest
         }
 
         static string _lastIssuer = "";
+
+        /// <summary>Form POST that follows the redirect with the cookies it got; "HTTP ERROR 401 ..." on an error status.</summary>
+        static string PostForm(string url, string form, CookieContainer jar)
+        {
+            try
+            {
+                var req = (HttpWebRequest)WebRequest.Create(url);
+                req.Method = "POST";
+                req.ContentType = "application/x-www-form-urlencoded";
+                req.CookieContainer = jar;
+                req.Proxy = null;
+                req.KeepAlive = false;
+                req.Timeout = 30000;
+                req.ServerCertificateValidationCallback = (o, cert, chain, errors) => true;
+                var bytes = Encoding.UTF8.GetBytes(form);
+                using (var s = req.GetRequestStream()) s.Write(bytes, 0, bytes.Length);
+                using (var resp = (HttpWebResponse)req.GetResponse())
+                using (var r = new StreamReader(resp.GetResponseStream(), Encoding.UTF8)) return r.ReadToEnd();
+            }
+            catch (WebException ex)
+            {
+                if (ex.Response != null) return "HTTP ERROR " + (int)((HttpWebResponse)ex.Response).StatusCode;
+                return "ERROR " + ex.Message;
+            }
+        }
 
         static string Get(string url, string host)
         {
