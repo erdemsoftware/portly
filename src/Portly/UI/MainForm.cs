@@ -72,8 +72,9 @@ namespace Portly.UI
             {
                 UpdateRow(svc);
                 UpdateGlobal();
-                // the "On the network" badge turns orange / green with the web server
-                if (svc == ServiceManager.Web && ShareStore.All().Any(x => LanShare.IsRunning(x.Host))) FillSites();
+                // the web server has just made the site certificates (the HTTPS badges were checked before that), and the
+                // "On the network" badge turns orange / green with it
+                if (svc == ServiceManager.Web && (svc.State == ServiceState.Running || ShareStore.All().Any(x => LanShare.IsRunning(x.Host)))) FillSites();
             });
             ServiceManager.SitesChanged += () => SafeInvoke(FillSites);
             ShareStore.Changed += () => SafeInvoke(FillSites); // a share started, stopped or ended by itself
