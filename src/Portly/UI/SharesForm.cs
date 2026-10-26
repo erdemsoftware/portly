@@ -39,7 +39,7 @@ namespace Portly.UI
             var text = I18n.T("lan.qrText");
             if (ShareStore.Get(host).LanPassword != "") text += "\n\n" + I18n.T("lan.qrPassword");
             if (https) text += "\n\n" + I18n.T("lan.qrHttps", "http" + url.Substring(5));
-            QrDialog.ShowFor(owner, I18n.T("lan.qrTitle", host), text, url, https ? "http" + url.Substring(5) + "portly-ca.crt" : null);
+            QrDialog.ShowFor(owner, I18n.T("lan.qrTitle", host), text, url, https ? "http" + url.Substring(5) + "portly-ca" : null);
         }
 
         /// <summary>The QR window of whatever share of the project runs (local network first).</summary>

@@ -227,7 +227,7 @@ namespace Portly.Tools
                     byte[] rest;
                     var head = ReadHead(cs, out rest);
                     if (head == null) return;
-                    if (await ServeCa(cs, head)) return;
+                    if (await ServeCa(cs, head, pub, entry.Https)) return;
                     // a share with a password: a small login page first, then a cookie
                     if (entry.Password != "")
                     {
@@ -292,18 +292,84 @@ namespace Portly.Tools
         }
 
         /// <summary>
-        /// /portly-ca.crt: the Portly CA certificate (public part only) to install on the phone, so the https address
-        /// opens without a warning. Answered by Portly itself, never by the site.
+        /// Answered by Portly itself, never by the site (also before the password):
+        /// /portly-ca = step-by-step guide for iPhone and Android, /portly-ca.crt = the Portly CA certificate
+        /// (public part only, DER: what iOS and Android install most reliably).
         /// </summary>
-        static async Task<bool> ServeCa(Stream cs, string head)
+        static async Task<bool> ServeCa(Stream cs, string head, string pub, bool https)
         {
-            if (!Regex.IsMatch(head, @"^(GET|HEAD) /portly-ca\.crt(\?\S*)? HTTP/", RegexOptions.IgnoreCase)) return false;
-            var crt = File.Exists(Certs.CaCertPath) ? File.ReadAllBytes(Certs.CaCertPath) : new byte[0];
+            var m = Regex.Match(head, @"^(GET|HEAD) /portly-ca(\.crt|/)?(\?\S*)? HTTP/", RegexOptions.IgnoreCase);
+            if (!m.Success) return false;
+            bool headOnly = m.Groups[1].Value.Equals("HEAD", StringComparison.OrdinalIgnoreCase);
+            if (m.Groups[2].Value != ".crt")
+            {
+                var bytes = Encoding.UTF8.GetBytes(GuidePage(pub, https));
+                var g = Latin1.GetBytes("HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: " + bytes.Length +
+                    "\r\nCache-Control: no-store\r\nConnection: close\r\n\r\n");
+                await cs.WriteAsync(g, 0, g.Length);
+                if (!headOnly) await cs.WriteAsync(bytes, 0, bytes.Length);
+                return true;
+            }
+            byte[] crt;
+            try { crt = Convert.FromBase64String(Regex.Replace(File.ReadAllText(Certs.CaCertPath), @"-----[^-]+-----|\s", "")); }
+            catch { crt = new byte[0]; }
             var h = Latin1.GetBytes("HTTP/1.1 200 OK\r\nContent-Type: application/x-x509-ca-cert\r\nContent-Disposition: attachment; filename=\"portly-ca.crt\"\r\n" +
                 "Content-Length: " + crt.Length + "\r\nCache-Control: no-store\r\nConnection: close\r\n\r\n");
             await cs.WriteAsync(h, 0, h.Length);
-            if (!head.StartsWith("HEAD", StringComparison.OrdinalIgnoreCase)) await cs.WriteAsync(crt, 0, crt.Length);
+            if (!headOnly) await cs.WriteAsync(crt, 0, crt.Length);
             return true;
+        }
+
+        /// <summary>The certificate guide for the phone: iPhone and Android tabs (picked from the browser), colored steps.</summary>
+        static string GuidePage(string pub, bool https)
+        {
+            Func<string, string> T = k => Html(I18n.T(k));
+            Func<string, string, string[], string> tab = (id, color, steps) =>
+            {
+                var sb = new StringBuilder("<section id=\"" + id + "\" class=\"tab\" style=\"--c:" + color + "\"><ol>");
+                for (int i = 0; i < steps.Length; i++)
+                {
+                    bool key = steps[i].StartsWith("!");
+                    var k = key ? steps[i].Substring(1) : steps[i];
+                    sb.Append("<li" + (key ? " class=\"key\"" : "") + "><span class=\"n\">" + (i + 1) + "</span><div>" +
+                        (key ? "<b class=\"tag\">" + T("guide.important") + "</b>" : "") + T(k) + "</div></li>");
+                    if (i == 0) sb.Append("<li class=\"dl\"><a class=\"btn\" href=\"/portly-ca.crt\">⬇ " + T("guide.download") + "</a></li>");
+                }
+                return sb.Append("</ol></section>").ToString();
+            };
+            var site = (https ? "https://" : "http://") + pub + "/";
+            return "<!doctype html><html lang=\"" + Html(I18n.Code) + "\"" + (I18n.IsRtl ? " dir=\"rtl\"" : "") + "><head><meta charset=\"utf-8\">" +
+                "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>" + T("guide.title") + "</title><style>" +
+                ":root{--bg:#f3f4fa;--card:#fff;--text:#1f2330;--muted:#5d6475;--line:#e3e6ef}" +
+                "@media(prefers-color-scheme:dark){:root{--bg:#121420;--card:#1d2030;--text:#e9ebf3;--muted:#a3a9bb;--line:#30354a}}" +
+                "*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.5}" +
+                ".hero{background:linear-gradient(135deg,#5b6cff,#a24bff 55%,#ff5f8f);color:#fff;padding:28px 20px 56px;text-align:center}" +
+                ".logo{display:inline-block;background:rgba(255,255,255,.2);border-radius:12px;padding:4px 12px;font-weight:800;letter-spacing:.5px}" +
+                ".hero h1{font-size:23px;margin:14px 0 6px}.hero p{margin:0 auto;max-width:460px;opacity:.95}" +
+                ".wrap{max-width:560px;margin:-36px auto 30px;padding:0 14px}" +
+                ".tabs{display:flex;gap:8px;background:var(--card);padding:6px;border-radius:16px;box-shadow:0 6px 24px rgba(20,20,60,.12)}" +
+                ".tabs button{flex:1;border:0;border-radius:12px;padding:12px;font-size:16px;font-weight:700;background:transparent;color:var(--muted)}" +
+                ".tabs button.on[data-t=ios]{background:linear-gradient(135deg,#0a84ff,#5e5ce6);color:#fff}" +
+                ".tabs button.on[data-t=android]{background:linear-gradient(135deg,#1db954,#0f9d58);color:#fff}" +
+                ".tab{display:none}.tab.on{display:block}ol{list-style:none;margin:16px 0 0;padding:0}" +
+                "li{display:flex;gap:14px;background:var(--card);border-radius:16px;padding:16px;margin-bottom:12px;border:1px solid var(--line)}" +
+                ".n{flex:none;width:34px;height:34px;border-radius:50%;background:var(--c);color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center}" +
+                "li.key{border:2px solid #ff9f0a;background:linear-gradient(0deg,rgba(255,159,10,.08),rgba(255,159,10,.08)),var(--card)}" +
+                ".tag{display:inline-block;background:#ff9f0a;color:#fff;border-radius:8px;padding:0 8px;margin-inline-end:6px;font-size:13px}" +
+                "li.dl{background:none;border:0;padding:0 0 4px}" +
+                ".btn{display:block;width:100%;text-align:center;text-decoration:none;color:#fff;font-weight:800;font-size:17px;padding:15px;border-radius:14px;background:var(--c);box-shadow:0 6px 18px rgba(0,0,0,.18)}" +
+                ".test{background:var(--card);border-radius:16px;padding:16px;border:1px solid var(--line);margin-top:6px}" +
+                ".test .btn{--c:linear-gradient(135deg,#5b6cff,#a24bff);margin-top:10px}.note{color:var(--muted);font-size:14px;margin:16px 4px}" +
+                "</style></head><body><div class=\"hero\"><span class=\"logo\">Portly</span><h1>🔒 " + T("guide.title") + "</h1><p>" + T("guide.intro") + "</p></div>" +
+                "<div class=\"wrap\"><div class=\"tabs\"><button data-t=\"ios\">📱 " + T("guide.iphone") + "</button><button data-t=\"android\">🤖 " + T("guide.android") + "</button></div>" +
+                tab("ios", "#0a84ff", new[] { "guide.ios1", "guide.ios2", "guide.ios3", "guide.ios4", "!guide.ios5" }) +
+                tab("android", "#1db954", new[] { "guide.android1", "guide.android2", "guide.android3", "guide.android4", "!guide.android5" }) +
+                "<div class=\"test\">✅ " + T("guide.test") + (https ? "<a class=\"btn\" href=\"" + Html(site) + "\">" + T("guide.open") + "</a>" : "") + "</div>" +
+                "<p class=\"note\">ℹ️ " + T("guide.note") + "</p></div><script>" +
+                "var b=document.querySelectorAll('.tabs button');function show(t){b.forEach(function(x){x.classList.toggle('on',x.dataset.t==t)});" +
+                "document.querySelectorAll('.tab').forEach(function(x){x.classList.toggle('on',x.id==t)})}" +
+                "b.forEach(function(x){x.onclick=function(){show(x.dataset.t)}});show(/android/i.test(navigator.userAgent)?'android':'ios');" +
+                "</script></body></html>";
         }
 
         static string CookieName(Entry e) { return "portly_share_" + e.Port; }

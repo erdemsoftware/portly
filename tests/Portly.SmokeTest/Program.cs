@@ -416,6 +416,11 @@ namespace Portly.SmokeTest
                     var again = LanShare.Start(demoSite);
                     Check("stopped share is remembered with its address", kept.Lan && LanShare.AddressFor(kept.LanPort) == lanUrl && again == lanUrl
                         && ShareStore.All().Any(x => x.Host == demoSite.Host), again + " / " + LanShare.AddressFor(kept.LanPort));
+                    // the certificate guide and the certificate itself are answered by Portly, before the password
+                    var plain = "http" + again.Substring(again.IndexOf(':'));
+                    var guide = Get(plain + "portly-ca", null);
+                    var der = Get(plain + "portly-ca.crt", null);
+                    Check("certificate guide for the phone", guide.Contains("/portly-ca.crt") && guide.Contains("data-t=\"android\"") && der.Length > 300 && !der.Contains("BEGIN"), Short(guide));
                     // a password: login page first, the right password gives a cookie and the site
                     ShareStore.Update(demoSite.Host, x => x.LanPassword = "pin123");
                     LanShare.SetPassword(demoSite.Host, "pin123");
