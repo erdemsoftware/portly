@@ -3,122 +3,88 @@
 <h1 align="center">Portly</h1>
 <p align="center">
   Fast, portable, open-source local web development environment for Windows<br>
-  Windows için hızlı, taşınabilir, açık kaynak yerel web geliştirme ortamı<br>
   <sub>by <a href="https://erdemsoftware.com">Erdem Software</a> · MIT · no ads, no tracking</sub>
 </p>
 
+<p align="center"><b>English</b> · <a href="README.tr.md">Türkçe</a></p>
+<p align="center"><sub>The app itself speaks 31 languages (Arabic, Persian and Urdu right-to-left).</sub></p>
+
 ---
 
-**[Türkçe](#türkçe)** · **[English](#english)** · **[Donate / Bağış](#donate)**
+Portly runs Apache or Nginx, PHP, MySQL or MariaDB, PostgreSQL, MongoDB, Redis, Memcached, Node.js, Mailpit, Composer, Adminer and phpMyAdmin from a single folder. No installer needed, no Windows services, no registry clutter. It even works from a USB stick.
 
-## Türkçe
-
-Portly; Apache ya da Nginx, PHP, MySQL ya da MariaDB, PostgreSQL, MongoDB, Redis, Memcached, Node.js, Mailpit, Composer, Adminer ve phpMyAdmin'i tek bir klasörde çalıştırır. Kurulum gerekmez, Windows servisi eklemez, kayıt defterini kirletmez. Klasörü bir USB belleğe kopyalasanız bile çalışır.
-
-### Neden Portly?
+## Why Portly?
 
 | | Laragon | **Portly** |
 |---|---|---|
-| Lisans | Kapalı kaynak, ticari kullanım ücretli | **MIT, tamamen ücretsiz, reklamsız** |
-| Uygulama güncellemesi | Elle kurulum dosyası | **Uygulama içinden tek tık** (SHA-256 doğrulamalı) |
-| Paket listesi | Yerel `packages.conf` | **Uzaktan güncellenen katalog** + windows.php.net'ten canlı PHP sürümleri |
-| Site başına PHP sürümü | Yok | **Var** (her PHP sürümü kendi FastCGI portunda) |
-| HTTPS | Tek sertifika, her projede yeniden | **Yerel kök sertifika** bir kez güvenilir yapılır, her siteye ayrı sertifika |
-| hosts dosyası | node.js ile | **Kendi küçük UAC yardımcısı**, sadece değişiklik olunca |
-| Ağ güvenliği | Tüm arayüzleri dinler | **Varsayılan 127.0.0.1** (güvenlik duvarı sorusu yok) |
-| PHP güvenlik ayarları | Varsayılan | `session.upload_progress` ve `allow_url_include` **kapalı** |
-| Çökme güvenliği | — | Portly kapanırsa servisler Windows tarafından kapatılır (job object) |
-| Port çakışması | Hata mesajı | Portu tutan program ve yolu gösterilir; **tek tıkla boş porta geç** ya da o programı kapat; artık süreçler kendiliğinden temizlenir |
-| Arayüz | Klasik | Kenar çubuklu modern arayüz, **açık/koyu tema** (Windows'u izler) |
-| Geçiş | — | **Laragon, XAMPP, WampServer, AMPPS, UwAmp, Uniform Server, Open Server, EasyPHP, MAMP**'tan projeleri ve veritabanlarını tek tıkla aktarma (Herd ve Local'dan projeler) |
-| Paylaşım | ngrok (hesap gerekir) | **Cloudflare hızlı tüneli**, hesapsız ve ücretsiz |
-| Posta | Mailpit | **Mailpit, MailHog ya da smtp4dev** |
-| Veritabanları | MySQL | **MySQL ya da MariaDB, PostgreSQL, MongoDB, SQLite**; Redis ve Memcached |
-| Veritabanı araçları | HeidiSQL | **phpMyAdmin, Adminer, HeidiSQL, DBeaver, Beekeeper Studio, DbGate, DB Browser for SQLite**, pgAdmin algılanır |
-| WordPress | Elle kurulum | **Tek tıkla kurulu WordPress** (WP-CLI ile; yönetici kullanıcısı ve şifresi hazır) |
-| Sorun önleme | — | OneDrive, Türkçe karakterli yol, uzun yol, başka PHP / PHPRC denetimi; root şifresi sıfırlama, kurtarma modu, Defender istisnası, hosts engeli uyarısı |
-| Diğer | — | Tek tıkla Xdebug, otomatik veritabanı yedeği; Laravel, Symfony, CodeIgniter, CakePHP, Drupal, Vue, React, Svelte, Nuxt, Next.js, Angular, Astro şablonları; Git, VS Code, Python, Go, Bun, Deno |
-| PHP eklentileri | Elle DLL arama | **Tek tıkla 17 PECL eklentisi** (redis, imagick, apcu, mongodb...) her PHP sürümüne uygun, doğrulanmış |
-| Terminal | Sürüm değişince eski PHP kalır | **Her terminalde projenin PHP / Node sürümü** (.php-version, composer.json, .nvmrc) |
-| Güncelleme bildirimi | — | "PHP 8.6 çıktı" gibi bildirim, **tek tıkla indir ve geç**; destek bitişi ve güvenlik açığı uyarısı |
-| Veritabanı güvenliği | — | **Denetle ve onar**, sürüm değişince veritabanlarını güvenle taşıma, büyük SQL içe aktarma, karakter seti / karşılaştırma seçimi |
-| Geliştirici araçları | — | Arka plan işleri (kuyruk, zamanlayıcı, Vite), site günlükleri, profil çıkarma, `portly` komut satırı, proje dosyası `portly.yml` |
-| Siteler | — | Ek ve joker alan adları, kendi sertifikan, arşivleme, Firefox/Java sertifika güveni, **Caddy** ve **FrankenPHP** (Octane) |
-| Diğer | — | Sunucuya gönder / sunucudan çek (SSH), Windows hizmeti modu, antivirüs/karantina denetimi, proxy, 4K ekran ve ekran okuyucu desteği. Az kullanılanlar Ayarlar > Özellikler'den açılır |
-| Dil | 34 dil (txt) | JSON, **31 dil** (Arapça, Farsça, Urduca sağdan sola), GitHub'dan katkıya açık |
-| Windows 7 / 8 / 8.1 | Belirsiz | **Ayrı Legacy sürümü** |
+| License | Closed source, paid for commercial use | **MIT, completely free, no ads** |
+| App updates | Download a new installer | **One click inside the app** (SHA-256 verified) |
+| Package list | Local `packages.conf` | **Remotely updated catalog** + live PHP versions from windows.php.net |
+| PHP version per site | No | **Yes** (every PHP version on its own FastCGI port) |
+| HTTPS | One certificate, recreated per project | **Local root CA** trusted once, a certificate per site |
+| Network safety | Listens on all interfaces | **127.0.0.1 by default** (no firewall prompt) |
+| PHP hardening | Defaults | `session.upload_progress` and `allow_url_include` **off** |
+| Crash safety | — | If Portly dies, Windows stops its services (job object) |
+| Port conflicts | Error message | Shows the program holding the port; **switch to a free port in one click** or close that program |
+| Sharing | ngrok (account needed) | **Local network** (phone / tablet on the same Wi-Fi, QR code, https, password) and **internet** through Cloudflare: random address without an account, or a **fixed address on your own domain** |
+| Migration | — | Projects and databases from **Laragon, XAMPP, WampServer, AMPPS, UwAmp, Uniform Server, Open Server, EasyPHP, MAMP** (projects from Herd and Local) |
+| Databases | MySQL | **MySQL or MariaDB, PostgreSQL, MongoDB, SQLite**; Redis and Memcached |
+| Database tools | HeidiSQL | **phpMyAdmin** (opens logged in while root has no password), **Adminer, HeidiSQL, DBeaver, Beekeeper Studio, DbGate, DB Browser for SQLite** |
+| WordPress | Manual | **One-click WordPress** (WP-CLI, admin user ready) |
+| Languages | 34 (txt) | **31**, plain JSON, open to contributions |
+| Windows 7 / 8 / 8.1 | Unclear | **Separate Legacy edition** |
 
-### Sürümler
+## Features
 
-| Sürüm | Windows | Güncelleme | Paketler |
+- **Projects**: every folder in `www` becomes `https://name.portly`; Laravel-style `public` folders are detected. Group folders and sub-projects (`blog.shop.portly`), templates for Laravel, Symfony, CodeIgniter, CakePHP, Drupal, Vue, React, Svelte, Nuxt, Next.js, Angular and Astro. Each card shows what the project is built with and its database.
+- **Share a project**
+  - *Local network*: open it on your phone with a QR code. Works over https; a guide on the phone installs Portly's certificate on iPhone and Android once. Optional password, time limit, start with Portly, list of connected devices; PHP errors from the phone show up in Portly's log.
+  - *Internet*: a free Cloudflare quick tunnel (no account), or your own domain such as `demo.example.com` through your Cloudflare account. Same password, time limit and device list.
+- **Per-site PHP version**, one-click **PHP extensions** (17 PECL extensions, verified per PHP version), **Xdebug**, terminals that follow the project's PHP / Node version (`.php-version`, `composer.json`, `.nvmrc`).
+- **Services**: Start all / Stop all with a padlock per service (choose which ones belong to the group), MySQL / MariaDB in one card, optional Tomcat + Java.
+- **Update notices** ("PHP 8.6 is out" → install and switch in one click), end-of-life and CVE warnings.
+- **Database safety**: check & repair, safe moves between MySQL / MariaDB versions, large SQL import, automatic backups, forgotten root password reset, InnoDB recovery mode.
+- **Developer workflow**: background jobs (queue, scheduler, Vite), site logs, profiler, `portly` CLI with hooks, `portly.yml` project file, push / pull over SSH.
+- **Sites**: extra and wildcard domains, your own certificates, archive, Fix SSL, Firefox / Java certificate trust, **Caddy** and **FrankenPHP** (Octane).
+- **Problem prevention**: OneDrive folders, non-ASCII and long paths, a second PHP or PHPRC, antivirus blocking the hosts file, quarantine check.
+- Modern sidebar UI with light / dark theme that follows Windows, per-monitor DPI and screen-reader support. Rarely used features are switched on in Settings > Features.
+
+## Editions
+
+| Download | Windows | Updates | Packages |
 |---|---|---|---|
-| `Portly-x.y.z-win10.zip` | 10 / 11 (64 bit) | **Var**: uygulama + paket kataloğu | En güncel: PHP 8.5, MySQL 8.4 LTS / 26.x, Apache 2.4.69, Node 24 LTS... |
-| `Portly-x.y.z-win7.zip` (Legacy) | 7 SP1 / 8 / 8.1 (64 bit) | **Yok** (sabit katalog) | Win7'de çalışan son sürümler: PHP 8.2, MySQL 5.7, Apache 2.4 VS16, Node 13 |
-| macOS / Linux | — | — | **Yakında.** Ayar dosyası (Ayarlar > dışa aktar) şimdiden platformdan bağımsız; geçişte ayarlarınız ve paket listeniz taşınabilecek. Desteklemek isterseniz GitHub'da yıldız verin ve bağış yapın. |
+| `Portly-x.y.z-win10.zip` | 10 / 11 (64-bit) | **Yes**: app + package catalog | Latest: PHP 8.5, MySQL 8.4 LTS / 26.x, Apache 2.4, Node 24 LTS ... |
+| `Portly-x.y.z-win7.zip` (Legacy) | 7 SP1 / 8 / 8.1 (64-bit) | **No** (frozen catalog) | Last versions that run on Windows 7: PHP 8.2, MySQL 5.7, Apache 2.4 VS16, Node 13 |
+| macOS / Linux | — | — | **Coming.** The settings export is already platform-neutral. Star the repo or donate to help it happen. |
 
-Legacy sürüm için .NET Framework 4.8 gerekir (Windows 10/11'de zaten yüklüdür).
+The Legacy edition needs .NET Framework 4.8 (already part of Windows 10 / 11).
 
-### Hızlı başlangıç
+## Quick start
 
-1. [Sürümler](https://github.com/erdemsoftware/portly/releases) sayfasından zip'i indirin ve `C:\Portly` gibi **boşluksuz** bir klasöre açın.
-2. `Portly.exe`'yi çalıştırın. İlk açılışta önerilen paketler seçili gelir, **Seçilenleri kur**'a tıklayın.
-3. **Hepsini başlat**'a tıklayın.
-4. `www` klasöründe bir klasör açın: `www\magaza` otomatik olarak `https://magaza.portly` olur. Laravel gibi `public` klasörü olan projeler kendiliğinden doğru köke bağlanır.
+1. Download a zip from [Releases](https://github.com/erdemsoftware/portly/releases) and unzip it to a folder **without spaces**, e.g. `C:\Portly`.
+2. Run `Portly.exe`. The recommended packages are preselected on the first start: click **Install selected**.
+3. Click **Start all**.
+4. Create a folder in `www`: `www\shop` becomes `https://shop.portly`.
 
-Gruplar, elle sürüm ekleme ve HTTPS için: [docs/04-kullanim.md](docs/04-kullanim.md).
-
-`http://localhost` adresinde tüm siteleri, Adminer'ı, Mailpit'i ve `phpinfo()`'yu gösteren bir pano açılır.
-
-### Klasör yapısı
+`http://localhost` opens a dashboard with all sites, Adminer, Mailpit and `phpinfo()`. More in [docs/04-kullanim.md](docs/04-kullanim.md) (Turkish).
 
 ```
 Portly\
-├─ Portly.exe            uygulama (~300 KB)
-├─ lang\  templates\     diller ve yapılandırma şablonları (güncellemeyle yenilenir)
-├─ bin\                  paketler: bin\php\php-8.5.12-..., bin\mysql\mysql-8.4.11-winx64 ...
-├─ etc\                  üretilen yapılandırma (her başlatmada yeniden yazılır)
-├─ usr\                  ayarlarınız, kendi şablonlarınız, SSL otoritesi (güncellemede dokunulmaz)
-├─ data\                 veritabanları (her MySQL serisine ayrı klasör)
-├─ www\                  projeleriniz (Ayarlar'dan başka klasör seçilebilir)
+├─ Portly.exe            the app
+├─ lang\  templates\     languages and config templates (renewed by updates)
+├─ bin\                  packages: bin\php\php-8.5.12-..., bin\mysql\mysql-8.4.11-winx64 ...
+├─ etc\                  generated configuration (rewritten at every start)
+├─ usr\                  your settings, own templates, SSL authority (never touched by updates)
+├─ data\                 databases (one folder per MySQL series)
+├─ www\                  your projects (another folder can be chosen in Settings)
 └─ logs\  tmp\  backup\
 ```
 
-Bir yapılandırma şablonunu değiştirmek için `templates\` içindeki dosyayı `usr\templates\` içine kopyalayıp düzenleyin. Güncellemeler sizin kopyanıza dokunmaz.
+To change a config template, copy it from `templates\` to `usr\templates\` and edit the copy; updates leave it alone.
 
----
+## Build from source
 
-## English
-
-Portly runs Apache or Nginx, PHP, MySQL or MariaDB, PostgreSQL, MongoDB, Redis, Memcached, Node.js, Mailpit, Composer, Adminer and phpMyAdmin from a single folder. No installer, no Windows services, no registry clutter. It even works from a USB stick.
-
-**Highlights**
-
-- One-click **self update** (SHA-256 verified) and a **remotely updated package catalog**; new PHP releases show up automatically from windows.php.net.
-- **Per-site PHP version**: every PHP version runs as its own FastCGI pool.
-- **HTTPS without warnings**: a local root CA is trusted once, every site gets its own certificate.
-- Every folder in your projects folder becomes `https://name.portly`; Laravel-style `public` folders are detected.
-- Listens on **127.0.0.1 only** by default, PHP hardened (`session.upload_progress`, `allow_url_include` off).
-- Crash safe: if Portly dies, Windows closes all services (job object).
-- Port conflicts are checked before every start: see which program holds the port, switch to a free port in one click, or close that program. Leftover Portly services are cleaned up automatically.
-- Modern sidebar UI with light / dark theme that follows Windows.
-- One-click import from Laragon, XAMPP, WampServer, AMPPS, UwAmp, Uniform Server, Open Server, EasyPHP and MAMP (projects and databases; projects from Laravel Herd and Local), share a site on the internet through a free Cloudflare quick tunnel, choice of Mailpit / MailHog / smtp4dev, one-click Xdebug, optional automatic database backups.
-- **Databases and tools**: MySQL or MariaDB, PostgreSQL, MongoDB, SQLite, Redis, Memcached; phpMyAdmin, Adminer, HeidiSQL, DBeaver, Beekeeper Studio, DbGate and DB Browser for SQLite one click away.
-- **One-click WordPress** (installed with WP-CLI, admin user ready) and templates for Laravel, Symfony, CodeIgniter, CakePHP, Drupal, Vue, React, Svelte, Nuxt, Next.js, Angular and Astro. Git, VS Code, Python, Go, Bun and Deno as optional packages.
-- **Problem prevention**: checks for OneDrive folders, non-ASCII paths, long paths, a second PHP or PHPRC; forgotten root password reset, InnoDB recovery mode, optional Defender exclusion, warning when antivirus blocks the hosts file.
-- **Two editions**: Windows 10/11 (updates, latest packages) and Legacy for Windows 7 SP1 / 8 / 8.1 (frozen, compatible packages).
-- **PHP extensions** in one click (17 PECL extensions, verified builds per PHP version); **terminals follow the project's PHP / Node version** (.php-version, composer.json, .nvmrc).
-- **Update notices** ("PHP 8.6 is out" → install and switch in one click), end-of-life and CVE warnings, antivirus quarantine check, proxy support.
-- **Database safety**: check & repair, safe moves between MySQL / MariaDB versions, large SQL import, collation and storage engine defaults.
-- **Developer workflow**: background jobs (queue, scheduler, Vite), site logs, profiler, `portly` CLI with hooks, `portly.yml` project file.
-- **Sites**: extra and wildcard domains, own certificates, archive, Firefox/Java trust, **Caddy** and **FrankenPHP** (Octane). Push / pull over SSH, Windows service mode, per-monitor DPI and screen-reader support. Rarely used features are switched on in Settings > Features.
-- **macOS and Linux: coming soon.** The settings export is already platform-neutral, so your settings and package list will move over. Star the repo or donate to help it happen.
-- 31 languages (right-to-left for Arabic, Persian, Urdu), plain JSON files, contributions welcome.
-
-**Quick start:** download a release, unzip to a folder without spaces (e.g. `C:\Portly`), run `Portly.exe`, install the recommended packages, click **Start all**, create `www\shop` and open `https://shop.portly`.
-
-### Build from source
-
-Requirements: any .NET SDK 6 or newer (the app itself targets .NET Framework 4.8, so it runs on Windows 7 SP1 – 11 without extra runtimes).
+Requirements: any .NET SDK 6 or newer (the app targets .NET Framework 4.8, so it runs on Windows 7 SP1 – 11 without extra runtimes). With Inno Setup installed, `build.ps1` also makes the setup programs.
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File build.ps1            # both editions -> dist\
@@ -127,22 +93,20 @@ dotnet build src\Portly\Portly.csproj -c Release -p:Edition=Legacy
 dotnet run --project tests\Portly.SmokeTest -c Release        # end-to-end test on test ports
 ```
 
-See [docs/02-mimari.md](docs/02-mimari.md) for the architecture and [docs/03-yayinlama.md](docs/03-yayinlama.md) for releasing.
+Architecture: [docs/02-mimari.md](docs/02-mimari.md), releasing: [docs/03-yayinlama.md](docs/03-yayinlama.md) (Turkish).
 
-### Translations
+## Translations
 
-Language files live in [`src/Portly/lang`](src/Portly/lang). Copy `en.json`, translate the values, keep `{0}` placeholders and send a pull request. Missing keys fall back to English. See [CONTRIBUTING.md](CONTRIBUTING.md).
-
----
+Language files live in [`src/Portly/lang`](src/Portly/lang). Copy `en.json`, translate the values, keep the `{0}` placeholders and send a pull request. Missing keys fall back to English. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Donate
 
-Portly is free and will stay free: no ads, no paid tiers, no tracking. If it saves you time, you can support the development.
-Portly ücretsizdir ve öyle kalacak. İşinizi kolaylaştırdıysa geliştirmeye destek olabilirsiniz.
+Portly is free and will stay free: no ads, no paid tiers, no tracking. If it saves you time, you can support its development.
 
-<!-- Bağış bağlantılarınızı buraya ekleyin / add your donation links here (GitHub Sponsors, Buy Me a Coffee, IBAN ...) -->
-Kart / card: **[Buy Me a Coffee](https://buymeacoffee.com/erdemsoftware)** · Kripto / crypto (USDT TRC-20, BEP-20, Polygon, Solana, ETH): in the app, Menu > Donate.
+- Card: **[Buy Me a Coffee](https://buymeacoffee.com/erdemsoftware)**
+- Binance Pay ID: **50018297**
+- Crypto (USDT on TRC-20, BEP-20, Polygon, Solana, Ethereum): in the app, Menu > Donate
 
 ---
 
-<sub>Apache, PHP, MySQL, MariaDB, PostgreSQL, MongoDB, Nginx, Node.js, Redis, Memcached, Mailpit, Composer, Adminer, phpMyAdmin and the other tools are downloaded from their official sources and are the property of their respective owners. Portly is not affiliated with Laragon.</sub>
+<sub>Apache, PHP, MySQL, MariaDB, PostgreSQL, MongoDB, Nginx, Node.js, Redis, Memcached, Mailpit, Composer, Adminer, phpMyAdmin, Cloudflare and the other tools are downloaded from their official sources and are the property of their respective owners. Portly is not affiliated with Laragon.</sub>

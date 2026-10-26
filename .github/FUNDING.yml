@@ -1,4 +1,3 @@
-# Shows the "Sponsor" button on GitHub. Uncomment and fill in what you use.
-# github: [erdemsoftware]
-# buy_me_a_coffee: erdemsoftware
-# custom: ["https://erdemsoftware.com/bagis"]
+# Shows the "Sponsor" button on GitHub.
+# github: [erdemsoftware]   # after GitHub Sponsors is set up for the account
+buy_me_a_coffee: erdemsoftware
