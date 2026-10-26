@@ -59,7 +59,9 @@ jobs:
         shell: pwsh
         run: |
           git checkout -- .
-          git checkout main
+          # the newest main (it may have moved since the checkout at the start)
+          git fetch origin main
+          git checkout -B main origin/main
           Copy-Item $env:RUNNER_TEMP/app.json manifest/app.json
           git config user.name "github-actions"
           git config user.email "github-actions@users.noreply.github.com"
