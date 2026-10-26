@@ -11,6 +11,9 @@
 
 ---
 
+<p align="center"><img src="assets/screenshots/tr-services.png" width="49%" alt="Servisler"> <img src="assets/screenshots/tr-projects.png" width="49%" alt="Projeler"></p>
+<p align="center"><img src="assets/screenshots/tr-qr.png" width="49%" alt="Projeyi telefonda QR kodla açma"> <img src="assets/screenshots/tr-newproject.png" width="40%" alt="Yeni proje"></p>
+
 Portly; Apache ya da Nginx, PHP, MySQL ya da MariaDB, PostgreSQL, MongoDB, Redis, Memcached, Node.js, Mailpit, Composer, Adminer ve phpMyAdmin'i tek bir klasörde çalıştırır. Kurulum gerekmez, Windows servisi eklemez, kayıt defterini kirletmez. Klasörü bir USB belleğe kopyalasanız bile çalışır.
 
 ## Neden Portly?

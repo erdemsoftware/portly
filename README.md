@@ -11,6 +11,9 @@
 
 ---
 
+<p align="center"><img src="assets/screenshots/en-services.png" width="49%" alt="Services"> <img src="assets/screenshots/en-projects.png" width="49%" alt="Projects"></p>
+<p align="center"><img src="assets/screenshots/en-qr.png" width="49%" alt="Open a project on your phone with a QR code"> <img src="assets/screenshots/en-newproject.png" width="40%" alt="New project"></p>
+
 Portly runs Apache or Nginx, PHP, MySQL or MariaDB, PostgreSQL, MongoDB, Redis, Memcached, Node.js, Mailpit, Composer, Adminer and phpMyAdmin from a single folder. No installer needed, no Windows services, no registry clutter. It even works from a USB stick.
 
 ## Why Portly?
