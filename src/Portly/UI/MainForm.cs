@@ -310,7 +310,7 @@ namespace Portly.UI
             // right-click: every database tool (Adminer, HeidiSQL, DBeaver ...)
             var dbMenu = new ContextMenuStrip();
             StyleMenu(dbMenu);
-            dbMenu.Opening += (s, e) => { dbMenu.Items.Clear(); BuildDatabaseToolItems(dbMenu.Items); };
+            dbMenu.Opening += (s, e) => { dbMenu.Items.Clear(); BuildDatabaseToolItems(dbMenu.Items); e.Cancel = dbMenu.Items.Count == 0; };
             dbTile.ContextMenuStrip = dbMenu;
             new ToolTip().SetToolTip(dbTile, I18n.T("main.databaseHint"));
             tiles.Controls.Add(dbTile);
@@ -422,7 +422,7 @@ namespace Portly.UI
 
             var cm = new ContextMenuStrip();
             StyleMenu(cm);
-            cm.Opening += (s, e) => BuildCardMenu(cm, row);
+            cm.Opening += (s, e) => { BuildCardMenu(cm, row); e.Cancel = cm.Items.Count == 0; };
             card.ContextMenuStrip = cm;
             row.Name.ContextMenuStrip = cm;
 
@@ -932,7 +932,8 @@ namespace Portly.UI
             var moreBtn = new ModernButton { Glyph = "more", Kind = ButtonKind.Ghost, AutoSize = false, Size = Ui.S(32, 32), Location = new Point(Ui.S(256), Ui.S(10)), AccessibleName = I18n.T("sites.more") };
             var cm = new ContextMenuStrip();
             StyleMenu(cm);
-            cm.Opening += (s, e) => BuildSiteMenu(cm.Items, site);
+            // WinForms cancels opening a menu that is empty before Opening: filled here, so open it (else the first click did nothing)
+            cm.Opening += (s, e) => { BuildSiteMenu(cm.Items, site); e.Cancel = cm.Items.Count == 0; };
             moreBtn.Click += (s, e) => cm.Show(moreBtn, new Point(0, moreBtn.Height));
             card.ContextMenuStrip = cm;
             card.Controls.AddRange(new Control[] { avatar, name, address, php, moreBtn });
@@ -945,7 +946,7 @@ namespace Portly.UI
                 if (sharing) { shareBtn.Kind = ButtonKind.Primary; shareBtn.CustomColor = p.Green; }
                 var sm = new ContextMenuStrip();
                 StyleMenu(sm);
-                sm.Opening += (s, e) => BuildShareMenu(sm.Items, site);
+                sm.Opening += (s, e) => { BuildShareMenu(sm.Items, site); e.Cancel = sm.Items.Count == 0; };
                 shareBtn.Click += (s, e) => sm.Show(shareBtn, new Point(0, shareBtn.Height));
                 new ToolTip().SetToolTip(shareBtn, sharing ? I18n.T("share.active") : I18n.T("share.button"));
                 name.Width = Ui.S(156);
