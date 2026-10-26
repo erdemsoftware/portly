@@ -116,9 +116,9 @@ Portly sistem ayarlarını yalnız sorarak değiştirir: hosts dosyası ve yerel
 Windows sürümleri bu depodan GitHub Actions ile derlenir. SignPath Foundation üzerinden kod imzalama için başvuru yapıldı; o zamana kadar sürümler imzasızdır ve her sürümle SHA-256 özetleri yayınlanır.
 
 Ekip rolleri:
-- Yazarlar / commit yetkilisi: [Muhammed Erdem](https://github.com/erdemsoftware)
-- İnceleyenler: [Muhammed Erdem](https://github.com/erdemsoftware)
-- Onaylayanlar (sürüm imzalama): [Muhammed Erdem](https://github.com/erdemsoftware)
+- Yazarlar / commit yetkilisi: [Erdem Software](https://github.com/erdemsoftware)
+- İnceleyenler: [Erdem Software](https://github.com/erdemsoftware)
+- Onaylayanlar (sürüm imzalama): [Erdem Software](https://github.com/erdemsoftware)
 
 ## Bağış
 

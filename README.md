@@ -116,9 +116,9 @@ Portly changes system settings only with a prompt: the hosts file and trusting i
 Windows releases are built from this repository by GitHub Actions. Code signing through the SignPath Foundation is applied for; until then releases are unsigned and their SHA-256 sums are published with each release.
 
 Team roles:
-- Authors / committers: [Muhammed Erdem](https://github.com/erdemsoftware)
-- Reviewers: [Muhammed Erdem](https://github.com/erdemsoftware)
-- Approvers (release signing): [Muhammed Erdem](https://github.com/erdemsoftware)
+- Authors / committers: [Erdem Software](https://github.com/erdemsoftware)
+- Reviewers: [Erdem Software](https://github.com/erdemsoftware)
+- Approvers (release signing): [Erdem Software](https://github.com/erdemsoftware)
 
 ## Donate
 
