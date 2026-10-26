@@ -99,6 +99,27 @@ Architecture: [docs/02-mimari.md](docs/02-mimari.md), releasing: [docs/03-yayinl
 
 Language files live in [`src/Portly/lang`](src/Portly/lang). Copy `en.json`, translate the values, keep the `{0}` placeholders and send a pull request. Missing keys fall back to English. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
+## Privacy
+
+Portly has no telemetry, no analytics and no accounts. It only connects to other systems for things you start or switch on:
+
+- **Update check** (on by default, can be turned off in Settings): downloads the package catalog and release information from this GitHub repository. Nothing about you or your projects is sent.
+- **Installing a package**: downloads it from its official source (windows.php.net, dev.mysql.com, nodejs.org ...).
+- **Sharing a project on the internet**: runs Cloudflare's `cloudflared`; visitors reach your site through Cloudflare. Local network sharing stays inside your network.
+
+Portly changes system settings only with a prompt: the hosts file and trusting its local certificate authority ask for confirmation (Windows UAC).
+
+**Uninstall**: the portable zip is removed by deleting its folder; the setup version uninstalls from Windows Settings > Apps. To remove the trusted Portly certificate authority too, open `certmgr.msc` > Trusted Root Certification Authorities > Certificates and delete "Portly Local CA".
+
+## Code signing policy
+
+Windows releases are built from this repository by GitHub Actions. Code signing through the SignPath Foundation is applied for; until then releases are unsigned and their SHA-256 sums are published with each release.
+
+Team roles:
+- Authors / committers: [Muhammed Erdem](https://github.com/erdemsoftware)
+- Reviewers: [Muhammed Erdem](https://github.com/erdemsoftware)
+- Approvers (release signing): [Muhammed Erdem](https://github.com/erdemsoftware)
+
 ## Donate
 
 Portly is free and will stay free: no ads, no paid tiers, no tracking. If it saves you time, you can support its development.

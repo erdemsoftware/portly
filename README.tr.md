@@ -99,6 +99,27 @@ Mimari: [docs/02-mimari.md](docs/02-mimari.md), yayınlama: [docs/03-yayinlama.m
 
 Dil dosyaları [`src/Portly/lang`](src/Portly/lang) klasöründedir. `en.json`'u kopyalayın, değerleri çevirin, `{0}` yer tutucularını koruyun ve pull request gönderin. Eksik anahtarlarda İngilizce gösterilir. Bkz. [CONTRIBUTING.md](CONTRIBUTING.md).
 
+## Gizlilik
+
+Portly'de telemetri, kullanım istatistiği ve hesap yoktur. Başka sistemlere yalnız sizin başlattığınız ya da açtığınız işler için bağlanır:
+
+- **Güncelleme denetimi** (varsayılan açık, Ayarlar'dan kapatılabilir): paket kataloğunu ve sürüm bilgisini bu GitHub deposundan indirir. Sizinle ya da projelerinizle ilgili hiçbir şey gönderilmez.
+- **Paket kurulumu**: paketi resmî kaynağından indirir (windows.php.net, dev.mysql.com, nodejs.org ...).
+- **Projeyi internette paylaşma**: Cloudflare'in `cloudflared` programını çalıştırır; ziyaretçiler sitenize Cloudflare üzerinden ulaşır. Yerel ağ paylaşımı ağınızın dışına çıkmaz.
+
+Portly sistem ayarlarını yalnız sorarak değiştirir: hosts dosyası ve yerel sertifika otoritesine güven için onay istenir (Windows UAC).
+
+**Kaldırma**: taşınabilir zip sürümü klasörü silinerek kaldırılır; kurulum sürümü Windows Ayarlar > Uygulamalar'dan kaldırılır. Güvenilen Portly sertifika otoritesini de kaldırmak için `certmgr.msc` > Güvenilen Kök Sertifika Yetkilileri > Sertifikalar'da "Portly Local CA"yı silin.
+
+## Kod imzalama politikası
+
+Windows sürümleri bu depodan GitHub Actions ile derlenir. SignPath Foundation üzerinden kod imzalama için başvuru yapıldı; o zamana kadar sürümler imzasızdır ve her sürümle SHA-256 özetleri yayınlanır.
+
+Ekip rolleri:
+- Yazarlar / commit yetkilisi: [Muhammed Erdem](https://github.com/erdemsoftware)
+- İnceleyenler: [Muhammed Erdem](https://github.com/erdemsoftware)
+- Onaylayanlar (sürüm imzalama): [Muhammed Erdem](https://github.com/erdemsoftware)
+
 ## Bağış
 
 Portly ücretsizdir ve öyle kalacak: reklam yok, ücretli sürüm yok, izleme yok. İşinizi kolaylaştırdıysa geliştirmeye destek olabilirsiniz.
