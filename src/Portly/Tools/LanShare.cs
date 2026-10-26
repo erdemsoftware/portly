@@ -10,6 +10,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using Portly.Config;
 using Portly.Core;
@@ -31,12 +32,90 @@ namespace Portly.Tools
         {
             public TcpListener Listener;
             public int Port;
+            public bool Online;          // behind a Cloudflare tunnel (listens on 127.0.0.1 only; the address comes from Host)
             public bool Https;           // the site has HTTPS: shared with https (certificate made for the address in use)
             public volatile bool Tls;    // the site sends http to https: reach it on the local HTTPS port
             public string Password = ""; // "" = no password
             public string Token;         // cookie value after the password was given (new at every start)
+            public DateTime? ExpiresAt;  // stops by itself then
+            public Timer Expiry;
+            public readonly Dictionary<string, ShareDevice> Devices = new Dictionary<string, ShareDevice>();
         }
         static readonly Dictionary<string, Entry> Shares = new Dictionary<string, Entry>(StringComparer.OrdinalIgnoreCase);
+        // internet shares: cloudflared -> this proxy (127.0.0.1) -> web server, so they get the same rewriting,
+        // password, device list, time limit and PHP error report as local network shares
+        static readonly Dictionary<string, Entry> Tunnels = new Dictionary<string, Entry>(StringComparer.OrdinalIgnoreCase);
+
+        static Dictionary<string, Entry> Map(bool online) { return online ? Tunnels : Shares; }
+
+        /// <summary>Starts the local proxy an internet share's tunnel points to; returns its port.</summary>
+        public static int StartTunnelProxy(Site site, string password)
+        {
+            var listener = new TcpListener(IPAddress.Loopback, 0);
+            listener.Start();
+            var entry = new Entry { Listener = listener, Port = ((IPEndPoint)listener.LocalEndpoint).Port, Online = true, Password = password ?? "", Token = Guid.NewGuid().ToString("N") };
+            Entry old;
+            lock (Shares)
+            {
+                if (Tunnels.TryGetValue(site.Host, out old)) { try { old.Listener.Stop(); } catch { } DisposeExpiry(old); }
+                Tunnels[site.Host] = entry;
+            }
+            Task.Run(() => AcceptLoop(entry, site.Host));
+            return entry.Port;
+        }
+
+        public static void StopTunnelProxy(string host)
+        {
+            Entry e;
+            lock (Shares)
+            {
+                if (!Tunnels.TryGetValue(host, out e)) return;
+                Tunnels.Remove(host);
+            }
+            try { e.Listener.Stop(); } catch { }
+            DisposeExpiry(e);
+        }
+
+        /// <summary>Devices that opened the share (newest first). Local network: by IP; internet: the visitor's IP from Cloudflare.</summary>
+        public static List<ShareDevice> DevicesOf(string host, bool online)
+        {
+            Entry e;
+            lock (Shares)
+            {
+                if (!Map(online).TryGetValue(host, out e)) return new List<ShareDevice>();
+                lock (e.Devices) return e.Devices.Values.OrderByDescending(d => d.Last).Select(d => d.Copy()).ToList();
+            }
+        }
+
+        /// <summary>When the share stops by itself, or null.</summary>
+        public static DateTime? ExpiresAt(string host, bool online)
+        {
+            Entry e;
+            lock (Shares) return Map(online).TryGetValue(host, out e) ? e.ExpiresAt : null;
+        }
+
+        /// <summary>Stop the running share after <paramref name="after"/> (null = no limit). <paramref name="stop"/> stops it.</summary>
+        public static void SetExpiry(string host, bool online, TimeSpan? after, Action stop)
+        {
+            Entry e;
+            lock (Shares) if (!Map(online).TryGetValue(host, out e)) return;
+            DisposeExpiry(e);
+            if (after == null) { e.ExpiresAt = null; ShareStore.Notify(); return; }
+            e.ExpiresAt = DateTime.Now + after.Value;
+            e.Expiry = new Timer(_ =>
+            {
+                Log.Info(I18n.T("shares.expired", host));
+                try { stop(); } catch (Exception ex) { Log.Warn(ex.Message); }
+            }, null, after.Value, Timeout.InfiniteTimeSpan);
+            ShareStore.Notify();
+        }
+
+        static void DisposeExpiry(Entry e)
+        {
+            var t = e.Expiry;
+            e.Expiry = null;
+            if (t != null) try { t.Dispose(); } catch { }
+        }
 
         static LanShare()
         {
@@ -122,6 +201,8 @@ namespace Portly.Tools
             var entry = new Entry { Listener = listener, Port = port, Https = https, Password = ShareStore.Get(site.Host).LanPassword, Token = token };
             lock (Shares) Shares[site.Host] = entry;
             Task.Run(() => AcceptLoop(entry, site.Host));
+            var minutes = ShareStore.Get(site.Host).LanMinutes;
+            if (minutes > 0) SetExpiry(site.Host, false, TimeSpan.FromMinutes(minutes), () => Stop(site.Host));
             var url = UrlOf(site.Host);
             Log.Info(I18n.T("lan.started", site.Host, url));
             ShareStore.Notify();
@@ -140,17 +221,18 @@ namespace Portly.Tools
                 Shares.Remove(host);
             }
             try { e.Listener.Stop(); } catch { }
+            DisposeExpiry(e);
             Log.Info(I18n.T("lan.stopped", host));
             ShareStore.Notify();
         }
 
         /// <summary>New password for a running share; devices that logged in before must log in again.</summary>
-        public static void SetPassword(string host, string password)
+        public static void SetPassword(string host, string password, bool online = false)
         {
             lock (Shares)
             {
                 Entry e;
-                if (!Shares.TryGetValue(host, out e) || e.Password == (password ?? "")) return;
+                if (!Map(online).TryGetValue(host, out e) || e.Password == (password ?? "")) return;
                 e.Password = password ?? "";
                 e.Token = Guid.NewGuid().ToString("N");
             }
@@ -179,8 +261,8 @@ namespace Portly.Tools
         public static void StopAll()
         {
             List<Entry> list;
-            lock (Shares) { list = Shares.Values.ToList(); Shares.Clear(); }
-            foreach (var e in list) try { e.Listener.Stop(); } catch { }
+            lock (Shares) { list = Shares.Values.Concat(Tunnels.Values).ToList(); Shares.Clear(); Tunnels.Clear(); }
+            foreach (var e in list) { try { e.Listener.Stop(); } catch { } DisposeExpiry(e); }
         }
 
         static async Task AcceptLoop(Entry entry, string host)
@@ -210,24 +292,45 @@ namespace Portly.Tools
                     client.NoDelay = true;
                     client.ReceiveTimeout = 30000;   // a device that connects and sends nothing
                     Stream cs = client.GetStream();
-                    // the address the device used (follows a new IP from the router, and the right adapter)
-                    var localIp = ((IPEndPoint)client.Client.LocalEndPoint).Address;
-                    if (localIp.IsIPv4MappedToIPv6) localIp = localIp.MapToIPv4();
-                    var pub = localIp + ":" + entry.Port;
-                    // the same port answers https and http: a TLS handshake starts with 0x16
-                    var first = new byte[1];
-                    if (client.Client.Receive(first, 1, SocketFlags.Peek) < 1) return;
-                    bool secure = first[0] == 0x16 && entry.Https;
-                    if (secure)
-                    {
-                        var ssl = new SslStream(cs, false);
-                        await ssl.AuthenticateAsServerAsync(Certs.LanCertificate(localIp), false, SslProtocols.Tls12, false);
-                        cs = ssl;
-                    }
+                    string pub;
+                    bool secure;
                     byte[] rest;
-                    var head = ReadHead(cs, out rest);
-                    if (head == null) return;
-                    if (await ServeCa(cs, head, pub, entry.Https)) return;
+                    string head;
+                    if (entry.Online)
+                    {
+                        // from cloudflared: plain http on 127.0.0.1, the public name (xyz.trycloudflare.com / demo.example.com) in Host
+                        secure = true;
+                        head = ReadHead(cs, out rest);
+                        if (head == null) return;
+                        var hostLine = head.Split(new[] { "\r\n" }, StringSplitOptions.None).FirstOrDefault(l => Is(Name(l), "Host"));
+                        pub = hostLine == null ? "" : hostLine.Substring(hostLine.IndexOf(':') + 1).Trim();
+                        if (!Regex.IsMatch(pub, @"^[A-Za-z0-9.-]+(:\d+)?$")) return;
+                    }
+                    else
+                    {
+                        // the address the device used (follows a new IP from the router, and the right adapter)
+                        var localIp = ((IPEndPoint)client.Client.LocalEndPoint).Address;
+                        if (localIp.IsIPv4MappedToIPv6) localIp = localIp.MapToIPv4();
+                        pub = localIp + ":" + entry.Port;
+                        // the same port answers https and http: a TLS handshake starts with 0x16
+                        var first = new byte[1];
+                        if (client.Client.Receive(first, 1, SocketFlags.Peek) < 1) return;
+                        secure = first[0] == 0x16 && entry.Https;
+                        if (secure)
+                        {
+                            var ssl = new SslStream(cs, false);
+                            await ssl.AuthenticateAsServerAsync(Certs.LanCertificate(localIp), false, SslProtocols.Tls12, false);
+                            cs = ssl;
+                        }
+                        head = ReadHead(cs, out rest);
+                        if (head == null) return;
+                        if (await ServeCa(cs, head, pub, entry.Https)) return;
+                    }
+                    // who is looking: local network = the device's IP, internet = the visitor's IP that Cloudflare passes on
+                    var headLines = head.Split(new[] { "\r\n" }, StringSplitOptions.None);
+                    var remote = ((IPEndPoint)client.Client.RemoteEndPoint).Address.ToString();
+                    if (entry.Online) remote = HeaderValue(headLines, "CF-Connecting-IP") ?? remote;
+                    Seen(entry, host, remote, HeaderValue(headLines, "User-Agent"), entry.Online ? HeaderValue(headLines, "CF-IPCountry") : null);
                     // a share with a password: a small login page first, then a cookie
                     if (entry.Password != "")
                     {
@@ -238,7 +341,6 @@ namespace Portly.Tools
                     var lines = head.Split(new[] { "\r\n" }, StringSplitOptions.None).ToList();
                     bool upgrade = lines.Any(l => l.StartsWith("Upgrade:", StringComparison.OrdinalIgnoreCase));
                     var method = lines[0].Split(' ')[0].ToUpperInvariant();
-                    var remote = ((IPEndPoint)client.Client.RemoteEndPoint).Address.ToString();
                     long length = 0;
                     var cl = lines.FirstOrDefault(l => Is(Name(l), "Content-Length"));
                     if (cl != null) long.TryParse(cl.Substring(cl.IndexOf(':') + 1).Trim(), out length);
@@ -267,6 +369,8 @@ namespace Portly.Tools
                                 ss = ssl;
                             }
                             var req = Latin1.GetBytes(string.Join("\r\n", RequestLines(lines, upgrade, tls, secure, host, pub, remote)) + "\r\n\r\n");
+                            // PHP errors while this request runs: into Portly's log with the device and the page
+                            long phpLogBefore = upgrade ? -1 : PhpLogLength();
                             await ss.WriteAsync(req, 0, req.Length);
                             if (rest.Length > 0) await ss.WriteAsync(rest, 0, rest.Length);
                             var up = moreBody ? cs.CopyToAsync(ss) : null;
@@ -282,6 +386,7 @@ namespace Portly.Tools
                                 continue;
                             }
                             await Answer(cs, ss, resp, body, upgrade, method == "HEAD", secure, host, pub);
+                            if (!upgrade) ReportErrors(entry, host, remote, lines[0], resp, phpLogBefore);
                             if (up != null && upgrade) await up;
                             return;
                         }
@@ -370,6 +475,86 @@ namespace Portly.Tools
                 "document.querySelectorAll('.tab').forEach(function(x){x.classList.toggle('on',x.id==t)})}" +
                 "b.forEach(function(x){x.onclick=function(){show(x.dataset.t)}});show(/android/i.test(navigator.userAgent)?'android':'ios');" +
                 "</script></body></html>";
+        }
+
+        static string HeaderValue(IEnumerable<string> lines, string name)
+        {
+            var l = lines.Skip(1).FirstOrDefault(x => Is(Name(x), name));
+            return l == null ? null : l.Substring(l.IndexOf(':') + 1).Trim();
+        }
+
+        static void Seen(Entry e, string host, string ip, string userAgent, string country)
+        {
+            bool added = false;
+            string label;
+            lock (e.Devices)
+            {
+                ShareDevice d;
+                if (!e.Devices.TryGetValue(ip, out d))
+                {
+                    if (e.Devices.Count >= 200) return; // an internet share seen by many: enough for the list
+                    e.Devices[ip] = d = new ShareDevice { Ip = ip, First = DateTime.Now };
+                    added = true;
+                }
+                d.Last = DateTime.Now;
+                d.Requests++;
+                if (!string.IsNullOrEmpty(userAgent)) d.Name = ShareDevice.Describe(userAgent);
+                if (!string.IsNullOrEmpty(country) && country != "XX") d.Country = country;
+                label = d.Label;
+            }
+            if (added)
+            {
+                Log.Info(I18n.T("shares.deviceJoined", host, label));
+                ShareStore.Notify();
+            }
+        }
+
+        static string PhpLogFile { get { return Path.Combine(Paths.Logs, "php_errors.log"); } }
+
+        static long PhpLogLength()
+        {
+            try { var f = new FileInfo(PhpLogFile); return f.Exists ? f.Length : 0; }
+            catch { return -1; }
+        }
+
+        /// <summary>
+        /// A request from a shared device ended with a server error or wrote to the PHP error log: put it into Portly's log
+        /// with the device and the page, so errors seen on the phone show up on the computer. (Requests running at the same
+        /// time share the PHP log, so a line may belong to another page of the same moment.)
+        /// </summary>
+        static void ReportErrors(Entry e, string host, string ip, string requestLine, string resp, long phpLogBefore)
+        {
+            try
+            {
+                int status = 0;
+                var sm = Regex.Match(resp, @"^HTTP/\S+ (\d{3})");
+                if (sm.Success) status = int.Parse(sm.Groups[1].Value);
+                var parts = requestLine.Split(' ');
+                var page = parts.Length > 1 ? parts[0] + " " + parts[1] : requestLine;
+                if (page.Length > 160) page = page.Substring(0, 160) + "...";
+                var messages = new List<string>();
+                if (phpLogBefore >= 0)
+                {
+                    var f = new FileInfo(PhpLogFile);
+                    if (f.Exists && f.Length > phpLogBefore)
+                    {
+                        using (var s = new FileStream(f.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
+                        {
+                            s.Position = Math.Max(phpLogBefore, f.Length - 8192);
+                            var text = new StreamReader(s, Encoding.UTF8).ReadToEnd();
+                            // "[26-Oct-2026 20:31:05 Europe/Istanbul] PHP Warning:  Undefined variable $x in ... on line 3"
+                            messages.AddRange(text.Split('\n').Select(l => Regex.Replace(l.Trim(), @"^\[[^\]]+\]\s*", "")).Where(l => l.StartsWith("PHP ")).Take(5));
+                        }
+                    }
+                }
+                if (messages.Count == 0 && status < 500) return;
+                string label;
+                lock (e.Devices) { ShareDevice d; label = e.Devices.TryGetValue(ip, out d) ? d.Label : ip; if (d != null) d.Errors += Math.Max(1, messages.Count); }
+                if (messages.Count == 0) messages.Add("HTTP " + status);
+                foreach (var m in messages) Log.Warn(I18n.T("shares.phpError", host, label, page, m));
+                ShareStore.Notify();
+            }
+            catch { }
         }
 
         static string CookieName(Entry e) { return "portly_share_" + e.Port; }
@@ -602,6 +787,51 @@ namespace Portly.Tools
                 if (j == p.Length) return i;
             }
             return -1;
+        }
+    }
+}
+
+namespace Portly.Tools
+{
+    /// <summary>A device (or internet visitor) that opened a shared project.</summary>
+    public class ShareDevice
+    {
+        public string Ip = "";
+        public string Name = "";      // "iPhone · Safari", "Android (Pixel 9) · Chrome"
+        public string Country = "";   // internet shares: two-letter code from Cloudflare
+        public DateTime First, Last;
+        public int Requests, Errors;
+
+        public string Label { get { return (Name != "" ? Name + " - " : "") + Ip + (Country != "" ? " (" + Country + ")" : ""); } }
+
+        public ShareDevice Copy() { return (ShareDevice)MemberwiseClone(); }
+
+        /// <summary>Phone / computer and browser from the User-Agent, in a few words.</summary>
+        public static string Describe(string ua)
+        {
+            string os =
+                ua.Contains("iPhone") ? "iPhone" :
+                ua.Contains("iPad") || ua.Contains("Macintosh") && ua.Contains("Mobile") ? "iPad" :
+                ua.Contains("Android") ? "Android" :
+                ua.Contains("Windows") ? "Windows" :
+                ua.Contains("Mac OS X") ? "Mac" :
+                ua.Contains("CrOS") ? "Chromebook" :
+                ua.Contains("Linux") ? "Linux" : "";
+            if (os == "Android")
+            {
+                // "Android 15; Pixel 9 Build/..." -> the model, when the browser sends it
+                var m = System.Text.RegularExpressions.Regex.Match(ua, @"Android [\d.]+; ([^;)]+?)(?: Build/[^;)]*)?[;)]");
+                if (m.Success && m.Groups[1].Value != "K") os += " (" + m.Groups[1].Value.Trim() + ")";
+            }
+            string browser =
+                ua.Contains("SamsungBrowser") ? "Samsung Internet" :
+                ua.Contains("Edg/") || ua.Contains("EdgA/") || ua.Contains("EdgiOS/") ? "Edge" :
+                ua.Contains("OPR/") ? "Opera" :
+                ua.Contains("Firefox/") || ua.Contains("FxiOS/") ? "Firefox" :
+                ua.Contains("CriOS/") || ua.Contains("Chrome/") ? "Chrome" :
+                ua.Contains("Safari/") ? "Safari" :
+                ua.Contains("curl/") ? "curl" : "";
+            return os != "" && browser != "" ? os + " · " + browser : os + browser;
         }
     }
 }

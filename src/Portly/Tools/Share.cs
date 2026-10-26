@@ -13,12 +13,15 @@ using Portly.Packages;
 namespace Portly.Tools
 {
     /// <summary>
-    /// Share a local site on the internet with a free Cloudflare "quick tunnel" (https://xxx.trycloudflare.com).
-    /// No Cloudflare account is needed. The tunnel lives until it is stopped or Portly exits.
+    /// Share a local site on the internet with Cloudflare: a free "quick tunnel" (random https://xxx.trycloudflare.com,
+    /// no account needed) or, with the user's Cloudflare account, a fixed address (CloudflareTunnel).
+    /// cloudflared talks to the project's local share proxy (LanShare.StartTunnelProxy), which rewrites addresses and
+    /// adds the password, device list, time limit and PHP error report. Runs until it is stopped or Portly exits.
     /// </summary>
     public static class Share
     {
-        static readonly Dictionary<string, Process> Tunnels = new Dictionary<string, Process>(StringComparer.OrdinalIgnoreCase);
+        static readonly Dictionary<string, Process> Quick = new Dictionary<string, Process>(StringComparer.OrdinalIgnoreCase);
+        static readonly Dictionary<string, string> Fixed = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase); // site -> fixed address
         static readonly Dictionary<string, string> Urls = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         static readonly Regex UrlRx = new Regex(@"https://[a-z0-9-]+\.trycloudflare\.com", RegexOptions.IgnoreCase);
 
@@ -28,14 +31,14 @@ namespace Portly.Tools
 
         public static string UrlOf(string host)
         {
-            lock (Tunnels) { string u; return Urls.TryGetValue(host, out u) ? u : null; }
+            lock (Urls) { string u; return Urls.TryGetValue(host, out u) ? u : null; }
         }
 
-        /// <summary>Starts the tunnel (installs cloudflared first when needed) and returns the public URL.</summary>
-        public static async Task<string> StartAsync(Site site, Action<string> status)
+        public static bool IsRunning(string host) { lock (Urls) return Urls.ContainsKey(host); }
+
+        /// <summary>cloudflared.exe, installed first when needed.</summary>
+        public static async Task<string> EnsureCloudflaredAsync(Action<string> status)
         {
-            var existing = UrlOf(site);
-            if (existing != null) return existing;
             if (PackageTypes.ActiveDir("cloudflared") == null)
             {
                 var entry = Catalog.Recommended("cloudflared");
@@ -43,10 +46,45 @@ namespace Portly.Tools
                 status(I18n.T("log.downloading", "cloudflared"));
                 await Installer.InstallAsync(entry, null, CancellationToken.None);
             }
-            var exe = Path.Combine(PackageTypes.ActiveDir("cloudflared"), "cloudflared.exe");
-            var port = Settings.Current.HttpPort;
-            // plain http to the local web server; the Host header picks the right site
-            var psi = new ProcessStartInfo(exe, "tunnel --no-autoupdate --url http://127.0.0.1:" + port + " --http-host-header " + site.Host)
+            return Path.Combine(PackageTypes.ActiveDir("cloudflared"), "cloudflared.exe");
+        }
+
+        /// <summary>Starts the tunnel and returns the public URL (fixed address when one is set and the account is connected).</summary>
+        public static async Task<string> StartAsync(Site site, Action<string> status)
+        {
+            var existing = UrlOf(site);
+            if (existing != null) return existing;
+            var exe = await EnsureCloudflaredAsync(status);
+            var stored = ShareStore.Get(site.Host);
+            int port = LanShare.StartTunnelProxy(site, stored.OnlinePassword);
+            string url;
+            bool fixedHost = stored.FixedHost != "" && CloudflareTunnel.IsConnected;
+            try
+            {
+                if (fixedHost)
+                {
+                    url = await CloudflareTunnel.AddAsync(exe, stored.FixedHost, port, status);
+                    lock (Urls) Fixed[site.Host] = stored.FixedHost;
+                }
+                else url = await StartQuick(exe, site.Host, port, status);
+            }
+            catch
+            {
+                LanShare.StopTunnelProxy(site.Host);
+                throw;
+            }
+            lock (Urls) Urls[site.Host] = url;
+            // remembered for "Shared projects" (a quick tunnel gets a new random address at every start)
+            ShareStore.Update(site.Host, e => { e.Online = true; e.OnlineUrl = url; });
+            if (stored.OnlineMinutes > 0)
+                LanShare.SetExpiry(site.Host, true, TimeSpan.FromMinutes(stored.OnlineMinutes), () => Stop(site.Host));
+            Log.Info(I18n.T("share.started", site.Host, url));
+            return url;
+        }
+
+        static async Task<string> StartQuick(string exe, string host, int port, Action<string> status)
+        {
+            var psi = new ProcessStartInfo(exe, "tunnel --no-autoupdate --url http://127.0.0.1:" + port)
             {
                 UseShellExecute = false,
                 CreateNoWindow = true,
@@ -70,8 +108,8 @@ namespace Portly.Tools
             {
                 found.TrySetResult(null);
                 bool was;
-                lock (Tunnels) { was = Tunnels.Remove(site.Host); Urls.Remove(site.Host); }
-                if (was) ShareStore.Notify(); // the tunnel ended by itself
+                lock (Urls) { Process q; was = Quick.TryGetValue(host, out q) && q == p; if (was) { Quick.Remove(host); Urls.Remove(host); } }
+                if (was) { LanShare.StopTunnelProxy(host); ShareStore.Notify(); } // the tunnel ended by itself
             };
             status(I18n.T("share.starting"));
             p.Start();
@@ -85,10 +123,7 @@ namespace Portly.Tools
                 try { if (!p.HasExited) ProcessUtil.KillTree(p.Id); } catch { }
                 throw new Exception(I18n.T("share.failed") + " " + I18n.T("err.seeLog", "cloudflared.log"));
             }
-            lock (Tunnels) { Tunnels[site.Host] = p; Urls[site.Host] = url; }
-            // remembered for "Shared projects" (Cloudflare gives a new random address at every start)
-            ShareStore.Update(site.Host, e => { e.Online = true; e.OnlineUrl = url; });
-            Log.Info(I18n.T("share.started", site.Host, url));
+            lock (Urls) Quick[host] = p;
             return url;
         }
 
@@ -96,25 +131,27 @@ namespace Portly.Tools
 
         public static void Stop(string host)
         {
-            Process p;
-            lock (Tunnels)
+            Process p = null;
+            string fixedHost = null;
+            lock (Urls)
             {
-                if (!Tunnels.TryGetValue(host, out p)) return;
-                Tunnels.Remove(host);
-                Urls.Remove(host);
+                if (!Urls.Remove(host)) return;
+                if (Quick.TryGetValue(host, out p)) Quick.Remove(host);
+                if (Fixed.TryGetValue(host, out fixedHost)) Fixed.Remove(host);
             }
-            try { if (!p.HasExited) ProcessUtil.KillTree(p.Id); } catch { }
+            if (p != null) try { if (!p.HasExited) ProcessUtil.KillTree(p.Id); } catch { }
+            if (fixedHost != null) CloudflareTunnel.Remove(fixedHost);
+            LanShare.StopTunnelProxy(host);
             Log.Info(I18n.T("share.stopped", host));
             ShareStore.Notify();
         }
 
-        public static bool IsRunning(string host) { lock (Tunnels) return Tunnels.ContainsKey(host); }
-
         public static void StopAll()
         {
             List<Process> list;
-            lock (Tunnels) { list = Tunnels.Values.ToList(); Tunnels.Clear(); Urls.Clear(); }
+            lock (Urls) { list = Quick.Values.ToList(); Quick.Clear(); Fixed.Clear(); Urls.Clear(); }
             foreach (var p in list) try { if (!p.HasExited) ProcessUtil.KillTree(p.Id); } catch { }
+            CloudflareTunnel.StopProcess();
         }
     }
 }

@@ -46,7 +46,8 @@ namespace Portly.UI
         public static void ShowQr(IWin32Window owner, string host)
         {
             if (LanShare.UrlOf(host) != null) ShowLanQr(owner, host);
-            else if (Share.UrlOf(host) != null) QrDialog.ShowFor(owner, I18n.T("share.qrTitle"), I18n.T("share.qrText"), Share.UrlOf(host));
+            else if (Share.UrlOf(host) != null)
+                QrDialog.ShowFor(owner, I18n.T("share.qrTitle"), I18n.T("share.qrText") + (ShareStore.Get(host).OnlinePassword != "" ? "\n\n" + I18n.T("lan.qrPassword") : ""), Share.UrlOf(host));
         }
 
         /// <summary>Internet share with a Cloudflare quick tunnel (asks every time: the site becomes public).</summary>
@@ -58,7 +59,7 @@ namespace Portly.UI
             {
                 var url = await Share.StartAsync(site, status);
                 try { Clipboard.SetText(url); } catch { }
-                QrDialog.ShowFor(owner, I18n.T("share.qrTitle"), I18n.T("share.qrText"), url);
+                ShowQr(owner, site.Host);
                 return url;
             }
             catch (Exception ex) { Ui.Error(owner, ex.Message); return null; }
@@ -105,7 +106,11 @@ namespace Portly.UI
 
             _changed = () => { if (IsHandleCreated && !IsDisposed) try { BeginInvoke((Action)Fill); } catch { } };
             ShareStore.Changed += _changed;
-            FormClosed += (s, e) => ShareStore.Changed -= _changed;
+            // "2 min ago" and the time left move on by themselves
+            var tick = new Timer { Interval = 30000 };
+            tick.Tick += (s, e) => Fill();
+            tick.Start();
+            FormClosed += (s, e) => { ShareStore.Changed -= _changed; tick.Dispose(); };
             Fill();
         }
 
@@ -139,7 +144,8 @@ namespace Portly.UI
             var site = SiteOf(e.Host);
             bool running = lan ? LanShare.IsRunning(e.Host) : Share.IsRunning(e.Host);
             var url = lan ? (running ? LanShare.UrlOf(e.Host) : LanShare.AddressFor(e.LanPort)) : (running ? Share.UrlOf(e.Host) : e.OnlineUrl);
-            var card = new Card { Size = Ui.S(660, 104), Radius = 10, Margin = Ui.P(0, 0, 0, 8) };
+            var devices = running ? LanShare.DevicesOf(e.Host, !lan) : new List<ShareDevice>();
+            var card = new Card { Size = Ui.S(660, running ? 128 : 104), Radius = 10, Margin = Ui.P(0, 0, 0, 8) };
 
             var name = Ui.Label(e.Host, Ui.Subtitle);
             name.AutoSize = false;
@@ -172,7 +178,15 @@ namespace Portly.UI
             card.Controls.Add(address);
             // a stopped internet share: the old address will not work again, the next start gives a new one
             var detail = !lan && !running && e.OnlineUrl != "" ? I18n.T("shares.oldUrl") : lan && e.LanPort > 0 ? I18n.T("shares.port", e.LanPort) : "";
-            var flags = lan ? string.Join("  ·  ", new[] { e.LanPassword != "" ? I18n.T("shares.hasPassword") : "", e.LanAuto ? I18n.T("shares.autoOn") : "" }.Where(x => x != "")) : "";
+            var expires = running ? LanShare.ExpiresAt(e.Host, !lan) : null;
+            int minutes = lan ? e.LanMinutes : e.OnlineMinutes;
+            var flags = string.Join("  ·  ", new[]
+            {
+                (lan ? e.LanPassword : e.OnlinePassword) != "" ? I18n.T("shares.hasPassword") : "",
+                lan && e.LanAuto ? I18n.T("shares.autoOn") : "",
+                expires != null ? I18n.T("shares.closesIn", Ago(expires.Value - DateTime.Now)) : minutes > 0 ? I18n.T("shares.limit", Duration(minutes)) : "",
+                !lan && e.FixedHost != "" && !running ? e.FixedHost : "",
+            }.Where(x => x != ""));
             var note = string.Join("  ·  ", new[] { detail, flags, e.Note }.Where(x => x != ""));
             if (note != "")
             {
@@ -183,6 +197,22 @@ namespace Portly.UI
                 n.Location = new Point(Ui.S(14), Ui.S(64));
                 new ToolTip().SetToolTip(n, note);
                 card.Controls.Add(n);
+            }
+            if (running)
+            {
+                // who opened it, and PHP errors their pages caused (details in the Log page)
+                int errors = devices.Sum(d => d.Errors);
+                var text = devices.Count == 0 ? I18n.T("shares.noDevices")
+                    : I18n.T("shares.devices", devices.Count) + ": " + string.Join(", ", devices.Take(2).Select(d => (d.Name != "" ? d.Name : d.Ip) + " (" + Ago(DateTime.Now - d.Last) + ")"))
+                      + (devices.Count > 2 ? " ..." : "");
+                var dl = Ui.Label((errors > 0 ? "⚠ " + I18n.T("shares.errors", errors) + "  ·  " : "") + text, Ui.Small, errors > 0 ? p.Orange : p.Muted);
+                dl.AutoSize = false;
+                dl.AutoEllipsis = true;
+                dl.Size = Ui.S(400, 18);
+                dl.Location = new Point(Ui.S(14), Ui.S(86));
+                if (devices.Count > 0)
+                    new ToolTip().SetToolTip(dl, string.Join("\n", devices.Select(d => d.Label + "  ·  " + I18n.T("shares.deviceLine", d.Requests, Ago(DateTime.Now - d.Last)) + (d.Errors > 0 ? "  ·  ⚠ " + d.Errors : ""))));
+                card.Controls.Add(dl);
             }
 
             // actions on the right
@@ -222,6 +252,20 @@ namespace Portly.UI
             return card;
         }
 
+        /// <summary>"2 min", "1 h 5 min", "now".</summary>
+        static string Ago(TimeSpan span)
+        {
+            if (span.TotalSeconds < 60) return I18n.T("time.now");
+            return Duration((int)Math.Round(span.TotalMinutes));
+        }
+
+        static string Duration(int minutes)
+        {
+            if (minutes < 60) return I18n.T("time.min", minutes);
+            if (minutes < 1440) return minutes % 60 == 0 ? I18n.T("time.hour", minutes / 60) : I18n.T("time.hour", minutes / 60) + " " + I18n.T("time.min", minutes % 60);
+            return I18n.T("time.day", minutes / 1440);
+        }
+
         static ModernButton Small(string text, string glyph, Func<Task> click)
         {
             var b = Ui.Button(text, async (s, e) => await click(), false, glyph);
@@ -230,7 +274,12 @@ namespace Portly.UI
             return b;
         }
 
-        /// <summary>Change the note, and for a local network share the port (a running share moves to the new port).</summary>
+        static readonly int[] LimitMinutes = { 0, 15, 30, 60, 120, 240, 480, 1440 };
+
+        /// <summary>
+        /// Settings of one share. Local network: port, password, start with Portly, time limit, note.
+        /// Internet: fixed address on the user's Cloudflare domain, password, time limit, note.
+        /// </summary>
         void Edit(ShareEntry e, bool lan)
         {
             using (var f = new Form())
@@ -246,50 +295,98 @@ namespace Portly.UI
                 f.Padding = Ui.P(20);
                 var t = new TableLayoutPanel { AutoSize = true, ColumnCount = 1, Dock = DockStyle.Fill };
                 t.Controls.Add(Ui.Label(e.Host + "  ·  " + (lan ? I18n.T("shares.lan") : I18n.T("shares.online")), Ui.Subtitle));
-                TextBox port = null;
-                if (lan)
-                {
-                    var pl = Ui.Label(I18n.T("shares.portLabel"), Ui.Bold);
-                    pl.Margin = Ui.P(0, 12, 0, 2);
-                    t.Controls.Add(pl);
-                    port = new TextBox { Width = Ui.S(120), Text = e.LanPort > 0 ? e.LanPort.ToString() : "" };
-                    t.Controls.Add(port);
-                    var hint = Ui.Label(I18n.T("shares.portHint"), Ui.Small, Ui.Muted);
-                    hint.MaximumSize = new Size(Ui.S(400), 0);
-                    t.Controls.Add(hint);
-                }
-                TextBox password = null;
+                Func<string, Label> heading = text => { var l = Ui.Label(text, Ui.Bold); l.Margin = Ui.P(0, 12, 0, 2); t.Controls.Add(l); return l; };
+                Action<string> hintOf = text => { var h = Ui.Label(text, Ui.Small, Ui.Muted); h.MaximumSize = new Size(Ui.S(420), 0); t.Controls.Add(h); };
+
+                TextBox port = null, fixedHost = null;
                 CheckBox auto = null;
                 if (lan)
                 {
-                    var wl = Ui.Label(I18n.T("shares.passwordLabel"), Ui.Bold);
-                    wl.Margin = Ui.P(0, 12, 0, 2);
-                    t.Controls.Add(wl);
-                    password = new TextBox { Width = Ui.S(220), Text = e.LanPassword, UseSystemPasswordChar = true, MaxLength = 64 };
-                    t.Controls.Add(password);
-                    var show = new CheckBox { Text = I18n.T("common.show"), AutoSize = true };
-                    show.CheckedChanged += (s, a) => password.UseSystemPasswordChar = !show.Checked;
-                    t.Controls.Add(show);
-                    var ph = Ui.Label(I18n.T("shares.passwordHint"), Ui.Small, Ui.Muted);
-                    ph.MaximumSize = new Size(Ui.S(400), 0);
-                    t.Controls.Add(ph);
+                    heading(I18n.T("shares.portLabel"));
+                    port = new TextBox { Width = Ui.S(120), Text = e.LanPort > 0 ? e.LanPort.ToString() : "" };
+                    t.Controls.Add(port);
+                    hintOf(I18n.T("shares.portHint"));
+                }
+                else
+                {
+                    // fixed address: the user's own domain through their Cloudflare account
+                    heading(I18n.T("cf.fixedLabel"));
+                    fixedHost = new TextBox { Width = Ui.S(300), Text = e.FixedHost };
+                    t.Controls.Add(fixedHost);
+                    hintOf(I18n.T("cf.fixedHint"));
+                    var cfState = Ui.Label("", Ui.Small, Ui.Muted);
+                    cfState.MaximumSize = new Size(Ui.S(420), 0);
+                    ModernButton cfButton = null;
+                    Action showState = () =>
+                    {
+                        cfState.Text = CloudflareTunnel.IsConnected ? "✓ " + I18n.T("cf.connectedState") : I18n.T("cf.notConnectedState");
+                        cfState.ForeColor = CloudflareTunnel.IsConnected ? Theme.Current.Green : Ui.Muted;
+                        cfButton.Text = CloudflareTunnel.IsConnected ? I18n.T("cf.disconnect") : I18n.T("cf.connect");
+                    };
+                    cfButton = Ui.Button(I18n.T("cf.connect"), async (s, a) =>
+                    {
+                        if (CloudflareTunnel.IsConnected)
+                        {
+                            if (!Ui.Confirm(f, I18n.T("cf.disconnectConfirm"))) return;
+                            CloudflareTunnel.Disconnect();
+                            showState();
+                            return;
+                        }
+                        cfButton.Enabled = false;
+                        try
+                        {
+                            Action<string> status = msg => { if (!f.IsDisposed) f.BeginInvoke((Action)(() => cfState.Text = msg)); };
+                            var exe = await Share.EnsureCloudflaredAsync(status);
+                            await CloudflareTunnel.ConnectAsync(exe, status, System.Threading.CancellationToken.None);
+                        }
+                        catch (Exception ex) { if (!f.IsDisposed) Ui.Error(f, ex.Message); }
+                        finally { if (!f.IsDisposed) { cfButton.Enabled = true; showState(); } }
+                    }, false);
+                    cfButton.Margin = Ui.P(0, 6, 0, 2);
+                    t.Controls.Add(cfButton);
+                    t.Controls.Add(cfState);
+                    showState();
+                }
+
+                heading(I18n.T("shares.passwordLabel"));
+                var password = new TextBox { Width = Ui.S(220), Text = lan ? e.LanPassword : e.OnlinePassword, UseSystemPasswordChar = true, MaxLength = 64 };
+                t.Controls.Add(password);
+                var show = new CheckBox { Text = I18n.T("common.show"), AutoSize = true };
+                show.CheckedChanged += (s, a) => password.UseSystemPasswordChar = !show.Checked;
+                t.Controls.Add(show);
+                hintOf(I18n.T(lan ? "shares.passwordHint" : "shares.passwordHintOnline"));
+
+                heading(I18n.T("shares.limitLabel"));
+                var limit = new ThemedCombo { Width = Ui.S(220) };
+                foreach (var m in LimitMinutes) limit.Items.Add(m == 0 ? I18n.T("shares.noLimit") : Duration(m));
+                int current = lan ? e.LanMinutes : e.OnlineMinutes;
+                limit.SelectedIndex = Math.Max(0, Array.IndexOf(LimitMinutes, current));
+                t.Controls.Add(limit);
+                hintOf(I18n.T("shares.limitHint"));
+
+                if (lan)
+                {
                     auto = new CheckBox { Text = I18n.T("shares.autoStart"), AutoSize = true, Checked = e.LanAuto, Margin = Ui.P(0, 12, 0, 0) };
                     t.Controls.Add(auto);
                 }
-                var nl = Ui.Label(I18n.T("shares.noteLabel"), Ui.Bold);
-                nl.Margin = Ui.P(0, 12, 0, 2);
-                t.Controls.Add(nl);
-                var note = new TextBox { Width = Ui.S(400), Text = e.Note, MaxLength = 200 };
+                heading(I18n.T("shares.noteLabel"));
+                var note = new TextBox { Width = Ui.S(420), Text = e.Note, MaxLength = 200 };
                 t.Controls.Add(note);
+
                 var buttons = new FlowLayoutPanel { AutoSize = true, FlowDirection = FlowDirection.RightToLeft, Dock = DockStyle.Fill, Margin = Ui.P(0, 14, 0, 0) };
                 var cancel = Ui.Button(I18n.T("common.cancel"), (s, a) => f.Close());
                 cancel.Margin = Padding.Empty;
                 var save = Ui.Button(I18n.T("common.save"), (s, a) =>
                 {
                     int newPort = e.LanPort;
-                    if (lan && !int.TryParse(port.Text.Trim(), out newPort) || lan && newPort != e.LanPort && !LanShare.PortFree(newPort, e.Host))
+                    if (lan && (!int.TryParse(port.Text.Trim(), out newPort) || newPort != e.LanPort && !LanShare.PortFree(newPort, e.Host)))
                     {
                         Ui.Error(f, I18n.T("shares.portBad", port.Text.Trim()));
+                        return;
+                    }
+                    if (!lan && fixedHost.Text.Trim() != "" && !CloudflareTunnel.IsValidHost(fixedHost.Text.Trim()))
+                    {
+                        Ui.Error(f, I18n.T("cf.badHost", fixedHost.Text.Trim()));
                         return;
                     }
                     f.DialogResult = DialogResult.OK;
@@ -303,21 +400,35 @@ namespace Portly.UI
                 f.CancelButton = cancel;
                 if (f.ShowDialog(this) != DialogResult.OK) return;
 
+                int minutes = LimitMinutes[Math.Max(0, limit.SelectedIndex)];
                 int chosen = lan ? int.Parse(port.Text.Trim()) : e.LanPort;
-                bool moved = lan && chosen != e.LanPort && LanShare.IsRunning(e.Host);
+                bool running = lan ? LanShare.IsRunning(e.Host) : Share.IsRunning(e.Host);
+                bool moved = lan && chosen != e.LanPort && running;
+                var newFixed = lan ? e.FixedHost : fixedHost.Text.Trim().ToLowerInvariant();
                 if (moved) LanShare.Stop(e.Host);
                 ShareStore.Update(e.Host, x =>
                 {
                     x.Note = note.Text.Trim();
-                    if (lan) { x.LanPort = chosen; x.LanPassword = password.Text; x.LanAuto = auto.Checked; }
+                    if (lan) { x.LanPort = chosen; x.LanPassword = password.Text; x.LanAuto = auto.Checked; x.LanMinutes = minutes; }
+                    else { x.OnlinePassword = password.Text; x.OnlineMinutes = minutes; x.FixedHost = newFixed; }
                 });
-                // a running share asks for the new password at once (devices log in again)
-                if (lan && !moved) LanShare.SetPassword(e.Host, password.Text);
                 if (moved)
                 {
                     var site = SiteOf(e.Host);
                     try { if (site != null) LanShare.Start(site); }
                     catch (Exception ex) { Ui.Error(this, ex.Message); }
+                }
+                else if (running)
+                {
+                    // a running share: the new password at once (devices log in again), the time limit counted from now
+                    LanShare.SetPassword(e.Host, password.Text, !lan);
+                    if (minutes != (lan ? e.LanMinutes : e.OnlineMinutes))
+                    {
+                        var host = e.Host;
+                        LanShare.SetExpiry(host, !lan, minutes > 0 ? TimeSpan.FromMinutes(minutes) : (TimeSpan?)null,
+                            lan ? (Action)(() => LanShare.Stop(host)) : () => Share.Stop(host));
+                    }
+                    if (!lan && newFixed != e.FixedHost) _status.Text = I18n.T("cf.nextStart");
                 }
                 Fill();
             }

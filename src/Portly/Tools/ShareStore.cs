@@ -19,6 +19,10 @@ namespace Portly.Tools
         public string Note = "";    // the user's own note ("for the customer", "phone test" ...)
         public string LanPassword = ""; // asked on the device before the site opens ("" = none)
         public bool LanAuto;        // start the local network share again when Portly starts
+        public int LanMinutes;      // stops by itself after this many minutes (0 = no limit)
+        public string OnlinePassword = "";
+        public int OnlineMinutes;
+        public string FixedHost = ""; // internet share on the user's own Cloudflare domain (demo.example.com) instead of a random one
     }
 
     /// <summary>Remembered shares (usr\shares.ini): listed and managed in "Shared projects", also while they are stopped.</summary>
@@ -54,6 +58,10 @@ namespace Portly.Tools
                 Note = ini.Get(host, "note", ""),
                 LanPassword = Unprotect(ini.Get(host, "lanPassword", "")),
                 LanAuto = ini.GetBool(host, "lanAuto", false),
+                LanMinutes = ini.GetInt(host, "lanMinutes", 0),
+                OnlinePassword = Unprotect(ini.Get(host, "onlinePassword", "")),
+                OnlineMinutes = ini.GetInt(host, "onlineMinutes", 0),
+                FixedHost = ini.Get(host, "fixedHost", ""),
             };
         }
 
@@ -74,6 +82,10 @@ namespace Portly.Tools
                     if (e.Note != "") ini.Set(host, "note", e.Note.Replace("\r", " ").Replace("\n", " "));
                     if (e.LanPassword != "") ini.Set(host, "lanPassword", Protect(e.LanPassword));
                     if (e.LanAuto) ini.Set(host, "lanAuto", true);
+                    if (e.LanMinutes > 0) ini.Set(host, "lanMinutes", e.LanMinutes);
+                    if (e.OnlinePassword != "") ini.Set(host, "onlinePassword", Protect(e.OnlinePassword));
+                    if (e.OnlineMinutes > 0) ini.Set(host, "onlineMinutes", e.OnlineMinutes);
+                    if (e.FixedHost != "") ini.Set(host, "fixedHost", e.FixedHost);
                 }
                 ini.Save();
             }

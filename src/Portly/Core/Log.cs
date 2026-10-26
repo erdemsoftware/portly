@@ -24,7 +24,7 @@ namespace Portly.Core
             if (h != null) { try { h(line); } catch { } }
         }
 
-        static void WriteFileOnly(string text)
+        public static void WriteFileOnly(string text)
         {
             lock (Sync)
             {

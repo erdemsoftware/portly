@@ -894,7 +894,7 @@ namespace Portly.UI
             {
                 var sp = new Pill { Text = I18n.T("share.badge"), Color = ColorTranslator.FromHtml("#F38020"), Cursor = Cursors.Hand };
                 sp.Click += (o, e) => WinUtil.Open(shared);
-                new ToolTip().SetToolTip(sp, shared);
+                new ToolTip().SetToolTip(sp, shared + "\n" + I18n.T("shares.devices", LanShare.DevicesOf(site.Host, true).Count));
                 badges.Add(sp);
             }
             var lan = LanShare.UrlOf(site);
@@ -904,7 +904,7 @@ namespace Portly.UI
                 bool down = LanShare.WebDown;
                 var lp = new Pill { Text = I18n.T("lan.badge"), Color = down ? p.Orange : p.Green, Cursor = Cursors.Hand };
                 lp.Click += (o, e) => ShareUi.ShowLanQr(this, site.Host);
-                new ToolTip().SetToolTip(lp, lan + (down ? "\n" + I18n.T("lan.webDownTitle") : ""));
+                new ToolTip().SetToolTip(lp, lan + (down ? "\n" + I18n.T("lan.webDownTitle") : "") + "\n" + I18n.T("shares.devices", LanShare.DevicesOf(site.Host, false).Count));
                 badges.Add(lp);
             }
             if (site.Valid && Settings.Current.Ssl)

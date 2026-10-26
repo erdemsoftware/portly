@@ -416,6 +416,19 @@ namespace Portly.SmokeTest
                     var again = LanShare.Start(demoSite);
                     Check("stopped share is remembered with its address", kept.Lan && LanShare.AddressFor(kept.LanPort) == lanUrl && again == lanUrl
                         && ShareStore.All().Any(x => x.Host == demoSite.Host), again + " / " + LanShare.AddressFor(kept.LanPort));
+                    // devices that opened it, PHP errors of their pages in Portly's log, time limit
+                    Get(again, null);
+                    var devs = LanShare.DevicesOf(demoSite.Host, false);
+                    Check("share lists the devices that opened it", devs.Count >= 1 && devs[0].Requests >= 1 && devs[0].Ip != "", string.Join(", ", devs.Select(d => d.Label)));
+                    File.WriteAllText(Path.Combine(www, "demo", "warn.php"), "<?php echo $portlyUndefinedVar; echo 'WARN-PAGE';");
+                    var logged = new List<string>();
+                    Action<string> grab = l => { lock (logged) logged.Add(l); };
+                    Log.Written += grab;
+                    Get(again + "warn.php", null);
+                    Thread.Sleep(300);
+                    Log.Written -= grab;
+                    lock (logged) Check("PHP error from a shared device shows in Portly's log", logged.Any(l => l.Contains("warn.php") && l.Contains("portlyUndefinedVar")), string.Join(" | ", logged));
+                    File.Delete(Path.Combine(www, "demo", "warn.php"));
                     // the certificate guide and the certificate itself are answered by Portly, before the password
                     var plain = "http" + again.Substring(again.IndexOf(':'));
                     var guide = Get(plain + "portly-ca", null);
@@ -430,6 +443,10 @@ namespace Portly.SmokeTest
                     string opened = PostForm(again + "__portly/login", "password=pin123&next=%2F", jar);
                     Check("local network share with a password", !locked.Contains("DEMO-OK") && locked.Contains("__portly/login") && wrongPage.Contains("401")
                         && opened.Contains("DEMO-OK") && ShareStore.Get(demoSite.Host).LanPassword == "pin123", Short(opened));
+                    LanShare.SetExpiry(demoSite.Host, false, TimeSpan.FromSeconds(2), () => LanShare.Stop(demoSite));
+                    bool limited = LanShare.ExpiresAt(demoSite.Host, false) != null;
+                    Thread.Sleep(3500);
+                    Check("share stops by itself after its time limit", limited && !LanShare.IsRunning(demoSite.Host));
                     LanShare.Stop(demoSite);
                     ShareStore.Update(demoSite.Host, x => { x.Lan = false; x.LanPort = 0; x.LanPassword = ""; });
                     Check("removed share leaves the list", !ShareStore.All().Any(x => x.Host == demoSite.Host && x.Lan));
