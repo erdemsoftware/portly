@@ -151,6 +151,8 @@ namespace Portly.Services
             // hosts file at all. A real domain (example.com) set to "live" is left out, so this PC opens the live site.
             var hosts = sites.Where(x => x.Valid && !x.ShowLive).Select(x => x.Host).Where(HostsFile.NeedsEntry).ToList();
             hosts.AddRange(sites.Where(x => x.Valid && !x.ShowLive).SelectMany(x => x.Aliases).Where(HostsFile.NeedsEntry));
+            // the local name of a real domain (example.com.portly) stays, also in Live mode: the local copy keeps working
+            hosts.AddRange(sites.Where(x => x.Valid && x.LocalHost != "").Select(x => x.LocalHost).Where(HostsFile.NeedsEntry));
             if (s.Tld == "localhost" && hosts.Count == 0 && !HostsFile.HasPortlyBlock()) return;
             var key = string.Join(",", hosts);
             if (key == _refusedHostsKey) return;

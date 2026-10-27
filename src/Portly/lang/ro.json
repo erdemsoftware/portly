@@ -1129,11 +1129,11 @@
   "settings.badHostTemplate": "Formatul adresei trebuie să conțină {name}, de exemplu {name}.{tld} sau {name}.",
   "domain.local": "Local",
   "domain.live": "Live",
-  "domain.localHint": "{0} deschide acest proiect local pe acest PC (site-ul live este ascuns aici). Dă clic pentru a deschide site-ul live.",
-  "domain.liveHint": "{0} deschide site-ul live pe acest PC; proiectul local nu este folosit. Dă clic pentru a deschide din nou proiectul local.",
+  "domain.localHint": "{0} deschide acest proiect local pe acest PC (site-ul live este ascuns aici). {1} deschide și el mereu proiectul local. Dă clic pentru a deschide site-ul live la {0}.",
+  "domain.liveHint": "{0} deschide site-ul live pe acest PC; proiectul local rămâne la {1}. Dă clic pentru a deschide din nou proiectul local la {0}.",
   "domain.toLocal": "{0} deschide acum proiectul local pe acest PC (reîncarcă browserul)",
-  "domain.toLive": "{0} deschide acum site-ul live pe acest PC (reîncarcă browserul)",
-  "project.realDomain": "{0} este o adresă reală de internet.\n\nCât timp Portly o servește, acest PC deschide la această adresă proiectul tău local în locul site-ului live, astfel încât URL-urile rămân aceleași când îl publici. Alte computere nu sunt afectate.\n\nPentru a vedea site-ul live pe acest PC, dă clic pe \"Local\" pe cardul proiectului ca să treci la \"Live\".\n\nCreezi proiectul?",
+  "domain.toLive": "{0} deschide acum site-ul live pe acest PC; proiectul local: {1} (reîncarcă browserul)",
+  "project.realDomain": "{0} este o adresă reală de internet.\n\nCât timp Portly o servește, acest PC deschide la această adresă proiectul tău local în locul site-ului live, astfel încât URL-urile rămân aceleași când îl publici. Alte computere nu sunt afectate. Proiectul primește și o adresă locală care funcționează mereu: {1}\n\nPentru a vedea site-ul live pe acest PC, dă clic pe \"Local\" pe cardul proiectului ca să treci la \"Live\".\n\nCreezi proiectul?",
   "share.rootWarn": "Utilizatorul root al bazei de date nu are parolă.\n\nSite-ul partajat se conectează la baza de date ca root, deci o breșă de securitate în site ar expune și bazele tale de date locale. Recomandat: protejează această partajare cu o parolă (cerută o dată înainte să se deschidă site-ul).\n\nAdaugi o parolă?",
   "share.passwordAsk": "Parola pentru această partajare (o sugestie este completată, o poți schimba):"
 }

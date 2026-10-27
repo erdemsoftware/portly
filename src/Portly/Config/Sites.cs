@@ -29,6 +29,13 @@ namespace Portly.Config
         public bool Archived;
         /// <summary>A real domain (example.com) set to open the live site on this PC: no hosts entry while this is on.</summary>
         public bool ShowLive;
+        /// <summary>
+        /// A real domain also answers to a local name of its own (example.com.portly), in the hosts file even in Live
+        /// mode: the local project stays reachable next to the live site. "" for other sites.
+        /// </summary>
+        public string LocalHost = "";
+        /// <summary>The name Portly opens: the local name while the real domain shows the live site, otherwise Host.</summary>
+        public string OpenHost { get { return ShowLive && LocalHost != "" ? LocalHost : Host; } }
         /// <summary>"" = PHP FastCGI, "frankenphp" or "octane" (FrankenPHP worker for Laravel Octane).</summary>
         public string Runtime = "";
 
@@ -38,6 +45,7 @@ namespace Portly.Config
             get
             {
                 var list = new List<string> { Host };
+                if (LocalHost != "") list.Add(LocalHost);
                 if (!IsGroup) list.Add("*." + Host);
                 foreach (var a in Aliases) if (!list.Contains(a)) list.Add(a);
                 return list;
@@ -58,8 +66,8 @@ namespace Portly.Config
         public string Url(bool https)
         {
             var s = Settings.Current;
-            if (https) return "https://" + Host + (s.HttpsPort == 443 ? "" : ":" + s.HttpsPort) + "/";
-            return "http://" + Host + (s.HttpPort == 80 ? "" : ":" + s.HttpPort) + "/";
+            if (https) return "https://" + OpenHost + (s.HttpsPort == 443 ? "" : ":" + s.HttpsPort) + "/";
+            return "http://" + OpenHost + (s.HttpPort == 80 ? "" : ":" + s.HttpPort) + "/";
         }
 
         public string PreferredUrl { get { return Url(Settings.Current.Ssl); } }
@@ -301,6 +309,7 @@ namespace Portly.Config
             site.Valid = IsValidName(Path.GetFileName(dir));
             if (!site.Valid) site.Problem = I18n.T("sites.invalidName");
             site.ShowLive = IsPublicName(host) && ini.GetBool(name, "live", false);
+            if (IsPublicName(host)) site.LocalHost = host + "." + Settings.Current.Tld;
 
             var customRoot = ini.Get(name, "root", "");
             if (customRoot != "" && !customRoot.Contains("..") && Directory.Exists(Path.Combine(dir, customRoot)))

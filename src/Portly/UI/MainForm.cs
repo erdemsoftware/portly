@@ -903,11 +903,11 @@ namespace Portly.UI
                 // a real domain (example.com): this PC opens either the local project or the live site; one click switches
                 bool live = site.ShowLive;
                 var dp = new Pill { Text = live ? I18n.T("domain.live") : I18n.T("domain.local"), Color = live ? p.Orange : p.Accent, Cursor = Cursors.Hand };
-                new ToolTip().SetToolTip(dp, I18n.T(live ? "domain.liveHint" : "domain.localHint", site.Host));
+                new ToolTip().SetToolTip(dp, I18n.T(live ? "domain.liveHint" : "domain.localHint", site.Host, site.LocalHost));
                 dp.Click += (o, e) =>
                 {
                     Sites.SetLive(site.Name, !live);
-                    SetStatus(I18n.T(live ? "domain.toLocal" : "domain.toLive", site.Host));
+                    SetStatus(I18n.T(live ? "domain.toLocal" : "domain.toLive", site.Host, site.LocalHost));
                     Task.Run(() => ServiceManager.SyncHostsInBackground(ServiceManager.RefreshSites()));
                 };
                 badges.Add(dp);

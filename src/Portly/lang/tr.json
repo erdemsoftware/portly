@@ -1129,11 +1129,11 @@
   "settings.badHostTemplate": "Adres biçimi {name} içermeli, örneğin {name}.{tld} ya da {name}.",
   "domain.local": "Yerel",
   "domain.live": "Canlı",
-  "domain.localHint": "{0} bu bilgisayarda yerel projeyi açıyor (canlı site burada görünmez). Canlı siteyi açmak için tıklayın.",
-  "domain.liveHint": "{0} bu bilgisayarda canlı siteyi açıyor; yerel proje kullanılmıyor. Yerel projeye dönmek için tıklayın.",
+  "domain.localHint": "{0} bu bilgisayarda yerel projeyi açıyor (canlı site burada görünmez). {1} de her zaman yerel projeyi açar. {0} adresinde canlı siteyi açmak için tıklayın.",
+  "domain.liveHint": "{0} bu bilgisayarda canlı siteyi açıyor; yerel proje {1} adresinde. {0} adresinde yeniden yerel projeyi açmak için tıklayın.",
   "domain.toLocal": "{0} artık bu bilgisayarda yerel projeyi açıyor (tarayıcıyı yenileyin)",
-  "domain.toLive": "{0} artık bu bilgisayarda canlı siteyi açıyor (tarayıcıyı yenileyin)",
-  "project.realDomain": "{0} gerçek bir internet adresi.\n\nPortly açıkken bu bilgisayar bu adreste canlı site yerine yerel projenizi açar; böylece canlıya alırken adresler değişmez. Diğer bilgisayarlar etkilenmez.\n\nBu bilgisayarda canlı siteyi görmek için proje kartındaki \"Yerel\" yazısına tıklayıp \"Canlı\" yapın.\n\nProje oluşturulsun mu?",
+  "domain.toLive": "{0} artık bu bilgisayarda canlı siteyi açıyor; yerel proje: {1} (tarayıcıyı yenileyin)",
+  "project.realDomain": "{0} gerçek bir internet adresi.\n\nPortly açıkken bu bilgisayar bu adreste canlı site yerine yerel projenizi açar; böylece canlıya alırken adresler değişmez. Diğer bilgisayarlar etkilenmez. Projeye ayrıca her zaman çalışan bir yerel adres de verilir: {1}\n\nBu bilgisayarda canlı siteyi görmek için proje kartındaki \"Yerel\" yazısına tıklayıp \"Canlı\" yapın.\n\nProje oluşturulsun mu?",
   "share.rootWarn": "Veritabanının root kullanıcısının şifresi yok.\n\nPaylaşılan site veritabanına root olarak bağlanıyor; sitede bir güvenlik açığı olursa yerel veritabanlarınız da açığa çıkar. Önerimiz: bu paylaşımı şifreyle koruyun (site açılmadan önce bir kez sorulur).\n\nŞifre eklensin mi?",
   "share.passwordAsk": "Bu paylaşımın şifresi (bir öneri yazıldı, değiştirebilirsiniz):"
 }

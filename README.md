@@ -67,7 +67,7 @@ The Legacy edition needs .NET Framework 4.8 (already part of Windows 10 / 11).
 1. Download a zip from [Releases](https://github.com/erdemsoftware/portly/releases) and unzip it to a folder **without spaces**, e.g. `C:\Portly`.
 2. Run `Portly.exe`. The recommended packages are preselected on the first start: click **Install selected**.
 3. Click **Start all**.
-4. Create a folder in `www`: `www\shop` becomes `https://shop.portly`. A folder named like a domain (`www\example.com`) opens as `https://example.com`, so URLs stay the same when you go live; a Local / Live switch on its card brings back the live site on your PC.
+4. Create a folder in `www`: `www\shop` becomes `https://shop.portly`. A folder named like a domain (`www\example.com`) opens as `https://example.com`, so URLs stay the same when you go live; a Local / Live switch on its card brings back the live site on your PC, while the local copy keeps working at `https://example.com.portly`.
 
 `http://localhost` opens a dashboard with all sites, Adminer, Mailpit and `phpinfo()`. More in [docs/04-kullanim.md](docs/04-kullanim.md) (Turkish).
 

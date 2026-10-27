@@ -1129,11 +1129,11 @@
   "settings.badHostTemplate": "The address format must contain {name}, for example {name}.{tld} or {name}.",
   "domain.local": "Local",
   "domain.live": "Live",
-  "domain.localHint": "{0} opens this local project on this PC (the live site is hidden here). Click to open the live site instead.",
-  "domain.liveHint": "{0} opens the live site on this PC; the local project is not used. Click to open the local project again.",
+  "domain.localHint": "{0} opens this local project on this PC (the live site is hidden here). {1} always opens the local project too. Click to open the live site at {0} instead.",
+  "domain.liveHint": "{0} opens the live site on this PC; the local project stays at {1}. Click to open the local project at {0} again.",
   "domain.toLocal": "{0} now opens the local project on this PC (reload the browser)",
-  "domain.toLive": "{0} now opens the live site on this PC (reload the browser)",
-  "project.realDomain": "{0} is a real internet address.\n\nWhile Portly serves it, this PC opens your local project at this address instead of the live site, so the URLs stay the same when you go live. Other computers are not affected.\n\nTo see the live site on this PC, click \"Local\" on the project card to switch it to \"Live\".\n\nCreate the project?",
+  "domain.toLive": "{0} now opens the live site on this PC; the local project: {1} (reload the browser)",
+  "project.realDomain": "{0} is a real internet address.\n\nWhile Portly serves it, this PC opens your local project at this address instead of the live site, so the URLs stay the same when you go live. Other computers are not affected. The project also gets a local address that always works: {1}\n\nTo see the live site on this PC, click \"Local\" on the project card to switch it to \"Live\".\n\nCreate the project?",
   "share.rootWarn": "The database user root has no password.\n\nThe shared site talks to the database as root, so a security hole in the site would open your local databases too. Recommended: protect this share with a password (asked once before the site opens).\n\nAdd a password?",
   "share.passwordAsk": "Password for this share (a suggestion is filled in, you can change it):"
 }

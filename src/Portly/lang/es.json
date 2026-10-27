@@ -1129,11 +1129,11 @@
   "settings.badHostTemplate": "El formato de dirección debe contener {name}, por ejemplo {name}.{tld} o {name}.",
   "domain.local": "Local",
   "domain.live": "Producción",
-  "domain.localHint": "{0} abre este proyecto local en este PC (el sitio en producción queda oculto aquí). Haz clic para abrir el sitio en producción.",
-  "domain.liveHint": "{0} abre el sitio en producción en este PC; el proyecto local no se usa. Haz clic para volver a abrir el proyecto local.",
+  "domain.localHint": "{0} abre este proyecto local en este PC (el sitio en producción queda oculto aquí). {1} también abre siempre el proyecto local. Haz clic para abrir el sitio en producción en {0}.",
+  "domain.liveHint": "{0} abre el sitio en producción en este PC; el proyecto local sigue en {1}. Haz clic para volver a abrir el proyecto local en {0}.",
   "domain.toLocal": "{0} ahora abre el proyecto local en este PC (recarga el navegador)",
-  "domain.toLive": "{0} ahora abre el sitio en producción en este PC (recarga el navegador)",
-  "project.realDomain": "{0} es una dirección real de Internet.\n\nMientras Portly la sirve, este PC abre tu proyecto local en esta dirección en lugar del sitio en producción, así las URL no cambian al publicarlo. Los demás equipos no se ven afectados.\n\nPara ver el sitio en producción en este PC, haz clic en \"Local\" en la tarjeta del proyecto para cambiarlo a \"Producción\".\n\n¿Crear el proyecto?",
+  "domain.toLive": "{0} ahora abre el sitio en producción en este PC; el proyecto local: {1} (recarga el navegador)",
+  "project.realDomain": "{0} es una dirección real de Internet.\n\nMientras Portly la sirve, este PC abre tu proyecto local en esta dirección en lugar del sitio en producción, así las URL no cambian al publicarlo. Los demás equipos no se ven afectados. El proyecto también recibe una dirección local que siempre funciona: {1}\n\nPara ver el sitio en producción en este PC, haz clic en \"Local\" en la tarjeta del proyecto para cambiarlo a \"Producción\".\n\n¿Crear el proyecto?",
   "share.rootWarn": "El usuario root de la base de datos no tiene contraseña.\n\nEl sitio compartido se conecta a la base de datos como root, así que un fallo de seguridad en el sitio también expondría tus bases de datos locales. Recomendado: protege este sitio compartido con una contraseña (se pide una vez antes de abrir el sitio).\n\n¿Añadir una contraseña?",
   "share.passwordAsk": "Contraseña para este sitio compartido (hay una sugerencia, puedes cambiarla):"
 }

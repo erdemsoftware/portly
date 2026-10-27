@@ -187,7 +187,7 @@ namespace Portly.UI
             if (err != null) { Ui.Error(this, err); return; }
             // a real domain: this PC will open the local copy instead of the live site (until it is switched on the card)
             var host = ProjectCreator.HostFor(name, parent);
-            if (Config.Sites.IsPublicName(host) && !Ui.Confirm(this, I18n.T("project.realDomain", host))) return;
+            if (Config.Sites.IsPublicName(host) && !Ui.Confirm(this, I18n.T("project.realDomain", host, host + "." + Settings.Current.Tld))) return;
             var template = _template;
             bool wantDb = _db.Enabled && _db.Checked;
             if (wantDb && ServiceManager.MySql.State != ServiceState.Running)

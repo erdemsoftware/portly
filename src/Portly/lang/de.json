@@ -1129,11 +1129,11 @@
   "settings.badHostTemplate": "Das Adressformat muss {name} enthalten, zum Beispiel {name}.{tld} oder {name}.",
   "domain.local": "Lokal",
   "domain.live": "Live",
-  "domain.localHint": "{0} öffnet auf diesem PC dieses lokale Projekt (die Live-Website ist hier ausgeblendet). Klicken Sie, um stattdessen die Live-Website zu öffnen.",
-  "domain.liveHint": "{0} öffnet auf diesem PC die Live-Website; das lokale Projekt wird nicht verwendet. Klicken Sie, um wieder das lokale Projekt zu öffnen.",
+  "domain.localHint": "{0} öffnet auf diesem PC dieses lokale Projekt (die Live-Website ist hier ausgeblendet). {1} öffnet ebenfalls immer das lokale Projekt. Klicken Sie, um stattdessen die Live-Website unter {0} zu öffnen.",
+  "domain.liveHint": "{0} öffnet auf diesem PC die Live-Website; das lokale Projekt bleibt unter {1} erreichbar. Klicken Sie, um unter {0} wieder das lokale Projekt zu öffnen.",
   "domain.toLocal": "{0} öffnet jetzt auf diesem PC das lokale Projekt (Browser neu laden)",
-  "domain.toLive": "{0} öffnet jetzt auf diesem PC die Live-Website (Browser neu laden)",
-  "project.realDomain": "{0} ist eine echte Internetadresse.\n\nSolange Portly sie bereitstellt, öffnet dieser PC unter dieser Adresse Ihr lokales Projekt statt der Live-Website, sodass die URLs beim Livegang gleich bleiben. Andere Computer sind nicht betroffen.\n\nUm die Live-Website auf diesem PC zu sehen, klicken Sie auf der Projektkarte auf \"Lokal\", um auf \"Live\" umzuschalten.\n\nProjekt erstellen?",
+  "domain.toLive": "{0} öffnet jetzt auf diesem PC die Live-Website; das lokale Projekt: {1} (Browser neu laden)",
+  "project.realDomain": "{0} ist eine echte Internetadresse.\n\nSolange Portly sie bereitstellt, öffnet dieser PC unter dieser Adresse Ihr lokales Projekt statt der Live-Website, sodass die URLs beim Livegang gleich bleiben. Andere Computer sind nicht betroffen. Das Projekt erhält außerdem eine lokale Adresse, die immer funktioniert: {1}\n\nUm die Live-Website auf diesem PC zu sehen, klicken Sie auf der Projektkarte auf \"Lokal\", um auf \"Live\" umzuschalten.\n\nProjekt erstellen?",
   "share.rootWarn": "Der Datenbankbenutzer root hat kein Passwort.\n\nDie geteilte Website verbindet sich als root mit der Datenbank, eine Sicherheitslücke in der Website würde also auch Ihre lokalen Datenbanken öffnen. Empfohlen: Schützen Sie diese Freigabe mit einem Passwort (wird einmal abgefragt, bevor sich die Website öffnet).\n\nPasswort hinzufügen?",
   "share.passwordAsk": "Passwort für diese Freigabe (ein Vorschlag ist eingetragen, Sie können ihn ändern):"
 }

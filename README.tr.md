@@ -67,7 +67,7 @@ Legacy sürüm için .NET Framework 4.8 gerekir (Windows 10 / 11'de zaten yükl�
 1. [Sürümler](https://github.com/erdemsoftware/portly/releases) sayfasından zip'i indirip `C:\Portly` gibi **boşluksuz** bir klasöre açın.
 2. `Portly.exe`'yi çalıştırın. İlk açılışta önerilen paketler seçili gelir: **Seçilenleri kur**'a tıklayın.
 3. **Hepsini başlat**'a tıklayın.
-4. `www` içinde bir klasör açın: `www\magaza` otomatik olarak `https://magaza.portly` olur. Alan adı gibi adlandırılan bir klasör (`www\ornek.com`) `https://ornek.com` olarak açılır; canlıya alırken adresler değişmez. Kartındaki Yerel / Canlı anahtarı bilgisayarınızda canlı siteyi yeniden gösterir.
+4. `www` içinde bir klasör açın: `www\magaza` otomatik olarak `https://magaza.portly` olur. Alan adı gibi adlandırılan bir klasör (`www\ornek.com`) `https://ornek.com` olarak açılır; canlıya alırken adresler değişmez. Kartındaki Yerel / Canlı anahtarı bilgisayarınızda canlı siteyi yeniden gösterir; yerel kopya bu sırada `https://ornek.com.portly` adresinde çalışmaya devam eder.
 
 `http://localhost` adresinde tüm siteleri, Adminer'ı, Mailpit'i ve `phpinfo()`'yu gösteren bir pano açılır. Ayrıntılar: [docs/04-kullanim.md](docs/04-kullanim.md).
 

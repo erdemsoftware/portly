@@ -1129,11 +1129,11 @@
   "settings.badHostTemplate": "Format alamat harus berisi {name}, misalnya {name}.{tld} atau {name}.",
   "domain.local": "Lokal",
   "domain.live": "Live",
-  "domain.localHint": "{0} membuka proyek lokal ini di PC ini (situs live disembunyikan di sini). Klik untuk membuka situs live.",
-  "domain.liveHint": "{0} membuka situs live di PC ini; proyek lokal tidak dipakai. Klik untuk membuka proyek lokal lagi.",
+  "domain.localHint": "{0} membuka proyek lokal ini di PC ini (situs live disembunyikan di sini). {1} juga selalu membuka proyek lokal. Klik untuk membuka situs live di {0}.",
+  "domain.liveHint": "{0} membuka situs live di PC ini; proyek lokal tetap ada di {1}. Klik untuk membuka proyek lokal di {0} lagi.",
   "domain.toLocal": "{0} sekarang membuka proyek lokal di PC ini (muat ulang browser)",
-  "domain.toLive": "{0} sekarang membuka situs live di PC ini (muat ulang browser)",
-  "project.realDomain": "{0} adalah alamat internet sungguhan.\n\nSelama Portly menyajikannya, PC ini membuka proyek lokal Anda di alamat ini, bukan situs live, sehingga URL tetap sama saat situs dirilis. Komputer lain tidak terpengaruh.\n\nUntuk melihat situs live di PC ini, klik \"Lokal\" pada kartu proyek untuk mengubahnya menjadi \"Live\".\n\nBuat proyeknya?",
+  "domain.toLive": "{0} sekarang membuka situs live di PC ini; proyek lokal: {1} (muat ulang browser)",
+  "project.realDomain": "{0} adalah alamat internet sungguhan.\n\nSelama Portly menyajikannya, PC ini membuka proyek lokal Anda di alamat ini, bukan situs live, sehingga URL tetap sama saat situs dirilis. Komputer lain tidak terpengaruh. Proyek ini juga mendapat alamat lokal yang selalu berfungsi: {1}\n\nUntuk melihat situs live di PC ini, klik \"Lokal\" pada kartu proyek untuk mengubahnya menjadi \"Live\".\n\nBuat proyeknya?",
   "share.rootWarn": "Pengguna database root tidak punya kata sandi.\n\nSitus yang dibagikan terhubung ke database sebagai root, jadi celah keamanan di situs juga akan membuka database lokal Anda. Disarankan: lindungi berbagi ini dengan kata sandi (ditanyakan sekali sebelum situs terbuka).\n\nTambahkan kata sandi?",
   "share.passwordAsk": "Kata sandi untuk berbagi ini (sudah diisi saran, Anda bisa mengubahnya):"
 }

@@ -43,6 +43,11 @@ namespace Portly.SmokeTest
                 domainSite == null ? "missing" : domainSite.Host + " valid=" + domainSite.Valid);
             var domainPage = Get(https, "example.com");
             Check("domain-named folder is served with HTTPS", domainPage.Contains("EXAMPLE-OK example.com"), Short(domainPage));
+            // its own local name works next to the live site: Live mode opens the local copy there
+            var localName = "example.com." + s.Tld;
+            var localPage = Get(https, localName);
+            Check("real domain keeps a local address in Live mode", domainSite != null && domainSite.LocalHost == localName && domainSite.AllNames.Contains(localName)
+                && domainSite.PreferredUrl.Contains(localName) && localPage.Contains("EXAMPLE-OK " + localName), Short(localPage));
             var oldTemplate = s.HostTemplate;
             s.HostTemplate = "{name}";
             bool laragonStyle = Sites.HostFor("shop") == "shop" && Sites.HostFor("Example.com") == "example.com";

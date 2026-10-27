@@ -1129,11 +1129,11 @@
   "settings.badHostTemplate": "Format alamat mesti mengandungi {name}, contohnya {name}.{tld} atau {name}.",
   "domain.local": "Setempat",
   "domain.live": "Langsung",
-  "domain.localHint": "{0} membuka projek setempat ini pada PC ini (laman langsung disembunyikan di sini). Klik untuk membuka laman langsung.",
-  "domain.liveHint": "{0} membuka laman langsung pada PC ini; projek setempat tidak digunakan. Klik untuk membuka projek setempat semula.",
+  "domain.localHint": "{0} membuka projek setempat ini pada PC ini (laman langsung disembunyikan di sini). {1} juga sentiasa membuka projek setempat. Klik untuk membuka laman langsung di {0}.",
+  "domain.liveHint": "{0} membuka laman langsung pada PC ini; projek setempat kekal di {1}. Klik untuk membuka projek setempat di {0} semula.",
   "domain.toLocal": "{0} kini membuka projek setempat pada PC ini (muat semula pelayar)",
-  "domain.toLive": "{0} kini membuka laman langsung pada PC ini (muat semula pelayar)",
-  "project.realDomain": "{0} ialah alamat internet sebenar.\n\nSelagi Portly menyajikannya, PC ini membuka projek setempat anda pada alamat ini dan bukan laman langsung, jadi URL kekal sama apabila anda melancarkannya. Komputer lain tidak terjejas.\n\nUntuk melihat laman langsung pada PC ini, klik \"Setempat\" pada kad projek untuk menukarnya kepada \"Langsung\".\n\nCipta projek?",
+  "domain.toLive": "{0} kini membuka laman langsung pada PC ini; projek setempat: {1} (muat semula pelayar)",
+  "project.realDomain": "{0} ialah alamat internet sebenar.\n\nSelagi Portly menyajikannya, PC ini membuka projek setempat anda pada alamat ini dan bukan laman langsung, jadi URL kekal sama apabila anda melancarkannya. Komputer lain tidak terjejas. Projek ini juga mendapat alamat setempat yang sentiasa berfungsi: {1}\n\nUntuk melihat laman langsung pada PC ini, klik \"Setempat\" pada kad projek untuk menukarnya kepada \"Langsung\".\n\nCipta projek?",
   "share.rootWarn": "Pengguna pangkalan data root tiada kata laluan.\n\nLaman yang dikongsi bersambung ke pangkalan data sebagai root, jadi lubang keselamatan dalam laman itu juga akan mendedahkan pangkalan data setempat anda. Disyorkan: lindungi perkongsian ini dengan kata laluan (ditanya sekali sebelum laman dibuka).\n\nTambah kata laluan?",
   "share.passwordAsk": "Kata laluan untuk perkongsian ini (cadangan telah diisi, anda boleh menukarnya):"
 }

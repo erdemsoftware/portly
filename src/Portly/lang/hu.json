@@ -1129,11 +1129,11 @@
   "settings.badHostTemplate": "A címformátumnak tartalmaznia kell a {name} elemet, például {name}.{tld} vagy {name}.",
   "domain.local": "Helyi",
   "domain.live": "Élő",
-  "domain.localHint": "A(z) {0} ezen a gépen ezt a helyi projektet nyitja meg (az élő webhely itt rejtve van). Kattints, ha inkább az élő webhelyet szeretnéd megnyitni.",
-  "domain.liveHint": "A(z) {0} ezen a gépen az élő webhelyet nyitja meg; a helyi projekt nincs használatban. Kattints a helyi projekt újbóli megnyitásához.",
+  "domain.localHint": "A(z) {0} ezen a gépen ezt a helyi projektet nyitja meg (az élő webhely itt rejtve van). A(z) {1} szintén mindig a helyi projektet nyitja meg. Kattints, ha inkább az élő webhelyet szeretnéd megnyitni a(z) {0} címen.",
+  "domain.liveHint": "A(z) {0} ezen a gépen az élő webhelyet nyitja meg; a helyi projekt a(z) {1} címen marad. Kattints, hogy a(z) {0} címen újra a helyi projekt nyíljon meg.",
   "domain.toLocal": "A(z) {0} mostantól ezen a gépen a helyi projektet nyitja meg (töltsd újra a böngészőt)",
-  "domain.toLive": "A(z) {0} mostantól ezen a gépen az élő webhelyet nyitja meg (töltsd újra a böngészőt)",
-  "project.realDomain": "A(z) {0} valódi internetes cím.\n\nAmíg a Portly kiszolgálja, ez a gép ezen a címen az élő webhely helyett a helyi projektedet nyitja meg, így az URL-ek ugyanazok maradnak élesítéskor. Más számítógépeket ez nem érint.\n\nHa ezen a gépen az élő webhelyet szeretnéd látni, kattints a projektkártyán a \"Helyi\" feliratra, és állítsd \"Élő\" értékre.\n\nLétrehozod a projektet?",
+  "domain.toLive": "A(z) {0} mostantól ezen a gépen az élő webhelyet nyitja meg; a helyi projekt: {1} (töltsd újra a böngészőt)",
+  "project.realDomain": "A(z) {0} valódi internetes cím.\n\nAmíg a Portly kiszolgálja, ez a gép ezen a címen az élő webhely helyett a helyi projektedet nyitja meg, így az URL-ek ugyanazok maradnak élesítéskor. Más számítógépeket ez nem érint. A projekt kap egy mindig működő helyi címet is: {1}\n\nHa ezen a gépen az élő webhelyet szeretnéd látni, kattints a projektkártyán a \"Helyi\" feliratra, és állítsd \"Élő\" értékre.\n\nLétrehozod a projektet?",
   "share.rootWarn": "Az adatbázis root felhasználójának nincs jelszava.\n\nA megosztott webhely root-ként csatlakozik az adatbázishoz, így a webhely egy biztonsági rése a helyi adatbázisaidat is megnyitná. Ajánlott: védd jelszóval ezt a megosztást (a webhely megnyitása előtt egyszer kéri).\n\nHozzáadsz jelszót?",
   "share.passwordAsk": "Jelszó ehhez a megosztáshoz (egy javaslat be van írva, módosíthatod):"
 }

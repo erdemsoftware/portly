@@ -1129,11 +1129,11 @@
   "settings.badHostTemplate": "Manzil formatida {name} boʻlishi kerak, masalan {name}.{tld} yoki {name}.",
   "domain.local": "Mahalliy",
   "domain.live": "Jonli",
-  "domain.localHint": "{0} bu kompyuterda ushbu mahalliy loyihani ochadi (jonli sayt bu yerda koʻrinmaydi). Jonli saytni ochish uchun bosing.",
-  "domain.liveHint": "{0} bu kompyuterda jonli saytni ochadi; mahalliy loyiha ishlatilmaydi. Mahalliy loyihaga qaytish uchun bosing.",
+  "domain.localHint": "{0} bu kompyuterda ushbu mahalliy loyihani ochadi (jonli sayt bu yerda koʻrinmaydi). {1} ham doim mahalliy loyihani ochadi. {0} manzilida jonli saytni ochish uchun bosing.",
+  "domain.liveHint": "{0} bu kompyuterda jonli saytni ochadi; mahalliy loyiha {1} manzilida qoladi. {0} manzilida yana mahalliy loyihani ochish uchun bosing.",
   "domain.toLocal": "{0} endi bu kompyuterda mahalliy loyihani ochadi (brauzerni yangilang)",
-  "domain.toLive": "{0} endi bu kompyuterda jonli saytni ochadi (brauzerni yangilang)",
-  "project.realDomain": "{0} haqiqiy internet manzili.\n\nPortly uni xizmat qilayotganda bu kompyuter shu manzilda jonli sayt oʻrniga mahalliy loyihangizni ochadi; shu tufayli jonliga chiqarganda manzillar oʻzgarmaydi. Boshqa kompyuterlarga taʼsir qilmaydi.\n\nBu kompyuterda jonli saytni koʻrish uchun loyiha kartasidagi \"Mahalliy\" yozuvini bosib, uni \"Jonli\" qiling.\n\nLoyiha yaratilsinmi?",
+  "domain.toLive": "{0} endi bu kompyuterda jonli saytni ochadi; mahalliy loyiha: {1} (brauzerni yangilang)",
+  "project.realDomain": "{0} haqiqiy internet manzili.\n\nPortly uni xizmat qilayotganda bu kompyuter shu manzilda jonli sayt oʻrniga mahalliy loyihangizni ochadi; shu tufayli jonliga chiqarganda manzillar oʻzgarmaydi. Boshqa kompyuterlarga taʼsir qilmaydi. Loyihaga doim ishlaydigan mahalliy manzil ham beriladi: {1}\n\nBu kompyuterda jonli saytni koʻrish uchun loyiha kartasidagi \"Mahalliy\" yozuvini bosib, uni \"Jonli\" qiling.\n\nLoyiha yaratilsinmi?",
   "share.rootWarn": "Maʼlumotlar bazasining root foydalanuvchisida parol yoʻq.\n\nUlashilgan sayt maʼlumotlar bazasiga root sifatida ulanadi; saytda xavfsizlik teshigi boʻlsa, mahalliy maʼlumotlar bazalaringiz ham ochilib qoladi. Tavsiya: bu ulashishni parol bilan himoyalang (sayt ochilishidan oldin bir marta soʻraladi).\n\nParol qoʻshilsinmi?",
   "share.passwordAsk": "Bu ulashish uchun parol (taklif yozilgan, uni oʻzgartirishingiz mumkin):"
 }

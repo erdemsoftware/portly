@@ -1129,11 +1129,11 @@
   "settings.badHostTemplate": "Het adresformaat moet {name} bevatten, bijvoorbeeld {name}.{tld} of {name}.",
   "domain.local": "Lokaal",
   "domain.live": "Live",
-  "domain.localHint": "{0} opent op deze pc dit lokale project (de live site is hier verborgen). Klik om in plaats daarvan de live site te openen.",
-  "domain.liveHint": "{0} opent op deze pc de live site; het lokale project wordt niet gebruikt. Klik om het lokale project weer te openen.",
+  "domain.localHint": "{0} opent op deze pc dit lokale project (de live site is hier verborgen). {1} opent ook altijd het lokale project. Klik om in plaats daarvan de live site op {0} te openen.",
+  "domain.liveHint": "{0} opent op deze pc de live site; het lokale project blijft op {1}. Klik om het lokale project weer op {0} te openen.",
   "domain.toLocal": "{0} opent nu op deze pc het lokale project (herlaad de browser)",
-  "domain.toLive": "{0} opent nu op deze pc de live site (herlaad de browser)",
-  "project.realDomain": "{0} is een echt internetadres.\n\nZolang Portly het serveert, opent deze pc op dit adres je lokale project in plaats van de live site, zodat de URL's hetzelfde blijven wanneer je live gaat. Andere computers merken er niets van.\n\nOm de live site op deze pc te zien, klik je op de projectkaart op \"Lokaal\" om over te schakelen naar \"Live\".\n\nProject maken?",
+  "domain.toLive": "{0} opent nu op deze pc de live site; het lokale project: {1} (herlaad de browser)",
+  "project.realDomain": "{0} is een echt internetadres.\n\nZolang Portly het serveert, opent deze pc op dit adres je lokale project in plaats van de live site, zodat de URL's hetzelfde blijven wanneer je live gaat. Andere computers merken er niets van. Het project krijgt ook een lokaal adres dat altijd werkt: {1}\n\nOm de live site op deze pc te zien, klik je op de projectkaart op \"Lokaal\" om over te schakelen naar \"Live\".\n\nProject maken?",
   "share.rootWarn": "De databasegebruiker root heeft geen wachtwoord.\n\nDe gedeelde site verbindt als root met de database, dus een beveiligingslek in de site zou ook je lokale databases openzetten. Aanbevolen: bescherm deze gedeelde site met een wachtwoord (wordt één keer gevraagd voordat de site opent).\n\nWachtwoord toevoegen?",
   "share.passwordAsk": "Wachtwoord voor deze gedeelde site (er is een suggestie ingevuld, je kunt die wijzigen):"
 }

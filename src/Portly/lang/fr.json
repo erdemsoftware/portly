@@ -1129,11 +1129,11 @@
   "settings.badHostTemplate": "Le format d'adresse doit contenir {name}, par exemple {name}.{tld} ou {name}.",
   "domain.local": "Local",
   "domain.live": "Production",
-  "domain.localHint": "{0} ouvre ce projet local sur ce PC (le site en ligne est masqué ici). Cliquez pour ouvrir plutôt le site en ligne.",
-  "domain.liveHint": "{0} ouvre le site en ligne sur ce PC ; le projet local n'est pas utilisé. Cliquez pour rouvrir le projet local.",
+  "domain.localHint": "{0} ouvre ce projet local sur ce PC (le site en ligne est masqué ici). {1} ouvre aussi toujours le projet local. Cliquez pour ouvrir plutôt le site en ligne à l'adresse {0}.",
+  "domain.liveHint": "{0} ouvre le site en ligne sur ce PC ; le projet local reste accessible à {1}. Cliquez pour rouvrir le projet local à l'adresse {0}.",
   "domain.toLocal": "{0} ouvre maintenant le projet local sur ce PC (rechargez le navigateur)",
-  "domain.toLive": "{0} ouvre maintenant le site en ligne sur ce PC (rechargez le navigateur)",
-  "project.realDomain": "{0} est une vraie adresse Internet.\n\nTant que Portly la sert, ce PC ouvre votre projet local à cette adresse au lieu du site en ligne, ainsi les URL restent les mêmes lors de la mise en ligne. Les autres ordinateurs ne sont pas concernés.\n\nPour voir le site en ligne sur ce PC, cliquez sur \"Local\" sur la carte du projet pour passer à \"Production\".\n\nCréer le projet ?",
+  "domain.toLive": "{0} ouvre maintenant le site en ligne sur ce PC ; le projet local : {1} (rechargez le navigateur)",
+  "project.realDomain": "{0} est une vraie adresse Internet.\n\nTant que Portly la sert, ce PC ouvre votre projet local à cette adresse au lieu du site en ligne, ainsi les URL restent les mêmes lors de la mise en ligne. Les autres ordinateurs ne sont pas concernés. Le projet reçoit aussi une adresse locale qui fonctionne toujours : {1}\n\nPour voir le site en ligne sur ce PC, cliquez sur \"Local\" sur la carte du projet pour passer à \"Production\".\n\nCréer le projet ?",
   "share.rootWarn": "L'utilisateur root de la base de données n'a pas de mot de passe.\n\nLe site partagé se connecte à la base de données en tant que root ; une faille de sécurité dans le site exposerait donc aussi vos bases de données locales. Recommandé : protégez ce partage par un mot de passe (demandé une fois avant l'ouverture du site).\n\nAjouter un mot de passe ?",
   "share.passwordAsk": "Mot de passe de ce partage (une suggestion est remplie, vous pouvez la modifier) :"
 }

@@ -1129,11 +1129,11 @@
   "settings.badHostTemplate": "Formát adresy musí obsahovat {name}, například {name}.{tld} nebo {name}.",
   "domain.local": "Místní",
   "domain.live": "Živý",
-  "domain.localHint": "{0} na tomto počítači otevírá tento místní projekt (živý web je zde skrytý). Klikněte pro otevření živého webu.",
-  "domain.liveHint": "{0} na tomto počítači otevírá živý web; místní projekt se nepoužívá. Klikněte pro opětovné otevření místního projektu.",
+  "domain.localHint": "{0} na tomto počítači otevírá tento místní projekt (živý web je zde skrytý). {1} také vždy otevírá místní projekt. Klikněte pro otevření živého webu na {0}.",
+  "domain.liveHint": "{0} na tomto počítači otevírá živý web; místní projekt zůstává na {1}. Klikněte pro opětovné otevření místního projektu na {0}.",
   "domain.toLocal": "{0} nyní na tomto počítači otevírá místní projekt (obnovte prohlížeč)",
-  "domain.toLive": "{0} nyní na tomto počítači otevírá živý web (obnovte prohlížeč)",
-  "project.realDomain": "{0} je skutečná internetová adresa.\n\nDokud ji Portly obsluhuje, tento počítač na této adrese otevírá váš místní projekt místo živého webu, takže adresy URL zůstanou stejné, až web spustíte naostro. Ostatní počítače to neovlivní.\n\nChcete-li na tomto počítači vidět živý web, klikněte na kartě projektu na \"Místní\" a přepněte na \"Živý\".\n\nVytvořit projekt?",
+  "domain.toLive": "{0} nyní na tomto počítači otevírá živý web; místní projekt: {1} (obnovte prohlížeč)",
+  "project.realDomain": "{0} je skutečná internetová adresa.\n\nDokud ji Portly obsluhuje, tento počítač na této adrese otevírá váš místní projekt místo živého webu, takže adresy URL zůstanou stejné, až web spustíte naostro. Ostatní počítače to neovlivní. Projekt také dostane místní adresu, která funguje vždy: {1}\n\nChcete-li na tomto počítači vidět živý web, klikněte na kartě projektu na \"Místní\" a přepněte na \"Živý\".\n\nVytvořit projekt?",
   "share.rootWarn": "Uživatel databáze root nemá heslo.\n\nSdílený web se k databázi připojuje jako root, takže bezpečnostní díra ve webu by otevřela i vaše místní databáze. Doporučujeme: chraňte toto sdílení heslem (zeptá se jednou před otevřením webu).\n\nPřidat heslo?",
   "share.passwordAsk": "Heslo pro toto sdílení (návrh je vyplněn, můžete ho změnit):"
 }
