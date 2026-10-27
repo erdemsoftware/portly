@@ -10,10 +10,10 @@ InstallModes:
   - silent
   - silentWithProgress
 InstallerSwitches:
-  Silent: /VERYSILENT /SUPPRESSMSGBOXES /NORESTART
-  SilentWithProgress: /SILENT /SUPPRESSMSGBOXES /NORESTART
   InstallLocation: /DIR="<INSTALLPATH>"
 UpgradeBehavior: install
+# the Inno Setup AppId (installer\portly.iss) + "_is1": how winget finds the installed copy
+ProductCode: '{6C1E2B7A-6E43-4C8E-9C59-0B1F8F2A5D11}_is1'
 ReleaseDate: {{DATE}}
 Installers:
   - Architecture: x64
