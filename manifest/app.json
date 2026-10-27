@@ -1,7 +1,7 @@
 {
-  "version": "1.0.0",
-  "url": "https://github.com/erdemsoftware/portly/releases/download/v1.0.0/Portly-1.0.0-win10.zip",
-  "sha256": "c76f4acec80030927d8f0ac89d2205633d8d46b52156ca52a1081df4513c333b",
+  "version": "1.1.0",
+  "url": "https://github.com/erdemsoftware/portly/releases/download/v1.1.0/Portly-1.1.0-win10.zip",
+  "sha256": "cc336e44d025e02958a7616dd09fa8da3bcf9357a0f6ced3cb583f4367b047ac",
   "notes": {
     "tr": "Yeni: ornek.com gibi alan adı adlı klasörler o adla açılır (canlıya alırken adresler değişmez). Ayarlar'da Laragon'daki gibi adres biçimi ({name}.{tld} ya da {name}). Gerçek alan adlarında kartta Yerel / Canlı geçişi; yerel proje her zaman ornek.com.portly gibi kendi adresinde de açılır. İnternette paylaşırken root şifresi boşsa uyarı ve paylaşım şifresi önerisi. Düzeltme: Hepsini başlat'tan sonra HTTPS rozetleri hemen yenileniyor.",
     "en": "New: folders named like a domain (example.com) are served under that name, so URLs stay the same when you go live. Address format setting like Laragon ({name}.{tld} or {name}). Local / Live switch on cards of real domains; the local project also always opens at its own address such as example.com.portly. Warning and a suggested share password when sharing on the internet while root has no password. Fix: HTTPS badges refresh right after Start all."
