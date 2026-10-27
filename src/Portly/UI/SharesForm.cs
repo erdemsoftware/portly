@@ -30,6 +30,15 @@ namespace Portly.UI
             catch (Exception ex) { Ui.Error(owner, ex.Message); return null; }
         }
 
+        /// <summary>Easy to type on a phone, hard to guess: e.g. "kite-4827-moon".</summary>
+        static string SuggestPassword()
+        {
+            var words = new[] { "kite", "moon", "river", "pixel", "cedar", "comet", "lotus", "amber", "delta", "maple", "orbit", "sonic", "tiger", "ultra", "vivid", "wave" };
+            var b = new byte[6];
+            using (var rng = System.Security.Cryptography.RandomNumberGenerator.Create()) rng.GetBytes(b);
+            return words[b[0] % words.Length] + "-" + (1000 + (b[1] << 8 | b[2]) % 9000) + "-" + words[b[3] % words.Length];
+        }
+
         /// <summary>QR code + explanation for a running local network share (https: also the certificate code).</summary>
         public static void ShowLanQr(IWin32Window owner, string host)
         {
@@ -55,6 +64,15 @@ namespace Portly.UI
         {
             if (ServiceManager.Web.State != ServiceState.Running) { Ui.Error(owner, I18n.T("main.webNotRunning")); return null; }
             if (!Ui.Confirm(owner, I18n.T("share.confirm", site.Host))) return null;
+            // the shared app talks to the database as root without a password: a hole in the app is a hole in the data.
+            // Offer a share password (asked before the site opens), with a ready one to accept.
+            if (Settings.Current.MysqlRootPassword == "" && ShareStore.Get(site.Host).OnlinePassword == "" && Ui.Confirm(owner, I18n.T("share.rootWarn")))
+            {
+                var suggested = SuggestPassword();
+                var pw = Ui.Prompt(owner, I18n.T("shares.passwordLabel"), I18n.T("share.passwordAsk"), suggested);
+                if (pw == null) return null;
+                if (pw.Trim() != "") ShareStore.Update(site.Host, e => e.OnlinePassword = pw.Trim());
+            }
             try
             {
                 var url = await Share.StartAsync(site, status);

@@ -56,14 +56,14 @@ namespace Portly.Tools
             return string.IsNullOrEmpty(parent) ? root : Path.Combine(root, parent);
         }
 
-        /// <summary>Address of a new project: name.tld, or name.parent.tld for a sub-project.</summary>
+        /// <summary>Address of a new project, by the same rules as the projects list (domain-like names stay as they are).</summary>
         public static string HostFor(string name, string parent)
         {
-            var host = name.ToLowerInvariant() + "." + (string.IsNullOrEmpty(parent) ? "" : parent.ToLowerInvariant() + ".");
-            return host + Settings.Current.Tld;
+            return string.IsNullOrEmpty(parent) ? Sites.HostFor(name) : Sites.ChildHost(name, Sites.HostFor(parent));
         }
 
-        public static string DbNameFor(string project) { return project.Replace('-', '_').Replace('/', '_').ToLowerInvariant(); }
+        /// <summary>shop -> shop, shop/blog -> shop_blog, example.com -> example_com (letters, digits and _ only).</summary>
+        public static string DbNameFor(string project) { return project.Replace('-', '_').Replace('/', '_').Replace('.', '_').ToLowerInvariant(); }
 
         /// <summary>Returns a message for the user (what was done / what to do next).</summary>
         public static Task<string> CreateAsync(string name, string template, bool createDb, Action<string> status, CancellationToken ct)

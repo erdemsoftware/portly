@@ -753,7 +753,7 @@ namespace Portly.UI
             var p = Theme.Current;
             var s = Settings.Current;
             var sites = ServiceManager.CurrentSites;
-            _sitesSub.Text = I18n.T("sites.count", sites.Count(x => x.Valid), s.DocumentRoot, s.Tld);
+            _sitesSub.Text = I18n.T("sites.count", sites.Count(x => x.Valid), s.DocumentRoot, s.HostTemplate.Replace("{name}", "*").Replace("{tld}", s.Tld));
             SitesWebUi.UpdateArchived(_archivedBtn);
             _siteFlow.SuspendLayout();
             foreach (Control c in _siteFlow.Controls.Cast<Control>().ToList()) c.Dispose();
@@ -897,6 +897,20 @@ namespace Portly.UI
                 sp.Click += (o, e) => WinUtil.Open(shared);
                 new ToolTip().SetToolTip(sp, shared + "\n" + I18n.T("shares.devices", LanShare.DevicesOf(site.Host, true).Count));
                 badges.Add(sp);
+            }
+            if (site.Valid && Sites.IsPublicName(site.Host))
+            {
+                // a real domain (example.com): this PC opens either the local project or the live site; one click switches
+                bool live = site.ShowLive;
+                var dp = new Pill { Text = live ? I18n.T("domain.live") : I18n.T("domain.local"), Color = live ? p.Orange : p.Accent, Cursor = Cursors.Hand };
+                new ToolTip().SetToolTip(dp, I18n.T(live ? "domain.liveHint" : "domain.localHint", site.Host));
+                dp.Click += (o, e) =>
+                {
+                    Sites.SetLive(site.Name, !live);
+                    SetStatus(I18n.T(live ? "domain.toLocal" : "domain.toLive", site.Host));
+                    Task.Run(() => ServiceManager.SyncHostsInBackground(ServiceManager.RefreshSites()));
+                };
+                badges.Add(dp);
             }
             var lan = LanShare.UrlOf(site);
             if (lan != null)

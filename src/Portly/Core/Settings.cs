@@ -54,6 +54,17 @@ namespace Portly.Core
 
         /// <summary>Domain ending: shop -> shop.portly</summary>
         public const string DefaultTld = "portly";
+        /// <summary>
+        /// Address of a project folder: "{name}" = the folder name, "{tld}" = the ending above. "{name}.{tld}" (default)
+        /// gives shop.portly; "{name}" serves each folder under its own name, like Laragon (folders named example.com
+        /// always keep their domain name).
+        /// </summary>
+        public string HostTemplate
+        {
+            get { var v = _ini.Get("general", "HostTemplate", "").Trim().ToLowerInvariant(); return v.Contains("{name}") ? v : "{name}.{tld}"; }
+            set { _ini.Set("general", "HostTemplate", (value ?? "").Trim().ToLowerInvariant()); }
+        }
+
         public string Tld { get { return _ini.Get("general", "Tld", DefaultTld).Trim('.').ToLowerInvariant(); } set { _ini.Set("general", "Tld", value.Trim('.').ToLowerInvariant()); } }
         public bool AutoVhosts { get { return _ini.GetBool("general", "AutoVirtualHosts", true); } set { _ini.Set("general", "AutoVirtualHosts", value); } }
         public bool Ssl { get { return _ini.GetBool("general", "Ssl", true); } set { _ini.Set("general", "Ssl", value); } }

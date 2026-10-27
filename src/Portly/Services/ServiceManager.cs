@@ -147,11 +147,11 @@ namespace Portly.Services
         {
             var s = Settings.Current;
             if (!s.AutoVhosts) return;
-            // site names only when the ending needs hosts; aliases unless they end in .localhost (browsers resolve those).
-            // Wildcards cannot go into the hosts file at all.
-            var hosts = s.Tld == "localhost" ? new List<string>() : sites.Where(x => x.Valid).Select(x => x.Host).ToList();
-            hosts.AddRange(sites.Where(x => x.Valid).SelectMany(x => x.Aliases).Where(HostsFile.NeedsEntry));
-            if (s.Tld == "localhost" && hosts.Count == 0) return;
+            // site names and aliases unless they end in .localhost (browsers resolve those); wildcards cannot go into the
+            // hosts file at all. A real domain (example.com) set to "live" is left out, so this PC opens the live site.
+            var hosts = sites.Where(x => x.Valid && !x.ShowLive).Select(x => x.Host).Where(HostsFile.NeedsEntry).ToList();
+            hosts.AddRange(sites.Where(x => x.Valid && !x.ShowLive).SelectMany(x => x.Aliases).Where(HostsFile.NeedsEntry));
+            if (s.Tld == "localhost" && hosts.Count == 0 && !HostsFile.HasPortlyBlock()) return;
             var key = string.Join(",", hosts);
             if (key == _refusedHostsKey) return;
             Task.Run(() =>

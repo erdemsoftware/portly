@@ -32,6 +32,29 @@ namespace Portly.SmokeTest
             Check("fix ssl: every valid site is checked", sslCheck.Sites.Count == ServiceManager.CurrentSites.Count(x => x.Valid), sslCheck.Sites.Count.ToString());
             foreach (var ext in new[] { ".crt", ".key", ".names" }) try { File.Delete(Path.Combine(Certs.SitesDir, "sslcheck.portly" + ext)); } catch { }
 
+            // ---------- folders named like a domain (Laragon "{name}"): example.com is served as example.com ----------
+            Directory.CreateDirectory(Path.Combine(www, "example.com"));
+            File.WriteAllText(Path.Combine(www, "example.com", "index.php"), "<?php echo 'EXAMPLE-OK ' . $_SERVER['HTTP_HOST'];");
+            // "live" first: a real domain would otherwise go into the hosts file (a UAC prompt in the middle of the test)
+            Sites.SetLive("example.com", true);
+            await ServiceManager.ReloadWebAsync();
+            var domainSite = ServiceManager.CurrentSites.FirstOrDefault(x => x.Name == "example.com");
+            Check("domain-named folder keeps its name as the address", domainSite != null && domainSite.Valid && domainSite.Host == "example.com" && domainSite.ShowLive && Sites.IsPublicName(domainSite.Host),
+                domainSite == null ? "missing" : domainSite.Host + " valid=" + domainSite.Valid);
+            var domainPage = Get(https, "example.com");
+            Check("domain-named folder is served with HTTPS", domainPage.Contains("EXAMPLE-OK example.com"), Short(domainPage));
+            var oldTemplate = s.HostTemplate;
+            s.HostTemplate = "{name}";
+            bool laragonStyle = Sites.HostFor("shop") == "shop" && Sites.HostFor("Example.com") == "example.com";
+            s.HostTemplate = "{name}.{tld}";
+            Check("address format: {name}.{tld} and Laragon-style {name}", laragonStyle && Sites.HostFor("shop") == "shop." + s.Tld
+                && Sites.ChildHost("blog", "example.com") == "blog.example.com" && Sites.ChildHost("acme.com", "clients.localhost") == "acme.com"
+                && ProjectCreator.HostFor("blog", "example.com") == "blog.example.com" && ProjectCreator.DbNameFor("example.com") == "example_com"
+                && !Sites.IsPublicName("shop.localhost") && !Sites.IsPublicName("x.test") && !Sites.IsPublicName("shop") && Sites.IsPublicName("www.example.com.tr"));
+            s.HostTemplate = oldTemplate;
+            Sites.SetLive("example.com", false);
+            Directory.Delete(Path.Combine(www, "example.com"), true);
+
             // ---------- extra domains: same site via Host header, names in the certificate ----------
             Features.Set("aliases", true);
             Sites.SetAliases("demo", new[] { "demo-alias.localhost", "*.wild.localhost" });

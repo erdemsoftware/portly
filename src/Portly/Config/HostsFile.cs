@@ -54,6 +54,9 @@ namespace Portly.Config
             return content.Substring(0, b) + content.Substring(e);
         }
 
+        /// <summary>Portly's block is in the hosts file (it may have to be emptied, e.g. after the last real domain went live).</summary>
+        public static bool HasPortlyBlock() { return Current().IndexOf(Begin, StringComparison.Ordinal) >= 0; }
+
         static string Current()
         {
             try { return File.ReadAllText(FilePath, Encoding.Default); } catch { return ""; }

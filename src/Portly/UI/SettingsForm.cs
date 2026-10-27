@@ -19,7 +19,7 @@ namespace Portly.UI
         ProxySettingsPanel _proxy;
         NumericUpDown _pgPort, _mongoPort, _memPort, _tomcatPort;
         NumericUpDown _backupKeep;
-        TextBox _docRoot, _tld;
+        TextBox _docRoot, _tld, _hostTemplate;
         CheckBox _legacySql, _runAsService;
         readonly Dictionary<string, CheckBox> _features = new Dictionary<string, CheckBox>();
         CheckBox _autoVhosts, _ssl, _runAtStartup, _startMin, _startServices, _closeToTray, _addToPath, _checkUpdates, _allowLan;
@@ -72,6 +72,10 @@ namespace Portly.UI
             _tld = new TextBox { Text = s.Tld, Width = Ui.S(110) };
             AddRow(g, I18n.T("settings.tld"), _tld);
             AddRow(g, "", Hint(I18n.T("settings.tldHint")));
+            // Laragon's "{name}": every folder under its own name; folders named like a domain (example.com) always are
+            _hostTemplate = new TextBox { Text = s.HostTemplate, Width = Ui.S(160) };
+            AddRow(g, I18n.T("settings.hostTemplate"), _hostTemplate);
+            AddRow(g, "", Hint(I18n.T("settings.hostTemplateHint")));
             _terminal = new ThemedCombo { DropDownStyle = ComboBoxStyle.DropDownList, Width = Ui.S(200) };
             _terminal.Items.Add(new Item("Command Prompt (cmd)", "cmd"));
             _terminal.Items.Add(new Item("PowerShell", "powershell"));
@@ -325,6 +329,8 @@ namespace Portly.UI
             var s = Settings.Current;
             var tld = _tld.Text.Trim().Trim('.').ToLowerInvariant();
             if (!Regex.IsMatch(tld, @"^[a-z][a-z0-9-]{0,20}$")) { Ui.Error(this, I18n.T("settings.badTld")); return; }
+            var hostTemplate = _hostTemplate.Text.Trim().ToLowerInvariant();
+            if (!Regex.IsMatch(hostTemplate, @"^([a-z0-9-]+\.)*\{name\}(\.([a-z0-9-]+|\{tld\}))*$")) { Ui.Error(this, I18n.T("settings.badHostTemplate")); return; }
             var root = _docRoot.Text.Trim();
             try
             {
@@ -345,7 +351,7 @@ namespace Portly.UI
             bool webChanged = server != s.WebServer;
             bool excludedChanged = _excluded != null && _excluded.Text.Trim() != s.ExcludedFolders;
             if (excludedChanged) s.ExcludedFolders = _excluded.Text.Trim();
-            bool webReload = root != s.DocumentRoot || tld != s.Tld || _autoVhosts.Checked != s.AutoVhosts || _ssl.Checked != s.Ssl
+            bool webReload = root != s.DocumentRoot || tld != s.Tld || hostTemplate != s.HostTemplate || _autoVhosts.Checked != s.AutoVhosts || _ssl.Checked != s.Ssl
                 || (int)_http.Value != s.HttpPort || (int)_https.Value != s.HttpsPort || _allowLan.Checked != s.AllowLan
                 || (int)_phpPort.Value != s.PhpBasePort || (int)_phpChildren.Value != s.PhpChildren
                 || (int)_mailSmtp.Value != s.MailpitSmtpPort || (int)_mysql.Value != s.MysqlPort || excludedChanged;
@@ -379,6 +385,7 @@ namespace Portly.UI
             s.DocumentRoot = root;
             if (tld != s.Tld) s.Raw.Set("general", "TldChosen", "1");
             s.Tld = tld;
+            s.HostTemplate = hostTemplate;
             s.Terminal = ((Item)_terminal.SelectedItem).Value;
             s.AutoVhosts = _autoVhosts.Checked;
             s.Ssl = _ssl.Checked;

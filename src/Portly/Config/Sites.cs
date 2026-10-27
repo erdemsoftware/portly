@@ -27,6 +27,8 @@ namespace Portly.Config
         public List<string> Aliases = new List<string>();
         /// <summary>sites.ini "archived=1": hidden, no vhost / hosts entry / certificate; files untouched.</summary>
         public bool Archived;
+        /// <summary>A real domain (example.com) set to open the live site on this PC: no hosts entry while this is on.</summary>
+        public bool ShowLive;
         /// <summary>"" = PHP FastCGI, "frankenphp" or "octane" (FrankenPHP worker for Laravel Octane).</summary>
         public string Runtime = "";
 
@@ -133,7 +135,53 @@ namespace Portly.Config
             ini.Save();
         }
 
-        public static bool IsValidName(string name) { return name != null && NameRx.IsMatch(name); }
+        public static bool IsValidName(string name) { return name != null && (NameRx.IsMatch(name) || IsDomainName(name)); }
+
+        // example.com, www.example.com.tr: a folder named like a domain is served under that very name (like Laragon's "{name}")
+        static readonly Regex DomainRx = new Regex(@"^(?=.{1,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$", RegexOptions.IgnoreCase);
+        public static bool IsDomainName(string name) { return name != null && DomainRx.IsMatch(name); }
+
+        /// <summary>
+        /// Address of a top-level project folder: a domain-like name as it is, otherwise the address template
+        /// (Settings > address format, "{name}.{tld}" by default: shop -> shop.portly).
+        /// </summary>
+        public static string HostFor(string folderName)
+        {
+            var n = (folderName ?? "").ToLowerInvariant();
+            if (IsDomainName(n)) return n;
+            var s = Settings.Current;
+            return s.HostTemplate.Replace("{name}", n).Replace("{tld}", s.Tld).ToLowerInvariant();
+        }
+
+        /// <summary>Address of a project inside a group / main project: blog.shop.portly, or its own domain name.</summary>
+        public static string ChildHost(string folderName, string parentHost)
+        {
+            var n = (folderName ?? "").ToLowerInvariant();
+            return IsDomainName(n) ? n : n + "." + parentHost;
+        }
+
+        // endings that never exist on the internet: such addresses cannot hide a live site
+        static readonly string[] LocalEndings = { "localhost", "test", "local", "example", "invalid", "internal", "lan", "home.arpa" };
+
+        /// <summary>
+        /// Is this a real internet name (example.com)? While Portly serves it, this PC opens the local copy instead of the live site.
+        /// </summary>
+        public static bool IsPublicName(string host)
+        {
+            if (string.IsNullOrEmpty(host) || host.IndexOf('.') < 0) return false;
+            var h = host.ToLowerInvariant();
+            var tld = Settings.Current.Tld;
+            if (h == tld || h.EndsWith("." + tld)) return false;
+            return !LocalEndings.Any(e => h == e || h.EndsWith("." + e));
+        }
+
+        /// <summary>Open the live site (true) or the local project (false) on this PC for a real-domain project.</summary>
+        public static void SetLive(string siteName, bool live)
+        {
+            var ini = new Ini(Paths.SitesFile);
+            if (live) ini.Set(siteName, "live", true); else ini.Remove(siteName, "live");
+            ini.Save();
+        }
 
         /// <summary>Does the folder look like a web project by itself?</summary>
         /// <summary>
@@ -216,7 +264,6 @@ namespace Portly.Config
             var root = Settings.Current.DocumentRoot;
             if (!Directory.Exists(root)) return list;
             var ini = new Ini(Paths.SitesFile);
-            var tld = Settings.Current.Tld;
             foreach (var dir in Folders(root))
             {
                 var name = Path.GetFileName(dir);
@@ -224,7 +271,7 @@ namespace Portly.Config
                 // only real web projects and groups become sites; a folder with just tools / .exe / notes is skipped
                 // (a sites.ini entry forces it to show, so a manual override always wins)
                 if (!group && !LooksLikeProject(dir) && ini.Section(name).Count == 0) continue;
-                var site = Make(name, dir, name.ToLowerInvariant() + "." + tld, ini);
+                var site = Make(name, dir, HostFor(name), ini);
                 list.Add(site);
                 // an archived group hides the projects inside it too
                 if (site.Archived || !site.Valid) continue;
@@ -239,7 +286,7 @@ namespace Portly.Config
                     // inside a group, list only the web projects, not the tool folders / app parts next to them
                     bool configured = ini.Section(childName).Count > 0;
                     if (!configured && (NotProjectFolders.Contains(subName) || !LooksLikeProject(sub))) continue;
-                    var child = Make(childName, sub, subName.ToLowerInvariant() + "." + site.Host, ini);
+                    var child = Make(childName, sub, ChildHost(subName, site.Host), ini);
                     child.Group = name;
                     if (!IsValidName(subName)) { child.Valid = false; child.Problem = I18n.T("sites.invalidName"); }
                     list.Add(child);
@@ -253,6 +300,7 @@ namespace Portly.Config
             var site = new Site { Name = name, Folder = dir, Host = host };
             site.Valid = IsValidName(Path.GetFileName(dir));
             if (!site.Valid) site.Problem = I18n.T("sites.invalidName");
+            site.ShowLive = IsPublicName(host) && ini.GetBool(name, "live", false);
 
             var customRoot = ini.Get(name, "root", "");
             if (customRoot != "" && !customRoot.Contains("..") && Directory.Exists(Path.Combine(dir, customRoot)))
