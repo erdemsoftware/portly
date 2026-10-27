@@ -14,7 +14,7 @@
 <p align="center"><img src="assets/screenshots/tr-services.png" width="49%" alt="Servisler"> <img src="assets/screenshots/tr-projects.png" width="49%" alt="Projeler"></p>
 <p align="center"><img src="assets/screenshots/tr-qr.png" width="49%" alt="Projeyi telefonda QR kodla açma"> <img src="assets/screenshots/tr-newproject.png" width="40%" alt="Yeni proje"></p>
 
-Portly; Apache ya da Nginx, PHP, MySQL ya da MariaDB, PostgreSQL, MongoDB, Redis, Memcached, Node.js, Mailpit, Composer, Adminer ve phpMyAdmin'i tek bir klasörde çalıştırır. Kurulum gerekmez, Windows servisi eklemez, kayıt defterini kirletmez. Klasörü bir USB belleğe kopyalasanız bile çalışır.
+Portly; Apache ya da Nginx, PHP, MySQL ya da MariaDB, PostgreSQL, MongoDB, Redis, Memcached, Node.js, Mailpit, Composer, Adminer ve phpMyAdmin'i tek bir klasörde çalıştırır. Kurulum gerekmez ve varsayılan olarak Windows'a hiçbir şey kurmaz: Windows servisi eklemez (Ayarlar > Özellikler'den açılmadıkça kapalı duran isteğe bağlı bir servis modu, sunucuları servis olarak çalıştırabilir), kayıt defterini kirletmez. Klasörü bir USB belleğe kopyalasanız bile çalışır.
 
 ## Neden Portly?
 
@@ -27,7 +27,7 @@ Portly; Apache ya da Nginx, PHP, MySQL ya da MariaDB, PostgreSQL, MongoDB, Redis
 | HTTPS | Tek sertifika, her projede yeniden | **Yerel kök sertifika** bir kez güvenilir yapılır, her siteye ayrı sertifika |
 | Ağ güvenliği | Tüm arayüzleri dinler | **Varsayılan 127.0.0.1** (güvenlik duvarı sorusu yok) |
 | PHP güvenlik ayarları | Varsayılan | `session.upload_progress` ve `allow_url_include` **kapalı** |
-| Çökme güvenliği | — | Portly kapanırsa servisleri Windows kapatır (job object) |
+| Çökme güvenliği | — | Portly kapanırsa başlattığı sunucuları Windows kapatır (job object) |
 | Port çakışması | Hata mesajı | Portu tutan programı gösterir; **tek tıkla boş porta geç** ya da o programı kapat |
 | Paylaşım | ngrok (hesap gerekir) | **Yerel ağ** (aynı Wi-Fi'deki telefon / tablet, QR kod, https, şifre) ve Cloudflare ile **internet**: hesapsız rastgele adres ya da **kendi alan adınızda sabit adres** |
 | Geçiş | — | **Laragon, XAMPP, WampServer, AMPPS, UwAmp, Uniform Server, Open Server, EasyPHP, MAMP**'tan projeler ve veritabanları (Herd ve Local'dan projeler) |

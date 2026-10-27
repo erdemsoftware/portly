@@ -14,7 +14,7 @@
 <p align="center"><img src="assets/screenshots/en-services.png" width="49%" alt="Services"> <img src="assets/screenshots/en-projects.png" width="49%" alt="Projects"></p>
 <p align="center"><img src="assets/screenshots/en-qr.png" width="49%" alt="Open a project on your phone with a QR code"> <img src="assets/screenshots/en-newproject.png" width="40%" alt="New project"></p>
 
-Portly runs Apache or Nginx, PHP, MySQL or MariaDB, PostgreSQL, MongoDB, Redis, Memcached, Node.js, Mailpit, Composer, Adminer and phpMyAdmin from a single folder. No installer needed, no Windows services, no registry clutter. It even works from a USB stick.
+Portly runs Apache or Nginx, PHP, MySQL or MariaDB, PostgreSQL, MongoDB, Redis, Memcached, Node.js, Mailpit, Composer, Adminer and phpMyAdmin from a single folder. No installer needed and nothing installed into Windows by default: no Windows services (an optional service mode, off unless you switch it on in Settings > Features, can run the stack as a service), no registry clutter. It even works from a USB stick.
 
 ## Why Portly?
 
@@ -27,7 +27,7 @@ Portly runs Apache or Nginx, PHP, MySQL or MariaDB, PostgreSQL, MongoDB, Redis, 
 | HTTPS | One certificate, recreated per project | **Local root CA** trusted once, a certificate per site |
 | Network safety | Listens on all interfaces | **127.0.0.1 by default** (no firewall prompt) |
 | PHP hardening | Defaults | `session.upload_progress` and `allow_url_include` **off** |
-| Crash safety | — | If Portly dies, Windows stops its services (job object) |
+| Crash safety | — | If Portly dies, Windows stops the servers it started (job object) |
 | Port conflicts | Error message | Shows the program holding the port; **switch to a free port in one click** or close that program |
 | Sharing | ngrok (account needed) | **Local network** (phone / tablet on the same Wi-Fi, QR code, https, password) and **internet** through Cloudflare: random address without an account, or a **fixed address on your own domain** |
 | Migration | — | Projects and databases from **Laragon, XAMPP, WampServer, AMPPS, UwAmp, Uniform Server, Open Server, EasyPHP, MAMP** (projects from Herd and Local) |
