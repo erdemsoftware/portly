@@ -1,7 +1,7 @@
 {
-  "version": "1.1.0",
-  "url": "https://github.com/erdemsoftware/portly/releases/download/v1.1.0/Portly-1.1.0-win10.zip",
-  "sha256": "cc336e44d025e02958a7616dd09fa8da3bcf9357a0f6ced3cb583f4367b047ac",
+  "version": "1.1.1",
+  "url": "https://github.com/erdemsoftware/portly/releases/download/v1.1.1/Portly-1.1.1-win10.zip",
+  "sha256": "302de22b53da7256e4c1ce7e63ac7df01b0695d214682738a0ad1ca962e42e21",
   "notes": {
     "tr": "Düzeltmeler: Ayarlar penceresi yaklaşık 6 kat hızlı açılıyor (arayüz genelinde daha akıcı). MySQL/MariaDB, Redis, PostgreSQL ve MongoDB artık ::1 (IPv6) adresinde de dinliyor: \"localhost\" ile bağlanan uygulamalarda her sayfaya eklenen yaklaşık 2 saniyelik bekleme kalktı.",
     "en": "Fixes: the Settings window opens about 6x faster (smoother UI overall). MySQL/MariaDB, Redis, PostgreSQL and MongoDB now also listen on ::1 (IPv6): the ~2 second wait added to every page of apps that connect to \"localhost\" is gone."
