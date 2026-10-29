@@ -3,8 +3,8 @@
   "url": "https://github.com/erdemsoftware/portly/releases/download/v1.1.0/Portly-1.1.0-win10.zip",
   "sha256": "cc336e44d025e02958a7616dd09fa8da3bcf9357a0f6ced3cb583f4367b047ac",
   "notes": {
-    "tr": "Yeni: ornek.com gibi alan adı adlı klasörler o adla açılır (canlıya alırken adresler değişmez). Ayarlar'da Laragon'daki gibi adres biçimi ({name}.{tld} ya da {name}). Gerçek alan adlarında kartta Yerel / Canlı geçişi; yerel proje her zaman ornek.com.portly gibi kendi adresinde de açılır. İnternette paylaşırken root şifresi boşsa uyarı ve paylaşım şifresi önerisi. Düzeltme: Hepsini başlat'tan sonra HTTPS rozetleri hemen yenileniyor.",
-    "en": "New: folders named like a domain (example.com) are served under that name, so URLs stay the same when you go live. Address format setting like Laragon ({name}.{tld} or {name}). Local / Live switch on cards of real domains; the local project also always opens at its own address such as example.com.portly. Warning and a suggested share password when sharing on the internet while root has no password. Fix: HTTPS badges refresh right after Start all."
+    "tr": "Düzeltmeler: Ayarlar penceresi yaklaşık 6 kat hızlı açılıyor (arayüz genelinde daha akıcı). MySQL/MariaDB, Redis, PostgreSQL ve MongoDB artık ::1 (IPv6) adresinde de dinliyor: \"localhost\" ile bağlanan uygulamalarda her sayfaya eklenen yaklaşık 2 saniyelik bekleme kalktı.",
+    "en": "Fixes: the Settings window opens about 6x faster (smoother UI overall). MySQL/MariaDB, Redis, PostgreSQL and MongoDB now also listen on ::1 (IPv6): the ~2 second wait added to every page of apps that connect to \"localhost\" is gone."
   },
   "donateUrl": ""
 }
