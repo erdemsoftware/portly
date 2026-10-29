@@ -46,7 +46,8 @@ namespace Portly.Services
             });
             if (error != null) { SetState(ServiceState.Error, error); return; }
             if (!EnsurePortFree(port)) return;
-            var listen = Settings.Current.AllowLan ? "*" : "127.0.0.1";
+            // also ::1: "localhost" clients try it first and Windows needs ~2 s to refuse a connection
+            var listen = Settings.Current.AllowLan ? "*" : Net.LoopbackV6 ? "127.0.0.1,::1" : "127.0.0.1";
             _p = Launch(Path.Combine(_bin, "postgres.exe"), "-D \"" + _data + "\" -p " + port + " -h " + listen, _bin, null, "postgresql", OnExit);
             if (await WaitForPort(port, _p, 30000)) { SetState(ServiceState.Running); Log.Info(I18n.T("log.started", Title + " " + VersionLabel)); }
             else SetState(ServiceState.Error, _p.HasExited ? ExitReason(_p) + " " + I18n.T("err.seeLog", "postgresql.log") : I18n.T("err.timeout"));
@@ -96,8 +97,9 @@ namespace Portly.Services
             var data = Path.Combine(Paths.Data, "mongodb-" + PackageTypes.Branch(Path.GetFileName(dir)));
             Directory.CreateDirectory(data);
             if (!EnsurePortFree(port)) return;
-            var bind = Settings.Current.AllowLan ? "0.0.0.0" : "127.0.0.1";
-            var args = "--dbpath \"" + data + "\" --port " + port + " --bind_ip " + bind + " --logpath \"" + Path.Combine(Paths.Logs, "mongodb.log") + "\" --logappend";
+            // also ::1: "localhost" clients try it first and Windows needs ~2 s to refuse a connection
+            var bind = Settings.Current.AllowLan ? "--bind_ip_all --ipv6" : Net.LoopbackV6 ? "--bind_ip 127.0.0.1,::1 --ipv6" : "--bind_ip 127.0.0.1";
+            var args = "--dbpath \"" + data + "\" --port " + port + " " + bind + " --logpath \"" + Path.Combine(Paths.Logs, "mongodb.log") + "\" --logappend";
             _p = Launch(Path.Combine(dir, "bin", "mongod.exe"), args, Path.Combine(dir, "bin"), null, "mongodb-console", OnExit);
             if (await WaitForPort(port, _p, 60000)) { SetState(ServiceState.Running); Log.Info(I18n.T("log.started", Title + " " + VersionLabel)); }
             else SetState(ServiceState.Error, _p.HasExited ? ExitReason(_p) + " " + I18n.T("err.seeLog", "mongodb.log") : I18n.T("err.timeout"));

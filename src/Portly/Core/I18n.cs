@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace Portly.Core
@@ -75,8 +76,16 @@ namespace Portly.Core
             return d;
         }
 
+        static List<LangInfo> _available;
+        static string _availableKey;
+
+        /// <summary>The installed languages. Remembered while the language files stay the same (31 files of ~80 KB each).</summary>
         public static List<LangInfo> Available()
         {
+            string key = "";
+            try { if (Directory.Exists(Paths.Lang)) key = string.Join("|", Directory.GetFiles(Paths.Lang, "*.json").Select(f => f + ":" + File.GetLastWriteTimeUtc(f).Ticks)); }
+            catch { }
+            if (_available != null && key == _availableKey) return new List<LangInfo>(_available);
             var list = new List<LangInfo>();
             if (!Directory.Exists(Paths.Lang)) return list;
             foreach (var f in Directory.GetFiles(Paths.Lang, "*.json"))
@@ -92,7 +101,9 @@ namespace Portly.Core
                 list.Add(li);
             }
             list.Sort((a, b) => string.Compare(a.English, b.English, StringComparison.OrdinalIgnoreCase));
-            return list;
+            _available = list;
+            _availableKey = key;
+            return new List<LangInfo>(list);
         }
 
         /// <summary>Translate. Missing keys fall back to English, then to the key itself.</summary>

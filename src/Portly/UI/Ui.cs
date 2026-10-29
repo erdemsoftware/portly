@@ -164,7 +164,7 @@ namespace Portly.UI
 
         public static Label Label(string text, Font font = null, Color? color = null)
         {
-            return new Label
+            return new FastLabel
             {
                 Text = text,
                 AutoSize = true,

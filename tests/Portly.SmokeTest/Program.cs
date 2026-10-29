@@ -271,6 +271,10 @@ namespace Portly.SmokeTest
                 s.SetVersion("redis", r8.Folder); s.Save();
                 await ServiceManager.Redis.StartAsync();
                 Check("Redis " + r8.Version + " runs", ServiceManager.Redis.State == ServiceState.Running, ServiceManager.Redis.LastError ?? "");
+                // "localhost" clients try ::1 first; Windows needs ~2 s to refuse a connection, so every server must answer there too
+                if (Net.LoopbackV6)
+                    Check("MySQL and Redis answer on ::1 at once (no 2 s \"localhost\" delay)", Ipv6Connects(s.MysqlPort) < 500 && Ipv6Connects(s.RedisPort) < 500,
+                        "mysql " + Ipv6Connects(s.MysqlPort) + " ms, redis " + Ipv6Connects(s.RedisPort) + " ms");
             }
             catch (Exception ex) { Check("Redis 8 runs", false, ex.Message); }
 
@@ -335,6 +339,9 @@ namespace Portly.SmokeTest
                 }
                 catch (Exception ex) { Check(pair.Item1 + " runs", false, ex.Message); }
             }
+            if (Net.LoopbackV6)
+                Check("PostgreSQL and MongoDB answer on ::1 at once", Ipv6Connects(s.PostgresPort) < 500 && Ipv6Connects(s.MongoPort) < 500,
+                    "postgres " + Ipv6Connects(s.PostgresPort) + " ms, mongodb " + Ipv6Connects(s.MongoPort) + " ms");
             try
             {
                 var pgBin = Path.Combine(PackageTypes.ActiveDir("postgresql"), "bin");
@@ -590,6 +597,15 @@ namespace Portly.SmokeTest
         }
 
         static string _lastIssuer = "";
+
+        /// <summary>Milliseconds to connect to [::1]:port (a refused connection takes ~2000 on Windows).</summary>
+        static long Ipv6Connects(int port)
+        {
+            var sw = Stopwatch.StartNew();
+            try { using (var c = new System.Net.Sockets.TcpClient(System.Net.Sockets.AddressFamily.InterNetworkV6)) c.Connect(IPAddress.IPv6Loopback, port); }
+            catch { return 9999; }
+            return sw.ElapsedMilliseconds;
+        }
 
         /// <summary>Form POST that follows the redirect with the cookies it got; "HTTP ERROR 401 ..." on an error status.</summary>
         static string PostForm(string url, string form, CookieContainer jar)

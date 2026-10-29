@@ -41,10 +41,12 @@ namespace Portly.Services
             // "localhost" resolves to ::1 first; MySQL 8.0.13+ and MariaDB 10.11+ accept several addresses
             var ver = PackageTypes.ParseVersion(dir);
             bool multi = IsMariaDb ? ver >= new Version(10, 11) : ver >= new Version(8, 0, 13);
-            if (!Settings.Current.AllowLan && multi && Net.LoopbackV6) v["BIND"] = "127.0.0.1,::1";
+            // Windows takes ~2 s to refuse a connection: a server missing on ::1 made every "localhost" page that slow
+            if (Settings.Current.AllowLan) v["BIND"] = IsMariaDb ? "::" : "*";   // all IPv4 and IPv6 addresses (a list may not hold wildcards)
+            else if (multi && Net.LoopbackV6) v["BIND"] = "127.0.0.1,::1";
 #if !LEGACY
             // access from WSL: also listen on the WSL adapter (its address changes after a reboot)
-            var wsl = multi ? Tools.WslAccess.BindAddress() : null;
+            var wsl = multi && !Settings.Current.AllowLan ? Tools.WslAccess.BindAddress() : null;
             if (wsl != null) v["BIND"] = v["BIND"] + "," + wsl;
 #endif
             var collation = Tools.DbOptions.EffectiveCollation(Settings.Current.DbEngine, ver);
@@ -221,6 +223,9 @@ namespace Portly.Services
             Func<string, string> pathFor = x => posix ? Posix(x) : Paths.Fwd(x);
             v["REDIS_PORT"] = port.ToString();
             v["REDIS_DATA"] = pathFor(data);
+            // "localhost" clients try ::1 first (Windows needs ~2 s to refuse it); "-" = skip the address if it is missing (Redis 6.2+)
+            if (PackageTypes.ParseVersion(dir) >= new Version(6, 2))
+                v["BIND"] = Settings.Current.AllowLan ? "* -::*" : "127.0.0.1 -::1";
             v["LOGS"] = pathFor(Paths.Logs);
             Templates.WriteIfChanged(conf, Templates.Render("redis.conf.tpl", v));
             if (!EnsurePortFree(port)) return;

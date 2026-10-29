@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Text;
@@ -225,6 +226,48 @@ namespace Portly.UI
     /// Padlock switch for "part of Start all / Stop all": closed and green = linked to the bulk actions,
     /// open and red = left alone by them. A CheckBox underneath, so keyboard and screen readers still work.
     /// </summary>
+    /// <summary>
+    /// Remembers measured sizes. Nested auto-size tables ask a label or check box for its preferred size with the same
+    /// arguments again and again while they lay out (TableLayout.InflateColumns / InflateRows), and every answer meant
+    /// measuring the text with GDI: the settings window spent seconds on it. The key holds everything the size depends on.
+    /// </summary>
+    static class PreferredSizeCache
+    {
+        public static Size Get(Control c, Dictionary<string, Size> cache, Size proposed, Func<Size, Size> measure)
+        {
+            var key = proposed.Width + "," + proposed.Height + "|" + c.MaximumSize.Width + "," + c.MaximumSize.Height + "|" + c.MinimumSize.Width + "," + c.MinimumSize.Height
+                + "|" + c.Padding + "|" + c.Font.GetHashCode() + "|" + c.Font.Size + "|" + c.Text + "|" + c.RightToLeft + "|" + c.DeviceDpi;
+            Size s;
+            if (cache.TryGetValue(key, out s)) return s;
+            s = measure(proposed);
+            if (cache.Count > 64) cache.Clear();
+            cache[key] = s;
+            return s;
+        }
+    }
+
+    /// <summary>Label with a size cache (see PreferredSizeCache); made by Ui.Label everywhere.</summary>
+    public class FastLabel : Label
+    {
+        readonly Dictionary<string, Size> _sizes = new Dictionary<string, Size>();
+        public override Size GetPreferredSize(Size proposed) { return PreferredSizeCache.Get(this, _sizes, proposed, base.GetPreferredSize); }
+    }
+
+    /// <summary>Check box with a size cache (see PreferredSizeCache).</summary>
+    public class FastCheckBox : CheckBox
+    {
+        readonly Dictionary<string, Size> _sizes = new Dictionary<string, Size>();
+        public override Size GetPreferredSize(Size proposed) { return PreferredSizeCache.Get(this, _sizes, proposed, base.GetPreferredSize); }
+        protected override void OnCheckedChanged(EventArgs e) { _sizes.Clear(); base.OnCheckedChanged(e); }
+    }
+
+    /// <summary>Radio button with a size cache (see PreferredSizeCache).</summary>
+    public class FastRadioButton : RadioButton
+    {
+        readonly Dictionary<string, Size> _sizes = new Dictionary<string, Size>();
+        public override Size GetPreferredSize(Size proposed) { return PreferredSizeCache.Get(this, _sizes, proposed, base.GetPreferredSize); }
+    }
+
     /// <summary>
     /// Scrolling panel that does not jump to a control when it gets the focus. WinForms scrolls a pressed button
     /// "into view" on mouse down; the mouse is then no longer over it on mouse up and the click is lost.

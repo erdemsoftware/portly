@@ -37,9 +37,13 @@ namespace Portly.UI
             StartPosition = FormStartPosition.CenterParent;
             ClientSize = Ui.S(640, 620);
             var s = Settings.Current;
+            // ~80 rows: without this every added row re-measures the whole table (the window took seconds to open)
+            SuspendLayout();
 
             var scroll = new ScrollPanel { Dock = DockStyle.Fill, BackColor = Ui.Bg, Padding = Ui.P(24, 16, 24, 8) };
             var stack = new TableLayoutPanel { Dock = DockStyle.Top, AutoSize = true, ColumnCount = 1, BackColor = Color.Transparent };
+            stack.SuspendLayout();
+            _suspended.Add(stack);
             stack.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
 
             // ---------------- appearance ----------------
@@ -108,12 +112,12 @@ namespace Portly.UI
             // ---------------- services ----------------
             var g2 = Grid();
             var web = new FlowLayoutPanel { AutoSize = true, WrapContents = false, Margin = Padding.Empty, BackColor = Color.Transparent };
-            _apache = new RadioButton { Text = "Apache", AutoSize = true, Checked = s.WebServer == "apache" };
-            _nginx = new RadioButton { Text = "Nginx", AutoSize = true, Checked = s.WebServer == "nginx" };
+            _apache = new FastRadioButton { Text = "Apache", AutoSize = true, Checked = s.WebServer == "apache" };
+            _nginx = new FastRadioButton { Text = "Nginx", AutoSize = true, Checked = s.WebServer == "nginx" };
             web.Controls.Add(_apache);
             web.Controls.Add(_nginx);
             // Caddy only while its optional feature is on (Windows 10+ edition)
-            _caddy = new RadioButton { Text = "Caddy", AutoSize = true, Checked = s.WebServer == "caddy", Visible = !AppInfo.IsLegacy && Features.IsOn("caddy") };
+            _caddy = new FastRadioButton { Text = "Caddy", AutoSize = true, Checked = s.WebServer == "caddy", Visible = !AppInfo.IsLegacy && Features.IsOn("caddy") };
             web.Controls.Add(_caddy);
             AddRow(g2, I18n.T("settings.webServer"), web);
             _dbEngine = new ThemedCombo { Width = Ui.S(200) };
@@ -200,7 +204,12 @@ namespace Portly.UI
             Controls.Add(buttons);
             scroll.BringToFront();
             CancelButton = cancel;
+            // one layout pass for everything, inner tables first
+            for (int i = _suspended.Count - 1; i >= 0; i--) _suspended[i].ResumeLayout(false);
+            ResumeLayout(true);
         }
+
+        readonly List<Control> _suspended = new List<Control>();
 
         ComboBox _collation, _storageEngine;
 
@@ -284,9 +293,11 @@ namespace Portly.UI
             stack.Controls.Add(card);
         }
 
-        static TableLayoutPanel Grid()
+        TableLayoutPanel Grid()
         {
             var t = new TableLayoutPanel { AutoSize = true, ColumnCount = 2, BackColor = Color.Transparent };
+            t.SuspendLayout();
+            _suspended.Add(t);
             t.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
             t.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             return t;
@@ -304,7 +315,7 @@ namespace Portly.UI
 
         static CheckBox Check(string text, bool value, TableLayoutPanel t)
         {
-            var c = new CheckBox { Text = text, Checked = value, AutoSize = true, MaximumSize = new Size(Ui.S(540), 0), BackColor = Color.Transparent };
+            var c = new FastCheckBox { Text = text, Checked = value, AutoSize = true, MaximumSize = new Size(Ui.S(540), 0), BackColor = Color.Transparent };
             int r = t.RowCount++;
             c.Margin = Ui.P(0, 5, 0, 5);
             t.Controls.Add(c, 0, r);
