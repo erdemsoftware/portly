@@ -1,7 +1,7 @@
 {
-  "version": "1.1.1",
-  "url": "https://github.com/erdemsoftware/portly/releases/download/v1.1.1/Portly-1.1.1-win10.zip",
-  "sha256": "302de22b53da7256e4c1ce7e63ac7df01b0695d214682738a0ad1ca962e42e21",
+  "version": "1.2.0",
+  "url": "https://github.com/erdemsoftware/portly/releases/download/v1.2.0/Portly-1.2.0-win10.zip",
+  "sha256": "82dc47d845b401bcc234d64111646df60ea3c0bd9dfacb56c06ddbc384543e98",
   "notes": {
     "tr": "Yeni: her servisin yanında \"Yeniden başlat\" düğmesi; Servisler ve Projeler sayfalarında hosts dosyasına hızlı erişim (düzenle, kayıtları yeniden yaz, klasörü aç); yeni sürüm hazır olunca Servisler sayfasının üstünde yeşil güncelleme düğmesi (kontrol artık her 3 saatte bir); Hızlı erişimde \"Hızlı kur\" kutusu.",
     "en": "New: a \"Restart\" button next to every service; quick access to the hosts file on the Services and Projects pages (edit, write the entries again, open the folder); a green update button at the top of the Services page when a new version is ready (checked every 3 hours now); a \"Quick install\" tile in Quick access."
