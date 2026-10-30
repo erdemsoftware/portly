@@ -1143,5 +1143,5 @@
   "hosts.sync": "Portly की प्रविष्टियाँ अभी hosts फ़ाइल में लिखें",
   "hosts.folder": "hosts फ़ोल्डर खोलें",
   "hosts.syncing": "hosts फ़ाइल अपडेट हो रही है...",
-  "main.installWordpress": "WordPress इंस्टॉल करें"
+  "main.quickInstall": "त्वरित इंस्टॉल"
 }

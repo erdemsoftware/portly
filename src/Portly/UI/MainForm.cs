@@ -324,7 +324,7 @@ namespace Portly.UI
             tiles.Controls.Add(Tile(I18n.T("main.mail"), "mail", (s, e) => OpenMailpit()));
             tiles.Controls.Add(Tile(I18n.T("main.terminal"), "terminal", (s, e) => Terminal.Open()));
             tiles.Controls.Add(Tile(I18n.T("main.root"), "folder", (s, e) => WinUtil.OpenFolder(Settings.Current.DocumentRoot)));
-            tiles.Controls.Add(Tile(I18n.T("main.installWordpress"), "import", (s, e) => NewProject("wordpress")));
+            tiles.Controls.Add(Tile(I18n.T("main.quickInstall"), "import", (s, e) => NewProject("wordpress")));
             tiles.Controls.Add(Tile(I18n.T("main.newProject"), "plus", (s, e) => NewProject()));
             if (TomcatService.Enabled)
             {

@@ -1143,5 +1143,5 @@
   "hosts.sync": "Tulis entri Portly ke file hosts sekarang",
   "hosts.folder": "Buka folder hosts",
   "hosts.syncing": "Memperbarui file hosts...",
-  "main.installWordpress": "Pasang WordPress"
+  "main.quickInstall": "Pasang cepat"
 }

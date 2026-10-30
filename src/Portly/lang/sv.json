@@ -1143,5 +1143,5 @@
   "hosts.sync": "Skriv Portlys poster till hosts-filen nu",
   "hosts.folder": "Öppna hosts-mappen",
   "hosts.syncing": "Uppdaterar hosts-filen...",
-  "main.installWordpress": "Installera WordPress"
+  "main.quickInstall": "Snabbinstallation"
 }

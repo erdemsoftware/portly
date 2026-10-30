@@ -1143,5 +1143,5 @@
   "hosts.sync": "Scrie acum intrările Portly în fișierul hosts",
   "hosts.folder": "Deschide folderul hosts",
   "hosts.syncing": "Se actualizează fișierul hosts...",
-  "main.installWordpress": "Instalează WordPress"
+  "main.quickInstall": "Instalare rapidă"
 }

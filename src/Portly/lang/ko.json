@@ -1143,5 +1143,5 @@
   "hosts.sync": "Portly의 항목을 지금 hosts 파일에 쓰기",
   "hosts.folder": "hosts 폴더 열기",
   "hosts.syncing": "hosts 파일을 업데이트하는 중...",
-  "main.installWordpress": "WordPress 설치"
+  "main.quickInstall": "빠른 설치"
 }

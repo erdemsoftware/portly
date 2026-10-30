@@ -1143,5 +1143,5 @@
   "hosts.sync": "A Portly bejegyzéseinek kiírása most a hosts fájlba",
   "hosts.folder": "A hosts mappa megnyitása",
   "hosts.syncing": "A hosts fájl frissítése...",
-  "main.installWordpress": "WordPress telepítése"
+  "main.quickInstall": "Gyors telepítés"
 }

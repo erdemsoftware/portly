@@ -1143,5 +1143,5 @@
   "hosts.sync": "Zapisz teraz wpisy Portly w pliku hosts",
   "hosts.folder": "Otwórz folder hosts",
   "hosts.syncing": "Aktualizowanie pliku hosts...",
-  "main.installWordpress": "Zainstaluj WordPress"
+  "main.quickInstall": "Szybka instalacja"
 }

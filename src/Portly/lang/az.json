@@ -1143,5 +1143,5 @@
   "hosts.sync": "Portly-nin qeydlərini indi hosts faylına yaz",
   "hosts.folder": "hosts qovluğunu aç",
   "hosts.syncing": "hosts faylı yenilənir...",
-  "main.installWordpress": "WordPress quraşdır"
+  "main.quickInstall": "Sürətli quraşdırma"
 }
