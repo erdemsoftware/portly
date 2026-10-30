@@ -1142,5 +1142,6 @@
   "hosts.edit": "hosts ファイルを編集（管理者）",
   "hosts.sync": "Portly のエントリを今すぐ hosts ファイルに書き込む",
   "hosts.folder": "hosts フォルダーを開く",
-  "hosts.syncing": "hosts ファイルを更新しています..."
+  "hosts.syncing": "hosts ファイルを更新しています...",
+  "main.installWordpress": "WordPress をインストール"
 }

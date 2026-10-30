@@ -295,7 +295,7 @@ namespace Portly.UI
             _updateTop.MinimumSize = new Size(0, Ui.S(40));
             _updateTop.CustomColor = Theme.Current.Green;
             _updateTop.Visible = false;
-            var header = PageHeader(I18n.T("nav.services"), out _servicesSub, _startAll, choose, _updateTop);
+            var header = PageHeader(I18n.T("nav.services"), out _servicesSub, _startAll, choose, HostsButton(true), _updateTop);
 
             var list = new TableLayoutPanel { Dock = DockStyle.Top, AutoSize = true, ColumnCount = 1, BackColor = Color.Transparent };
             list.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
@@ -324,7 +324,7 @@ namespace Portly.UI
             tiles.Controls.Add(Tile(I18n.T("main.mail"), "mail", (s, e) => OpenMailpit()));
             tiles.Controls.Add(Tile(I18n.T("main.terminal"), "terminal", (s, e) => Terminal.Open()));
             tiles.Controls.Add(Tile(I18n.T("main.root"), "folder", (s, e) => WinUtil.OpenFolder(Settings.Current.DocumentRoot)));
-            tiles.Controls.Add(Tile("WordPress", "globe", (s, e) => NewProject("wordpress")));
+            tiles.Controls.Add(Tile(I18n.T("main.installWordpress"), "import", (s, e) => NewProject("wordpress")));
             tiles.Controls.Add(Tile(I18n.T("main.newProject"), "plus", (s, e) => NewProject()));
             if (TomcatService.Enabled)
             {
@@ -1097,10 +1097,10 @@ namespace Portly.UI
         }
 
         /// <summary>"Hosts": edit the hosts file or write Portly's entries again, one click away on the Projects page.</summary>
-        ModernButton HostsButton()
+        ModernButton HostsButton(bool withText = false)
         {
             ModernButton b = null;
-            b = IconButton("globe", I18n.T("hosts.button"), (s, e) =>
+            b = IconButton("hosts", I18n.T("hosts.button"), (s, e) =>
             {
                 var m = new ContextMenuStrip();
                 StyleMenu(m);
@@ -1110,6 +1110,15 @@ namespace Portly.UI
                 m.Closed += (o, a) => BeginInvoke((Action)m.Dispose);
                 m.Show(b, new Point(0, b.Height));
             });
+            if (withText)
+            {
+                // on the Services page there is room for the word
+                b.AutoSize = true;
+                b.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+                b.Padding = Ui.P(14, 6, 14, 6);
+                b.Text = I18n.T("hosts.button");
+                b.MinimumSize = new Size(0, Ui.S(40));
+            }
             return b;
         }
 

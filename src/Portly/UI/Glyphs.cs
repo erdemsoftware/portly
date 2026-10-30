@@ -122,6 +122,17 @@ namespace Portly.UI
                         g.DrawLine(p, X(.5f), Y(.12f), X(.5f), Y(.62f));
                         g.DrawLines(p, new[] { new PointF(X(.3f), Y(.44f)), new PointF(X(.5f), Y(.64f)), new PointF(X(.7f), Y(.44f)) });
                         break;
+                    case "hosts":
+                        // a text file with its first line "address -> name"
+                        g.DrawLines(p, new[] { new PointF(X(.22f), Y(.1f)), new PointF(X(.62f), Y(.1f)), new PointF(X(.8f), Y(.28f)), new PointF(X(.8f), Y(.9f)), new PointF(X(.22f), Y(.9f)), new PointF(X(.22f), Y(.1f)) });
+                        g.DrawLines(p, new[] { new PointF(X(.62f), Y(.1f)), new PointF(X(.62f), Y(.28f)), new PointF(X(.8f), Y(.28f)) });
+                        g.FillEllipse(b, X(.3f), Y(.4f), s * .09f, s * .09f);
+                        g.DrawLine(p, X(.47f), Y(.445f), X(.7f), Y(.445f));
+                        g.FillEllipse(b, X(.3f), Y(.58f), s * .09f, s * .09f);
+                        g.DrawLine(p, X(.47f), Y(.625f), X(.7f), Y(.625f));
+                        g.FillEllipse(b, X(.3f), Y(.76f), s * .09f, s * .09f);
+                        g.DrawLine(p, X(.47f), Y(.805f), X(.62f), Y(.805f));
+                        break;
                     case "external":
                         g.DrawLines(p, new[] { new PointF(X(.62f), Y(.15f)), new PointF(X(.85f), Y(.15f)), new PointF(X(.85f), Y(.38f)) });
                         g.DrawLine(p, X(.85f), Y(.15f), X(.48f), Y(.52f));

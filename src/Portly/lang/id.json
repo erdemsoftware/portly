@@ -1142,5 +1142,6 @@
   "hosts.edit": "Edit file hosts (administrator)",
   "hosts.sync": "Tulis entri Portly ke file hosts sekarang",
   "hosts.folder": "Buka folder hosts",
-  "hosts.syncing": "Memperbarui file hosts..."
+  "hosts.syncing": "Memperbarui file hosts...",
+  "main.installWordpress": "Pasang WordPress"
 }

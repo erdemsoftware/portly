@@ -1142,5 +1142,6 @@
   "hosts.edit": "编辑 hosts 文件（管理员）",
   "hosts.sync": "立即将 Portly 的条目写入 hosts 文件",
   "hosts.folder": "打开 hosts 文件夹",
-  "hosts.syncing": "正在更新 hosts 文件..."
+  "hosts.syncing": "正在更新 hosts 文件...",
+  "main.installWordpress": "安装 WordPress"
 }

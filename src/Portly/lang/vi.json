@@ -1142,5 +1142,6 @@
   "hosts.edit": "Sửa tệp hosts (quản trị viên)",
   "hosts.sync": "Ghi ngay các mục của Portly vào tệp hosts",
   "hosts.folder": "Mở thư mục hosts",
-  "hosts.syncing": "Đang cập nhật tệp hosts..."
+  "hosts.syncing": "Đang cập nhật tệp hosts...",
+  "main.installWordpress": "Cài WordPress"
 }

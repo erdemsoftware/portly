@@ -1142,5 +1142,6 @@
   "hosts.edit": "Redigera hosts-filen (administratör)",
   "hosts.sync": "Skriv Portlys poster till hosts-filen nu",
   "hosts.folder": "Öppna hosts-mappen",
-  "hosts.syncing": "Uppdaterar hosts-filen..."
+  "hosts.syncing": "Uppdaterar hosts-filen...",
+  "main.installWordpress": "Installera WordPress"
 }

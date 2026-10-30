@@ -1142,5 +1142,6 @@
   "hosts.edit": "hosts-bestand bewerken (beheerder)",
   "hosts.sync": "Items van Portly nu naar het hosts-bestand schrijven",
   "hosts.folder": "hosts-map openen",
-  "hosts.syncing": "hosts-bestand wordt bijgewerkt..."
+  "hosts.syncing": "hosts-bestand wordt bijgewerkt...",
+  "main.installWordpress": "WordPress installeren"
 }

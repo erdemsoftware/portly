@@ -1142,5 +1142,6 @@
   "hosts.edit": "hosts faylini tahrirlash (administrator)",
   "hosts.sync": "Portly yozuvlarini hozir hosts fayliga yozish",
   "hosts.folder": "hosts papkasini ochish",
-  "hosts.syncing": "hosts fayli yangilanmoqda..."
+  "hosts.syncing": "hosts fayli yangilanmoqda...",
+  "main.installWordpress": "WordPress oʻrnatish"
 }

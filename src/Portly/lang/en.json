@@ -1142,5 +1142,6 @@
   "hosts.edit": "Edit the hosts file (administrator)",
   "hosts.sync": "Write Portly's entries to the hosts file now",
   "hosts.folder": "Open the hosts folder",
-  "hosts.syncing": "Updating the hosts file..."
+  "hosts.syncing": "Updating the hosts file...",
+  "main.installWordpress": "Install WordPress"
 }

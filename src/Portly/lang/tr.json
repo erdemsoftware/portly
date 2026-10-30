@@ -1142,5 +1142,6 @@
   "hosts.edit": "Hosts dosyasını düzenle (yönetici)",
   "hosts.sync": "Portly'nin kayıtlarını şimdi hosts dosyasına yaz",
   "hosts.folder": "Hosts klasörünü aç",
-  "hosts.syncing": "Hosts dosyası güncelleniyor..."
+  "hosts.syncing": "Hosts dosyası güncelleniyor...",
+  "main.installWordpress": "WordPress kur"
 }

@@ -1142,5 +1142,6 @@
   "hosts.edit": "Επεξεργασία αρχείου hosts (διαχειριστής)",
   "hosts.sync": "Εγγραφή των καταχωρίσεων του Portly στο αρχείο hosts τώρα",
   "hosts.folder": "Άνοιγμα του φακέλου hosts",
-  "hosts.syncing": "Ενημέρωση του αρχείου hosts..."
+  "hosts.syncing": "Ενημέρωση του αρχείου hosts...",
+  "main.installWordpress": "Εγκατάσταση WordPress"
 }

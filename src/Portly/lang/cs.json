@@ -1142,5 +1142,6 @@
   "hosts.edit": "Upravit soubor hosts (správce)",
   "hosts.sync": "Zapsat záznamy Portly do souboru hosts hned",
   "hosts.folder": "Otevřít složku hosts",
-  "hosts.syncing": "Aktualizuje se soubor hosts..."
+  "hosts.syncing": "Aktualizuje se soubor hosts...",
+  "main.installWordpress": "Nainstalovat WordPress"
 }

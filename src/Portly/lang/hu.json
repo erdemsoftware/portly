@@ -1142,5 +1142,6 @@
   "hosts.edit": "hosts fájl szerkesztése (rendszergazda)",
   "hosts.sync": "A Portly bejegyzéseinek kiírása most a hosts fájlba",
   "hosts.folder": "A hosts mappa megnyitása",
-  "hosts.syncing": "A hosts fájl frissítése..."
+  "hosts.syncing": "A hosts fájl frissítése...",
+  "main.installWordpress": "WordPress telepítése"
 }

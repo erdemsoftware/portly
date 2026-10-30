@@ -1142,5 +1142,6 @@
   "hosts.edit": "hosts ফাইল সম্পাদনা করুন (অ্যাডমিনিস্ট্রেটর)",
   "hosts.sync": "Portly-র এন্ট্রিগুলি এখনই hosts ফাইলে লিখুন",
   "hosts.folder": "hosts ফোল্ডার খুলুন",
-  "hosts.syncing": "hosts ফাইল আপডেট হচ্ছে..."
+  "hosts.syncing": "hosts ফাইল আপডেট হচ্ছে...",
+  "main.installWordpress": "WordPress ইনস্টল করুন"
 }

@@ -1143,5 +1143,6 @@
   "hosts.edit": "تحرير ملف hosts (المسؤول)",
   "hosts.sync": "كتابة مدخلات Portly في ملف hosts الآن",
   "hosts.folder": "فتح مجلد hosts",
-  "hosts.syncing": "جارٍ تحديث ملف hosts..."
+  "hosts.syncing": "جارٍ تحديث ملف hosts...",
+  "main.installWordpress": "تثبيت WordPress"
 }
