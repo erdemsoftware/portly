@@ -28,6 +28,7 @@ namespace Portly.UI
             public Pill Sec;       // end of life / security fix available (security.json)
             public ComboBox Version;
             public ToggleSwitch Toggle;
+            public ModernButton Restart;   // left of the padlock: stop + start in one click
             public LockToggle Bulk;   // padlock: part of Start all / Stop all
             public ModernButton Get;
             public bool ShowGet;   // Control.Visible is false while the page is hidden, so keep our own flag
@@ -39,7 +40,7 @@ namespace Portly.UI
         NotifyIcon _tray;
         ContextMenuStrip _menu;
         Panel _content, _pageServices, _pageSites, _pageLog;
-        ModernButton _navServices, _navSites, _navLog, _startAll, _updateBtn;
+        ModernButton _navServices, _navSites, _navLog, _startAll, _updateBtn, _updateTop;
         Label _status, _servicesSub, _sitesSub;
         readonly List<Row> _rows = new List<Row>();
         FlowLayoutPanel _siteFlow;
@@ -289,7 +290,12 @@ namespace Portly.UI
             ModernButton choose = null;
             choose = Ui.Button(I18n.T("main.chooseServices"), (s, e) => ChooseServices(choose), false, "list");
             choose.MinimumSize = new Size(0, Ui.S(40));
-            var header = PageHeader(I18n.T("nav.services"), out _servicesSub, _startAll, choose);
+            // "Portly x.y is ready": also at the top of this page, where it is seen (the sidebar one is easy to miss)
+            _updateTop = Ui.Button("", (s, e) => OnBannerClick(), true, "update");
+            _updateTop.MinimumSize = new Size(0, Ui.S(40));
+            _updateTop.CustomColor = Theme.Current.Green;
+            _updateTop.Visible = false;
+            var header = PageHeader(I18n.T("nav.services"), out _servicesSub, _startAll, choose, _updateTop);
 
             var list = new TableLayoutPanel { Dock = DockStyle.Top, AutoSize = true, ColumnCount = 1, BackColor = Color.Transparent };
             list.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
@@ -400,6 +406,9 @@ namespace Portly.UI
             row.Toggle = new ToggleSwitch { Anchor = AnchorStyles.Top | AnchorStyles.Right, AccessibleName = svc.Title };
             row.Toggle.Click += async (s, e) => await OnToggle(row);
             // under the run switch: is this service part of "Start all" / "Stop all"?
+            row.Restart = new ModernButton { Glyph = "refresh", Kind = ButtonKind.Ghost, AutoSize = false, Size = Ui.S(30, 30), Anchor = AnchorStyles.Top | AnchorStyles.Right, AccessibleName = I18n.T("svc.restart") + " - " + svc.Title };
+            new ToolTip().SetToolTip(row.Restart, I18n.T("svc.restart"));
+            row.Restart.Click += async (s, e) => await OnRestart(row);
             row.Bulk = new LockToggle { Checked = Settings.Current.IsEnabled(svc.Id), Anchor = AnchorStyles.Top | AnchorStyles.Right, AccessibleName = I18n.T("svc.bulk") + " - " + svc.Title };
             new ToolTip().SetToolTip(row.Bulk, I18n.T("svc.bulkHint"));
             row.Bulk.CheckedChanged += (s, e) =>
@@ -427,7 +436,7 @@ namespace Portly.UI
             card.ContextMenuStrip = cm;
             row.Name.ContextMenuStrip = cm;
 
-            card.Controls.AddRange(new Control[] { row.Tile, row.Name, row.Detail, row.Error, row.Fix, row.Toggle, row.Bulk, row.Status, row.Version, row.Get, row.Sec });
+            card.Controls.AddRange(new Control[] { row.Tile, row.Name, row.Detail, row.Error, row.Fix, row.Toggle, row.Bulk, row.Restart, row.Status, row.Version, row.Get, row.Sec });
             card.Resize += (s, e) => LayoutCard(row);
             card.Width = Ui.S(700);
             LayoutCard(row);
@@ -441,9 +450,11 @@ namespace Portly.UI
             // the padlock sits just left of the run switch, on the same line
             var bulkSize = row.Bulk.Size;
             row.Bulk.Location = new Point(row.Toggle.Left - Ui.S(12) - bulkSize.Width, top + (row.Toggle.Height - bulkSize.Height) / 2);
+            // restart sits just left of the padlock
+            row.Restart.Location = new Point(row.Bulk.Left - Ui.S(6) - row.Restart.Width, top + (row.Toggle.Height - row.Restart.Height) / 2);
             row.Get.Location = new Point(right - row.Get.Width, top - Ui.S(3));
-            // keep the status pills of all cards in one column (PHP has no switch; the column leaves room for "Bulk")
-            int switchLeft = row.Toggle.Left - Ui.S(12) - bulkSize.Width;
+            // keep the status pills of all cards in one column (PHP has no switch; the column leaves room for "Bulk" and restart)
+            int switchLeft = row.Restart.Left;
             int edge = (row.ShowGet ? row.Get.Left : switchLeft) - Ui.S(14);
             row.Status.Location = new Point(edge - row.Status.Width, top + 1);
             row.Version.Location = new Point(row.Status.Left - Ui.S(12) - row.Version.Width, top - Ui.S(1));
@@ -620,6 +631,22 @@ namespace Portly.UI
             finally { row.Toggle.Enabled = true; UpdateRow(svc); UpdateGlobal(); }
         }
 
+        /// <summary>Restart one service (the web server also takes its PHP pools and the site configs with it).</summary>
+        async Task OnRestart(Row row)
+        {
+            var svc = row.Svc;
+            if (svc.State != ServiceState.Running) return;
+            row.Restart.Enabled = false;
+            row.Toggle.Enabled = false;
+            try
+            {
+                if (svc.Id == "web") await ServiceManager.ReloadWebAsync();
+                else await ServiceManager.RestartAsync(svc);
+            }
+            catch (Exception ex) { Log.Error(I18n.T("svc.restartFailed", svc.Title), ex); }
+            finally { row.Toggle.Enabled = true; UpdateRow(svc); UpdateGlobal(); }
+        }
+
         void UpdateRow(Service svc)
         {
             var row = _rows.FirstOrDefault(r => r.Svc == svc);
@@ -650,6 +677,8 @@ namespace Portly.UI
             bool showSwitch = installed && svc.Id != "php";
             row.Toggle.Visible = showSwitch;
             row.Bulk.Visible = showSwitch;
+            row.Restart.Visible = showSwitch;
+            row.Restart.Enabled = svc.State == ServiceState.Running;   // nothing to restart while it is stopped
             _syncingBulk = true;
             row.Bulk.Checked = Settings.Current.IsEnabled(svc.Id);   // also changed from the card menu
             _syncingBulk = false;
@@ -729,8 +758,9 @@ namespace Portly.UI
             var page = new Panel { Dock = DockStyle.Fill, BackColor = Ui.Bg };
             var header = PageHeader(I18n.T("nav.sites"), out _sitesSub,
                 Ui.Button(I18n.T("main.newProject"), (s, e) => NewProject(), true, "plus"),
-                Ui.Button(I18n.T("sites.refresh"), async (s, e) => await ServiceManager.ReloadWebAsync(), false, "refresh"),
-                Ui.Button(I18n.T("sites.folder"), (s, e) => WinUtil.OpenFolder(Settings.Current.DocumentRoot), false, "folder"),
+                IconButton("refresh", I18n.T("sites.refresh"), async (s, e) => await ServiceManager.ReloadWebAsync()),
+                IconButton("folder", I18n.T("sites.folder"), (s, e) => WinUtil.OpenFolder(Settings.Current.DocumentRoot)),
+                HostsButton(),
                 Ui.Button(I18n.T("shares.title"), (s, e) => OpenShares(), false, "share"),
                 _archivedBtn = SitesWebUi.ArchivedButton(this),
                 _sslBtn = Ui.Button(I18n.T("sslfix.button"), (s, e) => OpenSslRepair(), false, "warning"));
@@ -1064,6 +1094,32 @@ namespace Portly.UI
         {
             // the site becomes public: ShareUi says exactly what happens before anything is downloaded or opened
             await ShareUi.StartOnline(this, site, s => SafeInvoke(() => SetStatus(s)));
+        }
+
+        /// <summary>"Hosts": edit the hosts file or write Portly's entries again, one click away on the Projects page.</summary>
+        ModernButton HostsButton()
+        {
+            ModernButton b = null;
+            b = IconButton("globe", I18n.T("hosts.button"), (s, e) =>
+            {
+                var m = new ContextMenuStrip();
+                StyleMenu(m);
+                m.Items.Add(I18n.T("hosts.edit"), null, (o, a) => Task.Run(() => WinUtil.RunElevated("notepad.exe", "\"" + HostsFile.FilePath + "\"", false)));
+                m.Items.Add(I18n.T("hosts.sync"), null, (o, a) => { SetStatus(I18n.T("hosts.syncing")); Task.Run(() => ServiceManager.SyncHostsNow()); });
+                m.Items.Add(I18n.T("hosts.folder"), null, (o, a) => WinUtil.OpenFolder(Path.GetDirectoryName(HostsFile.FilePath)));
+                m.Closed += (o, a) => BeginInvoke((Action)m.Dispose);
+                m.Show(b, new Point(0, b.Height));
+            });
+            return b;
+        }
+
+        /// <summary>Square icon-only button with a tooltip: the Projects header has too many buttons for words on every one.</summary>
+        ModernButton IconButton(string glyph, string text, EventHandler click)
+        {
+            var b = new ModernButton { Glyph = glyph, Kind = ButtonKind.Secondary, AutoSize = false, Size = Ui.S(40, 40), AccessibleName = text };
+            new ToolTip().SetToolTip(b, text);
+            b.Click += click;
+            return b;
         }
 
         void OpenShares()
@@ -1666,7 +1722,14 @@ namespace Portly.UI
         void UpdateBanner()
         {
             if (_updateBtn == null) return;
-            if (Updater.Available != null)
+            // visibility is set from computed values only (Control.Visible reads false while a page is hidden)
+            bool appUpdate = Updater.Available != null;
+            if (_updateTop != null)
+            {
+                if (appUpdate) _updateTop.Text = I18n.T("update.short", Updater.Available.Version);
+                _updateTop.Visible = appUpdate;
+            }
+            if (appUpdate)
             {
                 _updateBtn.Text = I18n.T("update.short", Updater.Available.Version);
                 _updateBtn.Kind = ButtonKind.Primary;
@@ -1850,6 +1913,10 @@ namespace Portly.UI
             await ShowHealth(false);
             await QuickIntegrityCheck();
             var checks = BackgroundChecks(false, false);
+            // a Portly that stays in the tray for days: look again every 3 hours (the checks themselves are rate limited)
+            var recheck = new System.Windows.Forms.Timer { Interval = 3 * 60 * 60 * 1000 };
+            recheck.Tick += async (o, e) => { try { await BackgroundChecks(false, false); } catch (Exception ex) { Log.Warn(ex.Message); } };
+            recheck.Start();
             if (_startServices || s.StartServicesOnLaunch || startFromWelcome) await ToggleAll();
             await checks;
         }

@@ -1135,5 +1135,12 @@
   "domain.toLive": "{0} artık bu bilgisayarda canlı siteyi açıyor; yerel proje: {1} (tarayıcıyı yenileyin)",
   "project.realDomain": "{0} gerçek bir internet adresi.\n\nPortly açıkken bu bilgisayar bu adreste canlı site yerine yerel projenizi açar; böylece canlıya alırken adresler değişmez. Diğer bilgisayarlar etkilenmez. Projeye ayrıca her zaman çalışan bir yerel adres de verilir: {1}\n\nBu bilgisayarda canlı siteyi görmek için proje kartındaki \"Yerel\" yazısına tıklayıp \"Canlı\" yapın.\n\nProje oluşturulsun mu?",
   "share.rootWarn": "Veritabanının root kullanıcısının şifresi yok.\n\nPaylaşılan site veritabanına root olarak bağlanıyor; sitede bir güvenlik açığı olursa yerel veritabanlarınız da açığa çıkar. Önerimiz: bu paylaşımı şifreyle koruyun (site açılmadan önce bir kez sorulur).\n\nŞifre eklensin mi?",
-  "share.passwordAsk": "Bu paylaşımın şifresi (bir öneri yazıldı, değiştirebilirsiniz):"
+  "share.passwordAsk": "Bu paylaşımın şifresi (bir öneri yazıldı, değiştirebilirsiniz):",
+  "svc.restart": "Yeniden başlat",
+  "svc.restartFailed": "{0} yeniden başlatılamadı",
+  "hosts.button": "Hosts",
+  "hosts.edit": "Hosts dosyasını düzenle (yönetici)",
+  "hosts.sync": "Portly'nin kayıtlarını şimdi hosts dosyasına yaz",
+  "hosts.folder": "Hosts klasörünü aç",
+  "hosts.syncing": "Hosts dosyası güncelleniyor..."
 }

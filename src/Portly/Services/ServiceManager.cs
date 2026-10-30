@@ -143,6 +143,13 @@ namespace Portly.Services
             else await Task.Run(() => RefreshSites());
         }
 
+        /// <summary>Write the hosts entries again now, also after the admin prompt was refused once (that answer is remembered otherwise).</summary>
+        public static void SyncHostsNow()
+        {
+            _refusedHostsKey = null;
+            SyncHostsInBackground(RefreshSites());
+        }
+
         public static void SyncHostsInBackground(List<Site> sites)
         {
             var s = Settings.Current;

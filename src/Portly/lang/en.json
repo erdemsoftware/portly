@@ -1135,5 +1135,12 @@
   "domain.toLive": "{0} now opens the live site on this PC; the local project: {1} (reload the browser)",
   "project.realDomain": "{0} is a real internet address.\n\nWhile Portly serves it, this PC opens your local project at this address instead of the live site, so the URLs stay the same when you go live. Other computers are not affected. The project also gets a local address that always works: {1}\n\nTo see the live site on this PC, click \"Local\" on the project card to switch it to \"Live\".\n\nCreate the project?",
   "share.rootWarn": "The database user root has no password.\n\nThe shared site talks to the database as root, so a security hole in the site would open your local databases too. Recommended: protect this share with a password (asked once before the site opens).\n\nAdd a password?",
-  "share.passwordAsk": "Password for this share (a suggestion is filled in, you can change it):"
+  "share.passwordAsk": "Password for this share (a suggestion is filled in, you can change it):",
+  "svc.restart": "Restart",
+  "svc.restartFailed": "{0} could not be restarted",
+  "hosts.button": "Hosts",
+  "hosts.edit": "Edit the hosts file (administrator)",
+  "hosts.sync": "Write Portly's entries to the hosts file now",
+  "hosts.folder": "Open the hosts folder",
+  "hosts.syncing": "Updating the hosts file..."
 }
