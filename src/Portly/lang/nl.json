@@ -1135,5 +1135,12 @@
   "domain.toLive": "{0} opent nu op deze pc de live site; het lokale project: {1} (herlaad de browser)",
   "project.realDomain": "{0} is een echt internetadres.\n\nZolang Portly het serveert, opent deze pc op dit adres je lokale project in plaats van de live site, zodat de URL's hetzelfde blijven wanneer je live gaat. Andere computers merken er niets van. Het project krijgt ook een lokaal adres dat altijd werkt: {1}\n\nOm de live site op deze pc te zien, klik je op de projectkaart op \"Lokaal\" om over te schakelen naar \"Live\".\n\nProject maken?",
   "share.rootWarn": "De databasegebruiker root heeft geen wachtwoord.\n\nDe gedeelde site verbindt als root met de database, dus een beveiligingslek in de site zou ook je lokale databases openzetten. Aanbevolen: bescherm deze gedeelde site met een wachtwoord (wordt één keer gevraagd voordat de site opent).\n\nWachtwoord toevoegen?",
-  "share.passwordAsk": "Wachtwoord voor deze gedeelde site (er is een suggestie ingevuld, je kunt die wijzigen):"
+  "share.passwordAsk": "Wachtwoord voor deze gedeelde site (er is een suggestie ingevuld, je kunt die wijzigen):",
+  "svc.restart": "Opnieuw starten",
+  "svc.restartFailed": "{0} kon niet opnieuw worden gestart",
+  "hosts.button": "Hosts",
+  "hosts.edit": "hosts-bestand bewerken (beheerder)",
+  "hosts.sync": "Items van Portly nu naar het hosts-bestand schrijven",
+  "hosts.folder": "hosts-map openen",
+  "hosts.syncing": "hosts-bestand wordt bijgewerkt..."
 }

@@ -1135,5 +1135,12 @@
   "domain.toLive": "{0} deschide acum site-ul live pe acest PC; proiectul local: {1} (reîncarcă browserul)",
   "project.realDomain": "{0} este o adresă reală de internet.\n\nCât timp Portly o servește, acest PC deschide la această adresă proiectul tău local în locul site-ului live, astfel încât URL-urile rămân aceleași când îl publici. Alte computere nu sunt afectate. Proiectul primește și o adresă locală care funcționează mereu: {1}\n\nPentru a vedea site-ul live pe acest PC, dă clic pe \"Local\" pe cardul proiectului ca să treci la \"Live\".\n\nCreezi proiectul?",
   "share.rootWarn": "Utilizatorul root al bazei de date nu are parolă.\n\nSite-ul partajat se conectează la baza de date ca root, deci o breșă de securitate în site ar expune și bazele tale de date locale. Recomandat: protejează această partajare cu o parolă (cerută o dată înainte să se deschidă site-ul).\n\nAdaugi o parolă?",
-  "share.passwordAsk": "Parola pentru această partajare (o sugestie este completată, o poți schimba):"
+  "share.passwordAsk": "Parola pentru această partajare (o sugestie este completată, o poți schimba):",
+  "svc.restart": "Repornește",
+  "svc.restartFailed": "{0} nu a putut fi repornit",
+  "hosts.button": "Hosts",
+  "hosts.edit": "Editează fișierul hosts (administrator)",
+  "hosts.sync": "Scrie acum intrările Portly în fișierul hosts",
+  "hosts.folder": "Deschide folderul hosts",
+  "hosts.syncing": "Se actualizează fișierul hosts..."
 }

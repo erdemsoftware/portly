@@ -1135,5 +1135,12 @@
   "domain.toLive": "{0} giờ mở trang thật trên máy này; dự án cục bộ: {1} (tải lại trình duyệt)",
   "project.realDomain": "{0} là một địa chỉ internet thật.\n\nKhi Portly phục vụ địa chỉ này, máy này sẽ mở dự án cục bộ của bạn thay cho trang thật, nên URL giữ nguyên khi bạn đưa trang lên chạy thật. Các máy tính khác không bị ảnh hưởng. Dự án cũng có một địa chỉ cục bộ luôn hoạt động: {1}\n\nĐể xem trang thật trên máy này, bấm \"Cục bộ\" trên thẻ dự án để chuyển sang \"Thật\".\n\nTạo dự án?",
   "share.rootWarn": "Người dùng cơ sở dữ liệu root không có mật khẩu.\n\nTrang được chia sẻ kết nối tới cơ sở dữ liệu với tư cách root, nên một lỗ hổng bảo mật trong trang cũng sẽ làm lộ các cơ sở dữ liệu cục bộ của bạn. Khuyến nghị: bảo vệ lượt chia sẻ này bằng mật khẩu (hỏi một lần trước khi mở trang).\n\nThêm mật khẩu?",
-  "share.passwordAsk": "Mật khẩu cho lượt chia sẻ này (đã điền sẵn một gợi ý, bạn có thể đổi):"
+  "share.passwordAsk": "Mật khẩu cho lượt chia sẻ này (đã điền sẵn một gợi ý, bạn có thể đổi):",
+  "svc.restart": "Khởi động lại",
+  "svc.restartFailed": "Không thể khởi động lại {0}",
+  "hosts.button": "Hosts",
+  "hosts.edit": "Sửa tệp hosts (quản trị viên)",
+  "hosts.sync": "Ghi ngay các mục của Portly vào tệp hosts",
+  "hosts.folder": "Mở thư mục hosts",
+  "hosts.syncing": "Đang cập nhật tệp hosts..."
 }

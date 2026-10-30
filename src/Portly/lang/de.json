@@ -1135,5 +1135,12 @@
   "domain.toLive": "{0} öffnet jetzt auf diesem PC die Live-Website; das lokale Projekt: {1} (Browser neu laden)",
   "project.realDomain": "{0} ist eine echte Internetadresse.\n\nSolange Portly sie bereitstellt, öffnet dieser PC unter dieser Adresse Ihr lokales Projekt statt der Live-Website, sodass die URLs beim Livegang gleich bleiben. Andere Computer sind nicht betroffen. Das Projekt erhält außerdem eine lokale Adresse, die immer funktioniert: {1}\n\nUm die Live-Website auf diesem PC zu sehen, klicken Sie auf der Projektkarte auf \"Lokal\", um auf \"Live\" umzuschalten.\n\nProjekt erstellen?",
   "share.rootWarn": "Der Datenbankbenutzer root hat kein Passwort.\n\nDie geteilte Website verbindet sich als root mit der Datenbank, eine Sicherheitslücke in der Website würde also auch Ihre lokalen Datenbanken öffnen. Empfohlen: Schützen Sie diese Freigabe mit einem Passwort (wird einmal abgefragt, bevor sich die Website öffnet).\n\nPasswort hinzufügen?",
-  "share.passwordAsk": "Passwort für diese Freigabe (ein Vorschlag ist eingetragen, Sie können ihn ändern):"
+  "share.passwordAsk": "Passwort für diese Freigabe (ein Vorschlag ist eingetragen, Sie können ihn ändern):",
+  "svc.restart": "Neu starten",
+  "svc.restartFailed": "{0} konnte nicht neu gestartet werden",
+  "hosts.button": "Hosts",
+  "hosts.edit": "hosts-Datei bearbeiten (Administrator)",
+  "hosts.sync": "Einträge von Portly jetzt in die hosts-Datei schreiben",
+  "hosts.folder": "hosts-Ordner öffnen",
+  "hosts.syncing": "hosts-Datei wird aktualisiert..."
 }

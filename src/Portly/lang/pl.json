@@ -1135,5 +1135,12 @@
   "domain.toLive": "{0} otwiera teraz na tym komputerze stronę produkcyjną; lokalny projekt: {1} (odśwież przeglądarkę)",
   "project.realDomain": "{0} to prawdziwy adres internetowy.\n\nDopóki Portly go obsługuje, ten komputer otwiera pod tym adresem twój lokalny projekt zamiast strony produkcyjnej, więc adresy URL pozostają takie same po publikacji. Inne komputery nie są objęte zmianą. Projekt dostaje też lokalny adres, który działa zawsze: {1}\n\nAby zobaczyć stronę produkcyjną na tym komputerze, kliknij \"Lokalnie\" na karcie projektu, aby przełączyć na \"Produkcja\".\n\nUtworzyć projekt?",
   "share.rootWarn": "Użytkownik bazy danych root nie ma hasła.\n\nUdostępniona strona łączy się z bazą danych jako root, więc luka bezpieczeństwa w stronie otworzyłaby też twoje lokalne bazy danych. Zalecane: zabezpiecz to udostępnienie hasłem (pytanie pojawia się raz przed otwarciem strony).\n\nDodać hasło?",
-  "share.passwordAsk": "Hasło dla tego udostępnienia (wpisano propozycję, możesz ją zmienić):"
+  "share.passwordAsk": "Hasło dla tego udostępnienia (wpisano propozycję, możesz ją zmienić):",
+  "svc.restart": "Uruchom ponownie",
+  "svc.restartFailed": "Nie udało się ponownie uruchomić: {0}",
+  "hosts.button": "Hosts",
+  "hosts.edit": "Edytuj plik hosts (administrator)",
+  "hosts.sync": "Zapisz teraz wpisy Portly w pliku hosts",
+  "hosts.folder": "Otwórz folder hosts",
+  "hosts.syncing": "Aktualizowanie pliku hosts..."
 }

@@ -1135,5 +1135,12 @@
   "domain.toLive": "{0} ahora abre el sitio en producción en este PC; el proyecto local: {1} (recarga el navegador)",
   "project.realDomain": "{0} es una dirección real de Internet.\n\nMientras Portly la sirve, este PC abre tu proyecto local en esta dirección en lugar del sitio en producción, así las URL no cambian al publicarlo. Los demás equipos no se ven afectados. El proyecto también recibe una dirección local que siempre funciona: {1}\n\nPara ver el sitio en producción en este PC, haz clic en \"Local\" en la tarjeta del proyecto para cambiarlo a \"Producción\".\n\n¿Crear el proyecto?",
   "share.rootWarn": "El usuario root de la base de datos no tiene contraseña.\n\nEl sitio compartido se conecta a la base de datos como root, así que un fallo de seguridad en el sitio también expondría tus bases de datos locales. Recomendado: protege este sitio compartido con una contraseña (se pide una vez antes de abrir el sitio).\n\n¿Añadir una contraseña?",
-  "share.passwordAsk": "Contraseña para este sitio compartido (hay una sugerencia, puedes cambiarla):"
+  "share.passwordAsk": "Contraseña para este sitio compartido (hay una sugerencia, puedes cambiarla):",
+  "svc.restart": "Reiniciar",
+  "svc.restartFailed": "No se pudo reiniciar {0}",
+  "hosts.button": "Hosts",
+  "hosts.edit": "Editar archivo hosts (administrador)",
+  "hosts.sync": "Escribir ahora las entradas de Portly en el archivo hosts",
+  "hosts.folder": "Abrir la carpeta de hosts",
+  "hosts.syncing": "Actualizando el archivo hosts..."
 }

@@ -1135,5 +1135,12 @@
   "domain.toLive": "{0} öppnar nu livewebbplatsen på den här datorn; det lokala projektet: {1} (ladda om webbläsaren)",
   "project.realDomain": "{0} är en riktig internetadress.\n\nSå länge Portly hanterar den öppnar den här datorn ditt lokala projekt på adressen i stället för livewebbplatsen, så att URL:erna förblir desamma när du går live. Andra datorer påverkas inte. Projektet får också en lokal adress som alltid fungerar: {1}\n\nFör att se livewebbplatsen på den här datorn klickar du på \"Lokal\" på projektkortet för att byta till \"Live\".\n\nSkapa projektet?",
   "share.rootWarn": "Databasanvändaren root har inget lösenord.\n\nDen delade webbplatsen ansluter till databasen som root, så ett säkerhetshål i webbplatsen skulle även öppna dina lokala databaser. Rekommenderas: skydda den här delningen med ett lösenord (frågas en gång innan webbplatsen öppnas).\n\nLägga till ett lösenord?",
-  "share.passwordAsk": "Lösenord för den här delningen (ett förslag är ifyllt, du kan ändra det):"
+  "share.passwordAsk": "Lösenord för den här delningen (ett förslag är ifyllt, du kan ändra det):",
+  "svc.restart": "Starta om",
+  "svc.restartFailed": "{0} kunde inte startas om",
+  "hosts.button": "Hosts",
+  "hosts.edit": "Redigera hosts-filen (administratör)",
+  "hosts.sync": "Skriv Portlys poster till hosts-filen nu",
+  "hosts.folder": "Öppna hosts-mappen",
+  "hosts.syncing": "Uppdaterar hosts-filen..."
 }

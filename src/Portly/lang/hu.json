@@ -1135,5 +1135,12 @@
   "domain.toLive": "A(z) {0} mostantól ezen a gépen az élő webhelyet nyitja meg; a helyi projekt: {1} (töltsd újra a böngészőt)",
   "project.realDomain": "A(z) {0} valódi internetes cím.\n\nAmíg a Portly kiszolgálja, ez a gép ezen a címen az élő webhely helyett a helyi projektedet nyitja meg, így az URL-ek ugyanazok maradnak élesítéskor. Más számítógépeket ez nem érint. A projekt kap egy mindig működő helyi címet is: {1}\n\nHa ezen a gépen az élő webhelyet szeretnéd látni, kattints a projektkártyán a \"Helyi\" feliratra, és állítsd \"Élő\" értékre.\n\nLétrehozod a projektet?",
   "share.rootWarn": "Az adatbázis root felhasználójának nincs jelszava.\n\nA megosztott webhely root-ként csatlakozik az adatbázishoz, így a webhely egy biztonsági rése a helyi adatbázisaidat is megnyitná. Ajánlott: védd jelszóval ezt a megosztást (a webhely megnyitása előtt egyszer kéri).\n\nHozzáadsz jelszót?",
-  "share.passwordAsk": "Jelszó ehhez a megosztáshoz (egy javaslat be van írva, módosíthatod):"
+  "share.passwordAsk": "Jelszó ehhez a megosztáshoz (egy javaslat be van írva, módosíthatod):",
+  "svc.restart": "Újraindítás",
+  "svc.restartFailed": "{0} újraindítása nem sikerült",
+  "hosts.button": "Hosts",
+  "hosts.edit": "hosts fájl szerkesztése (rendszergazda)",
+  "hosts.sync": "A Portly bejegyzéseinek kiírása most a hosts fájlba",
+  "hosts.folder": "A hosts mappa megnyitása",
+  "hosts.syncing": "A hosts fájl frissítése..."
 }

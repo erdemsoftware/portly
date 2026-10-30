@@ -1135,5 +1135,12 @@
   "domain.toLive": "{0} 现在在这台电脑上打开线上站点；本地项目：{1}（请刷新浏览器）",
   "project.realDomain": "{0} 是一个真实的互联网地址。\n\n在 Portly 提供服务期间，这台电脑会在此地址打开你的本地项目，而不是线上站点，因此上线时 URL 保持不变。其他电脑不受影响。项目还会获得一个始终可用的本地地址：{1}\n\n要在这台电脑上查看线上站点，请点击项目卡片上的“本地”，将其切换为“线上”。\n\n创建项目吗？",
   "share.rootWarn": "数据库用户 root 没有密码。\n\n共享的站点以 root 身份连接数据库，因此站点中的安全漏洞也会暴露你的本地数据库。建议：用密码保护此分享（打开站点前询问一次）。\n\n添加密码吗？",
-  "share.passwordAsk": "此分享的密码（已填入建议值，可以修改）："
+  "share.passwordAsk": "此分享的密码（已填入建议值，可以修改）：",
+  "svc.restart": "重启",
+  "svc.restartFailed": "无法重启 {0}",
+  "hosts.button": "Hosts",
+  "hosts.edit": "编辑 hosts 文件（管理员）",
+  "hosts.sync": "立即将 Portly 的条目写入 hosts 文件",
+  "hosts.folder": "打开 hosts 文件夹",
+  "hosts.syncing": "正在更新 hosts 文件..."
 }

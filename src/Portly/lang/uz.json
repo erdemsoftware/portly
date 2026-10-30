@@ -1135,5 +1135,12 @@
   "domain.toLive": "{0} endi bu kompyuterda jonli saytni ochadi; mahalliy loyiha: {1} (brauzerni yangilang)",
   "project.realDomain": "{0} haqiqiy internet manzili.\n\nPortly uni xizmat qilayotganda bu kompyuter shu manzilda jonli sayt oʻrniga mahalliy loyihangizni ochadi; shu tufayli jonliga chiqarganda manzillar oʻzgarmaydi. Boshqa kompyuterlarga taʼsir qilmaydi. Loyihaga doim ishlaydigan mahalliy manzil ham beriladi: {1}\n\nBu kompyuterda jonli saytni koʻrish uchun loyiha kartasidagi \"Mahalliy\" yozuvini bosib, uni \"Jonli\" qiling.\n\nLoyiha yaratilsinmi?",
   "share.rootWarn": "Maʼlumotlar bazasining root foydalanuvchisida parol yoʻq.\n\nUlashilgan sayt maʼlumotlar bazasiga root sifatida ulanadi; saytda xavfsizlik teshigi boʻlsa, mahalliy maʼlumotlar bazalaringiz ham ochilib qoladi. Tavsiya: bu ulashishni parol bilan himoyalang (sayt ochilishidan oldin bir marta soʻraladi).\n\nParol qoʻshilsinmi?",
-  "share.passwordAsk": "Bu ulashish uchun parol (taklif yozilgan, uni oʻzgartirishingiz mumkin):"
+  "share.passwordAsk": "Bu ulashish uchun parol (taklif yozilgan, uni oʻzgartirishingiz mumkin):",
+  "svc.restart": "Qayta ishga tushirish",
+  "svc.restartFailed": "{0} qayta ishga tushirilmadi",
+  "hosts.button": "Hosts",
+  "hosts.edit": "hosts faylini tahrirlash (administrator)",
+  "hosts.sync": "Portly yozuvlarini hozir hosts fayliga yozish",
+  "hosts.folder": "hosts papkasini ochish",
+  "hosts.syncing": "hosts fayli yangilanmoqda..."
 }

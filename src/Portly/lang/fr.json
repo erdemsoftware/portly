@@ -1135,5 +1135,12 @@
   "domain.toLive": "{0} ouvre maintenant le site en ligne sur ce PC ; le projet local : {1} (rechargez le navigateur)",
   "project.realDomain": "{0} est une vraie adresse Internet.\n\nTant que Portly la sert, ce PC ouvre votre projet local à cette adresse au lieu du site en ligne, ainsi les URL restent les mêmes lors de la mise en ligne. Les autres ordinateurs ne sont pas concernés. Le projet reçoit aussi une adresse locale qui fonctionne toujours : {1}\n\nPour voir le site en ligne sur ce PC, cliquez sur \"Local\" sur la carte du projet pour passer à \"Production\".\n\nCréer le projet ?",
   "share.rootWarn": "L'utilisateur root de la base de données n'a pas de mot de passe.\n\nLe site partagé se connecte à la base de données en tant que root ; une faille de sécurité dans le site exposerait donc aussi vos bases de données locales. Recommandé : protégez ce partage par un mot de passe (demandé une fois avant l'ouverture du site).\n\nAjouter un mot de passe ?",
-  "share.passwordAsk": "Mot de passe de ce partage (une suggestion est remplie, vous pouvez la modifier) :"
+  "share.passwordAsk": "Mot de passe de ce partage (une suggestion est remplie, vous pouvez la modifier) :",
+  "svc.restart": "Redémarrer",
+  "svc.restartFailed": "Impossible de redémarrer {0}",
+  "hosts.button": "Hosts",
+  "hosts.edit": "Modifier le fichier hosts (administrateur)",
+  "hosts.sync": "Écrire maintenant les entrées de Portly dans le fichier hosts",
+  "hosts.folder": "Ouvrir le dossier hosts",
+  "hosts.syncing": "Mise à jour du fichier hosts..."
 }

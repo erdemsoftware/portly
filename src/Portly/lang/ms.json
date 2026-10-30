@@ -1135,5 +1135,12 @@
   "domain.toLive": "{0} kini membuka laman langsung pada PC ini; projek setempat: {1} (muat semula pelayar)",
   "project.realDomain": "{0} ialah alamat internet sebenar.\n\nSelagi Portly menyajikannya, PC ini membuka projek setempat anda pada alamat ini dan bukan laman langsung, jadi URL kekal sama apabila anda melancarkannya. Komputer lain tidak terjejas. Projek ini juga mendapat alamat setempat yang sentiasa berfungsi: {1}\n\nUntuk melihat laman langsung pada PC ini, klik \"Setempat\" pada kad projek untuk menukarnya kepada \"Langsung\".\n\nCipta projek?",
   "share.rootWarn": "Pengguna pangkalan data root tiada kata laluan.\n\nLaman yang dikongsi bersambung ke pangkalan data sebagai root, jadi lubang keselamatan dalam laman itu juga akan mendedahkan pangkalan data setempat anda. Disyorkan: lindungi perkongsian ini dengan kata laluan (ditanya sekali sebelum laman dibuka).\n\nTambah kata laluan?",
-  "share.passwordAsk": "Kata laluan untuk perkongsian ini (cadangan telah diisi, anda boleh menukarnya):"
+  "share.passwordAsk": "Kata laluan untuk perkongsian ini (cadangan telah diisi, anda boleh menukarnya):",
+  "svc.restart": "Mula semula",
+  "svc.restartFailed": "{0} tidak dapat dimulakan semula",
+  "hosts.button": "Hosts",
+  "hosts.edit": "Edit fail hosts (pentadbir)",
+  "hosts.sync": "Tulis entri Portly ke fail hosts sekarang",
+  "hosts.folder": "Buka folder hosts",
+  "hosts.syncing": "Mengemas kini fail hosts..."
 }

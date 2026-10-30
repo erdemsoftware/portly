@@ -1135,5 +1135,12 @@
   "domain.toLive": "{0} sekarang membuka situs live di PC ini; proyek lokal: {1} (muat ulang browser)",
   "project.realDomain": "{0} adalah alamat internet sungguhan.\n\nSelama Portly menyajikannya, PC ini membuka proyek lokal Anda di alamat ini, bukan situs live, sehingga URL tetap sama saat situs dirilis. Komputer lain tidak terpengaruh. Proyek ini juga mendapat alamat lokal yang selalu berfungsi: {1}\n\nUntuk melihat situs live di PC ini, klik \"Lokal\" pada kartu proyek untuk mengubahnya menjadi \"Live\".\n\nBuat proyeknya?",
   "share.rootWarn": "Pengguna database root tidak punya kata sandi.\n\nSitus yang dibagikan terhubung ke database sebagai root, jadi celah keamanan di situs juga akan membuka database lokal Anda. Disarankan: lindungi berbagi ini dengan kata sandi (ditanyakan sekali sebelum situs terbuka).\n\nTambahkan kata sandi?",
-  "share.passwordAsk": "Kata sandi untuk berbagi ini (sudah diisi saran, Anda bisa mengubahnya):"
+  "share.passwordAsk": "Kata sandi untuk berbagi ini (sudah diisi saran, Anda bisa mengubahnya):",
+  "svc.restart": "Mulai ulang",
+  "svc.restartFailed": "{0} gagal dimulai ulang",
+  "hosts.button": "Hosts",
+  "hosts.edit": "Edit file hosts (administrator)",
+  "hosts.sync": "Tulis entri Portly ke file hosts sekarang",
+  "hosts.folder": "Buka folder hosts",
+  "hosts.syncing": "Memperbarui file hosts..."
 }

@@ -1135,5 +1135,12 @@
   "domain.toLive": "{0} nyní na tomto počítači otevírá živý web; místní projekt: {1} (obnovte prohlížeč)",
   "project.realDomain": "{0} je skutečná internetová adresa.\n\nDokud ji Portly obsluhuje, tento počítač na této adrese otevírá váš místní projekt místo živého webu, takže adresy URL zůstanou stejné, až web spustíte naostro. Ostatní počítače to neovlivní. Projekt také dostane místní adresu, která funguje vždy: {1}\n\nChcete-li na tomto počítači vidět živý web, klikněte na kartě projektu na \"Místní\" a přepněte na \"Živý\".\n\nVytvořit projekt?",
   "share.rootWarn": "Uživatel databáze root nemá heslo.\n\nSdílený web se k databázi připojuje jako root, takže bezpečnostní díra ve webu by otevřela i vaše místní databáze. Doporučujeme: chraňte toto sdílení heslem (zeptá se jednou před otevřením webu).\n\nPřidat heslo?",
-  "share.passwordAsk": "Heslo pro toto sdílení (návrh je vyplněn, můžete ho změnit):"
+  "share.passwordAsk": "Heslo pro toto sdílení (návrh je vyplněn, můžete ho změnit):",
+  "svc.restart": "Restartovat",
+  "svc.restartFailed": "{0} se nepodařilo restartovat",
+  "hosts.button": "Hosts",
+  "hosts.edit": "Upravit soubor hosts (správce)",
+  "hosts.sync": "Zapsat záznamy Portly do souboru hosts hned",
+  "hosts.folder": "Otevřít složku hosts",
+  "hosts.syncing": "Aktualizuje se soubor hosts..."
 }
