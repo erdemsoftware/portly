@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -72,6 +73,25 @@ namespace Portly.Tools
             public int Active;           // requests being served; a connection leaves this count after a 101
             public int Tunnels;          // WebSocket tunnels, and upgrades on their way to becoming one
             public int Refusing;         // over the limit, being told so
+            public volatile bool Stopped;
+            public readonly ConcurrentDictionary<TcpClient, byte> Open = new ConcurrentDictionary<TcpClient, byte>();
+        }
+
+        /// <summary>
+        /// Ends what is connected: a stopped share or a new password must not leave a WebSocket tunnel or a request running
+        /// for a device that has no right to it any more. Closing the device's side ends the tunnel to the web server as well.
+        /// </summary>
+        static void CloseOpen(Entry e)
+        {
+            foreach (var c in e.Open.Keys.ToList()) { try { c.Close(); } catch { } }
+        }
+
+        static void End(Entry e)
+        {
+            e.Stopped = true;
+            try { e.Listener.Stop(); } catch { }
+            DisposeExpiry(e);
+            CloseOpen(e);
         }
         static readonly Dictionary<string, Entry> Shares = new Dictionary<string, Entry>(StringComparer.OrdinalIgnoreCase);
         // internet shares: cloudflared -> this proxy (127.0.0.1) -> web server, so they get the same rewriting,
@@ -104,8 +124,7 @@ namespace Portly.Tools
                 if (!Tunnels.TryGetValue(host, out e)) return;
                 Tunnels.Remove(host);
             }
-            try { e.Listener.Stop(); } catch { }
-            DisposeExpiry(e);
+            End(e);
         }
 
         /// <summary>Devices that opened the share (newest first). Local network: by IP; internet: the visitor's IP from Cloudflare.</summary>
@@ -265,8 +284,7 @@ namespace Portly.Tools
                 if (!Shares.TryGetValue(host, out e)) return;
                 Shares.Remove(host);
             }
-            try { e.Listener.Stop(); } catch { }
-            DisposeExpiry(e);
+            End(e);
             if (!keepRule) Task.Run(() => ShareFirewall.Close(e.Port));
             Log.Info(I18n.T("lan.stopped", host));
             ShareStore.Notify();
@@ -286,14 +304,15 @@ namespace Portly.Tools
         /// <summary>New password for a running share; devices that logged in before must log in again.</summary>
         public static void SetPassword(string host, string password, bool online = false)
         {
+            Entry e;
             lock (Shares)
             {
-                Entry e;
                 if (!Map(online).TryGetValue(host, out e) || e.Password == (password ?? "")) return;
                 e.Password = password ?? "";
                 e.Token = Guid.NewGuid().ToString("N");
                 e.Gate.Reset();
             }
+            CloseOpen(e);
         }
 
         public static bool IsRunning(string host) { lock (Shares) return Shares.ContainsKey(host); }
@@ -321,7 +340,7 @@ namespace Portly.Tools
         {
             List<Entry> list;
             lock (Shares) { list = Shares.Values.Concat(Tunnels.Values).ToList(); Shares.Clear(); Tunnels.Clear(); }
-            foreach (var e in list) { try { e.Listener.Stop(); } catch { } DisposeExpiry(e); }
+            foreach (var e in list) End(e);
         }
 
         static async Task AcceptLoop(Entry entry, string host)
@@ -366,6 +385,8 @@ namespace Portly.Tools
             {
                 try
                 {
+                    entry.Open[client] = 0;
+                    if (entry.Stopped) return; // it stopped just as this one was accepted
                     client.NoDelay = true;
                     client.ReceiveTimeout = 30000;   // the blocking reads of a chunked body
                     Stream cs = new GuardedStream(client.GetStream(), guard);
@@ -521,6 +542,8 @@ namespace Portly.Tools
                 catch { } // the device or the web server closed the connection
                 finally
                 {
+                    byte gone;
+                    entry.Open.TryRemove(client, out gone);
                     if (counted) Interlocked.Decrement(ref entry.Active);
                     if (tunnelSlot) Interlocked.Decrement(ref entry.Tunnels);
                     if (full) Interlocked.Decrement(ref entry.Refusing);

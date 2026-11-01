@@ -194,6 +194,25 @@ namespace Portly.SmokeTest
                 c.ReadToClose(3000);
                 Check("share: tunnel ends when the web server closes", c.Closed, "");
             }
+            // what is connected goes with the right to be connected
+            using (var web = new FakeWeb(h => Upgrade101) { Echo = true })
+            using (var c = new ShareClient(ShareProxy(s, web)))
+            {
+                c.Send(WsHead);
+                c.ReadUntil("101");
+                LanShare.SetPassword(ShareHost, "changed", true);
+                c.ReadToClose(3000);
+                Check("share: a new password ends open tunnels", c.Closed, "");
+            }
+            using (var web = new FakeWeb(h => Upgrade101) { Echo = true })
+            using (var c = new ShareClient(ShareProxy(s, web)))
+            {
+                c.Send(WsHead);
+                c.ReadUntil("101");
+                LanShare.StopTunnelProxy(ShareHost);
+                c.ReadToClose(3000);
+                Check("share: stopping the share ends open tunnels", c.Closed, "");
+            }
             using (var web = new FakeWeb(h => Upgrade101) { Echo = true })
             {
                 var c = new ShareClient(ShareProxy(s, web));
