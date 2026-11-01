@@ -1202,5 +1202,9 @@
   "sslfix.upgradeDone": "Yangi markaz ishlatilmoqda, {0} ta sayt sertifikati yangilandi.",
   "sslfix.upgradeRefused": "Yangi markazga ishonch bildirilmadi, shuning uchun hech narsa oʻzgartirilmadi.",
   "sslfix.upgraded": "Mahalliy sertifikatlash markazi almashtirildi, {0} ta sayt sertifikati yangilandi",
-  "sslfix.oldCaLeft": "Eski markazga hali ham ishoniladi. \"Tuzatish\" uni yana olib tashlashga urinadi."
+  "sslfix.oldCaLeft": "Eski markazga hali ham ishoniladi. \"Tuzatish\" uni yana olib tashlashga urinadi.",
+  "hosts.find": "Qidirish:",
+  "hosts.noMatch": "Natija topilmadi",
+  "hosts.findPrev": "Oldingi natija",
+  "hosts.findNext": "Keyingi natija"
 }

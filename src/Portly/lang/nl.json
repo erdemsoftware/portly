@@ -1202,5 +1202,9 @@
   "sslfix.upgradeDone": "Nieuwe certificeringsinstantie in gebruik, {0} sitecertificaten vernieuwd.",
   "sslfix.upgradeRefused": "De nieuwe certificeringsinstantie werd niet vertrouwd, dus er is niets gewijzigd.",
   "sslfix.upgraded": "Lokale certificeringsinstantie vervangen, {0} sitecertificaten vernieuwd",
-  "sslfix.oldCaLeft": "De oude certificeringsinstantie wordt nog steeds vertrouwd. \"Herstellen\" probeert die opnieuw te verwijderen."
+  "sslfix.oldCaLeft": "De oude certificeringsinstantie wordt nog steeds vertrouwd. \"Herstellen\" probeert die opnieuw te verwijderen.",
+  "hosts.find": "Zoeken:",
+  "hosts.noMatch": "Geen resultaat",
+  "hosts.findPrev": "Vorig resultaat",
+  "hosts.findNext": "Volgend resultaat"
 }

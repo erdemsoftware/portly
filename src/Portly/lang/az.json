@@ -1202,5 +1202,9 @@
   "sslfix.upgradeDone": "Yeni mərkəz istifadədədir, {0} sayt sertifikatı yeniləndi.",
   "sslfix.upgradeRefused": "Yeni mərkəzə etibar edilmədi, ona görə heç nə dəyişdirilmədi.",
   "sslfix.upgraded": "Yerli sertifikat mərkəzi dəyişdirildi, {0} sayt sertifikatı yeniləndi",
-  "sslfix.oldCaLeft": "Köhnə mərkəzə hələ də etibar edilir. \"Düzəlt\" onu yenidən silməyə çalışır."
+  "sslfix.oldCaLeft": "Köhnə mərkəzə hələ də etibar edilir. \"Düzəlt\" onu yenidən silməyə çalışır.",
+  "hosts.find": "Axtar:",
+  "hosts.noMatch": "Nəticə yoxdur",
+  "hosts.findPrev": "Əvvəlki nəticə",
+  "hosts.findNext": "Növbəti nəticə"
 }

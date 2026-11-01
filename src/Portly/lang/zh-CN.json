@@ -1202,5 +1202,9 @@
   "sslfix.upgradeDone": "新颁发机构已启用，已续订 {0} 个站点证书。",
   "sslfix.upgradeRefused": "新颁发机构未受信任，因此未做任何更改。",
   "sslfix.upgraded": "本地证书颁发机构已替换，已续订 {0} 个站点证书",
-  "sslfix.oldCaLeft": "旧颁发机构仍受信任。“修复”会再次尝试移除它。"
+  "sslfix.oldCaLeft": "旧颁发机构仍受信任。“修复”会再次尝试移除它。",
+  "hosts.find": "搜索:",
+  "hosts.noMatch": "无匹配项",
+  "hosts.findPrev": "上一个匹配项",
+  "hosts.findNext": "下一个匹配项"
 }

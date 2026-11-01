@@ -77,6 +77,12 @@ namespace Portly.SmokeTest
             Check("SitesWeb: dashboard shows aliases", Get(http, "localhost").Contains("demo-alias.localhost"));
             Check("SitesWeb: alias validation", Sites.IsValidAlias("*.shop.test") && Sites.IsValidAlias("a-b.c") && !Sites.IsValidAlias("*.*.x.y") && !Sites.IsValidAlias("bad name.test") && !Sites.IsValidAlias("single"));
             Check("SitesWeb: hosts file skips wildcards and .localhost", HostsFile.NeedsEntry("shop.test") && !HostsFile.NeedsEntry("*.shop.test") && !HostsFile.NeedsEntry("a.localhost"));
+            var hostsHits = Portly.UI.HostsForm.FindAll("127.0.0.1 Shop\r\n# shop\r\nSHOPshop", "shop");
+            Check("SitesWeb: hosts search finds every match, ignoring case", string.Join(",", hostsHits) == "10,18,24,28", string.Join(",", hostsHits));
+            Check("SitesWeb: hosts search with nothing to find", Portly.UI.HostsForm.FindAll("abc", "").Count == 0 && Portly.UI.HostsForm.FindAll("abc", "x").Count == 0 && Portly.UI.HostsForm.FindStep(new System.Collections.Generic.List<int>(), 0, true) == -1);
+            Check("SitesWeb: hosts search moves on and wraps at both ends",
+                Portly.UI.HostsForm.FindStep(hostsHits, 11, true) == 18 && Portly.UI.HostsForm.FindStep(hostsHits, 29, true) == 10
+                && Portly.UI.HostsForm.FindStep(hostsHits, 18, false) == 10 && Portly.UI.HostsForm.FindStep(hostsHits, 10, false) == 28);
 
             // ---------- own certificate (.pfx) ----------
             Features.Set("customCerts", true);

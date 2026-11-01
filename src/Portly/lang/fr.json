@@ -1202,5 +1202,9 @@
   "sslfix.upgradeDone": "Nouvelle autorité en service, {0} certificats de site renouvelés.",
   "sslfix.upgradeRefused": "La nouvelle autorité n'a pas été approuvée, rien n'a donc été modifié.",
   "sslfix.upgraded": "Autorité de certification locale remplacée, {0} certificats de site renouvelés",
-  "sslfix.oldCaLeft": "L'ancienne autorité est toujours approuvée. \"Réparer\" essaie de nouveau de la supprimer."
+  "sslfix.oldCaLeft": "L'ancienne autorité est toujours approuvée. \"Réparer\" essaie de nouveau de la supprimer.",
+  "hosts.find": "Rechercher :",
+  "hosts.noMatch": "Aucun résultat",
+  "hosts.findPrev": "Résultat précédent",
+  "hosts.findNext": "Résultat suivant"
 }

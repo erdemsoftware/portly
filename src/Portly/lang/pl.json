@@ -1202,5 +1202,9 @@
   "sslfix.upgradeDone": "Nowy urząd certyfikacji jest w użyciu, odnowiono certyfikaty stron ({0}).",
   "sslfix.upgradeRefused": "Nowy urząd certyfikacji nie został uznany za zaufany, więc niczego nie zmieniono.",
   "sslfix.upgraded": "Zastąpiono lokalny urząd certyfikacji, odnowiono certyfikaty stron ({0})",
-  "sslfix.oldCaLeft": "Stary urząd certyfikacji jest nadal zaufany. \"Napraw\" spróbuje go usunąć ponownie."
+  "sslfix.oldCaLeft": "Stary urząd certyfikacji jest nadal zaufany. \"Napraw\" spróbuje go usunąć ponownie.",
+  "hosts.find": "Szukaj:",
+  "hosts.noMatch": "Brak wyników",
+  "hosts.findPrev": "Poprzedni wynik",
+  "hosts.findNext": "Następny wynik"
 }

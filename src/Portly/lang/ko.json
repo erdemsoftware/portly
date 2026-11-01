@@ -1202,5 +1202,9 @@
   "sslfix.upgradeDone": "새 인증 기관을 사용 중입니다. 사이트 인증서 {0}개를 갱신했습니다.",
   "sslfix.upgradeRefused": "새 인증 기관이 신뢰되지 않아 아무것도 변경하지 않았습니다.",
   "sslfix.upgraded": "로컬 인증 기관을 교체하고 사이트 인증서 {0}개를 갱신했습니다",
-  "sslfix.oldCaLeft": "이전 인증 기관이 아직 신뢰되고 있습니다. \"복구\"에서 다시 제거를 시도합니다."
+  "sslfix.oldCaLeft": "이전 인증 기관이 아직 신뢰되고 있습니다. \"복구\"에서 다시 제거를 시도합니다.",
+  "hosts.find": "검색:",
+  "hosts.noMatch": "일치 항목 없음",
+  "hosts.findPrev": "이전 항목",
+  "hosts.findNext": "다음 항목"
 }

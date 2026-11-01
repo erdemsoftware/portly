@@ -1202,5 +1202,9 @@
   "sslfix.upgradeDone": "Nueva autoridad en uso, {0} certificados de sitio renovados.",
   "sslfix.upgradeRefused": "No se confió en la nueva autoridad, así que no se cambió nada.",
   "sslfix.upgraded": "Autoridad de certificación local reemplazada, {0} certificados de sitio renovados",
-  "sslfix.oldCaLeft": "La autoridad antigua sigue siendo de confianza. \"Reparar\" intenta quitarla de nuevo."
+  "sslfix.oldCaLeft": "La autoridad antigua sigue siendo de confianza. \"Reparar\" intenta quitarla de nuevo.",
+  "hosts.find": "Buscar:",
+  "hosts.noMatch": "Sin resultados",
+  "hosts.findPrev": "Resultado anterior",
+  "hosts.findNext": "Resultado siguiente"
 }

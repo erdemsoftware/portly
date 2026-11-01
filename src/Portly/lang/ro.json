@@ -1202,5 +1202,9 @@
   "sslfix.upgradeDone": "Autoritatea nouă este în uz, {0} certificate de site reînnoite.",
   "sslfix.upgradeRefused": "Autoritatea nouă nu a fost acceptată ca fiind de încredere, așa că nu s-a schimbat nimic.",
   "sslfix.upgraded": "Autoritatea de certificare locală a fost înlocuită, {0} certificate de site reînnoite",
-  "sslfix.oldCaLeft": "Autoritatea veche este încă de încredere. \"Repară\" încearcă din nou să o elimine."
+  "sslfix.oldCaLeft": "Autoritatea veche este încă de încredere. \"Repară\" încearcă din nou să o elimine.",
+  "hosts.find": "Caută:",
+  "hosts.noMatch": "Niciun rezultat",
+  "hosts.findPrev": "Rezultatul anterior",
+  "hosts.findNext": "Rezultatul următor"
 }

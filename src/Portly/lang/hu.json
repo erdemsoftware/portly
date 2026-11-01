@@ -1202,5 +1202,9 @@
   "sslfix.upgradeDone": "Az új hitelesítésszolgáltató használatban, {0} webhelytanúsítvány megújítva.",
   "sslfix.upgradeRefused": "Az új hitelesítésszolgáltató nem lett megbízható, ezért semmi sem változott.",
   "sslfix.upgraded": "A helyi hitelesítésszolgáltató lecserélve, {0} webhelytanúsítvány megújítva",
-  "sslfix.oldCaLeft": "A régi hitelesítésszolgáltató továbbra is megbízható. A \"Javítás\" újra megpróbálja eltávolítani."
+  "sslfix.oldCaLeft": "A régi hitelesítésszolgáltató továbbra is megbízható. A \"Javítás\" újra megpróbálja eltávolítani.",
+  "hosts.find": "Keresés:",
+  "hosts.noMatch": "Nincs találat",
+  "hosts.findPrev": "Előző találat",
+  "hosts.findNext": "Következő találat"
 }

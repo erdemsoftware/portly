@@ -1202,5 +1202,9 @@
   "sslfix.upgradeDone": "Nuova autorità in uso, {0} certificati dei siti rinnovati.",
   "sslfix.upgradeRefused": "La nuova autorità non è stata considerata attendibile, quindi non è stato modificato nulla.",
   "sslfix.upgraded": "Autorità di certificazione locale sostituita, {0} certificati dei siti rinnovati",
-  "sslfix.oldCaLeft": "La vecchia autorità è ancora attendibile. \"Ripara\" tenta di nuovo di rimuoverla."
+  "sslfix.oldCaLeft": "La vecchia autorità è ancora attendibile. \"Ripara\" tenta di nuovo di rimuoverla.",
+  "hosts.find": "Cerca:",
+  "hosts.noMatch": "Nessun risultato",
+  "hosts.findPrev": "Risultato precedente",
+  "hosts.findNext": "Risultato successivo"
 }

@@ -1202,5 +1202,9 @@
   "sslfix.upgradeDone": "Yeni yetkili kullanımda, {0} site sertifikası yenilendi.",
   "sslfix.upgradeRefused": "Yeni yetkiliye güvenilmedi, bu yüzden hiçbir şey değiştirilmedi.",
   "sslfix.upgraded": "Yerel sertifika yetkilisi değiştirildi, {0} site sertifikası yenilendi",
-  "sslfix.oldCaLeft": "Eski yetkiliye hâlâ güveniliyor. \"Onar\" onu yeniden kaldırmayı dener."
+  "sslfix.oldCaLeft": "Eski yetkiliye hâlâ güveniliyor. \"Onar\" onu yeniden kaldırmayı dener.",
+  "hosts.find": "Ara:",
+  "hosts.noMatch": "Sonuç yok",
+  "hosts.findPrev": "Önceki sonuç",
+  "hosts.findNext": "Sonraki sonuç"
 }

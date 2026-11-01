@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -13,7 +14,8 @@ namespace Portly.UI
     /// </summary>
     public class HostsForm : Form
     {
-        readonly TextBox _text;
+        readonly TextBox _text, _find;
+        readonly Label _count;
         readonly ModernButton _save, _close;
         string _loaded;
         bool _busy;
@@ -33,9 +35,21 @@ namespace Portly.UI
             top.Controls.Add(new Label { Dock = DockStyle.Top, AutoSize = true, MaximumSize = new Size(Ui.S(710), 0), ForeColor = Ui.Muted, Text = I18n.T("hosts.editIntro", HostsFile.FilePath) });
 
             // MaxLength 0: a multiline box stops typing at 32 KB otherwise, and hosts files can be bigger
-            _text = new TextBox { Dock = DockStyle.Fill, Multiline = true, AcceptsReturn = true, AcceptsTab = true, ScrollBars = ScrollBars.Both, WordWrap = false, Font = Ui.Mono, MaxLength = 0 };
+            // HideSelection off: the match stays visible while the focus is in the search box
+            _text = new TextBox { Dock = DockStyle.Fill, Multiline = true, AcceptsReturn = true, AcceptsTab = true, ScrollBars = ScrollBars.Both, WordWrap = false, Font = Ui.Mono, MaxLength = 0, HideSelection = false };
             var host = new Panel { Dock = DockStyle.Fill, Padding = Ui.P(16, 4, 16, 4), BackColor = Ui.Bg };
             host.Controls.Add(_text);
+
+            var bar = new FlowLayoutPanel { Dock = DockStyle.Top, AutoSize = true, WrapContents = true, BackColor = Color.Transparent, Padding = Ui.P(0, 0, 0, 6) };
+            bar.Controls.Add(Ui.Label(I18n.T("hosts.find")));
+            _find = new TextBox { Width = Ui.S(220), Margin = Ui.P(0, 4, 8, 0) };
+            bar.Controls.Add(_find);
+            bar.Controls.Add(FindButton("▲", "hosts.findPrev", false));
+            bar.Controls.Add(FindButton("▼", "hosts.findNext", true));
+            _count = Ui.Label("", Ui.Small, Ui.Muted);
+            _count.Margin = Ui.P(4, 8, 0, 4);
+            bar.Controls.Add(_count);
+            host.Controls.Add(bar);
 
             var bottom = new Panel { Dock = DockStyle.Bottom, AutoSize = true, Padding = Ui.P(16, 6, 16, 12), BackColor = Ui.Bg };
             var row = new FlowLayoutPanel { Dock = DockStyle.Top, AutoSize = true, WrapContents = true };
@@ -51,7 +65,16 @@ namespace Portly.UI
 
             KeyDown += async (s, e) =>
             {
-                if (e.Control && e.KeyCode == Keys.S) { e.SuppressKeyPress = true; await Save(); }
+                if (e.Control && e.KeyCode == Keys.F) { e.SuppressKeyPress = true; _find.Focus(); _find.SelectAll(); }
+                else if (e.KeyCode == Keys.F3) { e.SuppressKeyPress = true; Find(!e.Shift); }
+                else if (e.Control && e.KeyCode == Keys.S) { e.SuppressKeyPress = true; await Save(); }
+            };
+            _find.TextChanged += (s, e) => Find(true, true);
+            _text.TextChanged += (s, e) => ShowCount(FindAll(_text.Text, _find.Text));
+            _find.KeyDown += (s, e) =>
+            {
+                if (e.KeyCode == Keys.Enter) { e.SuppressKeyPress = true; Find(!e.Shift); }
+                else if (e.KeyCode == Keys.Escape) { e.SuppressKeyPress = true; _text.Focus(); }
             };
             FormClosing += (s, e) =>
             {
@@ -63,6 +86,65 @@ namespace Portly.UI
         }
 
         bool Changed { get { return _loaded != null && _text.Text != _loaded; } }
+
+        ModernButton FindButton(string arrow, string key, bool forward)
+        {
+            var b = Ui.Button(arrow, (s, e) => Find(forward));
+            b.Padding = Ui.P(8, 6, 8, 6);
+            b.Margin = Ui.P(0, 0, 4, 0);
+            b.AccessibleName = I18n.T(key);
+            return b;
+        }
+
+        /// <summary>Where every match starts, ignoring case.</summary>
+        public static List<int> FindAll(string text, string query)
+        {
+            var all = new List<int>();
+            if (string.IsNullOrEmpty(query)) return all;
+            for (var i = text.IndexOf(query, StringComparison.OrdinalIgnoreCase); i >= 0; i = text.IndexOf(query, i + query.Length, StringComparison.OrdinalIgnoreCase))
+                all.Add(i);
+            return all;
+        }
+
+        /// <summary>The match to go to from a position, wrapping around at either end; -1 without matches.</summary>
+        public static int FindStep(List<int> all, int from, bool forward)
+        {
+            if (all.Count == 0) return -1;
+            if (forward)
+            {
+                foreach (var at in all) if (at >= from) return at;
+                return all[0];
+            }
+            for (var i = all.Count - 1; i >= 0; i--) if (all[i] < from) return all[i];
+            return all[all.Count - 1];
+        }
+
+        /// <summary>stay: typing keeps a match that still fits instead of moving on to the next one.</summary>
+        void Find(bool forward, bool stay = false)
+        {
+            var query = _find.Text;
+            if (query.Length == 0 && !stay) { _find.Focus(); return; }
+            var all = FindAll(_text.Text, query);
+            var at = FindStep(all, _text.SelectionStart + (forward && !stay && _text.SelectionLength > 0 ? 1 : 0), forward);
+            if (at >= 0)
+            {
+                _text.Select(at, query.Length);
+                _text.ScrollToCaret();
+            }
+            ShowCount(all);
+        }
+
+        void ShowCount(List<int> all)
+        {
+            var query = _find.Text;
+            if (query.Length == 0) _count.Text = "";
+            else if (all.Count == 0) _count.Text = I18n.T("hosts.noMatch");
+            else
+            {
+                var i = _text.SelectionLength == query.Length ? all.IndexOf(_text.SelectionStart) : -1;
+                _count.Text = (i >= 0 ? (i + 1) + " / " : "") + all.Count;
+            }
+        }
 
         /// <summary>Without a readable file the box stays locked: saving an empty text would wipe it.</summary>
         void Reload()

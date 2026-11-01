@@ -1202,5 +1202,9 @@
   "sslfix.upgradeDone": "Nová autorita se používá, obnoveno certifikátů webů: {0}.",
   "sslfix.upgradeRefused": "Nová autorita nebyla označena jako důvěryhodná, proto se nic nezměnilo.",
   "sslfix.upgraded": "Místní certifikační autorita byla nahrazena, obnoveno certifikátů webů: {0}",
-  "sslfix.oldCaLeft": "Stará autorita je stále důvěryhodná. \"Opravit\" se ji pokusí odebrat znovu."
+  "sslfix.oldCaLeft": "Stará autorita je stále důvěryhodná. \"Opravit\" se ji pokusí odebrat znovu.",
+  "hosts.find": "Hledat:",
+  "hosts.noMatch": "Žádná shoda",
+  "hosts.findPrev": "Předchozí shoda",
+  "hosts.findNext": "Další shoda"
 }

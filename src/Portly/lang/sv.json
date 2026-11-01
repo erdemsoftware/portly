@@ -1202,5 +1202,9 @@
   "sslfix.upgradeDone": "Ny certifikatutfärdare används, {0} webbplatscertifikat förnyade.",
   "sslfix.upgradeRefused": "Den nya certifikatutfärdaren blev inte betrodd, så inget ändrades.",
   "sslfix.upgraded": "Den lokala certifikatutfärdaren ersattes, {0} webbplatscertifikat förnyade",
-  "sslfix.oldCaLeft": "Den gamla certifikatutfärdaren är fortfarande betrodd. \"Reparera\" försöker ta bort den igen."
+  "sslfix.oldCaLeft": "Den gamla certifikatutfärdaren är fortfarande betrodd. \"Reparera\" försöker ta bort den igen.",
+  "hosts.find": "Sök:",
+  "hosts.noMatch": "Ingen träff",
+  "hosts.findPrev": "Föregående träff",
+  "hosts.findNext": "Nästa träff"
 }

@@ -1202,5 +1202,9 @@
   "sslfix.upgradeDone": "新しい証明機関を使用中です。{0} 件のサイト証明書を更新しました。",
   "sslfix.upgradeRefused": "新しい証明機関が信頼されなかったため、何も変更していません。",
   "sslfix.upgraded": "ローカル証明機関を置き換え、{0} 件のサイト証明書を更新しました",
-  "sslfix.oldCaLeft": "古い証明機関はまだ信頼されています。「修復」でもう一度削除を試みます。"
+  "sslfix.oldCaLeft": "古い証明機関はまだ信頼されています。「修復」でもう一度削除を試みます。",
+  "hosts.find": "検索:",
+  "hosts.noMatch": "一致なし",
+  "hosts.findPrev": "前の一致",
+  "hosts.findNext": "次の一致"
 }

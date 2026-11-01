@@ -1202,5 +1202,9 @@
   "sslfix.upgradeDone": "Pihak berkuasa baharu digunakan, {0} sijil laman diperbaharui.",
   "sslfix.upgradeRefused": "Pihak berkuasa baharu tidak dipercayai, jadi tiada apa yang diubah.",
   "sslfix.upgraded": "Pihak berkuasa sijil tempatan diganti, {0} sijil laman diperbaharui",
-  "sslfix.oldCaLeft": "Pihak berkuasa lama masih dipercayai. \"Baiki\" cuba membuangnya semula."
+  "sslfix.oldCaLeft": "Pihak berkuasa lama masih dipercayai. \"Baiki\" cuba membuangnya semula.",
+  "hosts.find": "Cari:",
+  "hosts.noMatch": "Tiada hasil",
+  "hosts.findPrev": "Hasil sebelumnya",
+  "hosts.findNext": "Hasil seterusnya"
 }

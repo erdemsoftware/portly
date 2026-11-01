@@ -1202,5 +1202,9 @@
   "sslfix.upgradeDone": "New authority in use, {0} site certificates renewed.",
   "sslfix.upgradeRefused": "The new authority was not trusted, so nothing was changed.",
   "sslfix.upgraded": "Local certificate authority replaced, {0} site certificates renewed",
-  "sslfix.oldCaLeft": "The old authority is still trusted. \"Fix\" tries to remove it again."
+  "sslfix.oldCaLeft": "The old authority is still trusted. \"Fix\" tries to remove it again.",
+  "hosts.find": "Search:",
+  "hosts.noMatch": "No match",
+  "hosts.findPrev": "Previous match",
+  "hosts.findNext": "Next match"
 }

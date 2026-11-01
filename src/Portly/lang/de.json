@@ -1202,5 +1202,9 @@
   "sslfix.upgradeDone": "Neue Zertifizierungsstelle in Verwendung, {0} Website-Zertifikate erneuert.",
   "sslfix.upgradeRefused": "Die neue Zertifizierungsstelle wurde nicht als vertrauenswürdig eingestuft, daher wurde nichts geändert.",
   "sslfix.upgraded": "Lokale Zertifizierungsstelle ersetzt, {0} Website-Zertifikate erneuert",
-  "sslfix.oldCaLeft": "Die alte Zertifizierungsstelle ist weiterhin vertrauenswürdig. \"Reparieren\" versucht erneut, sie zu entfernen."
+  "sslfix.oldCaLeft": "Die alte Zertifizierungsstelle ist weiterhin vertrauenswürdig. \"Reparieren\" versucht erneut, sie zu entfernen.",
+  "hosts.find": "Suchen:",
+  "hosts.noMatch": "Kein Treffer",
+  "hosts.findPrev": "Vorheriger Treffer",
+  "hosts.findNext": "Nächster Treffer"
 }

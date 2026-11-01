@@ -1202,5 +1202,9 @@
   "sslfix.upgradeDone": "Otoritas baru digunakan, {0} sertifikat situs diperbarui.",
   "sslfix.upgradeRefused": "Otoritas baru tidak tepercaya, jadi tidak ada yang diubah.",
   "sslfix.upgraded": "Otoritas sertifikat lokal diganti, {0} sertifikat situs diperbarui",
-  "sslfix.oldCaLeft": "Otoritas lama masih tepercaya. \"Perbaiki\" mencoba menghapusnya lagi."
+  "sslfix.oldCaLeft": "Otoritas lama masih tepercaya. \"Perbaiki\" mencoba menghapusnya lagi.",
+  "hosts.find": "Cari:",
+  "hosts.noMatch": "Tidak ada hasil",
+  "hosts.findPrev": "Hasil sebelumnya",
+  "hosts.findNext": "Hasil berikutnya"
 }

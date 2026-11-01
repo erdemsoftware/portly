@@ -10,3 +10,6 @@ obj/
 # a Portly folder used for testing next to the sources
 portable/
 
+
+# private keys kept next to the sources, never committed
+secrets/

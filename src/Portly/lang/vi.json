@@ -1202,5 +1202,9 @@
   "sslfix.upgradeDone": "Đang dùng tổ chức cấp chứng chỉ mới, đã gia hạn {0} chứng chỉ trang.",
   "sslfix.upgradeRefused": "Tổ chức cấp chứng chỉ mới không được tin cậy, nên không có gì thay đổi.",
   "sslfix.upgraded": "Đã thay tổ chức cấp chứng chỉ cục bộ, đã gia hạn {0} chứng chỉ trang",
-  "sslfix.oldCaLeft": "Tổ chức cấp chứng chỉ cũ vẫn được tin cậy. \"Sửa\" sẽ thử xóa lại."
+  "sslfix.oldCaLeft": "Tổ chức cấp chứng chỉ cũ vẫn được tin cậy. \"Sửa\" sẽ thử xóa lại.",
+  "hosts.find": "Tìm:",
+  "hosts.noMatch": "Không có kết quả",
+  "hosts.findPrev": "Kết quả trước",
+  "hosts.findNext": "Kết quả tiếp theo"
 }
