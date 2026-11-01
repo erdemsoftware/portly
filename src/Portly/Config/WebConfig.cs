@@ -51,6 +51,17 @@ namespace Portly.Config
             }
         }
 
+        /// <summary>
+        /// Host header the dashboard and the tools answer to: this computer's own names, with or without a Portly port.
+        /// A check of the client address is not enough: a web page can point its own domain at 127.0.0.1 (DNS rebinding),
+        /// then the visitor's browser connects from this computer but sends the foreign name.
+        /// </summary>
+        internal static string LocalHostPattern()
+        {
+            var s = Settings.Current;
+            return @"^(localhost|127\.0\.0\.1|\[::1\])(:(" + s.HttpPort + "|" + s.HttpsPort + "))?$";
+        }
+
         static void CleanAuto(string dir, IEnumerable<string> keep)
         {
             Directory.CreateDirectory(dir);
@@ -86,6 +97,12 @@ namespace Portly.Config
             // tools (/adminer, /phpmyadmin) on http://localhost only
             Directory.CreateDirectory(ApacheAlias);
             var aliasText = new StringBuilder("# " + v["GENERATED"] + "\r\n");
+            // included by both default vhosts: covers the dashboard and every alias. Here and not in httpd.conf so that a
+            // customized template in usr\templates gets it too. AuthMerging And keeps the <Directory> and <Files> rules.
+            // Portly's own shares connect from 127.0.0.1 too and always send X-Forwarded-Host: a first line such as
+            // "GET http://localhost/phpmyadmin/" would otherwise pick this vhost and win over the Host header they set.
+            aliasText.Append("<Location \"/\">\r\n    AuthMerging And\r\n    <RequireAll>\r\n        Require local\r\n        Require expr \"%{HTTP_HOST} =~ m#")
+                .Append(LocalHostPattern()).Append("#i\"\r\n        Require expr \"-z %{req:X-Forwarded-Host}\"\r\n    </RequireAll>\r\n</Location>\r\n");
             foreach (var tool in ToolApps.WebTools())
             {
                 aliasText.Append("Alias /").Append(tool.Item1).Append(" \"").Append(Paths.Fwd(tool.Item2)).Append("\"\r\n");
@@ -163,6 +180,8 @@ namespace Portly.Config
 
             Directory.CreateDirectory(NginxAlias);
             var alias = new StringBuilder("# " + v["GENERATED"] + "\r\n");
+            // included by the default server, for the same reason as Apache; $http_host because $host falls back to server_name without a Host header
+            alias.Append("if ($http_host !~* \"").Append(LocalHostPattern()).Append("\") {\r\n    return 403;\r\n}\r\n");
             int toolPort = defaultPhp == "" ? 0 : phpPort(defaultPhp);
             foreach (var tool in ToolApps.WebTools())
             {

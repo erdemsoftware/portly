@@ -15,13 +15,23 @@
 }
 
 # http://localhost -> Portly dashboard and tools (/adminer, /phpmyadmin), this computer only
+# route keeps this order: on its own Caddy sorts respond behind handle, so the refusal would never run.
+# Both must hold: a local client and a local name (a foreign name on 127.0.0.1 is DNS rebinding).
 (portly_dashboard) {
-	@remote not remote_ip 127.0.0.1 ::1
-	respond @remote 403
-{{TOOLS}}	handle {
-		root * "{{DASHBOARD}}"
-		{{PHP}}
-		file_server
+	route {
+		@refused not {
+			remote_ip 127.0.0.1 ::1
+			header_regexp Host "(?i){{LOCAL_HOST}}"
+		}
+		respond @refused 403
+		# Portly's own shares connect from 127.0.0.1 too: see WebConfig
+		@shared header X-Forwarded-Host *
+		respond @shared 403
+{{TOOLS}}		handle {
+			root * "{{DASHBOARD}}"
+			{{PHP}}
+			file_server
+		}
 	}
 }
 

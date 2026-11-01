@@ -33,8 +33,9 @@ namespace Portly.Config
             v["DASHBOARD"] = Paths.Fwd(ToolApps.DashboardDir);
             v["DEFAULT_BIND"] = s.AllowLan ? "" : "default_bind 127.0.0.1" + (Net.LoopbackV6 ? " [::1]" : "");
             v["PHP"] = defaultPhp == "" ? "" : "php_fastcgi 127.0.0.1:" + phpPort(defaultPhp);
+            v["LOCAL_HOST"] = WebConfig.LocalHostPattern();
 
-            // /adminer, /phpmyadmin on http://localhost only (the dashboard block answers local addresses only)
+            // /adminer, /phpmyadmin on http://localhost only (the dashboard block refuses other addresses and names)
             var tools = new StringBuilder();
             foreach (var tool in ToolApps.WebTools())
             {
@@ -44,7 +45,8 @@ namespace Portly.Config
                 tools.Append("\t\tfile_server\r\n\t}\r\n");
             }
             v["TOOLS"] = tools.ToString();
-            v["DEFAULT_SSL"] = ssl ? "https://localhost:" + s.HttpsPort + ", https://127.0.0.1:" + s.HttpsPort + " {\r\n\ttls " + Q(certs["localhost"].Item1) + " " + Q(certs["localhost"].Item2) + "\r\n\timport portly_dashboard\r\n}" : "";
+            // every name on the HTTPS port, like http://:port above: a name of no block would get an empty 200 instead of the refusal
+            v["DEFAULT_SSL"] = ssl ? "https://:" + s.HttpsPort + " {\r\n\ttls " + Q(certs["localhost"].Item1) + " " + Q(certs["localhost"].Item2) + "\r\n\timport portly_dashboard\r\n}" : "";
 
             var siteText = new StringBuilder();
             if (s.AutoVhosts)

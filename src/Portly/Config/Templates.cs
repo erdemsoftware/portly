@@ -44,6 +44,7 @@ namespace Portly.Config
                 { "LOGS", Paths.Fwd(Paths.Logs) },
                 { "TMP", Paths.Fwd(Paths.Tmp) },
                 { "DATA", Paths.Fwd(Paths.Data) },
+                { "MYSQL_FILES", Paths.Fwd(Paths.MysqlFiles) },
                 { "DOC_ROOT", Paths.Fwd(s.DocumentRoot) },
                 { "HTTP_PORT", s.HttpPort.ToString() },
                 { "HTTPS_PORT", s.HttpsPort.ToString() },

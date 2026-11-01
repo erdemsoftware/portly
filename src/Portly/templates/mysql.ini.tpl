@@ -17,7 +17,7 @@ innodb_buffer_pool_size=256M
 max_connections=200
 table_open_cache=1024
 log-error="{{LOGS}}/mysql-error.log"
-secure-file-priv=""
+secure-file-priv="{{MYSQL_FILES}}"
 explicit_defaults_for_timestamp=1
 {{MYSQL_EXTRA}}
 {{SQL_MODE}}
