@@ -23,6 +23,12 @@ namespace Portly.Core
             set { _ini.Set("mysql", "StorageEngine", value); }
         }
 
+        /// <summary>
+        /// A root password is stored, also when this Windows user cannot decrypt it (folder moved to another PC):
+        /// MysqlRootPassword is "" then, yet the server does want a password.
+        /// </summary>
+        public bool HasRootPassword { get { return _ini.Get("mysql", "RootPassword", "") != ""; } }
+
         // ---------- access from WSL (feature "wsl") ----------
         /// <summary>Access from WSL was set up (user, bind address, firewall rule).</summary>
         public bool WslAccess { get { return _ini.GetBool("wsl", "Enabled", false); } set { _ini.Set("wsl", "Enabled", value); } }

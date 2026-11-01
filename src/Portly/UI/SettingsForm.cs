@@ -154,6 +154,17 @@ namespace Portly.UI
 
             // ---------------- databases ----------------
             var g3 = Grid();
+            // works at once on the running server, not with the Save button
+            var rootHint = Hint(DatabaseUi.RootStatus());
+            var rootButton = Ui.Button(I18n.T(s.HasRootPassword ? "db.password" : "dbroot.set"), null);
+            rootButton.Click += (o, e) =>
+            {
+                DatabaseUi.RootPassword(this);
+                rootHint.Text = DatabaseUi.RootStatus();
+                rootButton.Text = I18n.T(Settings.Current.HasRootPassword ? "db.password" : "dbroot.set");
+            };
+            AddRow(g3, I18n.T("dbroot.title"), rootButton);
+            AddRow(g3, "", rootHint);
             _backup = new ThemedCombo { Width = Ui.S(220) };
             foreach (var h in new[] { 0, 24, 12, 6 })
                 _backup.Items.Add(new Item(h == 0 ? I18n.T("settings.backupOff") : I18n.T("settings.backupEvery", h), h.ToString()));

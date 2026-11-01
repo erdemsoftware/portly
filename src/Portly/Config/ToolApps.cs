@@ -67,11 +67,14 @@ namespace Portly.Config
         }
 
         /// <summary>phpMyAdmin config: cookie login, empty root password allowed (local only), current MySQL port.</summary>
-        /// <summary>Skip phpMyAdmin's login: root has no password and is the only account. When the server cannot be
-        /// asked (not running yet) the last answer is kept, so the page does not flip between the two.</summary>
+        /// <summary>Skip phpMyAdmin's login: root has no password and is the only account, and LAN access is off (with
+        /// LAN access on, a mistake in the web server's rules should not end at a logged-in root; the login page still
+        /// accepts root with an empty password). When the server cannot be asked (not running yet) the last answer is
+        /// kept, so the page does not flip between the two.
+        /// Adminer needs nothing: it has no auto login, it always shows its own form.</summary>
         static bool AutoLogin()
         {
-            if (Settings.Current.MysqlRootPassword != "") return false;
+            if (Settings.Current.HasRootPassword || Settings.Current.AllowLan) return false;
             var ini = Settings.Current.Raw;
             int others = Tools.Database.OtherUserCount();
             if (others < 0) return ini.GetInt("phpmyadmin", "OtherUsers", 0) == 0;
@@ -106,7 +109,7 @@ namespace Portly.Config
                           "$cfg['blowfish_secret'] = '" + secret + "';\n" +
                           "$i = 1;\n" +
                           // only root and without a password: open logged in (only this computer can reach /phpmyadmin,
-                          // see WebConfig). A password or other accounts: the login page, so the user can choose who logs in.
+                          // see WebConfig). A password, other accounts or LAN access: the login page, so the user can choose who logs in.
                           // The password is never written to this file.
                           (AutoLogin()
                               ? "$cfg['Servers'][$i]['auth_type'] = 'config';\n$cfg['Servers'][$i]['user'] = 'root';\n$cfg['Servers'][$i]['password'] = '';\n"

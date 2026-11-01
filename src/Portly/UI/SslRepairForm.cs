@@ -14,8 +14,8 @@ namespace Portly.UI
     {
         readonly List<Site> _sites;
         readonly FlowLayoutPanel _list;
-        readonly Label _summary;
-        readonly ModernButton _fix, _close;
+        readonly Label _summary, _upgradeText;
+        readonly ModernButton _fix, _close, _upgrade;
 
         public SslRepairForm(List<Site> sites)
         {
@@ -43,13 +43,19 @@ namespace Portly.UI
             t.Controls.Add(_summary);
             _list = new ScrollFlow { FlowDirection = FlowDirection.TopDown, WrapContents = false, Width = Ui.S(560), Margin = Padding.Empty };
             t.Controls.Add(_list);
+            _upgradeText = Ui.Label("", Ui.Small, Ui.Muted);
+            _upgradeText.MaximumSize = new Size(Ui.S(540), 0);
+            _upgradeText.Margin = Ui.P(0, 10, 0, 0);
+            t.Controls.Add(_upgradeText);
 
             var buttons = new FlowLayoutPanel { AutoSize = true, FlowDirection = FlowDirection.RightToLeft, Dock = DockStyle.Fill, Margin = Ui.P(0, 12, 0, 0) };
             _close = Ui.Button(I18n.T("common.close"), (s, e) => Close());
             _close.Margin = Padding.Empty;
             _fix = Ui.Button(I18n.T("sslfix.fix"), async (s, e) => await Fix(), true, "refresh");
+            _upgrade = Ui.Button(I18n.T("sslfix.upgrade"), async (s, e) => await Upgrade());
             buttons.Controls.Add(_close);
             buttons.Controls.Add(_fix);
+            buttons.Controls.Add(_upgrade);
             t.Controls.Add(buttons);
             Controls.Add(t);
             CancelButton = _close;
@@ -63,6 +69,7 @@ namespace Portly.UI
             {
                 _summary.Text = I18n.T("sslfix.sslOff");
                 _fix.Enabled = false;
+                _upgrade.Visible = _upgradeText.Visible = false;
                 return;
             }
             int bad = r.Sites.Count(x => x.Problem != null && !x.Renewed);
@@ -82,7 +89,14 @@ namespace Portly.UI
             else
                 _summary.Text = I18n.T("sslfix.done", r.Renewed) + (r.CaTrusted ? "" : "\n" + I18n.T("sslfix.caStillNot")) + "\n" + I18n.T("sslfix.browserHint");
             _fix.Visible = !after;
-            _fix.Enabled = !r.CaTrusted || bad > 0;
+            // sites outside the authority's names: only the upgrade below helps them
+            _fix.Enabled = !r.CaTrusted || bad > r.OutsideCa.Count || r.OldCas > 0;
+            if (r.OldCas > 0) AddLine(false, I18n.T("sslfix.oldCaLeft"), null);
+            // optional: an existing authority is never replaced without being asked
+            var outside = r.OutsideCa;
+            _upgrade.Visible = _upgradeText.Visible = r.CaUnrestricted || outside.Count > 0;
+            _upgrade.Enabled = true;
+            _upgradeText.Text = outside.Count > 0 ? I18n.T("sslfix.outside", string.Join(", ", outside.Select(x => x.Site.Host))) : I18n.T("sslfix.upgradeIntro");
         }
 
         void AddLine(bool ok, string what, string detail)
@@ -108,6 +122,22 @@ namespace Portly.UI
                 row.Controls.Add(d);
             }
             _list.Controls.Add(row);
+        }
+
+        async System.Threading.Tasks.Task Upgrade()
+        {
+            if (!Ui.Confirm(this, I18n.T("sslfix.upgradeConfirm", string.Join(", ", Certs.PermittedNames())))) return;
+            _fix.Enabled = _close.Enabled = _upgrade.Enabled = false;
+            _summary.Text = I18n.T("sslfix.working");
+            try
+            {
+                var u = await SslRepair.UpgradeCaAsync(_sites);
+                Show(SslRepair.Check(_sites), false);
+                _summary.Text = u.Error ?? I18n.T("sslfix.upgradeDone", u.Renewed) + (u.OldRemoved ? "" : "\n" + I18n.T("sslfix.oldCaLeft"))
+                    + (u.JavaError != null ? "\n" + u.JavaError : "") + "\n" + I18n.T("sslfix.browserHint");
+            }
+            catch (Exception ex) { Ui.Error(this, ex.Message); }
+            _close.Enabled = true;
         }
 
         async System.Threading.Tasks.Task Fix()

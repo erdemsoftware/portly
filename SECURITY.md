@@ -43,3 +43,11 @@ administrator access to the computer.
   php.ini. Remote php.ini hotfixes are limited to a built-in whitelist of stricter values.
 - Passwords Portly stores (database root password, proxy password) are encrypted with Windows DPAPI.
 - Services listen on 127.0.0.1 unless LAN access is switched on.
+- The database root account has no password by default, so existing projects keep working. Settings > MySQL sets one
+  on every root account; phpMyAdmin then shows its login page, as it also does while LAN access is on. Root can move
+  `general_log_file` anywhere at run time, whatever the option file says and despite `secure-file-priv`, so only that
+  password stops someone who reaches phpMyAdmin from writing a file.
+- A new local CA carries critical name constraints (local names, names of the current projects, private addresses) and
+  a server-only EKU. Older CAs stay as they are until the user replaces them in "Fix SSL". The CA key is protected by
+  DPAPI for the Windows user; the file has no special ACL, which would add nothing to DPAPI and could keep a moved
+  folder from recovering.

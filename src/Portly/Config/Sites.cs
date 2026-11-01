@@ -169,7 +169,7 @@ namespace Portly.Config
         }
 
         // endings that never exist on the internet: such addresses cannot hide a live site
-        static readonly string[] LocalEndings = { "localhost", "test", "local", "example", "invalid", "internal", "lan", "home.arpa" };
+        public static readonly string[] LocalEndings = { "localhost", "test", "local", "example", "invalid", "internal", "lan", "home.arpa" };
 
         /// <summary>
         /// Is this a real internet name (example.com)? While Portly serves it, this PC opens the local copy instead of the live site.

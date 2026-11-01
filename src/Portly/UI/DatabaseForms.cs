@@ -114,9 +114,138 @@ namespace Portly.UI
         }
     }
 
+    /// <summary>
+    /// One line on the main window while root has no password and the server listens beyond this computer.
+    /// Settings, password and WSL state change in many places, so it simply looks again every few seconds.
+    /// </summary>
+    public class RootPasswordNotice : Panel
+    {
+        readonly System.Windows.Forms.Timer _timer = new System.Windows.Forms.Timer { Interval = 5000 };
+
+        public RootPasswordNotice()
+        {
+            Dock = DockStyle.Top;
+            Height = Ui.S(54);
+            Padding = Ui.P(0, 0, 0, 8);
+            BackColor = Color.Transparent;
+            var card = new Card { Dock = DockStyle.Fill, Radius = 12, BorderColor = Color.FromArgb(160, Theme.Current.Orange) };
+            var flow = new FlowLayoutPanel { Dock = DockStyle.Right, AutoSize = true, WrapContents = false, BackColor = Color.Transparent, Padding = Ui.P(0, 8, 8, 0) };
+            var button = Ui.Button(I18n.T("dbroot.set"), (s, e) => { DatabaseUi.RootPassword(FindForm()); Check(); });
+            button.Margin = Padding.Empty;
+            flow.Controls.Add(button);
+            var text = I18n.T("dbroot.exposed");
+            var label = new Label
+            {
+                Dock = DockStyle.Fill, AutoEllipsis = true, TextAlign = ContentAlignment.MiddleLeft, Font = Ui.Font, ForeColor = Ui.Text,
+                BackColor = Color.Transparent, Padding = Ui.P(16, 0, 8, 0), Text = text,
+            };
+            new ToolTip().SetToolTip(label, text);
+            card.Controls.Add(label);
+            card.Controls.Add(flow);
+            Controls.Add(card);
+            _timer.Tick += (s, e) => Check();
+            _timer.Start();
+            Check();
+        }
+
+        void Check() { Visible = Database.RootPasswordExposed && MySqlService.BinDir != null; }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing) _timer.Dispose();
+            base.Dispose(disposing);
+        }
+    }
+
     /// <summary>Database menu actions: new database, SQL import, check and repair, version change, WSL access.</summary>
     public static class DatabaseUi
     {
+        // =====================================================================
+        // root password
+        // =====================================================================
+        /// <summary>Set, change or remove the root password (Settings > MySQL and the database menu).</summary>
+        public static void RootPassword(IWin32Window owner)
+        {
+            if (ServiceManager.MySql.State != ServiceState.Running) { Ui.Error(owner, I18n.T("err.mysqlNotRunning")); return; }
+            bool has = Settings.Current.HasRootPassword;
+            string done = null;
+            using (var f = Dialog(I18n.T(has ? "db.password" : "dbroot.set")))
+            {
+                var stack = new TableLayoutPanel { AutoSize = true, ColumnCount = 1 };
+                var intro = Ui.Label(I18n.T("dbroot.intro"), Ui.Font, Ui.Muted);
+                intro.MaximumSize = new Size(Ui.S(460), 0);
+                intro.Margin = Ui.P(0, 0, 0, 8);
+                stack.Controls.Add(intro);
+                var g = Grid();
+                var pass = new TextBox { Width = Ui.S(260), UseSystemPasswordChar = true };
+                var repeat = new TextBox { Width = Ui.S(260), UseSystemPasswordChar = true };
+                Row(g, I18n.T("db.newPassword"), pass);
+                Row(g, I18n.T("dbroot.repeat"), repeat);
+                var show = new CheckBox { Text = I18n.T("common.show"), AutoSize = true };
+                show.CheckedChanged += (s, e) => pass.UseSystemPasswordChar = repeat.UseSystemPasswordChar = !show.Checked;
+                Row(g, "", show);
+                stack.Controls.Add(g);
+                var message = Ui.Label("", Ui.Font, Ui.Red);
+                message.MaximumSize = new Size(Ui.S(460), 0);
+                stack.Controls.Add(message);
+
+                Func<string, bool> apply = text =>
+                {
+                    Cursor.Current = Cursors.WaitCursor;
+                    var err = Database.ChangeRootPassword(text);
+                    Cursor.Current = Cursors.Default;
+                    if (err == null) return true;
+                    message.Text = err;
+                    return false;
+                };
+                var buttons = OkCancel(f, I18n.T("common.save"), () =>
+                {
+                    if (pass.Text == "") { message.Text = I18n.T("dbroot.empty"); return false; }
+                    if (pass.Text != repeat.Text) { message.Text = I18n.T("dbroot.mismatch"); return false; }
+                    if (!apply(pass.Text)) return false;
+                    done = I18n.T("db.passwordChanged");
+                    return true;
+                });
+                buttons.Controls.Add(Ui.Button(I18n.T("dbroot.generate"), (s, e) =>
+                {
+                    pass.Text = repeat.Text = Database.RandomPassword(20);
+                    show.Checked = true;
+                }));
+                if (has)
+                {
+                    // two clicks in this window: a second dialog on top would hide what it is about
+                    bool armed = false;
+                    ModernButton remove = null;
+                    remove = Ui.Button(I18n.T("dbroot.remove"), (s, e) =>
+                    {
+                        if (!armed)
+                        {
+                            armed = true;
+                            message.Text = I18n.T("dbroot.removeWarn");
+                            remove.Text = I18n.T("dbui.clickAgain", I18n.T("dbroot.remove"));
+                            return;
+                        }
+                        if (!apply("")) return;
+                        done = I18n.T("dbroot.removed");
+                        f.DialogResult = DialogResult.OK;
+                        f.Close();
+                    });
+                    buttons.Controls.Add(remove);
+                }
+                stack.Controls.Add(buttons);
+                f.Controls.Add(stack);
+                if (f.ShowDialog(owner) != DialogResult.OK) return;
+            }
+            if (done != null) Ui.Info(owner, done);
+        }
+
+        /// <summary>One line for Settings: has root a password, and does it matter right now?</summary>
+        public static string RootStatus()
+        {
+            if (Settings.Current.HasRootPassword) return I18n.T("dbroot.statusSet");
+            return I18n.T(Database.RootPasswordExposed ? "dbroot.exposed" : "dbroot.statusNone");
+        }
+
         static ThemedCombo CollationCombo(string engine, Version v, string selected)
         {
             var c = new ThemedCombo { Width = Ui.S(260) };
