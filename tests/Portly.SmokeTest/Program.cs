@@ -37,6 +37,7 @@ namespace Portly.SmokeTest
         {
             Console.OutputEncoding = Encoding.UTF8;
             if (args.Length > 0 && args[0] == "--share-security") return ShareSecurityOnly();
+            if (args.Length > 0 && args[0] == "--updates-security") return UpdatesSecurityOnly();
             try { return Run(args).GetAwaiter().GetResult(); }
             catch (Exception ex) { Console.WriteLine(ex); return 2; }
             finally { try { ServiceManager.StopAllAsync().Wait(30000); } catch { } }

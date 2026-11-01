@@ -70,6 +70,8 @@ namespace Portly.Tools
     {
         public static List<ExtInfo> All = new List<ExtInfo>();
         public static string Updated = "";
+        /// <summary>Why the downloaded list was refused (bad or missing signature), else null.</summary>
+        public static string TrustError;
         static bool _loaded, _refreshed;
 
         static string CacheFile { get { return Path.Combine(Paths.Cache, "extensions.json"); } }
@@ -80,9 +82,9 @@ namespace Portly.Tools
         {
             if (_loaded) return;
             _loaded = true;
-            if (!AppInfo.IsLegacy && File.Exists(CacheFile))
+            if (!AppInfo.IsLegacy)
             {
-                try { Parse(File.ReadAllText(CacheFile, Encoding.UTF8)); return; }
+                try { var cached = SignedManifest.ReadCache(CacheFile); if (cached != null) { Parse(cached); return; } }
                 catch (Exception ex) { Log.Warn("Cached extension list is invalid: " + ex.Message); }
             }
             try
@@ -101,10 +103,11 @@ namespace Portly.Tools
             _refreshed = true;
             try
             {
-                var json = await Net.GetStringAsync(AppInfo.ManifestBase + "extensions.json");
-                Parse(json); // throws when invalid -> cache is not overwritten
-                File.WriteAllText(CacheFile, json, new UTF8Encoding(false));
+                var manifest = await SignedManifest.DownloadAsync("extensions.json");
+                Parse(manifest.Text); // throws when invalid -> cache is not overwritten
+                manifest.SaveTo(CacheFile);
             }
+            catch (ManifestSecurityException ex) { TrustError = ex.Message; Log.Error(ex.Message); }
             catch (Exception ex) { Log.Warn("Extension list refresh failed: " + ex.Message); }
         }
 

@@ -121,6 +121,7 @@ namespace Portly.UI
                 // newest list (modern edition); the embedded copy is shown meanwhile
                 await PhpExtensions.RefreshAsync();
                 if (!IsDisposed && !_busy) Fill();
+                if (!IsDisposed && PhpExtensions.TrustError != null) _status.Text = PhpExtensions.TrustError;
             };
         }
 

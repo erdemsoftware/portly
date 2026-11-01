@@ -10,6 +10,8 @@ permissions:
 jobs:
   release:
     runs-on: windows-latest
+    # protect this environment with a required reviewer so that a tag alone cannot get a signature
+    environment: manifest-signing
     env:
       # empty when the secret is not set: then signing is skipped
       SIGN_PFX_BASE64: ${{ secrets.SIGN_PFX_BASE64 }}
@@ -21,6 +23,23 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
+      - name: Use the tagged sources
+        shell: pwsh
+        run: |
+          git checkout ${{ github.ref_name }}
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+      # Not optional, unlike code signing: stop here, before anything is published, when the manifests could not be
+      # signed at the end. The check also fails while ManifestKeys.cs holds the placeholder or another key.
+      - name: Check the manifest signing key
+        shell: pwsh
+        env:
+          PORTLY_MANIFEST_KEY: ${{ secrets.PORTLY_MANIFEST_KEY }}
+          PORTLY_MANIFEST_KEY_2: ${{ secrets.PORTLY_MANIFEST_KEY_2 }}
+        run: ./tools/sign-manifests.ps1 -CheckKey
+      - name: Security tests
+        shell: pwsh
+        timeout-minutes: 10
+        run: ./tools/run-security-tests.ps1
       # Optional code signing. Add the repository secrets SIGN_PFX_BASE64 (the .pfx file, base64) and
       # SIGN_PFX_PASSWORD to sign Portly.exe and the setup programs with signtool; without them this is skipped.
       # (SignPath Foundation: see docs/03-yayinlama.md.)
@@ -37,7 +56,6 @@ jobs:
           PORTLY_SIGN_PASSWORD: ${{ secrets.SIGN_PFX_PASSWORD }}
         run: |
           $version = '${{ github.ref_name }}'.TrimStart('v')
-          git checkout ${{ github.ref_name }}
           ./build.ps1 -Version $version -UpdateManifest
           Copy-Item manifest/app.json $env:RUNNER_TEMP/app.json
       - name: Publish GitHub release
@@ -57,14 +75,13 @@ jobs:
           if-no-files-found: ignore
       - name: Point the in-app updater to this release
         shell: pwsh
+        env:
+          PORTLY_MANIFEST_KEY: ${{ secrets.PORTLY_MANIFEST_KEY }}
+          PORTLY_MANIFEST_KEY_2: ${{ secrets.PORTLY_MANIFEST_KEY_2 }}
         run: |
           git checkout -- .
-          # the newest main (it may have moved since the checkout at the start)
-          git fetch origin main
-          git checkout -B main origin/main
-          Copy-Item $env:RUNNER_TEMP/app.json manifest/app.json
-          git config user.name "github-actions"
-          git config user.email "github-actions@users.noreply.github.com"
-          git add manifest/app.json
-          git commit -m "Release ${{ github.ref_name }}: update manifest/app.json"
-          git push origin main
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          git checkout -f -B main origin/main
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          # the newest main (it may have moved since the checkout at the start), signed after app.json is in place
+          ./tools/push-signed-manifests.ps1 -Message "Release ${{ github.ref_name }}: update manifest/app.json" -AppJson $env:RUNNER_TEMP/app.json

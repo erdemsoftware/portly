@@ -19,7 +19,8 @@ namespace Portly.Packages
 
     /// <summary>
     /// Self update (modern edition only).
-    /// manifest/app.json on GitHub describes the latest release; the zip must match its SHA-256.
+    /// manifest/app.json on GitHub describes the latest release. Its signature must verify and the version must be
+    /// newer than the running one; the zip must match the SHA-256 in that signed file.
     /// Only program files are replaced (Portly.exe, lang\, templates\); bin, data, www, usr, etc are never touched.
     /// The running exe is renamed to Portly.exe.old (Windows allows renaming a running exe) and removed on next start.
     /// </summary>
@@ -31,30 +32,46 @@ namespace Portly.Packages
         public static async Task<AppUpdate> CheckAsync()
         {
             if (!AppInfo.UpdatesSupported) return null;
-            var json = await Net.GetStringAsync(AppInfo.ManifestBase + "app.json");
-            var o = Json.ParseObject(json);
+            var manifest = await SignedManifest.DownloadAsync("app.json"); // throws when the signature is missing or wrong
+            var o = Json.ParseObject(manifest.Text);
             var donate = o.Str("donateUrl");
             if (donate.StartsWith("https://")) AppInfo.DonateUrl = donate;
             Version v;
             if (!Version.TryParse(o.Str("version"), out v)) return null;
-            var current = new Version(AppInfo.Version.Major, AppInfo.Version.Minor, AppInfo.Version.Build);
             Settings.Current.LastUpdateCheck = DateTime.Now.ToString("yyyy-MM-dd HH:mm");
             Settings.Current.Save();
-            if (v <= current) { Available = null; return null; }
+            Available = Parse(manifest.Text, RunningVersion);
+            if (Available != null) Log.Info(I18n.T("log.updateAvailable", v));
+            return Available;
+        }
+
+        static Version RunningVersion { get { return new Version(AppInfo.Version.Major, AppInfo.Version.Minor, AppInfo.Version.Build); } }
+
+        /// <summary>The update an app.json offers, or null unless it is newer than current: an old signed file cannot downgrade.</summary>
+        public static AppUpdate Parse(string json, Version current)
+        {
+            var o = Json.ParseObject(json);
+            Version v;
+            if (!Version.TryParse(o.Str("version"), out v) || v <= current) return null;
             var notes = o.Obj("notes");
-            Available = new AppUpdate
+            return new AppUpdate
             {
                 Version = v,
                 Url = o.Str("url"),
                 Sha256 = o.Str("sha256"),
                 Notes = notes == null ? "" : notes.Str(I18n.Code, notes.Str("en")),
             };
-            Log.Info(I18n.T("log.updateAvailable", v));
-            return Available;
+        }
+
+        /// <summary>Last check before anything is downloaded or replaced.</summary>
+        public static void EnsureNewer(AppUpdate u, Version current)
+        {
+            if (u == null || u.Version == null || u.Version <= current) throw new Exception(I18n.T("err.updateRollback"));
         }
 
         public static async Task ApplyAsync(AppUpdate u, Action<InstallProgress> progress, CancellationToken ct)
         {
+            EnsureNewer(u, RunningVersion);
             if (string.IsNullOrEmpty(u.Sha256) || !u.Url.StartsWith("https://")) throw new Exception(I18n.T("err.updateManifest"));
             var work = Path.Combine(Paths.Tmp, "update");
             if (Directory.Exists(work)) Directory.Delete(work, true);

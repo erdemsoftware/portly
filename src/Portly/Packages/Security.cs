@@ -82,7 +82,7 @@ namespace Portly.Packages
         {
             if (!AppInfo.IsLegacy && File.Exists(CacheFile))
             {
-                try { Parse(File.ReadAllText(CacheFile, Encoding.UTF8)); return; }
+                try { var cached = SignedManifest.ReadCache(CacheFile); if (cached != null) { Parse(cached); return; } }
                 catch (Exception ex) { Log.Warn("Cached security.json is invalid: " + ex.Message); }
             }
             try { Parse(Embedded()); } catch (Exception ex) { Log.Warn("security.json: " + ex.Message); }
@@ -103,10 +103,9 @@ namespace Portly.Packages
             if (AppInfo.IsLegacy) return false;
             try
             {
-                var json = await Net.GetStringAsync(AppInfo.ManifestBase + "security.json");
-                Parse(json);
-                Directory.CreateDirectory(Paths.Cache);
-                File.WriteAllText(CacheFile, json, new UTF8Encoding(false));
+                var manifest = await SignedManifest.DownloadAsync("security.json");
+                Parse(manifest.Text);
+                manifest.SaveTo(CacheFile);
                 return true;
             }
             catch (Exception ex)

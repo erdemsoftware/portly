@@ -36,7 +36,7 @@ namespace Portly.SmokeTest
             try { Tests_ShareSecurity(Settings.Current, null).GetAwaiter().GetResult(); }
             catch (Exception ex) { Check("share security", false, ex.ToString()); }
             Console.WriteLine(_ok + " passed, " + _fail + " failed");
-            return _fail == 0 ? 0 : 1;
+            return _fail == 0 && _ok > 0 ? 0 : 1;
         }
 
         /// <summary>The share proxy passes one checked request, and nothing a device can use to speak to the web server directly.</summary>

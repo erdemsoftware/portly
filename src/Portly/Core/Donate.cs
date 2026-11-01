@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Portly.Packages;
 
 namespace Portly.Core
 {
@@ -25,9 +26,7 @@ namespace Portly.Core
 
         public static List<DonateMethod> Load()
         {
-            string json = null;
-            try { if (File.Exists(CacheFile)) json = File.ReadAllText(CacheFile, Encoding.UTF8); } catch { }
-            var list = Parse(json);
+            var list = Parse(SignedManifest.ReadCache(CacheFile));
             if (list == null)
             {
                 using (var s = typeof(Donate).Assembly.GetManifestResourceStream("donate.json"))
@@ -41,9 +40,10 @@ namespace Portly.Core
             if (!AppInfo.UpdatesSupported) return;
             try
             {
-                var json = await Net.GetStringAsync(AppInfo.ManifestBase + "donate.json");
-                if (Parse(json) != null) File.WriteAllText(CacheFile, json, new UTF8Encoding(false));
+                var manifest = await SignedManifest.DownloadAsync("donate.json");
+                if (Parse(manifest.Text) != null) manifest.SaveTo(CacheFile);
             }
+            catch (ManifestSecurityException ex) { Log.Warn(ex.Message); }
             catch { }
         }
 

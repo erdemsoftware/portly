@@ -16,11 +16,56 @@ Ayrıca PHP sürümleri doğrudan `windows.php.net/downloads/releases/releases.j
 
 `app.json` içindeki `donateUrl` doldurulursa uygulamadaki tüm "Bağış yap" bağlantıları yeni sürüm çıkarmadan o adrese gider.
 
+## Manifest imzalama
+
+Uygulamanın indirdiği her `manifest/*.json` dosyasının yanında ayrık imzası (`<ad>.json.sig`) durur: tek satır base64, RSA PKCS#1 v1.5 + SHA-256, dosyanın **tam baytları** üzerinde. Windows 7 ve .NET Framework 4.8'de yerleşik olduğu için RSA-3072 kullanılır; Ed25519 yoktur ve NuGet alınmaz.
+
+Uygulama imzası eksik ya da bozuk dosyayı **reddeder**, imzasız yedek yol yoktur. Bir önceki kopya (önbellek ya da exe içine gömülü olan) kullanılmaya devam eder, Paketler penceresinde ve günlükte açık bir ileti çıkar. `usr\cache` içindeki kopyalar imzalarıyla saklanır, her okumada yeniden doğrulanır; imzası tutmayan kopya silinir. Exe içine gömülü kopyalar imzalı sürümün parçası sayılır, ayrıca doğrulanmaz. `app.json` ayrıca çalışan sürümden yeni olmalıdır, eski bir imzalı dosya ile sürüm düşürülemez. Eski Portly sürümleri `.sig` dosyalarını görmezden gelir, onlar için bir şey değişmez.
+
+**Satır sonları:** `.gitattributes` içindeki `manifest/*.json -text` kuralı kaldırılmamalıdır. Windows'ta `core.autocrlf=true` iken git dosyayı CRLF çıkarır, GitHub ise depodaki baytları sunar; kural olmazsa imza, kullanıcının indirdiği dosyayla tutmaz.
+
+### Anahtarı ilk kez oluşturmak
+
+Özel anahtar yalnızca sizde ve GitHub'ın gizli değerlerinde durur, depoya girmez. Depo dışındaki bir klasörde çalıştırın:
+
+```powershell
+$rsa = New-Object System.Security.Cryptography.RSACryptoServiceProvider(3072)
+$rsa.PersistKeyInCsp = $false
+[IO.File]::WriteAllText("$PWD\portly-manifest-private.xml", $rsa.ToXmlString($true))   # GİZLİ
+$rsa.ToXmlString($false)                                                                # açık anahtar
+```
+
+1. Çıkan açık anahtarı (tek satır, `<RSAKeyValue>` ile başlar) `src/Portly/Packages/ManifestKeys.cs` içindeki satıra koyun: `public const string PublicKey1 = "<RSAKeyValue>...</RSAKeyValue>";`. Başka değişiklik gerekmez.
+2. Özel anahtar dosyasının içeriğini GitHub'da **Settings > Secrets and variables > Actions** altına `PORTLY_MANIFEST_KEY` adıyla ekleyin. PEM de kabul edilir (PowerShell 7 gerekir). Dosyayı güvenli bir yerde saklayıp diskten silin.
+3. Önerilen: **Settings > Environments > `manifest-signing`** ortamına zorunlu onaylayıcı ekleyin ve gizli değeri bu ortama koyun. Üç iş akışı da bu ortamı kullanır. Onaylayıcı yoksa `main` dalına yazabilen herkes (ya da çalınmış bir erişim) değiştirdiği manifesti `sign-manifests` ile imzalatmış olur; imza o zaman yalnızca barındırma yolunu korur, depoyu değil.
+
+### Ne zaman imzalanır
+
+- **Yeni sürüm:** `release.yml` en başta anahtarı denetler (`sign-manifests.ps1 -CheckKey`). Gizli değer yoksa, kaynakta hâlâ yer tutucu varsa ya da anahtar `ManifestKeys.cs` ile eşleşmiyorsa sürüm hiçbir şey yayınlanmadan **başarısız olur**. En sonda `app.json` doldurulduktan sonra `main` üzerindeki tüm manifestleri imzalar, işlenen baytları açık anahtarlarla doğrular ve gönderir.
+- **`main` üzerinde manifest değişince:** `sign-manifests.yml` imzaları kendisi yeniler. Bot yalnızca `.sig` dosyalarını değiştirir ve `GITHUB_TOKEN` ile gönderir, bu yüzden döngü oluşmaz. İş bitene kadar (bir iki dakika) yeni istemciler yeni dosyayı reddeder ve eskisiyle devam eder.
+- **Elle:** `$env:PORTLY_MANIFEST_KEY = Get-Content anahtar.xml -Raw`, sonra `powershell -File tools\sign-manifests.ps1`. Denetim için gizli değer gerekmez: `tools\sign-manifests.ps1 -VerifyCommitted`.
+
+### Anahtar değiştirme
+
+1. Yeni açık anahtarı `PublicKey2` olarak ekleyip `Trusted` dizisine yazın, sürüm çıkarın.
+2. Geçiş süresince eski anahtar `PORTLY_MANIFEST_KEY`, yeni anahtar `PORTLY_MANIFEST_KEY_2` olsun: `.sig` dosyasına iki satır yazılır, iki kuşak istemci de doğrular.
+3. İstemciler yeni sürüme geçtikten sonra eski anahtarı gizli değerden ve sonraki bir sürümde kaynaktan çıkarın.
+
+Özel anahtar kaybolursa imzalı güncelleme yapılamaz: mevcut istemciler yeni dosyaları reddeder ve kullanıcıların yeni sürümü elle kurması gerekir.
+
+## Paket özetleri (SHA-256)
+
+`Installer` özeti tutmayan paketi siler ve kurmaz. Özeti olmayan paket HTTPS ile kurulmaya devam eder, günlüğe uyarı düşer; HTTP adresli ve özetsiz paket reddedilir.
+
+Eksik özetleri **Actions > fill-package-hashes > Run workflow** doldurur (`tools/fill-package-hashes.ps1`, çok GB indirir, yerelde çalıştırmayın). Bulunan her özet hemen yazılır, iş yeniden başlatılınca kaldığı yerden devam eder; sonunda imzalanıp `main` dalına gönderilir. Özet listesi yalnızca oynak adresler kalana kadar tekrar çalıştırın. Legacy kataloğu exe içindedir, özetler bir sonraki Legacy derlemesiyle gelir.
+
+Oynak adresler (`latest`, `gh-pages`: Composer, VS Code, WP-CLI) bilerek atlanır: dosya her sürümde değişir, sabit özet bir sonraki iyi sürümü de reddederdi. Üretici bir dosyayı aynı adresle yeniden yayınlarsa kurulum "dosya hasarlı" hatası verir; özeti girdiden silip iş akışını yeniden çalıştırın.
+
 ## Paket kataloğunu güncellemek (uygulama sürümü gerekmez)
 
 1. `manifest/packages.json` içindeki girdiyi değiştirin ya da yeni girdi ekleyin.
-2. Bağlantının çalıştığını deneyin: `curl -I -L <url>`.
-3. `main` dalına gönderin. Kullanıcılar en geç 12 saat içinde görür.
+2. Bağlantının çalıştığını deneyin: `curl -I -L <url>`. Sürümü sabit yeni girdilere `sha256` ekleyin (`(Get-FileHash dosya -Algorithm SHA256).Hash.ToLower()`) ya da fill-package-hashes işini çalıştırın.
+3. `main` dalına gönderin. `sign-manifests` imzayı yeniler. Kullanıcılar en geç 12 saat içinde görür.
 
 Alanlar: `type`, `version`, `folder` (bin altındaki klasör adı), `url`, isteğe bağlı `sha256`, `subdir` (zip içindeki asıl klasör, ör. Apache için `Apache24`), `vc` (gereken VC++ 14.x alt sürümü), `tag` (LTS, newest ...), `note`, `recommended`, `minOs` (10.0 = Win10).
 
@@ -80,7 +125,9 @@ git tag v1.0.1
 git push origin v1.0.1
 ```
 
-`release.yml` iki sürümü derler, zip'leri ve `SHA256SUMS.txt` dosyasını GitHub sürümüne ekler, ardından `manifest/app.json` dosyasını yeni sürüm, adres ve SHA-256 ile güncelleyip `main` dalına gönderir. Kullanıcılar o andan sonra güncellemeyi görür.
+`release.yml` önce imza anahtarını denetler ve güvenlik testlerini (`tools/run-security-tests.ps1`: `--share-security`, `--updates-security`) çalıştırır; biri başarısızsa hiçbir şey yayınlanmaz. Sonra iki sürümü derler, zip'leri ve `SHA256SUMS.txt` dosyasını GitHub sürümüne ekler, ardından `manifest/app.json` dosyasını yeni sürüm, adres ve SHA-256 ile günceller, tüm manifestleri imzalayıp `main` dalına gönderir. Kullanıcılar o andan sonra güncellemeyi görür.
+
+Bu son adım sürüm yayınlandıktan sonra çalışır. Başarısız olursa sürüm durur ama kullanıcılara duyurulmaz: `build\` çıktısındaki `app.json` yerine aşağıdaki elle yolu izleyin.
 
 Değişiklik notunu etiketlemeden önce `manifest/app.json` içindeki `notes` alanına yazın.
 
@@ -91,13 +138,15 @@ powershell -ExecutionPolicy Bypass -File build.ps1 -Version 1.0.1 -UpdateManifes
 ```
 
 1. `dist\` içindeki zip'leri GitHub'da `v1.0.1` sürümüne yükleyin.
-2. Sürüm yayınlandıktan **sonra** güncellenmiş `manifest/app.json` dosyasını `main` dalına gönderin. Sıra önemlidir: önce gönderilirse kullanıcılar henüz var olmayan dosyayı indirmeye çalışır.
+2. Sürüm yayınlandıktan **sonra** güncellenmiş `manifest/app.json` dosyasını imzalayıp (`tools\sign-manifests.ps1`) `.sig` dosyalarıyla birlikte `main` dalına gönderin. Sıra önemlidir: önce gönderilirse kullanıcılar henüz var olmayan dosyayı indirmeye çalışır.
 
 Inno Setup 6 kuruluysa `build.ps1` kurulum programlarını da üretir.
 
 ## Yayın öncesi kontrol listesi
 
 - [ ] `dotnet run --project tests\Portly.SmokeTest -c Release` tüm adımları geçti
+- [ ] `PORTLY_MANIFEST_KEY` tanımlı, `ManifestKeys.cs` içinde gerçek açık anahtar var
+- [ ] Yayından sonra `main` üzerinde `tools\sign-manifests.ps1 -VerifyCommitted` geçiyor
 - [ ] İki sürüm de derleniyor (`build.ps1`)
 - [ ] Yeni metinler `en.json` ve `tr.json` dosyalarına eklendi (diğer diller İngilizceye düşer)
 - [ ] Üretilen `php.ini` içinde `session.upload_progress.enabled = Off` duruyor

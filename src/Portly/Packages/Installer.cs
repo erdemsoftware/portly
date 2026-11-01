@@ -23,6 +23,7 @@ namespace Portly.Packages
         {
             var target = e.InstallDir;
             if (Directory.Exists(target)) { Log.Info(e.TypeName + " " + e.Version + " is already installed"); return; }
+            if (!HasHash(e) && !e.Url.StartsWith("https://", StringComparison.OrdinalIgnoreCase)) throw new Exception(I18n.T("err.noHashHttp", e.TypeName + " " + e.Version));
             // a database without a pinned version follows the newest folder: installing a newer one would switch
             // to an empty data dir silently ("my databases vanished"). Pin the current one; switching stays explicit.
             if ((e.Type == "mysql" || e.Type == "mariadb" || e.Type == "postgresql" || e.Type == "mongodb") && Settings.Current.GetVersion(e.Type) == "")
@@ -37,7 +38,7 @@ namespace Portly.Packages
             Report(progress, "download", 0, 0);
             Log.Info(I18n.T("log.downloading", e.TypeName + " " + e.Version));
 
-            bool cached = File.Exists(download) && (e.Sha256 == "" || Net.Sha256(download).Equals(e.Sha256, StringComparison.OrdinalIgnoreCase));
+            bool cached = File.Exists(download) && (!HasHash(e) || HashMatches(e, download));
             if (!cached)
             {
                 string lastError = null;
@@ -53,16 +54,8 @@ namespace Portly.Packages
                     catch (Exception ex) { lastError = ex.Message; Log.Warn(url + " -> " + ex.Message); }
                 }
                 if (lastError != null) throw new Exception(I18n.T("err.download", lastError));
-                if (e.Sha256 != "")
-                {
-                    var actual = Net.Sha256(download);
-                    if (!actual.Equals(e.Sha256, StringComparison.OrdinalIgnoreCase))
-                    {
-                        File.Delete(download);
-                        throw new Exception(I18n.T("err.checksum"));
-                    }
-                }
             }
+            VerifyDownload(e, download);
             ct.ThrowIfCancellationRequested();
 
             if (e.Kind == "file")
@@ -104,6 +97,23 @@ namespace Portly.Packages
             }
             Log.Info(I18n.T("log.installed", e.TypeName + " " + e.Version));
             Report(progress, "done", 100, 0);
+        }
+
+        static bool HasHash(PackageEntry e) { return !string.IsNullOrWhiteSpace(e.Sha256); }
+
+        static bool HashMatches(PackageEntry e, string file) { return Net.Sha256(file).Equals(e.Sha256.Trim(), StringComparison.OrdinalIgnoreCase); }
+
+        /// <summary>
+        /// Nothing is extracted or run before this. A wrong SHA-256 deletes the file and refuses the install. A package
+        /// without one (a moving "latest" URL, or one tools\fill-package-hashes.ps1 has not reached yet) still installs
+        /// over HTTPS, with a warning in the log.
+        /// </summary>
+        public static void VerifyDownload(PackageEntry e, string file)
+        {
+            if (!HasHash(e)) { Log.Warn(I18n.T("log.noPackageHash", e.TypeName + " " + e.Version)); return; }
+            if (HashMatches(e, file)) return;
+            TryDelete(file);
+            throw new Exception(I18n.T("err.checksum"));
         }
 
         /// <summary>

@@ -270,7 +270,7 @@ namespace Portly.UI
             _busy = true; UpdateButtons();
             _status.Text = I18n.T("pkg.refreshing");
             var ok = await Catalog.RefreshAsync();
-            _status.Text = ok ? I18n.T("pkg.refreshed", Catalog.Updated) : I18n.T("pkg.refreshFailed");
+            _status.Text = Catalog.TrustError ?? (ok ? I18n.T("pkg.refreshed", Catalog.Updated) : I18n.T("pkg.refreshFailed"));
             _busy = false;
             Fill();
         }

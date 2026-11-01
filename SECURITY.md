@@ -38,7 +38,11 @@ administrator access to the computer.
 
 ## Design notes
 
-- Every download is checked against the SHA-256 in the catalog when one is published.
+- Manifests downloaded from GitHub (`manifest/*.json`) carry a detached RSA-3072 signature (`.json.sig`) checked against
+  public keys built into Portly. A missing or wrong signature means the file is refused; there is no unsigned fallback.
+  Cached copies are checked again when read. The app update must also be newer than the running version.
+- Every download is checked against the SHA-256 in the signed catalog. A package without a hash (moving "latest" URLs)
+  is installed over HTTPS only, with a warning in the log. The PHP list from windows.php.net is not signed by Portly.
 - `session.upload_progress.enabled = Off`, `allow_url_include = Off` and `expose_php = Off` are enforced in every
   php.ini. Remote php.ini hotfixes are limited to a built-in whitelist of stricter values.
 - Passwords Portly stores (database root password, proxy password) are encrypted with Windows DPAPI.

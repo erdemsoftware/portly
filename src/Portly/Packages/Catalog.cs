@@ -33,8 +33,8 @@ namespace Portly.Packages
 
     /// <summary>
     /// Package catalog.
-    ///  Modern edition: manifest/packages.json from GitHub (cached in usr\cache), plus live PHP versions
-    ///                  from windows.php.net, so new PHP releases appear without a Portly update.
+    ///  Modern edition: manifest/packages.json from GitHub, signed (cached in usr\cache with its signature), plus live
+    ///                  PHP versions from windows.php.net, so new PHP releases appear without a Portly update.
     ///  Legacy edition: the catalog embedded in the exe (frozen, Windows 7 compatible packages).
     /// </summary>
     public static class Catalog
@@ -43,6 +43,8 @@ namespace Portly.Packages
         public static string VcRedistUrl = "https://aka.ms/vc14/vc_redist.x64.exe";
         public static int VcRedistMinor = 50;
         public static string Updated = "";
+        /// <summary>Why the last refresh refused the downloaded catalog (bad or missing signature), else null.</summary>
+        public static string TrustError;
         /// <summary>Xdebug build to download for PHP 8.x, and the last one for PHP 7.4.</summary>
         public static string XdebugVersion = "3.5.3";
         public static string Xdebug74 = "3.1.6";
@@ -54,9 +56,9 @@ namespace Portly.Packages
         public static void LoadLocal()
         {
             string json = null;
-            if (!AppInfo.IsLegacy && File.Exists(CacheFile))
+            if (!AppInfo.IsLegacy)
             {
-                try { json = File.ReadAllText(CacheFile, Encoding.UTF8); Parse(json); }
+                try { json = SignedManifest.ReadCache(CacheFile); if (json != null) Parse(json); }
                 catch (Exception ex) { Log.Warn("Cached catalog is invalid: " + ex.Message); json = null; }
             }
             if (json == null) Parse(Embedded());
@@ -79,12 +81,19 @@ namespace Portly.Packages
         {
             if (AppInfo.IsLegacy) return false;
             bool ok = false;
+            TrustError = null;
             try
             {
-                var json = await Net.GetStringAsync(AppInfo.ManifestBase + "packages.json");
-                Parse(json); // throws when invalid -> cache is not overwritten
-                File.WriteAllText(CacheFile, json, new UTF8Encoding(false));
+                var manifest = await SignedManifest.DownloadAsync("packages.json");
+                Parse(manifest.Text); // throws when invalid -> cache is not overwritten
+                manifest.SaveTo(CacheFile);
                 ok = true;
+            }
+            catch (ManifestSecurityException ex)
+            {
+                TrustError = ex.Message;
+                Log.Error(ex.Message);
+                LoadLocal();
             }
             catch (Exception ex)
             {
@@ -164,6 +173,7 @@ namespace Portly.Packages
                 var file = zip.Str("path");
                 if (!file.EndsWith(".zip")) continue;
                 var folder = file.Substring(0, file.Length - 4);
+                if (folder.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0 || folder.Contains("..")) continue; // this list is not signed
                 var sameBranch = catalogPhp.Where(e => e.Branch == v.Major + "." + v.Minor).ToList();
                 if (sameBranch.Any(e => PackageTypes.ParseVersion(e.Version) >= v)) continue;
                 bool recommended = sameBranch.Any(e => e.Recommended);
