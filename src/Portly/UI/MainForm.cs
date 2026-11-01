@@ -1872,7 +1872,7 @@ namespace Portly.UI
             {
                 var site = ServiceManager.CurrentSites.FirstOrDefault(x => x.Valid && string.Equals(x.Host, e.Host, StringComparison.OrdinalIgnoreCase));
                 if (site == null) continue;
-                try { LanShare.Start(site); }
+                try { LanShare.Start(site, true); }
                 catch (Exception ex) { Log.Warn(I18n.T("lan.autoFailed", e.Host, ex.Message)); }
             }
         }
@@ -1884,6 +1884,7 @@ namespace Portly.UI
             WatchDocRoot();
             Terminal.ApplyUserPath();
             if (ServiceMode.IsController) ServiceMode.StartPolling(); // states come from the Portly Windows service
+            await Task.Run(() => ShareFirewall.Prepare(ShareStore.All().Where(x => x.Lan && x.LanAuto && x.LanPort > 0).Select(x => x.LanPort).ToList()));
             StartAutoShares();
 
             var s = Settings.Current;

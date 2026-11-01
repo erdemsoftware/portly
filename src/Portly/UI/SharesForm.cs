@@ -19,7 +19,7 @@ namespace Portly.UI
         {
             if (ServiceManager.Web.State != ServiceState.Running) { Ui.Error(owner, I18n.T("main.webNotRunning")); return null; }
             // the explanation only the first time; a remembered share starts again directly
-            if (!ShareStore.Get(site.Host).Lan && !Ui.Confirm(owner, I18n.T("lan.confirm", site.Host))) return null;
+            if (!ShareStore.Get(site.Host).Lan && !Ui.Confirm(owner, I18n.T("lan.confirmRule", site.Host))) return null;
             try
             {
                 var url = LanShare.Start(site);
@@ -46,6 +46,9 @@ namespace Portly.UI
             if (url == null) return;
             bool https = url.StartsWith("https://");
             var text = I18n.T("lan.qrText");
+            // why devices may not get through (UAC refused, network not private ...): first, the code alone would not work
+            var note = ShareFirewall.Note(ShareStore.Get(host).LanPort);
+            if (note != null) text = note + "\n\n" + text;
             if (ShareStore.Get(host).LanPassword != "") text += "\n\n" + I18n.T("lan.qrPassword");
             if (https) text += "\n\n" + I18n.T("lan.qrHttps", "http" + url.Substring(5));
             QrDialog.ShowFor(owner, I18n.T("lan.qrTitle", host), text, url, https ? "http" + url.Substring(5) + "portly-ca" : null);
@@ -423,7 +426,7 @@ namespace Portly.UI
                 bool running = lan ? LanShare.IsRunning(e.Host) : Share.IsRunning(e.Host);
                 bool moved = lan && chosen != e.LanPort && running;
                 var newFixed = lan ? e.FixedHost : fixedHost.Text.Trim().ToLowerInvariant();
-                if (moved) LanShare.Stop(e.Host);
+                if (moved) LanShare.Stop(e.Host, true);
                 ShareStore.Update(e.Host, x =>
                 {
                     x.Note = note.Text.Trim();

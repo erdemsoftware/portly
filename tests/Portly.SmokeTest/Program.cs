@@ -36,6 +36,7 @@ namespace Portly.SmokeTest
         static int Main(string[] args)
         {
             Console.OutputEncoding = Encoding.UTF8;
+            ShareFirewall.Elevate = (exe, arguments) => 0; // a test run never raises UAC or changes the firewall
             if (args.Length > 0 && args[0] == "--share-security") return ShareSecurityOnly();
             try { return Run(args).GetAwaiter().GetResult(); }
             catch (Exception ex) { Console.WriteLine(ex); return 2; }

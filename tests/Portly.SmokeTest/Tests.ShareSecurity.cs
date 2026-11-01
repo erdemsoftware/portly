@@ -52,6 +52,13 @@ namespace Portly.SmokeTest
                 ShareMalformed(s);
                 ShareNormal(s);
                 ShareHttpsRetry(s);
+                ShareHeaders(s);
+                ShareSlowClients(s);
+                ShareConnectionLimits(s);
+                SharePasswordGate();
+                SharePasswordFlow(s);
+                ShareLanSide(s);
+                ShareFirewallRules();
             }
             finally
             {
@@ -293,7 +300,7 @@ namespace Portly.SmokeTest
                 Thread.Sleep(100);
                 c.Send(" world");
                 var got = c.ReadToClose(3000);
-                Check("share: POST with the body in two packets", got.Contains("ok") && web.Seen.EndsWith("Content-Length: 11\r\nX-Forwarded-Host: " + PublicHost + "\r\nX-Forwarded-Proto: https\r\nX-Forwarded-For: 127.0.0.1\r\nConnection: close\r\n\r\nhello world"), Short(web.Seen));
+                Check("share: POST with the body in two packets", got.Contains("ok") && web.Seen.EndsWith("Content-Length: 11\r\nX-Forwarded-Host: " + PublicHost + "\r\nX-Forwarded-Proto: https\r\nX-Forwarded-For: 127.0.0.1\r\nX-Real-IP: 127.0.0.1\r\nConnection: close\r\n\r\nhello world"), Short(web.Seen));
             }
             // larger than one read of the proxy
             using (var web = new FakeWeb(h => Ok200))
@@ -359,6 +366,565 @@ namespace Portly.SmokeTest
             }
         }
 
+        /// <summary>Only Portly tells the site who is asking; the address for the device list still comes from Cloudflare.</summary>
+        static void ShareHeaders(Settings s)
+        {
+            var spoofed = new[]
+            {
+                "Forwarded", "forwarded", "X-Real-IP", "X_Real_IP", "x-real-ip", "True-Client-IP", "True_Client_IP", "X-Client-IP", "X_Client_IP", "Client-IP",
+                "CF-Connecting-IP", "CF_Connecting_IP", "cf-connecting-ip", "CF-Connecting-IPv6", "CF-IPCountry", "X-Cluster-Client-IP", "X_Cluster_Client_IP",
+                "X-Originating-IP", "X-Remote-IP", "X-Remote-Addr", "X-Forwarded-For", "X_Forwarded_For", "X-Forwarded-Server", "X-Host", "X-Original-URL", "X-Rewrite-URL", "Proxy",
+            };
+            foreach (var request in new[] { "GET /a HTTP/1.1\r\nHost: " + PublicHost + "\r\n", WsHead.Substring(0, WsHead.Length - 2) })
+            {
+                bool upgrade = request == WsHead.Substring(0, WsHead.Length - 2);
+                foreach (var name in spoofed)
+                    using (var web = new FakeWeb(h => Ok200))
+                    using (var c = new ShareClient(ShareProxy(s, web)))
+                    {
+                        c.Send(request + name + ": 6.6.6.6\r\n\r\n");
+                        c.ReadToClose(3000);
+                        // CF-Connecting-IP itself is who Portly believes on this kind of share: it comes out as Portly's own two headers only
+                        var passed = name.StartsWith("CF-C", StringComparison.OrdinalIgnoreCase) ? web.Seen.Replace("X-Forwarded-For: 6.6.6.6\r\n", "").Replace("X-Real-IP: 6.6.6.6\r\n", "") : web.Seen;
+                        Check("share: client " + name + " does not reach the site" + (upgrade ? " (upgrade)" : ""), web.Seen.StartsWith("GET ") && !passed.Contains("6.6.6.6"), Short(web.Seen));
+                    }
+            }
+            using (var web = new FakeWeb(h => Ok200))
+            {
+                int port = ShareProxy(s, web);
+                using (var c = new ShareClient(port))
+                {
+                    c.Send("GET / HTTP/1.1\r\nHost: " + PublicHost + "\r\nCF-Connecting-IP: 203.0.113.9\r\nCF-IPCountry: TR\r\nX-Real-IP: 6.6.6.6\r\nX-Forwarded-For: 6.6.6.6\r\n\r\n");
+                    c.ReadToClose(3000);
+                }
+                Check("share: the site gets the visitor's address from Portly only", web.Seen.Contains("X-Forwarded-For: 203.0.113.9\r\n") && web.Seen.Contains("X-Real-IP: 203.0.113.9\r\n") && !web.Seen.Contains("6.6.6.6") && !web.Seen.Contains("CF-Connecting-IP"), Short(web.Seen));
+                var device = LanShare.DevicesOf(ShareHost, true).FirstOrDefault(d => d.Ip == "203.0.113.9");
+                Check("share: the device list still reads CF-Connecting-IP", device != null && device.Country == "TR", string.Join(",", LanShare.DevicesOf(ShareHost, true).Select(d => d.Label)));
+            }
+            using (var web = new FakeWeb(h => Ok200))
+            using (var c = new ShareClient(ShareProxy(s, web)))
+            {
+                c.Send("GET / HTTP/1.1\r\nHost: " + PublicHost + "\r\nCF-Connecting-IP: not an address, 1.2.3.4\r\n\r\n");
+                c.ReadToClose(3000);
+                Check("share: a CF-Connecting-IP that is no address is not believed", web.Seen.Contains("X-Forwarded-For: 127.0.0.1\r\n") && !web.Seen.Contains("not an address"), Short(web.Seen));
+            }
+        }
+
+        static void Limits(int head, int window, int minBytes, int stall, Action test)
+        {
+            int h = ShareLimits.HeadMs, w = ShareLimits.BodyWindowMs, m = ShareLimits.BodyMinBytes, t = ShareLimits.StallMs;
+            ShareLimits.HeadMs = head; ShareLimits.BodyWindowMs = window; ShareLimits.BodyMinBytes = minBytes; ShareLimits.StallMs = stall;
+            try { test(); }
+            finally { ShareLimits.HeadMs = h; ShareLimits.BodyWindowMs = w; ShareLimits.BodyMinBytes = m; ShareLimits.StallMs = t; }
+        }
+
+        /// <summary>Sends one small piece every 100 ms until the proxy hangs up, at most for <paramref name="ms"/>. Returns how long it stayed open, in ms.</summary>
+        static long Trickle(ShareClient c, int ms, string piece = "x")
+        {
+            var clock = Stopwatch.StartNew();
+            while (clock.ElapsedMilliseconds < ms && !c.HungUp(100)) c.Send(piece);
+            return clock.ElapsedMilliseconds;
+        }
+
+        static void ShareSlowClients(Settings s)
+        {
+            Limits(800, 600, 1000, 700, () =>
+            {
+                using (var web = new FakeWeb(h => Ok200))
+                using (var c = new ShareClient(ShareProxy(s, web)))
+                {
+                    var clock = Stopwatch.StartNew();
+                    c.ReadToClose(4000);
+                    Check("share: a connection that sends nothing is closed when the head time is over", c.Closed && clock.ElapsedMilliseconds < 2500 && web.Connections == 0, clock.ElapsedMilliseconds + " ms");
+                }
+                using (var web = new FakeWeb(h => Ok200))
+                using (var c = new ShareClient(ShareProxy(s, web)))
+                {
+                    c.Send("GET / HTTP/1.1\r\nHost: " + PublicHost + "\r\n");
+                    var open = Trickle(c, 5000, "X-A: b\r\n");
+                    Check("share: a head sent byte by byte does not extend its time", open < 2500 && web.Connections == 0, open + " ms");
+                }
+                using (var web = new FakeWeb(h => Ok200))
+                using (var c = new ShareClient(ShareProxy(s, web, "secret")))
+                {
+                    c.Send("POST /__portly/login HTTP/1.1\r\nHost: " + PublicHost + "\r\nContent-Length: 4000\r\n\r\n");
+                    var open = Trickle(c, 5000);
+                    Check("share: a login form sent byte by byte runs out of the same time", open < 2500, open + " ms");
+                }
+                using (var web = new FakeWeb(h => Ok200))
+                using (var c = new ShareClient(ShareProxy(s, web)))
+                {
+                    c.Send("POST /a HTTP/1.1\r\nHost: " + PublicHost + "\r\nContent-Length: 100000\r\n\r\n");
+                    var open = Trickle(c, 6000);
+                    bool ended = false;
+                    for (int i = 0; i < 30 && !ended; i++) { Thread.Sleep(50); ended = web.Closed > 0; }
+                    Check("share: a body that trickles is closed, the web server side too", open < 3000 && ended, open + " ms, web closed " + web.Closed);
+                }
+                using (var web = new FakeWeb(h => Ok200))
+                using (var c = new ShareClient(ShareProxy(s, web)))
+                {
+                    c.Send("POST /a HTTP/1.1\r\nHost: " + PublicHost + "\r\nTransfer-Encoding: chunked\r\n\r\n");
+                    var open = Trickle(c, 6000, "1\r\nx\r\n");
+                    Check("share: a chunked body that trickles is closed", open < 3000 && web.Connections == 0, open + " ms");
+                }
+                // about 3 KB/s for 4 seconds: over several windows, none of them empty
+                using (var web = new FakeWeb(h => Ok200))
+                using (var c = new ShareClient(ShareProxy(s, web)))
+                {
+                    var piece = new string('u', 1000);
+                    c.Send("POST /upload HTTP/1.1\r\nHost: " + PublicHost + "\r\nContent-Length: " + 12 * piece.Length + "\r\n\r\n");
+                    for (int i = 0; i < 12; i++) { Thread.Sleep(300); c.Send(piece); }
+                    var got = c.ReadToClose(3000);
+                    Check("share: a slow but steady upload arrives whole", got.Contains("ok") && web.Seen.EndsWith(string.Concat(Enumerable.Repeat(piece, 12))), web.Seen.Length.ToString());
+                }
+                // the time PHP takes is not the device's
+                using (var web = new FakeWeb(h => { Thread.Sleep(2000); return Ok200; }))
+                using (var c = new ShareClient(ShareProxy(s, web)))
+                {
+                    c.Send("GET / HTTP/1.1\r\nHost: " + PublicHost + "\r\n\r\n");
+                    var got = c.ReadToClose(5000);
+                    Check("share: a slow page is left alone", got.Contains("ok"), Short(got));
+                }
+                int waitServer = ShareLimits.ServerMs;
+                ShareLimits.ServerMs = 700;
+                using (var web = new FakeWeb(h => { Thread.Sleep(4000); return Ok200; }))
+                using (var c = new ShareClient(ShareProxy(s, web)))
+                {
+                    var clock = Stopwatch.StartNew();
+                    c.Send("GET / HTTP/1.1\r\nHost: " + PublicHost + "\r\n\r\n");
+                    c.ReadToClose(3000);
+                    Check("share: a web server that never answers does not hold the connection for ever", c.Closed && clock.ElapsedMilliseconds < 2500, clock.ElapsedMilliseconds + " ms");
+                }
+                ShareLimits.ServerMs = waitServer;
+                using (var web = new FakeWeb(h => { Thread.Sleep(1500); return Ok200; }))
+                using (var c = new ShareClient(ShareProxy(s, web)))
+                {
+                    c.Send("POST /a HTTP/1.1\r\nHost: " + PublicHost + "\r\nContent-Length: 4\r\n\r\nabcd");
+                    var got = c.ReadToClose(5000);
+                    Check("share: a POST with a slow answer is left alone", got.Contains("ok"), Short(got));
+                }
+                using (var web = new FakeWeb(h => Upgrade101) { Echo = true })
+                using (var c = new ShareClient(ShareProxy(s, web)))
+                {
+                    c.Send(WsHead);
+                    c.ReadUntil("101");
+                    Thread.Sleep(1800);
+                    c.Send("ping");
+                    var got = c.ReadUntil("echo:ping");
+                    Check("share: a quiet tunnel stays open past every deadline", got.Contains("echo:ping"), Short(got));
+                }
+                // a device that stops reading: Windows takes in a lot for it first, then the proxy's writes wait
+                using (var web = new FakeWeb(h => "HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: 2147483648\r\n\r\n") { FloodMb = 2048 })
+                using (var c = new ShareClient(ShareProxy(s, web), 4096))
+                {
+                    c.Send("GET /big HTTP/1.1\r\nHost: " + PublicHost + "\r\n\r\n");
+                    bool ended = false;
+                    for (int i = 0; i < 150 && !ended; i++) { Thread.Sleep(100); ended = web.Closed > 0; }
+                    Check("share: a device that stops reading is closed", ended && !web.Flooded, "web closed " + web.Closed);
+                }
+                // reading steadily, a large rewritten page is one big write for the proxy
+                var page = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 4194304\r\n\r\n" + new string('p', 4 * 1024 * 1024);
+                using (var web = new FakeWeb(h => page))
+                using (var c = new ShareClient(ShareProxy(s, web)))
+                {
+                    c.Send("GET /big HTTP/1.1\r\nHost: " + PublicHost + "\r\n\r\n");
+                    var got = c.ReadToClose(8000);
+                    Check("share: a device that keeps reading gets a large page whole", got.EndsWith(new string('p', 1000)) && got.Length > 4 * 1024 * 1024, got.Length.ToString());
+                }
+            });
+        }
+
+        static void ShareConnectionLimits(Settings s)
+        {
+            int conns = ShareLimits.MaxConnections, tunnels = ShareLimits.MaxTunnels, refusing = ShareLimits.MaxRefusing;
+            try
+            {
+                using (var web = new FakeWeb(h => Ok200))
+                {
+                    int port = ShareProxy(s, web);
+                    var clients = Enumerable.Range(0, 60).Select(i => new ShareClient(port)).ToList();
+                    foreach (var c in clients) c.Send("GET /asset" + " HTTP/1.1\r\nHost: " + PublicHost + "\r\n\r\n");
+                    var answers = clients.Select(c => c.ReadToClose(5000)).ToList();
+                    int fine = answers.Count(a => a.Contains("ok"));
+                    clients.ForEach(c => c.Dispose());
+                    Check("share: 60 assets at once are all served with the normal limit", fine == 60, fine + ": " + Short(answers.FirstOrDefault(a => !a.Contains("ok")) ?? ""));
+                }
+                ShareLimits.MaxConnections = 3;
+                using (var web = new FakeWeb(h => Ok200))
+                {
+                    int port = ShareProxy(s, web);
+                    var waiting = Enumerable.Range(0, 3).Select(i => new ShareClient(port)).ToList();
+                    Thread.Sleep(200);
+                    using (var c = new ShareClient(port))
+                    {
+                        c.Send("GET /one-too-many HTTP/1.1\r\nHost: " + PublicHost + "\r\n\r\n");
+                        var got = c.ReadToClose(3000);
+                        Check("share: past the limit a device gets a clean 503", got.StartsWith("HTTP/1.1 503 ") && got.Contains("Retry-After:") && c.Closed && !web.Seen.Contains("one-too-many"), Short(got));
+                    }
+                    waiting.ForEach(c => c.Dispose());
+                    Thread.Sleep(300);
+                    using (var c = new ShareClient(port))
+                    {
+                        c.Send("GET /again HTTP/1.1\r\nHost: " + PublicHost + "\r\n\r\n");
+                        var got = c.ReadToClose(3000);
+                        Check("share: places free up when connections end", got.Contains("ok"), Short(got));
+                    }
+                }
+                ShareLimits.MaxConnections = 2;
+                ShareLimits.MaxTunnels = 2;
+                using (var web = new FakeWeb(h => h.Contains("Upgrade:") ? Upgrade101 : Ok200) { Echo = true })
+                {
+                    int port = ShareProxy(s, web);
+                    var open = Enumerable.Range(0, 2).Select(i => new ShareClient(port)).ToList();
+                    foreach (var c in open) { c.Send(WsHead); c.ReadUntil("101"); }
+                    Thread.Sleep(100);
+                    using (var c = new ShareClient(port))
+                    {
+                        c.Send(WsHead.Replace("/hmr", "/third"));
+                        var got = c.ReadToClose(3000);
+                        Check("share: past the tunnel limit an upgrade gets 503 and never reaches the site", got.StartsWith("HTTP/1.1 503 ") && !web.Seen.Contains("/third"), Short(got));
+                    }
+                    using (var c = new ShareClient(port))
+                    using (var d = new ShareClient(port))
+                    {
+                        c.Send("GET /plain HTTP/1.1\r\nHost: " + PublicHost + "\r\n\r\n");
+                        d.Send("GET /plain HTTP/1.1\r\nHost: " + PublicHost + "\r\n\r\n");
+                        Check("share: open tunnels do not use up the places of normal requests", c.ReadToClose(3000).StartsWith("HTTP/1.1 200 ") && d.ReadToClose(3000).StartsWith("HTTP/1.1 200 "), Short(c.ReadToClose(1)));
+                    }
+                    open[0].Dispose();
+                    Thread.Sleep(300);
+                    using (var c = new ShareClient(port))
+                    {
+                        c.Send(WsHead);
+                        Check("share: a closed tunnel frees its place", c.ReadUntil("101").StartsWith("HTTP/1.1 101"), Short(c.ReadUntil("101")));
+                    }
+                    open[1].Dispose();
+                }
+                ShareLimits.MaxConnections = 0;
+                ShareLimits.MaxRefusing = 1;
+                using (var web = new FakeWeb(h => Ok200))
+                {
+                    int port = ShareProxy(s, web);
+                    using (var a = new ShareClient(port))
+                    {
+                        Thread.Sleep(100);
+                        using (var b = new ShareClient(port))
+                        {
+                            var clock = Stopwatch.StartNew();
+                            b.ReadToClose(3000);
+                            Check("share: past the refusing limit a connection is just closed", b.Closed && clock.ElapsedMilliseconds < 1000, clock.ElapsedMilliseconds + " ms");
+                        }
+                    }
+                }
+            }
+            finally { ShareLimits.MaxConnections = conns; ShareLimits.MaxTunnels = tunnels; ShareLimits.MaxRefusing = refusing; }
+        }
+
+        static void SharePasswordGate()
+        {
+            var t = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            var gate = new PasswordGate();
+            GateVerdict v = null;
+            for (int i = 0; i < 5; i++) v = gate.Attempt("10.0.0.1", () => false, t);
+            Check("password gate: the fifth wrong answer locks for a minute", v.LockStarted && !v.Everyone && v.Wait == TimeSpan.FromMinutes(1), v.Wait.ToString());
+            bool asked = false;
+            v = gate.Attempt("10.0.0.1", () => { asked = true; return true; }, t.AddSeconds(59));
+            Check("password gate: while locked the password is not looked at", !asked && !v.Right && !v.Tested && v.Wait == TimeSpan.FromSeconds(1) && !v.LockStarted, v.Wait.ToString());
+            Check("password gate: another address is not locked", gate.Attempt("10.0.0.2", () => true, t).Right, "");
+            var locks = new List<double>();
+            for (int i = 0; i < 7; i++)
+            {
+                t = t.AddMinutes(16);
+                locks.Add(gate.Attempt("10.0.0.1", () => false, t).Wait.TotalMinutes);
+            }
+            Check("password gate: the lock grows up to 15 minutes", locks.SequenceEqual(new double[] { 2, 4, 8, 15, 15, 15, 15 }), string.Join(",", locks));
+            t = t.AddMinutes(16);
+            Check("password gate: the right password after the lock opens and clears", gate.Attempt("10.0.0.1", () => true, t).Right, "");
+            for (int i = 0; i < 4; i++) v = gate.Attempt("10.0.0.1", () => false, t);
+            Check("password gate: a success starts the count again", v.Wait == TimeSpan.Zero, v.Wait.ToString());
+            gate.Reset();
+            Check("password gate: Reset forgets everything", gate.Attempt("10.0.0.1", () => false, t).Wait == TimeSpan.Zero && gate.Tracked == 1, "");
+
+            gate = new PasswordGate();
+            for (int i = 0; i < 19; i++) v = gate.Attempt("10.1.0." + i, () => false, t);
+            Check("password gate: wrong answers from many addresses are allowed up to the share's limit", v.Wait == TimeSpan.Zero, v.Wait.ToString());
+            v = gate.Attempt("10.1.0.100", () => false, t);
+            Check("password gate: the share-wide limit locks", v.LockStarted && v.Everyone && v.Wait == TimeSpan.FromMinutes(1), v.Wait.ToString());
+            asked = false;
+            v = gate.Attempt("10.1.0.200", () => { asked = true; return true; }, t.AddSeconds(30));
+            Check("password gate: a new address cannot test the password during the share-wide lock", !asked && !v.Right && v.Wait > TimeSpan.Zero, v.Wait.ToString());
+            int tested = 0;
+            var u = t;
+            for (int i = 0; i < 2000; i++)
+            {
+                u = u.AddSeconds(1);
+                if (gate.Attempt("10.2." + i / 200 + "." + i % 200, () => false, u).Tested) tested++;
+            }
+            Check("password gate: rotating addresses get about 100 guesses an hour", tested <= 110 && tested > 0, tested.ToString());
+
+            gate = new PasswordGate();
+            for (int i = 0; i < 5; i++) v = gate.Attempt("2001:db8:1:2::" + (i + 1).ToString("x"), () => false, t);
+            Check("password gate: an IPv6 network counts as one address", v.LockStarted, v.Wait.ToString());
+            Check("password gate: another IPv6 network does not", gate.Attempt("2001:db8:1:3::1", () => true, t).Right, "");
+
+            gate = new PasswordGate();
+            for (int i = 0; i < 3000; i++) gate.Attempt("10." + i / 250 + "." + i % 250 + ".1", () => false, t.AddMinutes(10 * i));
+            Check("password gate: the list of addresses stays bounded", gate.Tracked <= 1024, gate.Tracked.ToString());
+
+            Check("share: password comparison", LanShare.SamePassword("kite-1234-moon", "kite-1234-moon") && LanShare.SamePassword("şifré", "şifré")
+                && !LanShare.SamePassword("kite", "kite-1234-moon") && !LanShare.SamePassword("kitf", "kite") && !LanShare.SamePassword("", "kite"), "");
+        }
+
+        static string Login(int port, string password, string address)
+        {
+            using (var c = new ShareClient(port))
+            {
+                var form = "password=" + password + "&next=%2F";
+                c.Send("POST /__portly/login HTTP/1.1\r\nHost: " + PublicHost + "\r\nCF-Connecting-IP: " + address + "\r\nContent-Length: " + form.Length + "\r\n\r\n" + form);
+                return c.ReadToClose(5000);
+            }
+        }
+
+        static void SharePasswordFlow(Settings s)
+        {
+            using (var web = new FakeWeb(h => Ok200))
+            {
+                int port = ShareProxy(s, web, "secret");
+                var bad = "";
+                for (int i = 0; i < 4; i++) bad = Login(port, "guess" + i, "198.51.100.1");
+                Check("share: wrong password below the limit is 401", bad.StartsWith("HTTP/1.1 401 "), Short(bad));
+                bad = Login(port, "guess5", "198.51.100.1");
+                Check("share: the fifth wrong password is 429 and says when to try again", bad.StartsWith("HTTP/1.1 429 ") && bad.Contains("Retry-After: 60\r\n"), Short(bad));
+                var clock = Stopwatch.StartNew();
+                var wrong = Login(port, "guess6", "198.51.100.1");
+                var right = Login(port, "secret", "198.51.100.1");
+                Check("share: locked out, the right password gets nothing", right.StartsWith("HTTP/1.1 429 ") && !right.Contains("Set-Cookie"), Short(right));
+                Func<string, string> body = x => System.Text.RegularExpressions.Regex.Replace(x, @"Retry-After: \d+", "");
+                Check("share: locked out, right and wrong passwords get the same answer", body(wrong) == body(right), Short(wrong) + " | " + Short(right));
+                Check("share: locked out, the answer is immediate", clock.ElapsedMilliseconds < 500, clock.ElapsedMilliseconds + " ms");
+                var other = Login(port, "secret", "198.51.100.2");
+                Check("share: another address can still log in", other.StartsWith("HTTP/1.1 303 "), Short(other));
+                var cookie = System.Text.RegularExpressions.Regex.Match(other, @"Set-Cookie: ([^;]+);").Groups[1].Value;
+                using (var c = new ShareClient(port))
+                {
+                    c.Send("GET / HTTP/1.1\r\nHost: " + PublicHost + "\r\nCF-Connecting-IP: 198.51.100.1\r\nCookie: " + cookie + "\r\n\r\n");
+                    Check("share: a device with the cookie stays in during a lockout", c.ReadToClose(3000).Contains("ok"), "");
+                }
+                using (var c = new ShareClient(port))
+                {
+                    var form = "password=secret";
+                    c.Send("POST /__portly/login HTTP/1.1\r\nHost: " + PublicHost + "\r\nCF-Connecting-IP: 198.51.100.1\r\nX-Forwarded-For: 198.51.100.77\r\nX-Real-IP: 198.51.100.77\r\nContent-Length: " + form.Length + "\r\n\r\n" + form);
+                    Check("share: a forged address header does not get around the lockout", c.ReadToClose(5000).StartsWith("HTTP/1.1 429 "), "");
+                }
+                LanShare.SetPassword(ShareHost, "changed", true);
+                var after = Login(port, "changed", "198.51.100.1");
+                Check("share: a new password ends the lockout", after.StartsWith("HTTP/1.1 303 "), Short(after));
+            }
+            // side by side: the count happens with the comparison
+            using (var web = new FakeWeb(h => Ok200))
+            {
+                int port = ShareProxy(s, web, "secret");
+                var answers = Task.WhenAll(Enumerable.Range(0, 24).Select(i => Task.Run(() => Login(port, "guess" + i, "198.51.100.3")))).GetAwaiter().GetResult();
+                int unlocked = answers.Count(a => a.StartsWith("HTTP/1.1 401 "));
+                Check("share: guesses sent side by side cannot pass the limit", unlocked == 4 && answers.Count(a => a.StartsWith("HTTP/1.1 429 ")) == 20, unlocked.ToString());
+            }
+        }
+
+        /// <summary>
+        /// The local network branch of the proxy, on 127.0.0.1: a real share listens on all addresses, which would put the
+        /// Windows firewall question on the screen of whoever runs this.
+        /// </summary>
+        static TcpListener LanProxy(bool https, string password = "")
+        {
+            var listener = new TcpListener(IPAddress.Loopback, 0);
+            listener.Start();
+            var flags = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static;
+            var type = typeof(LanShare).GetNestedType("Entry", System.Reflection.BindingFlags.NonPublic);
+            var entry = Activator.CreateInstance(type);
+            type.GetField("Listener").SetValue(entry, listener);
+            type.GetField("Port").SetValue(entry, ((IPEndPoint)listener.LocalEndpoint).Port);
+            type.GetField("Https").SetValue(entry, https);
+            type.GetField("Password").SetValue(entry, password);
+            type.GetField("Token").SetValue(entry, Guid.NewGuid().ToString("N"));
+            typeof(LanShare).GetMethod("AcceptLoop", flags).Invoke(null, new[] { entry, ShareHost });
+            return listener;
+        }
+
+        static void ShareLanSide(Settings s)
+        {
+            Limits(800, 600, 1000, 700, () =>
+            {
+                using (var web = new FakeWeb(h => Ok200))
+                {
+                    s.HttpPort = web.Port;
+                    var listener = LanProxy(true);
+                    int port = ((IPEndPoint)listener.LocalEndpoint).Port;
+                    try
+                    {
+                        using (var c = new ShareClient(port))
+                        {
+                            c.Send("GET / HTTP/1.1\r\nHost: x\r\nCF-Connecting-IP: 6.6.6.6\r\n\r\n");
+                            var got = c.ReadToClose(3000);
+                            Check("share (LAN): plain http on the shared port, no address believed from a header", got.Contains("ok") && web.Seen.Contains("X-Forwarded-For: 127.0.0.1\r\n") && web.Seen.Contains("X-Forwarded-Proto: http\r\n") && !web.Seen.Contains("6.6.6.6"), Short(web.Seen));
+                        }
+                        using (var c = new ShareClient(port))
+                        {
+                            var clock = Stopwatch.StartNew();
+                            c.ReadToClose(4000);
+                            Check("share (LAN): a connection that sends nothing is closed in time", c.Closed && clock.ElapsedMilliseconds < 2500, clock.ElapsedMilliseconds + " ms");
+                        }
+                        using (var c = new ShareClient(port))
+                        {
+                            c.Send("\x16\x03\x01");
+                            var open = Trickle(c, 5000, "\x00");
+                            Check("share (LAN): a TLS handshake that stalls is closed in time", open < 2500, open + " ms");
+                        }
+                        using (var raw = new TcpClient())
+                        {
+                            raw.Connect(IPAddress.Loopback, port);
+                            using (var tls = new SslStream(raw.GetStream(), false, (o, c, ch, e) => true))
+                            {
+                                tls.AuthenticateAsClient("127.0.0.1", null, SslProtocols.Tls12, false);
+                                var request = Encoding.ASCII.GetBytes("GET /over-tls HTTP/1.1\r\nHost: x\r\n\r\n");
+                                tls.Write(request, 0, request.Length);
+                                var got = new StreamReader(tls, Encoding.ASCII).ReadToEnd();
+                                Check("share (LAN): a request over TLS gets its answer", got.Contains("ok") && web.Seen.Contains("GET /over-tls HTTP/1.0\r\n") && web.Seen.Contains("X-Forwarded-Proto: https\r\n"), Short(got));
+                            }
+                        }
+                    }
+                    finally { listener.Stop(); }
+                }
+            });
+            using (var web = new FakeWeb(h => Ok200))
+            {
+                s.HttpPort = web.Port;
+                var listener = LanProxy(false, "secret");
+                int port = ((IPEndPoint)listener.LocalEndpoint).Port;
+                try
+                {
+                    var last = "";
+                    for (int i = 0; i < 5; i++) last = Login(port, "guess", "198.51.100." + (10 + i));
+                    Check("share (LAN): a forged address header cannot rotate past the lockout", last.StartsWith("HTTP/1.1 429 "), Short(last));
+                }
+                finally { listener.Stop(); }
+            }
+        }
+
+        /// <summary>The firewall rule of a local network share, with the elevated command and the firewall itself swapped out: no UAC here.</summary>
+        static void ShareFirewallRules()
+        {
+            var exe = Paths.Exe;
+            File.Delete(Path.Combine(Paths.Usr, "share-firewall-declined.txt"));
+            Func<int, FirewallView> net = active => new FirewallView { Active = active };
+            Func<int, FirewallRule> own = port => new FirewallRule { Name = "Portly share " + port, Allow = true, Profiles = ShareFirewall.Private, Ports = port.ToString() };
+            Check("firewall: the rule is the port, private networks and this subnet",
+                ShareFirewall.AddCommand(8900) == "netsh advfirewall firewall add rule name=\"Portly share 8900\" dir=in action=allow protocol=TCP localport=8900 profile=private remoteip=localsubnet", ShareFirewall.AddCommand(8900));
+            Check("firewall: no rule on a private network means add it", ShareFirewall.Decide(net(ShareFirewall.Private), 8900, exe) == FirewallNeed.AddRule, "");
+            var v = net(ShareFirewall.Private);
+            v.Rules.Add(own(8900));
+            Check("firewall: the share's rule is enough", ShareFirewall.Decide(v, 8900, exe) == FirewallNeed.None, "");
+            Check("firewall: a rule for another port is not", ShareFirewall.Decide(v, 8901, exe) == FirewallNeed.AddRule, "");
+            v.Rules[0].Enabled = false;
+            Check("firewall: a disabled rule does not count", ShareFirewall.Decide(v, 8900, exe) == FirewallNeed.AddRule, "");
+            v = net(ShareFirewall.Private);
+            v.Rules.Add(new FirewallRule { Name = "Portly", App = exe.ToUpperInvariant(), Allow = true, Profiles = ShareFirewall.Private });
+            Check("firewall: Windows' own allow for this Portly.exe needs no rule", ShareFirewall.Decide(v, 8900, exe) == FirewallNeed.None, "");
+            v = net(ShareFirewall.Private);
+            v.Rules.Add(new FirewallRule { Name = "Portly", App = @"D:\other\Portly.exe", Allow = true, Profiles = ShareFirewall.Private });
+            Check("firewall: an allow for a Portly.exe somewhere else does not help", ShareFirewall.Decide(v, 8900, exe) == FirewallNeed.AddRule, "");
+            v = net(ShareFirewall.Private);
+            v.Rules.Add(new FirewallRule { Name = "Portly", App = exe, Allow = false, Profiles = ShareFirewall.Private });
+            Check("firewall: a block rule for Portly.exe is reported, an allow rule could not beat it", ShareFirewall.Decide(v, 8900, exe) == FirewallNeed.Blocked, "");
+            Check("firewall: on a public network a private rule would do nothing", ShareFirewall.Decide(net(ShareFirewall.Public), 8900, exe) == FirewallNeed.NotPrivate, "");
+            v = net(ShareFirewall.Public);
+            v.Off = ShareFirewall.Public;
+            Check("firewall: switched off, nothing is needed", ShareFirewall.Decide(v, 8900, exe) == FirewallNeed.None, "");
+            Check("firewall: no firewall to read, nothing is asked", ShareFirewall.Decide(null, 8900, exe) == FirewallNeed.None, "");
+
+            var read = ShareFirewall.Read;
+            var elevate = ShareFirewall.Elevate;
+            var machine = read();
+            Check("firewall: the real firewall can be read without rights", machine != null, "");
+            var rules = new FirewallView { Active = ShareFirewall.Private };
+            var commands = new List<string>();
+            int answer = 0;
+            ShareFirewall.Read = () => rules;
+            ShareFirewall.Elevate = (file, args) =>
+            {
+                commands.Add(file + " " + args);
+                if (answer != 0) return answer;
+                foreach (System.Text.RegularExpressions.Match m in System.Text.RegularExpressions.Regex.Matches(args, @"delete rule name=""Portly share (\d+)"""))
+                    rules.Rules.RemoveAll(r => r.Name == "Portly share " + m.Groups[1].Value);
+                foreach (System.Text.RegularExpressions.Match m in System.Text.RegularExpressions.Regex.Matches(args, @"add rule name=""Portly share (\d+)"""))
+                    rules.Rules.Add(own(int.Parse(m.Groups[1].Value)));
+                return 0;
+            };
+            try
+            {
+                const int P = 48900, Q = 48901, R = 48902;
+                ShareFirewall.Open(P, false);
+                Check("firewall: a start adds the rule once", commands.Count == 1 && commands[0].StartsWith("cmd.exe /c ") && commands[0].EndsWith(ShareFirewall.AddCommand(P)) && ShareFirewall.Note(P) == null, string.Join(" | ", commands));
+                ShareFirewall.Open(P, false);
+                ShareFirewall.Open(P, true);
+                Check("firewall: a rule that exists costs no UAC", commands.Count == 1, string.Join(" | ", commands));
+                ShareFirewall.Close(P);
+                Check("firewall: stopping removes the rule", commands.Count == 2 && commands[1].EndsWith(ShareFirewall.DeleteCommand(P)) && rules.Rules.Count == 0, string.Join(" | ", commands));
+                ShareFirewall.Close(P);
+                Check("firewall: stopping without a rule costs no UAC", commands.Count == 2, "");
+
+                commands.Clear();
+                answer = -2;
+                ShareFirewall.Open(P, false);
+                Check("firewall: refused UAC leaves a message and no exception", commands.Count == 1 && ShareFirewall.Note(P) != null, "");
+                ShareFirewall.Open(P, true);
+                ShareFirewall.Open(P, true);
+                ShareFirewall.Prepare(new[] { P });
+                Check("firewall: after a refusal automatic starts do not ask again", commands.Count == 1 && ShareFirewall.Note(P) != null, string.Join(" | ", commands));
+                ShareFirewall.Open(P, false);
+                Check("firewall: a start by the user asks again", commands.Count == 2, "");
+                answer = 0;
+                ShareFirewall.Open(P, false);
+                ShareFirewall.Close(P);
+                commands.Clear();
+                ShareFirewall.Prepare(new[] { P });
+                Check("firewall: once granted the refusal is forgotten", commands.Count == 1, string.Join(" | ", commands));
+                ShareFirewall.Close(P);
+
+                // left behind by a Portly that was closed while sharing
+                commands.Clear();
+                rules.Rules.Add(own(Q));
+                rules.Rules.Add(own(R));
+                ShareFirewall.Prepare(new[] { R, P });
+                Check("firewall: at start one UAC prompt adds what is missing and removes what is left over",
+                    commands.Count == 1 && commands[0].Contains(ShareFirewall.DeleteCommand(Q)) && commands[0].Contains(ShareFirewall.AddCommand(P)) && !commands[0].Contains(ShareFirewall.DeleteCommand(R)), string.Join(" | ", commands));
+                ShareFirewall.Prepare(new[] { R, P });
+                Check("firewall: nothing to do at the next start, no UAC", commands.Count == 1, string.Join(" | ", commands));
+                commands.Clear();
+                answer = -2;
+                rules.Rules.Add(own(Q));
+                ShareFirewall.Prepare(new[] { R, P });
+                ShareFirewall.Prepare(new[] { R, P });
+                Check("firewall: a refused clean-up is not asked at every start", commands.Count == 1, string.Join(" | ", commands));
+                commands.Clear();
+                answer = 0;
+                rules.Rules.RemoveAll(r => r.Name.EndsWith(P.ToString()));
+                ShareFirewall.Open(P, false);
+                Check("firewall: the next prompt takes the left-over rule along", commands.Count == 1 && commands[0].Contains(ShareFirewall.DeleteCommand(Q)) && commands[0].Contains(ShareFirewall.AddCommand(P)), string.Join(" | ", commands));
+
+                rules.Active = ShareFirewall.Public;
+                rules.Rules.Clear();
+                commands.Clear();
+                ShareFirewall.Open(P, false);
+                Check("firewall: on a public network no UAC, a message instead", commands.Count == 0 && ShareFirewall.Note(P) != null, "");
+                ShareFirewall.Close(P);
+            }
+            finally
+            {
+                ShareFirewall.Read = read;
+                ShareFirewall.Elevate = elevate;
+            }
+        }
+
         /// <summary>A device talking to the proxy.</summary>
         class ShareClient : IDisposable
         {
@@ -366,8 +932,9 @@ namespace Portly.SmokeTest
             readonly NetworkStream _s;
             public bool Closed;
 
-            public ShareClient(int port)
+            public ShareClient(int port, int receiveBuffer = 0)
             {
+                if (receiveBuffer > 0) _c.ReceiveBufferSize = receiveBuffer;
                 _c.Connect(IPAddress.Loopback, port);
                 _c.NoDelay = true;
                 _s = _c.GetStream();
@@ -380,6 +947,14 @@ namespace Portly.SmokeTest
             }
 
             string _got = "";
+
+            /// <summary>Did the proxy close the connection? Waits for it up to <paramref name="ms"/>.</summary>
+            public bool HungUp(int ms)
+            {
+                if (Closed) return true;
+                if (_c.Client.Poll(ms * 1000, SelectMode.SelectRead)) ReadSome(ms);
+                return Closed;
+            }
 
             public string ReadUntil(string text, int ms = 3000)
             {
@@ -431,6 +1006,8 @@ namespace Portly.SmokeTest
             public bool Echo;               // after a 101: "echo:" + every piece of data
             public bool CloseAfterAnswer;   // an answer that ends with the connection
             public X509Certificate2 Certificate;
+            public int FloodMb;             // after the answer: this many more MB, sent for as long as they are taken
+            public volatile bool Flooded;   // all of them went out
 
             public int Connections { get { return Volatile.Read(ref _connections); } }
             public int Closed { get { return Volatile.Read(ref _closed); } }
@@ -501,6 +1078,8 @@ namespace Portly.SmokeTest
                                 pending = pending.Substring(end + 4 + length);
                                 var answer = _answer(head);
                                 Write(s, answer);
+                                for (int mb = 0; mb < FloodMb; mb++) Write(s, new string('f', 1024 * 1024));
+                                Flooded = FloodMb > 0;
                                 if (CloseAfterAnswer) return;
                                 if (answer.StartsWith("HTTP/1.1 101 "))
                                 {
