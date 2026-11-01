@@ -1104,7 +1104,7 @@ namespace Portly.UI
             {
                 var m = new ContextMenuStrip();
                 StyleMenu(m);
-                m.Items.Add(I18n.T("hosts.edit"), null, (o, a) => Task.Run(() => WinUtil.RunElevated("notepad.exe", "\"" + HostsFile.FilePath + "\"", false)));
+                m.Items.Add(I18n.T("hosts.edit"), null, (o, a) => { using (var f = new HostsForm()) f.ShowDialog(this); });
                 m.Items.Add(I18n.T("hosts.sync"), null, (o, a) => { SetStatus(I18n.T("hosts.syncing")); Task.Run(() => ServiceManager.SyncHostsNow()); });
                 m.Items.Add(I18n.T("hosts.folder"), null, (o, a) => WinUtil.OpenFolder(Path.GetDirectoryName(HostsFile.FilePath)));
                 m.Closed += (o, a) => BeginInvoke((Action)m.Dispose);

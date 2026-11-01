@@ -114,6 +114,49 @@ namespace Portly.Config
             catch { return false; }
         }
 
+        /// <summary>The whole file for the editor. Throws when it cannot be read: an empty text must never be saved over it.</summary>
+        public static string ReadAll() { return File.ReadAllText(FilePath, Encoding.Default); }
+
+        /// <summary>Save the editor's text. Returns 0, -2 (UAC refused) or an error code.</summary>
+        public static int SaveAll(string content)
+        {
+            if (!TryWrite(content))
+            {
+                var tmp = Path.Combine(Paths.Tmp, "hosts-edit.txt");
+                File.WriteAllText(tmp, content, Encoding.Default);
+                var code = WinUtil.RunElevated(Paths.Exe, "--hosts-write \"" + tmp + "\"");
+                try { File.Delete(tmp); } catch { }
+                if (code != 0) return code;
+            }
+            System.Threading.Thread.Sleep(300);
+            if (ReadAll() != content) return 4; // antivirus or another tool undid it
+            try { ProcessUtil.Run("ipconfig.exe", "/flushdns", null, null, 15000); } catch { }
+            return 0;
+        }
+
+        /// <summary>Runs in the elevated helper process ("Portly.exe --hosts-write file"): the user's own edit, whole file.</summary>
+        public static int WriteElevated(string file)
+        {
+            try
+            {
+                if (new FileInfo(file).Length > 4 * 1024 * 1024) return 3;
+                var content = File.ReadAllText(file, Encoding.Default);
+                if (content.IndexOf('\0') >= 0) return 3;
+                WriteOver(content);
+                return 0;
+            }
+            catch { return 2; }
+        }
+
+        static void WriteOver(string content)
+        {
+            var attr = File.GetAttributes(FilePath);
+            bool ro = (attr & FileAttributes.ReadOnly) != 0;
+            if (ro) File.SetAttributes(FilePath, attr & ~FileAttributes.ReadOnly);
+            File.WriteAllText(FilePath, content, Encoding.Default);
+            if (ro) File.SetAttributes(FilePath, attr);
+        }
+
         /// <summary>Runs in the elevated helper process ("Portly.exe --hosts-apply file").</summary>
         public static int ApplyElevated(string blockFile)
         {
@@ -130,12 +173,7 @@ namespace Portly.Config
                     if (parts.Length != 2 || parts[0] != "127.0.0.1" || !HostRx.IsMatch(parts[1])) return 3;
                     hosts.Add(parts[1]);
                 }
-                var content = Compose(Current(), BuildBlock(hosts));
-                var attr = File.GetAttributes(FilePath);
-                bool ro = (attr & FileAttributes.ReadOnly) != 0;
-                if (ro) File.SetAttributes(FilePath, attr & ~FileAttributes.ReadOnly);
-                File.WriteAllText(FilePath, content, Encoding.Default);
-                if (ro) File.SetAttributes(FilePath, attr);
+                WriteOver(Compose(Current(), BuildBlock(hosts)));
                 return 0;
             }
             catch { return 2; }
