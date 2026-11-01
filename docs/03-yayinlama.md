@@ -127,7 +127,7 @@ git push origin v1.0.1
 
 `release.yml` önce imza anahtarını denetler ve güvenlik testlerini (`tools/run-security-tests.ps1`: `--share-security`, `--updates-security`) çalıştırır; biri başarısızsa hiçbir şey yayınlanmaz. Sonra iki sürümü derler, zip'leri ve `SHA256SUMS.txt` dosyasını GitHub sürümüne ekler, ardından `manifest/app.json` dosyasını yeni sürüm, adres ve SHA-256 ile günceller, tüm manifestleri imzalayıp `main` dalına gönderir. Kullanıcılar o andan sonra güncellemeyi görür.
 
-Bu son adım sürüm yayınlandıktan sonra çalışır. Başarısız olursa sürüm durur ama kullanıcılara duyurulmaz: `build\` çıktısındaki `app.json` yerine aşağıdaki elle yolu izleyin.
+Bu son adım sürüm yayınlandıktan sonra çalışır. Başarısız olursa sürüm durur ama kullanıcılara duyurulmaz. İşi yeniden çalıştırmayın (`gh release create` sürüm zaten var diye durur); aşağıdaki "Elle" bölümünün 2. adımını uygulayın.
 
 Değişiklik notunu etiketlemeden önce `manifest/app.json` içindeki `notes` alanına yazın.
 
