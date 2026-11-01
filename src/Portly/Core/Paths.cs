@@ -29,6 +29,8 @@ namespace Portly.Core
         public static string Cache { get { return Path.Combine(Usr, "cache"); } }
         public static string Downloads { get { return Path.Combine(Tmp, "downloads"); } }
         public static string Sessions { get { return Path.Combine(Tmp, "sessions"); } }
+        /// <summary>The only folder SELECT ... INTO OUTFILE and LOAD DATA INFILE may use (secure-file-priv): outside every document root.</summary>
+        public static string MysqlFiles { get { return Path.Combine(Tmp, "mysql-files"); } }
         public static string Ssl { get { return Path.Combine(Etc, "ssl"); } }
         public static string UserSsl { get { return Path.Combine(Usr, "ssl"); } }
         public static string Apps { get { return Path.Combine(Etc, "apps"); } }
@@ -40,7 +42,7 @@ namespace Portly.Core
 
         public static void EnsureAll()
         {
-            foreach (var d in new[] { Bin, Etc, Usr, Data, Tmp, Logs, Www, Backup, Cache, Downloads, Sessions, Ssl, UserSsl, UserTemplates, Apps })
+            foreach (var d in new[] { Bin, Etc, Usr, Data, Tmp, Logs, Www, Backup, Cache, Downloads, Sessions, MysqlFiles, Ssl, UserSsl, UserTemplates, Apps })
                 Directory.CreateDirectory(d);
         }
 

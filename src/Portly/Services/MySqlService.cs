@@ -34,6 +34,8 @@ namespace Portly.Services
 
         void WriteConfig(string dir, string data)
         {
+            // secure-file-priv pointing at a missing folder stops mysqld from starting (tmp\ can be emptied by hand)
+            Directory.CreateDirectory(Paths.MysqlFiles);
             var v = Templates.CommonVars();
             v["MYSQL_DIR"] = Paths.Fwd(dir);
             v["MYSQL_DATA"] = Paths.Fwd(data);
