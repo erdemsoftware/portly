@@ -1,10 +1,10 @@
 ; Portly setup (Inno Setup 6) - built by build.ps1
-;   ISCC /DAppVersion=1.0.0 /DEdition=win10 /DSourceDir=... /DOutputDir=... portly.iss
+;   ISCC /DAppVersion=1.0.0 /DEdition=win10 /DAsset=win10-11 /DSourceDir=... /DOutputDir=... portly.iss
 ; Installs into C:\Portly by default: Portly keeps packages, databases and projects next to the exe,
 ; so it must not live in "Program Files" (no write access there without admin rights).
 ;
 ; Silent install (winget, scripts, company roll-out):
-;   Portly-x.y.z-win10-setup.exe /VERYSILENT /SUPPRESSMSGBOXES /NORESTART [/DIR="D:\Portly"] [/TASKS="desktopicon"]
+;   Portly-x.y.z-win10-11-setup.exe /VERYSILENT /SUPPRESSMSGBOXES /NORESTART [/DIR="D:\Portly"] [/TASKS="desktopicon"]
 ;   /SILENT shows only the progress window. /DIR must be a folder the user can write to (not Program Files).
 ;   Portly is not started after a silent install.
 ; Uninstall (Settings > Apps, or unins000.exe in the Portly folder):
@@ -17,6 +17,9 @@
 #endif
 #ifndef Edition
   #define Edition "win10"
+#endif
+#ifndef Asset
+  #define Asset "win10-11"
 #endif
 #ifndef SourceDir
   #define SourceDir "..\build\stage\Portly"
@@ -51,7 +54,7 @@ MinVersion=6.1sp1
 MinVersion=10.0
 #endif
 OutputDir={#OutputDir}
-OutputBaseFilename=Portly-{#AppVersion}-{#Edition}-setup
+OutputBaseFilename=Portly-{#AppVersion}-{#Asset}-setup
 SetupIconFile=..\assets\portly.ico
 UninstallDisplayIcon={app}\Portly.exe
 Compression=lzma2/max

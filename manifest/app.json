@@ -1,6 +1,6 @@
 {
   "version": "1.2.1",
-  "url": "https://github.com/erdemsoftware/portly/releases/download/v1.2.1/Portly-1.2.1-win10.zip",
+  "url": "https://github.com/erdemsoftware/portly/releases/download/v1.2.1/Portly-1.2.1-win10-11.zip",
   "sha256": "2325dbcd72074e7f8a7d2b3099a2f09f8d3106c8206607be08add34b9e2fc879",
   "notes": {
     "tr": "Önemli güvenlik güncellemesi, herkesin güncellemesi önerilir. Site paylaşımı, yerel araçlar (phpMyAdmin, pano, posta) ve MySQL korumaları güçlendirildi; paylaşım şifresine deneme sınırı eklendi. Güncellemeler artık imzalı olarak denetleniyor. Takılan PHP kendiliğinden yeniden başlıyor. Yeni: MySQL root şifresi ayarı, sınırlı yerel sertifika yetkilisi (SSL onarım penceresinden) ve Portly içinde hosts düzenleyici. Not: Araçlar ve pano artık yalnızca localhost, 127.0.0.1 ve ::1 adlarıyla açılır.",

@@ -56,8 +56,8 @@ Portly; Apache ya da Nginx, PHP, MySQL ya da MariaDB, PostgreSQL, MongoDB, Redis
 
 | İndirme | Windows | Güncelleme | Paketler |
 |---|---|---|---|
-| `Portly-x.y.z-win10.zip` | 10 / 11 (64 bit) | **Var**: uygulama + paket kataloğu | En güncel: PHP 8.5, MySQL 8.4 LTS / 26.x, Apache 2.4, Node 24 LTS ... |
-| `Portly-x.y.z-win7.zip` (Legacy) | 7 SP1 / 8 / 8.1 (64 bit) | **Yok** (sabit katalog) | Windows 7'de çalışan son sürümler: PHP 8.2, MySQL 5.7, Apache 2.4 VS16, Node 13 |
+| `Portly-x.y.z-win10-11.zip` | 10 / 11 (64 bit) | **Var**: uygulama + paket kataloğu | En güncel: PHP 8.5, MySQL 8.4 LTS / 26.x, Apache 2.4, Node 24 LTS ... |
+| `Portly-x.y.z-win7-8.zip` (Legacy) | 7 SP1 / 8 / 8.1 (64 bit) | **Yok** (sabit katalog) | Windows 7'de çalışan son sürümler: PHP 8.2, MySQL 5.7, Apache 2.4 VS16, Node 13 |
 | macOS / Linux | — | — | **Yakında.** Ayar dosyası şimdiden platformdan bağımsız. Desteklemek için yıldız verin ya da bağış yapın. |
 
 Legacy sürüm için .NET Framework 4.8 gerekir (Windows 10 / 11'de zaten yüklüdür).

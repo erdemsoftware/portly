@@ -542,7 +542,7 @@ namespace Portly.SmokeTest
             Check("leftover Portly service closed automatically", orphanConflicts.Count == 0 && orphan.WaitForExit(3000) && !ProcessUtil.IsPortInUse(s.RedisPort));
 
             // ---------- self update: apply the release zip from dist\ ----------
-            var releaseZip = Directory.GetFiles(Path.Combine(Paths.Root, "..", "..", "dist"), "Portly-*-win10.zip").FirstOrDefault();
+            var releaseZip = Directory.GetFiles(Path.Combine(Paths.Root, "..", "..", "dist"), "Portly-*-win10-11.zip").FirstOrDefault();
             if (releaseZip != null)
             {
                 var before = File.GetLastWriteTimeUtc(Path.Combine(Paths.Root, "Portly.exe"));

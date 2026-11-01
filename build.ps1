@@ -2,8 +2,8 @@
   Portly build script
   -------------------
   Builds both editions and creates the release zips in dist\:
-    Portly-<version>-win10.zip   Windows 10 / 11 (updates)
-    Portly-<version>-win7.zip    Windows 7 / 8 / 8.1 (Legacy, frozen)
+    Portly-<version>-win10-11.zip   Windows 10 / 11 (updates)
+    Portly-<version>-win7-8.zip     Windows 7 / 8 / 8.1 (Legacy, frozen)
   and, when Inno Setup 6 is installed, the setup programs.
 
   Usage:
@@ -66,8 +66,8 @@ $dist = Join-Path $root 'dist'
 New-Item -ItemType Directory -Force $dist | Out-Null
 
 $editions = @(
-    @{ Name = 'Modern'; Suffix = 'win10' },
-    @{ Name = 'Legacy'; Suffix = 'win7' }
+    @{ Name = 'Modern'; Suffix = 'win10'; Asset = 'win10-11' },
+    @{ Name = 'Legacy'; Suffix = 'win7'; Asset = 'win7-8' }
 )
 $sums = @()
 foreach ($e in $editions) {
@@ -85,7 +85,7 @@ foreach ($e in $editions) {
     Copy-Item (Join-Path $root 'LICENSE') (Join-Path $stage 'LICENSE.txt')
     Copy-Item (Join-Path $root "installer\README-$($e.Suffix).txt") (Join-Path $stage 'README.txt')
 
-    $zip = Join-Path $dist "Portly-$Version-$($e.Suffix).zip"
+    $zip = Join-Path $dist "Portly-$Version-$($e.Asset).zip"
     if (Test-Path $zip) { Remove-Item $zip }
     Add-Type -AssemblyName System.IO.Compression.FileSystem
     [System.IO.Compression.ZipFile]::CreateFromDirectory((Split-Path $stage), $zip, 'Optimal', $false)
@@ -102,9 +102,9 @@ foreach ($e in $editions) {
             $quoted = ($signArgs | ForEach-Object { if ($_ -match '\s') { '$q' + $_ + '$q' } else { $_ } }) -join ' '
             $isccSign = @('/DSign=1', "/Sportly=`$q$($signtool.FullName)`$q sign $quoted `$q`$f`$q")
         }
-        & $iscc /Q @isccSign "/DAppVersion=$Version" "/DEdition=$($e.Suffix)" "/DSourceDir=$stage" "/DOutputDir=$dist" (Join-Path $root 'installer\portly.iss')
+        & $iscc /Q @isccSign "/DAppVersion=$Version" "/DEdition=$($e.Suffix)" "/DAsset=$($e.Asset)" "/DSourceDir=$stage" "/DOutputDir=$dist" (Join-Path $root 'installer\portly.iss')
         if ($LASTEXITCODE -ne 0) { throw "Installer failed: $($e.Name)" }
-        $setup = Join-Path $dist "Portly-$Version-$($e.Suffix)-setup.exe"
+        $setup = Join-Path $dist "Portly-$Version-$($e.Asset)-setup.exe"
         Sign-File $setup
         $sums += "$((Get-FileHash $setup -Algorithm SHA256).Hash.ToLower())  $(Split-Path $setup -Leaf)"
         Write-Host "  $setup" -ForegroundColor Green
@@ -120,7 +120,7 @@ if ($UpdateManifest) {
     $manifest = Join-Path $root 'manifest\app.json'
     $app = Get-Content $manifest -Raw -Encoding UTF8 | ConvertFrom-Json
     $app.version = $Version
-    $app.url = "https://github.com/erdemsoftware/portly/releases/download/v$Version/Portly-$Version-win10.zip"
+    $app.url = "https://github.com/erdemsoftware/portly/releases/download/v$Version/Portly-$Version-win10-11.zip"
     $app.sha256 = $modernHash
     ($app | ConvertTo-Json -Depth 5) | Set-Content $manifest -Encoding utf8
     Write-Host "manifest\app.json updated (sign and commit it AFTER the GitHub release is published)" -ForegroundColor Yellow

@@ -56,8 +56,8 @@ Portly runs Apache or Nginx, PHP, MySQL or MariaDB, PostgreSQL, MongoDB, Redis, 
 
 | Download | Windows | Updates | Packages |
 |---|---|---|---|
-| `Portly-x.y.z-win10.zip` | 10 / 11 (64-bit) | **Yes**: app + package catalog | Latest: PHP 8.5, MySQL 8.4 LTS / 26.x, Apache 2.4, Node 24 LTS ... |
-| `Portly-x.y.z-win7.zip` (Legacy) | 7 SP1 / 8 / 8.1 (64-bit) | **No** (frozen catalog) | Last versions that run on Windows 7: PHP 8.2, MySQL 5.7, Apache 2.4 VS16, Node 13 |
+| `Portly-x.y.z-win10-11.zip` | 10 / 11 (64-bit) | **Yes**: app + package catalog | Latest: PHP 8.5, MySQL 8.4 LTS / 26.x, Apache 2.4, Node 24 LTS ... |
+| `Portly-x.y.z-win7-8.zip` (Legacy) | 7 SP1 / 8 / 8.1 (64-bit) | **No** (frozen catalog) | Last versions that run on Windows 7: PHP 8.2, MySQL 5.7, Apache 2.4 VS16, Node 13 |
 | macOS / Linux | — | — | **Coming.** The settings export is already platform-neutral. Star the repo or donate to help it happen. |
 
 The Legacy edition needs .NET Framework 4.8 (already part of Windows 10 / 11).

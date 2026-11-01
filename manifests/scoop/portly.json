@@ -29,7 +29,7 @@
     "autoupdate": {
         "architecture": {
             "64bit": {
-                "url": "https://github.com/erdemsoftware/portly/releases/download/v$version/Portly-$version-win10.zip"
+                "url": "https://github.com/erdemsoftware/portly/releases/download/v$version/Portly-$version-win10-11.zip"
             }
         },
         "hash": {

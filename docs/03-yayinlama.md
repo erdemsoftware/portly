@@ -102,7 +102,7 @@ Kendi sertifikanız olursa (OV/EV) yukarıdaki `SIGN_PFX_*` yolu yeterlidir.
 Kurulum programı sessiz kurulumu destekler:
 
 ```
-Portly-1.0.1-win10-setup.exe /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /DIR="D:\Portly"
+Portly-1.0.1-win10-11-setup.exe /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /DIR="D:\Portly"
 unins000.exe /VERYSILENT /SUPPRESSMSGBOXES            (paketler, veritabanları, projeler, ayarlar kalır)
 unins000.exe /VERYSILENT /SUPPRESSMSGBOXES /PURGE     (hepsi silinir)
 ```

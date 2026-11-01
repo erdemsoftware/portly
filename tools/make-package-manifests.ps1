@@ -17,8 +17,8 @@ $base = "https://github.com/erdemsoftware/portly/releases/download/v$Version"
 
 function Hash([string]$file) { if (Test-Path $file) { (Get-FileHash $file -Algorithm SHA256).Hash } else { $null } }
 
-$setup = Join-Path $Dist "Portly-$Version-win10-setup.exe"
-$zip = Join-Path $Dist "Portly-$Version-win10.zip"
+$setup = Join-Path $Dist "Portly-$Version-win10-11-setup.exe"
+$zip = Join-Path $Dist "Portly-$Version-win10-11.zip"
 $setupHash = Hash $setup
 $zipHash = Hash $zip
 
@@ -27,7 +27,7 @@ if ($setupHash) {
     New-Item -ItemType Directory -Force $wingetOut | Out-Null
     foreach ($t in Get-ChildItem (Join-Path $root 'manifests\winget') -Filter *.yaml) {
         $text = Get-Content $t.FullName -Raw -Encoding UTF8
-        $text = $text.Replace('{{VERSION}}', $Version).Replace('{{URL}}', "$base/Portly-$Version-win10-setup.exe").Replace('{{SHA256}}', $setupHash).Replace('{{DATE}}', (Get-Date -Format 'yyyy-MM-dd'))
+        $text = $text.Replace('{{VERSION}}', $Version).Replace('{{URL}}', "$base/Portly-$Version-win10-11-setup.exe").Replace('{{SHA256}}', $setupHash).Replace('{{DATE}}', (Get-Date -Format 'yyyy-MM-dd'))
         # drop the template note on the first line
         $text = ($text -split "`r?`n" | Where-Object { $_ -notmatch '^# Template' }) -join "`n"
         [IO.File]::WriteAllText((Join-Path $wingetOut $t.Name), $text, (New-Object Text.UTF8Encoding($false)))
@@ -39,7 +39,7 @@ if ($zipHash) {
     $scoopOut = Join-Path $Out 'scoop'
     New-Item -ItemType Directory -Force $scoopOut | Out-Null
     $text = Get-Content (Join-Path $root 'manifests\scoop\portly.json') -Raw -Encoding UTF8
-    $text = $text.Replace('{{VERSION}}', $Version).Replace('{{ZIP_URL}}', "$base/Portly-$Version-win10.zip").Replace('{{ZIP_SHA256}}', $zipHash.ToLower())
+    $text = $text.Replace('{{VERSION}}', $Version).Replace('{{ZIP_URL}}', "$base/Portly-$Version-win10-11.zip").Replace('{{ZIP_SHA256}}', $zipHash.ToLower())
     [IO.File]::WriteAllText((Join-Path $scoopOut 'portly.json'), $text, (New-Object Text.UTF8Encoding($false)))
     Write-Host "  Scoop manifest: $scoopOut\portly.json" -ForegroundColor Green
 } else { Write-Host "  Scoop skipped: $zip not found" -ForegroundColor Yellow }
