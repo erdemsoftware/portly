@@ -6,6 +6,7 @@ using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Security;
 using System.Security.Authentication;
+using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Net.Sockets;
 using System.Text;
@@ -17,6 +18,32 @@ using Portly.Core;
 
 namespace Portly.Tools
 {
+    /// <summary>What one share lets a device hold on to.</summary>
+    public static class ShareLimits
+    {
+        // public and not constant: the tests shorten them
+        /// <summary>Time for everything before the request goes on: TLS, the whole head, the login form. Trickling bytes does not extend it.</summary>
+        public static int HeadMs = 30000;
+        /// <summary>A request body must bring BodyMinBytes in every BodyWindowMs (about 550 bytes/s, far below a bad mobile network; a pause under a minute passes).</summary>
+        public static int BodyWindowMs = 60000, BodyMinBytes = 32 * 1024;
+        /// <summary>A device that takes no data from Portly for this long is gone.</summary>
+        public static int StallMs = 60000;
+        /// <summary>A slow PHP page: how long the web server may take to start its answer.</summary>
+        public static int ServerMs = 300000;
+        /// <summary>
+        /// Requests at the same time, per share. One request is one connection here, and behind a tunnel Cloudflare runs a visitor's
+        /// HTTP/2 streams side by side (a Vite page loads hundreds of modules), so this is far above the 6 of one browser.
+        /// </summary>
+        public static int MaxConnections = 400;
+        /// <summary>
+        /// WebSocket tunnels at the same time, per share. Open tunnels are idle for hours, so after the 101 a connection leaves
+        /// MaxConnections and counts here only: tunnels can only keep out other tunnels, never page loads.
+        /// </summary>
+        public static int MaxTunnels = 64;
+        /// <summary>Connections over the limit being told 503 (they need their head read first). Past this they are simply closed.</summary>
+        public static int MaxRefusing = 32;
+    }
+
     /// <summary>
     /// Share one site with the devices on the same network (phone, tablet, another PC): http://192.168.1.20:8901.
     /// Portly listens on a port of its own and passes each request to the local web server with the site's Host header,
@@ -41,6 +68,10 @@ namespace Portly.Tools
             public DateTime? ExpiresAt;  // stops by itself then
             public Timer Expiry;
             public readonly Dictionary<string, ShareDevice> Devices = new Dictionary<string, ShareDevice>();
+            public readonly PasswordGate Gate = new PasswordGate();
+            public int Active;           // requests being served; a connection leaves this count after a 101
+            public int Tunnels;          // WebSocket tunnels, and upgrades on their way to becoming one
+            public int Refusing;         // over the limit, being told so
         }
         static readonly Dictionary<string, Entry> Shares = new Dictionary<string, Entry>(StringComparer.OrdinalIgnoreCase);
         // internet shares: cloudflared -> this proxy (127.0.0.1) -> web server, so they get the same rewriting,
@@ -163,32 +194,42 @@ namespace Portly.Tools
             return b[0] == 10 || b[0] == 192 && b[1] == 168 || b[0] == 172 && b[1] >= 16 && b[1] <= 31;
         }
 
-        /// <summary>Starts sharing and returns the address for the other devices.</summary>
-        public static string Start(Site site)
+        /// <summary>Only binds: listening on all addresses is what makes Windows show its own firewall question.</summary>
+        static bool CanListen(int port)
+        {
+            try
+            {
+                using (var s = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp))
+                    s.Bind(new IPEndPoint(IPAddress.Any, port));
+                return true;
+            }
+            catch (SocketException) { return false; }
+        }
+
+        /// <summary>
+        /// Starts sharing and returns the address for the other devices. <paramref name="automatic"/>: started by Portly itself,
+        /// not by the user, so a firewall permission the user refused earlier is not asked for again.
+        /// </summary>
+        public static string Start(Site site, bool automatic = false)
         {
             var existing = UrlOf(site);
             if (existing != null) return existing;
             var ip = LocalIp();
             if (ip == null) throw new Exception(I18n.T("lan.noNetwork"));
-            TcpListener listener = null;
             // the remembered port first: the address on the phone stays the same
             int port = ShareStore.Get(site.Host).LanPort;
-            if (port > 0)
-            {
-                try { listener = new TcpListener(IPAddress.Any, port); listener.Start(); }
-                catch (SocketException) { listener = null; }
-            }
-            if (listener == null)
+            if (port <= 0 || !CanListen(port))
             {
                 var taken = new HashSet<int>(ShareStore.All().Where(x => x.Host != site.Host).Select(x => x.LanPort));
                 for (port = FirstPort; port < FirstPort + 100; port++)
-                {
-                    if (taken.Contains(port)) continue;
-                    try { listener = new TcpListener(IPAddress.Any, port); listener.Start(); break; }
-                    catch (SocketException) { listener = null; }
-                }
+                    if (!taken.Contains(port) && CanListen(port)) break;
+                if (port == FirstPort + 100) throw new Exception(I18n.T("lan.noPort"));
             }
-            if (listener == null) throw new Exception(I18n.T("lan.noPort"));
+            // before listening: with the narrow rule in place Windows has no reason to offer "allow Portly on every port"
+            ShareFirewall.Open(port, automatic);
+            var listener = new TcpListener(IPAddress.Any, port);
+            try { listener.Start(); }
+            catch (SocketException) { throw new Exception(I18n.T("lan.noPort")); } // taken while the permission was asked
             int chosen = port;
             ShareStore.Update(site.Host, e => { e.Lan = true; e.LanPort = chosen; });
             // a site with HTTPS is shared with HTTPS too (certificate for the address, signed by the Portly CA)
@@ -212,8 +253,11 @@ namespace Portly.Tools
 
         public static void Stop(Site site) { Stop(site.Host); }
 
-        /// <summary>Stops sharing; the entry (port, note) stays in "Shared projects".</summary>
-        public static void Stop(string host)
+        /// <summary>
+        /// Stops sharing; the entry (port, note) stays in "Shared projects". The firewall rule of the port goes too, in the
+        /// background because it can wait for UAC; <paramref name="keepRule"/> when a start follows and can clean it in one go.
+        /// </summary>
+        public static void Stop(string host, bool keepRule = false)
         {
             Entry e;
             lock (Shares)
@@ -223,9 +267,21 @@ namespace Portly.Tools
             }
             try { e.Listener.Stop(); } catch { }
             DisposeExpiry(e);
+            if (!keepRule) Task.Run(() => ShareFirewall.Close(e.Port));
             Log.Info(I18n.T("lan.stopped", host));
             ShareStore.Notify();
         }
+
+        /// <summary>Ports whose firewall rule is still wanted: running shares, and those that start with Portly.</summary>
+        public static HashSet<int> PortsInUse()
+        {
+            HashSet<int> used;
+            lock (Shares) used = new HashSet<int>(Shares.Values.Select(x => x.Port));
+            used.UnionWith(ShareStore.All().Where(x => x.Lan && x.LanAuto).Select(x => x.LanPort));
+            return used;
+        }
+
+        public static bool IsPortShared(int port) { lock (Shares) return Shares.Values.Any(x => x.Port == port); }
 
         /// <summary>New password for a running share; devices that logged in before must log in again.</summary>
         public static void SetPassword(string host, string password, bool online = false)
@@ -236,6 +292,7 @@ namespace Portly.Tools
                 if (!Map(online).TryGetValue(host, out e) || e.Password == (password ?? "")) return;
                 e.Password = password ?? "";
                 e.Token = Guid.NewGuid().ToString("N");
+                e.Gate.Reset();
             }
         }
 
@@ -259,6 +316,7 @@ namespace Portly.Tools
             catch (SocketException) { return false; }
         }
 
+        /// <summary>When Portly exits. No UAC here (Windows may be shutting down): a rule left behind goes at the next start.</summary>
         public static void StopAll()
         {
             List<Entry> list;
@@ -272,8 +330,20 @@ namespace Portly.Tools
             {
                 TcpClient client;
                 try { client = await entry.Listener.AcceptTcpClientAsync(); }
+                catch (SocketException ex) when (ex.SocketErrorCode == SocketError.ConnectionReset) { continue; } // that device left, the share goes on
                 catch { return; } // stopped
-                var _ = Task.Run(() => Serve(client, entry, host));
+                bool full = Interlocked.Increment(ref entry.Active) > ShareLimits.MaxConnections;
+                if (full)
+                {
+                    Interlocked.Decrement(ref entry.Active);
+                    if (Interlocked.Increment(ref entry.Refusing) > ShareLimits.MaxRefusing)
+                    {
+                        Interlocked.Decrement(ref entry.Refusing);
+                        client.Close();
+                        continue;
+                    }
+                }
+                var _ = Task.Run(() => Serve(client, entry, host, full));
             }
         }
 
@@ -285,16 +355,20 @@ namespace Portly.Tools
         /// A WebSocket upgrade (Vite) goes out as it came, and only after the web server answered 101 does the connection
         /// become a raw tunnel: until then every byte is the request Portly checked, or nothing could stop a second request
         /// reaching the web server from 127.0.0.1 with its own Host.
+        /// <paramref name="full"/>: over the share's limit, the device only hears 503 (its head is read first, or closing would
+        /// reset the connection and the answer with it).
         /// </summary>
-        static async Task Serve(TcpClient client, Entry entry, string host)
+        static async Task Serve(TcpClient client, Entry entry, string host, bool full)
         {
+            bool counted = !full, tunnelSlot = false;
             using (client)
+            using (var guard = new Guard(client, full ? Math.Min(5000, ShareLimits.HeadMs) : ShareLimits.HeadMs))
             {
                 try
                 {
                     client.NoDelay = true;
-                    client.ReceiveTimeout = 30000;   // a device that connects and sends nothing
-                    Stream cs = client.GetStream();
+                    client.ReceiveTimeout = 30000;   // the blocking reads of a chunked body
+                    Stream cs = new GuardedStream(client.GetStream(), guard);
                     string pub;
                     bool secure;
                     byte[] rest;
@@ -303,8 +377,10 @@ namespace Portly.Tools
                     {
                         // from cloudflared: plain http on 127.0.0.1, the public name (xyz.trycloudflare.com / demo.example.com) in Host
                         secure = true;
-                        head = ReadHead(cs, out rest);
-                        if (head == null) return;
+                        var got = await ReadHead(cs);
+                        if (got == null) return;
+                        head = got.Item1;
+                        rest = got.Item2;
                         if (!WellFormed(head)) { await Refuse(cs, "400 Bad Request"); return; }
                         var hostLine = head.Split(new[] { "\r\n" }, StringSplitOptions.None).FirstOrDefault(l => Is(Name(l), "Host"));
                         pub = hostLine == null ? "" : hostLine.Substring(hostLine.IndexOf(':') + 1).Trim();
@@ -318,31 +394,37 @@ namespace Portly.Tools
                         pub = localIp + ":" + entry.Port;
                         // the same port answers https and http: a TLS handshake starts with 0x16
                         var first = new byte[1];
-                        if (client.Client.Receive(first, 1, SocketFlags.Peek) < 1) return;
+                        var socket = client.Client;
+                        if (await Task<int>.Factory.FromAsync(socket.BeginReceive(first, 0, 1, SocketFlags.Peek, null, null), socket.EndReceive) < 1) return;
                         secure = first[0] == 0x16 && entry.Https;
                         if (secure)
                         {
-                            var ssl = new SslStream(cs, false);
+                            var ssl = new SslStream(client.GetStream(), false);
                             await ssl.AuthenticateAsServerAsync(Certs.LanCertificate(localIp), false, SslProtocols.Tls12, false);
-                            cs = ssl;
+                            cs = new GuardedStream(ssl, guard);
                         }
-                        head = ReadHead(cs, out rest);
-                        if (head == null) return;
+                        var got = await ReadHead(cs);
+                        if (got == null) return;
+                        head = got.Item1;
+                        rest = got.Item2;
                         if (!WellFormed(head)) { await Refuse(cs, "400 Bad Request"); return; }
                         if (await ServeCa(cs, head, pub, entry.Https)) return;
                     }
+                    if (full) { await Refuse(cs, "503 Service Unavailable", "Retry-After: 2\r\n"); return; }
                     // who is looking: local network = the device's IP, internet = the visitor's IP that Cloudflare passes on
                     var headLines = head.Split(new[] { "\r\n" }, StringSplitOptions.None);
                     var remote = ((IPEndPoint)client.Client.RemoteEndPoint).Address.ToString();
-                    if (entry.Online) remote = HeaderValue(headLines, "CF-Connecting-IP") ?? remote;
+                    IPAddress visitor;
+                    if (entry.Online && IPAddress.TryParse(HeaderValue(headLines, "CF-Connecting-IP") ?? "", out visitor)) remote = visitor.ToString();
                     Seen(entry, host, remote, HeaderValue(headLines, "User-Agent"), entry.Online ? HeaderValue(headLines, "CF-IPCountry") : null);
                     // a share with a password: a small login page first, then a cookie
                     if (entry.Password != "")
                     {
-                        var allowed = await CheckPassword(cs, head, rest, entry, host, secure);
+                        var allowed = await CheckPassword(cs, head, rest, entry, host, secure, remote);
                         if (allowed == null) return;
                         head = allowed;
                     }
+                    guard.Forwarding();
                     var lines = head.Split(new[] { "\r\n" }, StringSplitOptions.None).ToList();
                     var method = lines[0].Split(' ')[0].ToUpperInvariant();
                     long length = 0;
@@ -350,10 +432,22 @@ namespace Portly.Tools
                     if (cl != null) length = long.Parse(cl); // WellFormed checked it
                     bool chunked = HeaderValue(lines, "Transfer-Encoding") != null;
                     bool upgrade = !chunked && length == 0 && AsksUpgrade(lines);
+                    if (upgrade)
+                    {
+                        tunnelSlot = Interlocked.Increment(ref entry.Tunnels) <= ShareLimits.MaxTunnels;
+                        if (!tunnelSlot)
+                        {
+                            Interlocked.Decrement(ref entry.Tunnels);
+                            await Refuse(cs, "503 Service Unavailable", "Retry-After: 5\r\n");
+                            return;
+                        }
+                    }
                     if (chunked)
                     {
                         // the request goes out as HTTP/1.0: the web server gets the plain body with its length
+                        guard.Body();
                         var refused = ReadChunked(cs, ref rest);
+                        guard.Forwarding();
                         if (refused != null) { await Refuse(cs, refused); return; }
                         length = rest.Length;
                         lines.RemoveAll(l => Is(Name(l), "Transfer-Encoding"));
@@ -378,8 +472,9 @@ namespace Portly.Tools
                                 await SendPage(cs, "503 Service Unavailable", I18n.T("lan.webDownTitle"), I18n.T("lan.webDownText"));
                                 return;
                             }
+                            guard.Server = server;
                             server.NoDelay = true;
-                            server.ReceiveTimeout = 300000;  // a slow PHP page
+                            server.ReceiveTimeout = 300000;  // the blocking reads of a refused upgrade's answer
                             Stream ss = server.GetStream();
                             if (tls)
                             {
@@ -393,11 +488,14 @@ namespace Portly.Tools
                             long phpLogBefore = upgrade ? -1 : PhpLogLength();
                             await ss.WriteAsync(req, 0, req.Length);
                             if (rest.Length > 0) await ss.WriteAsync(rest, 0, rest.Length);
-                            if (moreBody > 0) { var _ = CopyBytes(cs, ss, moreBody); }
+                            if (moreBody > 0) { var _ = CopyBytes(cs, ss, moreBody, guard); }
 
-                            byte[] body;
-                            var resp = ReadHead(ss, out body);
-                            if (resp == null) return;
+                            guard.AwaitServer(true);
+                            var answer = await ReadHead(ss);
+                            guard.AwaitServer(false);
+                            if (answer == null) return;
+                            var resp = answer.Item1;
+                            var body = answer.Item2;
                             // http -> https of the same site: use the local HTTPS port (only a request without a body can be sent again)
                             if (!tls && attempt == 0 && Settings.Current.Ssl && moreBody == 0 && Regex.IsMatch(resp, @"^HTTP/\S+ 30[1278] ")
                                 && Regex.IsMatch(resp, @"(?im)^Location:\s*https://" + Regex.Escape(host) + @"(:\d+)?(/|\s*$)"))
@@ -408,6 +506,8 @@ namespace Portly.Tools
                             if (upgrade && Switched(resp))
                             {
                                 if (tunnel.Length > 0) await ss.WriteAsync(tunnel, 0, tunnel.Length);
+                                Interlocked.Decrement(ref entry.Active);
+                                counted = false;
                                 // whichever side closes first ends the tunnel
                                 await Task.WhenAny(cs.CopyToAsync(ss), Answer(cs, ss, resp, body, true, false, secure, host, pub));
                                 return;
@@ -419,6 +519,12 @@ namespace Portly.Tools
                     }
                 }
                 catch { } // the device or the web server closed the connection
+                finally
+                {
+                    if (counted) Interlocked.Decrement(ref entry.Active);
+                    if (tunnelSlot) Interlocked.Decrement(ref entry.Tunnels);
+                    if (full) Interlocked.Decrement(ref entry.Refusing);
+                }
             }
         }
 
@@ -588,8 +694,9 @@ namespace Portly.Tools
         /// <summary>
         /// Password check for a protected share. Returns the request head to pass on (without Portly's own cookie),
         /// or null when Portly already answered (login page, wrong password, redirect after the right one).
+        /// <paramref name="remote"/> is who tries: while it is locked out the password is not even looked at.
         /// </summary>
-        static async Task<string> CheckPassword(Stream cs, string head, byte[] rest, Entry entry, string host, bool secure)
+        static async Task<string> CheckPassword(Stream cs, string head, byte[] rest, Entry entry, string host, bool secure, string remote)
         {
             var lines = head.Split(new[] { "\r\n" }, StringSplitOptions.None).ToList();
             var parts = lines[0].Split(' ');
@@ -606,7 +713,7 @@ namespace Portly.Tools
                 var buf = new byte[1024];
                 while (body.Length < Math.Min(len, 4096))
                 {
-                    int n = cs.Read(buf, 0, buf.Length);
+                    int n = await cs.ReadAsync(buf, 0, buf.Length);
                     if (n <= 0) break;
                     body.Write(buf, 0, n);
                 }
@@ -615,15 +722,19 @@ namespace Portly.Tools
                 if (!form.TryGetValue("next", out next)) next = "/";
                 form.TryGetValue("password", out given);
                 if (!next.StartsWith("/") || next.StartsWith("//")) next = "/";
-                if (given == entry.Password)
+                var password = entry.Password;
+                var verdict = entry.Gate.Attempt(remote, () => SamePassword(given ?? "", password), DateTime.UtcNow);
+                if (verdict.Right)
                 {
                     var h = Latin1.GetBytes("HTTP/1.1 303 See Other\r\nLocation: " + next + "\r\nSet-Cookie: " + cookie + "; Path=/; HttpOnly; SameSite=Lax" + (secure ? "; Secure" : "") +
                         "\r\nContent-Length: 0\r\nCache-Control: no-store\r\nConnection: close\r\n\r\n");
                     await cs.WriteAsync(h, 0, h.Length);
                     return null;
                 }
-                await Task.Delay(800); // slows down guessing
-                await SendLogin(cs, host, next, true);
+                if (verdict.LockStarted)
+                    Log.Warn(verdict.Everyone ? I18n.T("lan.lockedAll", host, Minutes(verdict.Wait)) : I18n.T("lan.lockedAddress", host, remote, Minutes(verdict.Wait)));
+                if (verdict.Tested) await Task.Delay(800); // slows down guessing
+                await SendLogin(cs, host, next, true, verdict.Wait);
                 return null;
             }
             var cookieLine = lines.FirstOrDefault(l => Is(Name(l), "Cookie"));
@@ -639,17 +750,35 @@ namespace Portly.Tools
             return string.Join("\r\n", lines);
         }
 
-        static Task SendLogin(Stream cs, string host, string next, bool wrong)
+        static int Minutes(TimeSpan t) { return (int)Math.Ceiling(t.TotalMinutes); }
+
+        /// <summary>Compares digests, so the time taken says nothing about how much of the password was right, or its length.</summary>
+        public static bool SamePassword(string a, string b)
         {
+            using (var sha = SHA256.Create())
+            {
+                var x = sha.ComputeHash(Encoding.UTF8.GetBytes(a));
+                var y = sha.ComputeHash(Encoding.UTF8.GetBytes(b));
+                int diff = 0;
+                for (int i = 0; i < x.Length; i++) diff |= x[i] ^ y[i];
+                return diff == 0;
+            }
+        }
+
+        /// <summary><paramref name="locked"/> above zero: the page says when to try again; it is the same whatever password was sent.</summary>
+        static Task SendLogin(Stream cs, string host, string next, bool wrong, TimeSpan locked = default(TimeSpan))
+        {
+            bool blocked = locked > TimeSpan.Zero;
             var form = "<form method=\"post\" action=\"/__portly/login\"><input type=\"hidden\" name=\"next\" value=\"" + Html(next) + "\">" +
                 "<input type=\"password\" name=\"password\" placeholder=\"" + Html(I18n.T("lan.loginPassword")) + "\" autofocus required>" +
-                (wrong ? "<p class=\"err\">" + Html(I18n.T("lan.loginWrong")) + "</p>" : "") +
+                (blocked ? "<p class=\"err\">" + Html(I18n.T("lan.loginLocked", Minutes(locked))) + "</p>" : wrong ? "<p class=\"err\">" + Html(I18n.T("lan.loginWrong")) + "</p>" : "") +
                 "<button type=\"submit\">" + Html(I18n.T("lan.loginButton")) + "</button></form>";
-            return SendPage(cs, wrong ? "401 Unauthorized" : "200 OK", I18n.T("lan.loginTitle", host), null, form);
+            return SendPage(cs, blocked ? "429 Too Many Requests" : wrong ? "401 Unauthorized" : "200 OK", I18n.T("lan.loginTitle", host), null, form,
+                blocked ? "Retry-After: " + (int)Math.Ceiling(locked.TotalSeconds) + "\r\n" : "");
         }
 
         /// <summary>Small page answered by Portly itself (login, web server stopped), readable on a phone.</summary>
-        static async Task SendPage(Stream cs, string status, string title, string text, string formHtml = null)
+        static async Task SendPage(Stream cs, string status, string title, string text, string formHtml = null, string extraHeaders = "")
         {
             var html = "<!doctype html><html lang=\"" + Html(I18n.Code) + "\"" + (I18n.IsRtl ? " dir=\"rtl\"" : "") + "><head><meta charset=\"utf-8\">" +
                 "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>" + Html(title) + "</title><style>" +
@@ -664,7 +793,7 @@ namespace Portly.Tools
                 (text != null ? "<p>" + Html(text) + "</p>" : "") + (formHtml ?? "") + "</div></body></html>";
             var bytes = Encoding.UTF8.GetBytes(html);
             var h = Latin1.GetBytes("HTTP/1.1 " + status + "\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: " + bytes.Length +
-                "\r\nCache-Control: no-store\r\nConnection: close\r\n\r\n");
+                "\r\nCache-Control: no-store\r\n" + extraHeaders + "Connection: close\r\n\r\n");
             await cs.WriteAsync(h, 0, h.Length);
             await cs.WriteAsync(bytes, 0, bytes.Length);
         }
@@ -722,10 +851,29 @@ namespace Portly.Tools
         static bool Switched(string resp) { return Regex.IsMatch(resp, @"^HTTP/1\.1 101(\s|$)"); }
 
         /// <summary>Answer of Portly itself to a request that does not go on.</summary>
-        static async Task Refuse(Stream cs, string status)
+        static async Task Refuse(Stream cs, string status, string extraHeaders = "")
         {
-            var h = Latin1.GetBytes("HTTP/1.1 " + status + "\r\nContent-Length: 0\r\nConnection: close\r\n\r\n");
+            var h = Latin1.GetBytes("HTTP/1.1 " + status + "\r\n" + extraHeaders + "Content-Length: 0\r\nConnection: close\r\n\r\n");
             await cs.WriteAsync(h, 0, h.Length);
+        }
+
+        /// <summary>
+        /// Headers sites and frameworks take a visitor's address or the real host from. Nobody in front of the site but Portly
+        /// may set them: a device could pose as 127.0.0.1 or an allow-listed address. Cloudflare's own go too, Portly passes the
+        /// address on. (Proxy: never a request header; PHP would read it as the HTTP_PROXY setting.)
+        /// </summary>
+        static readonly HashSet<string> ProxyOnly = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "Forwarded", "X-Real-IP", "True-Client-IP", "X-Client-IP", "Client-IP", "X-Cluster-Client-IP", "X-Original-Forwarded-For",
+            "X-Originating-IP", "X-Remote-IP", "X-Remote-Addr", "X-Host", "X-Original-Host", "X-HTTP-Host-Override", "X-Original-URL", "X-Rewrite-URL",
+            "Fastly-Client-IP", "CF-Connecting-IP", "CF-Connecting-IPv6", "CF-Pseudo-IPv4", "CF-IPCountry", "Proxy",
+        };
+
+        // PHP reads "_" in a header name as "-"
+        static bool OnlyFromProxy(string name)
+        {
+            var n = name.Replace('_', '-');
+            return n.StartsWith("X-Forwarded-", StringComparison.OrdinalIgnoreCase) || ProxyOnly.Contains(n);
         }
 
         static List<string> RequestLines(List<string> lines, bool upgrade, bool tls, bool secure, string host, string pub, string remote)
@@ -737,8 +885,7 @@ namespace Portly.Tools
                 if (l == "") continue;
                 var name = Name(l);
                 // plain answers (no Accept-Encoding): the site's address in pages can be rewritten
-                // (PHP reads "_" in a header name as "-")
-                if (Is(name, "Host") || name.Replace('_', '-').StartsWith("X-Forwarded-", StringComparison.OrdinalIgnoreCase)
+                if (Is(name, "Host") || OnlyFromProxy(name)
                     || !upgrade && (Is(name, "Connection") || Is(name, "Keep-Alive") || Is(name, "Accept-Encoding") || Is(name, "Upgrade"))
                     || upgrade && Is(name, "Expect"))
                     continue;
@@ -754,6 +901,7 @@ namespace Portly.Tools
             outLines.Add("X-Forwarded-Host: " + pub);
             outLines.Add("X-Forwarded-Proto: " + (secure ? "https" : "http"));
             outLines.Add("X-Forwarded-For: " + remote);
+            outLines.Add("X-Real-IP: " + remote);
             if (!upgrade) outLines.Add("Connection: close");
             return outLines;
         }
@@ -835,17 +983,27 @@ namespace Portly.Tools
             return o.ToArray();
         }
 
-        /// <summary>Exactly <paramref name="count"/> bytes, the rest of a request body; less when the device stops sending.</summary>
-        static async Task CopyBytes(Stream from, Stream to, long count)
+        /// <summary>
+        /// Exactly <paramref name="count"/> bytes, the rest of a request body; less when the device stops sending. Time the web
+        /// server takes to read is not the device's fault: the guard only counts the waiting for the device.
+        /// </summary>
+        static async Task CopyBytes(Stream from, Stream to, long count, Guard guard)
         {
             var buf = new byte[81920];
-            while (count > 0)
+            guard.Body();
+            try
             {
-                int n = await from.ReadAsync(buf, 0, (int)Math.Min(buf.Length, count));
-                if (n <= 0) return;
-                await to.WriteAsync(buf, 0, n);
-                count -= n;
+                while (count > 0)
+                {
+                    int n = await from.ReadAsync(buf, 0, (int)Math.Min(buf.Length, count));
+                    if (n <= 0) return;
+                    guard.Upstream = true;
+                    await to.WriteAsync(buf, 0, n);
+                    guard.Upstream = false;
+                    count -= n;
+                }
             }
+            finally { guard.Forwarding(); }
         }
 
         /// <summary>
@@ -958,25 +1116,23 @@ namespace Portly.Tools
             }
         }
 
-        /// <summary>Reads up to the empty line after the headers (max 64 KB); what came after it goes to <paramref name="rest"/>.</summary>
-        static string ReadHead(Stream s, out byte[] rest)
+        /// <summary>
+        /// Reads up to the empty line after the headers (max 64 KB): that head and what came after it, or null. No thread waits
+        /// here: hundreds of requests at once must not use up the thread pool (the guards' timers run on it too).
+        /// </summary>
+        static async Task<Tuple<string, byte[]>> ReadHead(Stream s)
         {
             var buf = new MemoryStream();
             var one = new byte[8192];
-            rest = new byte[0];
             while (buf.Length < 64 * 1024)
             {
                 int n;
-                try { n = s.Read(one, 0, one.Length); } catch { return null; }
+                try { n = await s.ReadAsync(one, 0, one.Length); } catch { return null; }
                 if (n <= 0) return null;
                 buf.Write(one, 0, n);
                 var all = buf.ToArray();
                 int end = IndexOf(all, new byte[] { 13, 10, 13, 10 });
-                if (end >= 0)
-                {
-                    rest = all.Skip(end + 4).ToArray();
-                    return Latin1.GetString(all, 0, end);
-                }
+                if (end >= 0) return Tuple.Create(Latin1.GetString(all, 0, end), all.Skip(end + 4).ToArray());
             }
             return null;
         }
@@ -991,6 +1147,271 @@ namespace Portly.Tools
             }
             return -1;
         }
+
+        /// <summary>
+        /// Keeps one connection from being held open for nothing: closes it when the time for the head is over, when a request
+        /// body stops coming, when the device stopped taking data, or when the web server never answers. A slow PHP page and a quiet WebSocket are left alone. Socket
+        /// timeouts cannot do this: they do not apply to async reads, and every trickled byte would restart them.
+        /// </summary>
+        class Guard : IDisposable
+        {
+            const int Head = 0, Sending = 1, Rest = 2;
+            readonly TcpClient _client;
+            readonly int _headMs;
+            readonly int _started = Environment.TickCount;
+            readonly Timer _timer;
+            volatile int _phase = Head;
+            int _windowStart, _writeStart, _serverSince;
+            long _read, _windowRead;
+            volatile bool _writing, _awaitingServer;
+
+            /// <summary>Waiting for the web server to take a part of the body, not for the device.</summary>
+            public volatile bool Upstream;
+            /// <summary>Closed together with the device: nobody is left to wait for it.</summary>
+            public volatile TcpClient Server;
+
+            public Guard(TcpClient client, int headMs)
+            {
+                _client = client;
+                _headMs = headMs;
+                int tick = Math.Max(20, Math.Min(1000, Math.Min(Math.Min(headMs, ShareLimits.BodyWindowMs), ShareLimits.StallMs) / 4));
+                _timer = new Timer(_ => Tick(), null, tick, tick);
+            }
+
+            /// <summary>The head is in and accepted, or the body is through.</summary>
+            public void Forwarding()
+            {
+                _serverSince = Environment.TickCount;
+                _phase = Rest;
+            }
+
+            /// <summary>Waiting for the web server to start its answer (the clock runs from the end of the request).</summary>
+            public void AwaitServer(bool on)
+            {
+                _serverSince = Environment.TickCount;
+                _awaitingServer = on;
+            }
+
+            /// <summary>A request body starts arriving.</summary>
+            public void Body()
+            {
+                _windowStart = Environment.TickCount;
+                _windowRead = Interlocked.Read(ref _read);
+                _phase = Sending;
+            }
+
+            public void Received(int n) { if (n > 0) Interlocked.Add(ref _read, n); }
+
+            public void Writing(bool on)
+            {
+                if (on) _writeStart = Environment.TickCount;
+                _writing = on;
+            }
+
+            void Tick()
+            {
+                int now = Environment.TickCount;
+                if (_phase == Head) { if (now - _started > _headMs) Close(); return; }
+                if (_writing && now - _writeStart > ShareLimits.StallMs) { Close(); return; }
+                if (_phase == Rest && _awaitingServer && now - _serverSince > ShareLimits.ServerMs) { Close(); return; }
+                if (_phase != Sending) return;
+                if (Upstream) { _windowStart = now; _windowRead = Interlocked.Read(ref _read); return; }
+                if (now - _windowStart < ShareLimits.BodyWindowMs) return;
+                long read = Interlocked.Read(ref _read);
+                if (read - _windowRead < ShareLimits.BodyMinBytes) { Close(); return; }
+                _windowStart = now;
+                _windowRead = read;
+            }
+
+            void Close()
+            {
+                try { _timer.Dispose(); } catch { }
+                try { _client.Close(); } catch { }
+                var s = Server;
+                if (s != null) try { s.Close(); } catch { }
+            }
+
+            public void Dispose() { _timer.Dispose(); }
+        }
+
+        /// <summary>The device's side of a connection: tells the guard what moves. Large writes go in pieces, each one has to finish in time.</summary>
+        class GuardedStream : Stream
+        {
+            const int Piece = 64 * 1024;
+            readonly Stream _s;
+            readonly Guard _guard;
+
+            public GuardedStream(Stream s, Guard guard) { _s = s; _guard = guard; }
+
+            public override int Read(byte[] buffer, int offset, int count)
+            {
+                int n = _s.Read(buffer, offset, count);
+                _guard.Received(n);
+                return n;
+            }
+
+            public override async Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken token)
+            {
+                int n = await _s.ReadAsync(buffer, offset, count, token);
+                _guard.Received(n);
+                return n;
+            }
+
+            public override void Write(byte[] buffer, int offset, int count)
+            {
+                while (count > 0)
+                {
+                    int n = Math.Min(count, Piece);
+                    _guard.Writing(true);
+                    _s.Write(buffer, offset, n);
+                    _guard.Writing(false);
+                    offset += n;
+                    count -= n;
+                }
+            }
+
+            public override async Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken token)
+            {
+                while (count > 0)
+                {
+                    int n = Math.Min(count, Piece);
+                    _guard.Writing(true);
+                    await _s.WriteAsync(buffer, offset, n, token);
+                    _guard.Writing(false);
+                    offset += n;
+                    count -= n;
+                }
+            }
+
+            public override void Flush() { _s.Flush(); }
+            public override Task FlushAsync(CancellationToken token) { return _s.FlushAsync(token); }
+            public override bool CanRead { get { return true; } }
+            public override bool CanWrite { get { return true; } }
+            public override bool CanSeek { get { return false; } }
+            public override long Length { get { throw new NotSupportedException(); } }
+            public override long Position { get { throw new NotSupportedException(); } set { throw new NotSupportedException(); } }
+            public override long Seek(long offset, SeekOrigin origin) { throw new NotSupportedException(); }
+            public override void SetLength(long value) { throw new NotSupportedException(); }
+        }
+    }
+
+    /// <summary>What one password attempt came to.</summary>
+    public class GateVerdict
+    {
+        public bool Right;          // the password was right and may be used
+        public bool Tested;         // the password was compared at all (never while locked out)
+        public TimeSpan Wait;       // above zero: locked out for this long
+        public bool LockStarted;    // this attempt started the lockout
+        public bool Everyone;       // the lockout is the share-wide one
+    }
+
+    /// <summary>
+    /// Limits password guessing on one share. Per address: 5 wrong answers, then locked for 1 minute, and every further wrong
+    /// answer doubles that up to 15. Per share, for guessing from many addresses: at most 20 wrong answers a minute and 100 an
+    /// hour; past that nobody can log in for the rest of that period (devices with the cookie stay in).
+    /// While locked the password is not compared, so the answer cannot tell a right one from a wrong one. The check, the
+    /// comparison and the count are one step: guesses sent side by side cannot slip through. An IPv6 visitor counts by its /64
+    /// network, which one customer usually has whole.
+    /// </summary>
+    public class PasswordGate
+    {
+        const int FreeTries = 5, MaxLockMinutes = 15, MaxAddresses = 1024;
+        const int PerMinute = 20, PerHour = 100;
+
+        class Tries { public int Wrong; public DateTime Until, Last; }
+
+        readonly Dictionary<string, Tries> _addresses = new Dictionary<string, Tries>();
+        readonly Queue<DateTime> _recent = new Queue<DateTime>();   // wrong answers of the last hour, at most PerHour
+        DateTime _closedUntil;
+
+        /// <summary>One attempt from <paramref name="address"/>. <paramref name="right"/> compares the password and is called only when allowed.</summary>
+        public GateVerdict Attempt(string address, Func<bool> right, DateTime now)
+        {
+            var key = Key(address);
+            lock (_addresses)
+            {
+                var result = new GateVerdict();
+                Tries t;
+                _addresses.TryGetValue(key, out t);
+                var until = t != null && t.Until > _closedUntil ? t.Until : _closedUntil;
+                if (until > now)
+                {
+                    result.Wait = until - now;
+                    return result;
+                }
+                result.Tested = true;
+                if (right())
+                {
+                    if (t != null) _addresses.Remove(key);
+                    result.Right = true;
+                    return result;
+                }
+                if (t == null)
+                {
+                    MakeRoom(now);
+                    _addresses[key] = t = new Tries();
+                }
+                t.Wrong++;
+                t.Last = now;
+                if (t.Wrong >= FreeTries)
+                {
+                    t.Until = now.AddMinutes(Math.Min(MaxLockMinutes, 1 << Math.Min(t.Wrong - FreeTries, 4)));
+                    result.Wait = t.Until - now;
+                    result.LockStarted = true;
+                }
+                CountForShare(now, result);
+                return result;
+            }
+        }
+
+        void CountForShare(DateTime now, GateVerdict result)
+        {
+            while (_recent.Count > 0 && _recent.Peek() <= now.AddHours(-1)) _recent.Dequeue();
+            _recent.Enqueue(now);
+            while (_recent.Count > PerHour) _recent.Dequeue();
+            var lastMinute = _recent.Where(x => x > now.AddMinutes(-1)).ToList();
+            var until = _recent.Count >= PerHour ? _recent.Peek().AddHours(1) : DateTime.MinValue;
+            if (lastMinute.Count >= PerMinute)
+            {
+                var minute = lastMinute[lastMinute.Count - PerMinute].AddMinutes(1);
+                if (minute > until) until = minute;
+            }
+            if (until <= now) return;
+            _closedUntil = until;
+            result.Wait = until - now;
+            result.LockStarted = true;
+            result.Everyone = true;
+        }
+
+        /// <summary>The list has a fixed size: what is over for an hour goes, and if that is not enough the oldest.</summary>
+        void MakeRoom(DateTime now)
+        {
+            if (_addresses.Count < MaxAddresses) return;
+            foreach (var old in _addresses.Where(x => x.Value.Until <= now && x.Value.Last.AddHours(1) <= now).Select(x => x.Key).ToList()) _addresses.Remove(old);
+            if (_addresses.Count >= MaxAddresses) _addresses.Remove(_addresses.OrderBy(x => x.Value.Last).First().Key);
+        }
+
+        static string Key(string address)
+        {
+            IPAddress ip;
+            if (!IPAddress.TryParse(address, out ip)) return address;
+            if (ip.IsIPv4MappedToIPv6) return ip.MapToIPv4().ToString();
+            if (ip.AddressFamily != AddressFamily.InterNetworkV6) return ip.ToString();
+            return BitConverter.ToString(ip.GetAddressBytes(), 0, 8);
+        }
+
+        /// <summary>A new password: nothing tried against the old one counts.</summary>
+        public void Reset()
+        {
+            lock (_addresses)
+            {
+                _addresses.Clear();
+                _recent.Clear();
+                _closedUntil = DateTime.MinValue;
+            }
+        }
+
+        public int Tracked { get { lock (_addresses) return _addresses.Count; } }
     }
 }
 
