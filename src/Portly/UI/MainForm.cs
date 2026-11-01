@@ -1795,6 +1795,7 @@ namespace Portly.UI
             try
             {
                 await Catalog.RefreshAsync();
+                if (interactive && Catalog.TrustError != null) SafeInvoke(() => Ui.Error(this, Catalog.TrustError));
                 UpdateNotices.MarkChecked();
                 var u = appDue ? await Updater.CheckAsync() : Updater.Available;
                 SafeInvoke(() =>

@@ -13,6 +13,11 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
+      # before the build: the smoke test compiles Portly too, and build.ps1 then rebuilds it cleanly
+      - name: Security tests
+        shell: pwsh
+        timeout-minutes: 10
+        run: ./tools/run-security-tests.ps1
       - name: Build both editions
         shell: pwsh
         run: ./build.ps1

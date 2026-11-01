@@ -1,0 +1,30 @@
+name: sign-manifests
+
+# A manifest changed on main without a release: sign it, because clients refuse a manifest whose .sig does not match.
+# Clients keep their previous copy for the minute or two until this has finished.
+# This cannot loop: the push uses GITHUB_TOKEN (starts no workflow), the bot changes only .sig files (the paths filter
+# ignores those), and signing the same bytes gives the same .sig (nothing to commit).
+on:
+  push:
+    branches: [main]
+    paths: ['manifest/*.json']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sign:
+    runs-on: windows-latest
+    # protect this environment with a required reviewer so that a push to main alone cannot get a signature
+    environment: manifest-signing
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Sign and commit
+        shell: pwsh
+        env:
+          PORTLY_MANIFEST_KEY: ${{ secrets.PORTLY_MANIFEST_KEY }}
+          PORTLY_MANIFEST_KEY_2: ${{ secrets.PORTLY_MANIFEST_KEY_2 }}
+        run: ./tools/push-signed-manifests.ps1 -Message "Sign manifests"

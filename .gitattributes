@@ -1,0 +1,4 @@
+# Manifests are signed byte for byte. Git must never touch their line endings: a Windows checkout with
+# core.autocrlf=true would otherwise sign CRLF bytes while raw.githubusercontent.com serves LF.
+manifest/*.json -text
+manifest/*.json.sig -text

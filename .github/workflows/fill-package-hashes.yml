@@ -1,0 +1,43 @@
+name: fill-package-hashes
+
+# Downloads the packages that have no sha256 yet (many GB) and commits the hashes with fresh signatures.
+# Start it by hand. Run it again until the summary lists nothing but moving URLs: every run continues where the last stopped.
+on:
+  workflow_dispatch:
+    inputs:
+      max_minutes:
+        description: Start no new download after this many minutes
+        default: '270'
+
+permissions:
+  contents: write
+
+jobs:
+  fill:
+    runs-on: windows-latest
+    environment: manifest-signing
+    timeout-minutes: 345
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Check the signing key before hours of downloads
+        shell: pwsh
+        env:
+          PORTLY_MANIFEST_KEY: ${{ secrets.PORTLY_MANIFEST_KEY }}
+          PORTLY_MANIFEST_KEY_2: ${{ secrets.PORTLY_MANIFEST_KEY_2 }}
+        run: ./tools/sign-manifests.ps1 -CheckKey
+      - name: Download and hash
+        shell: pwsh
+        # a step timeout, unlike the job's, still lets the next step save what was found
+        timeout-minutes: 310
+        env:
+          MAX_MINUTES: ${{ inputs.max_minutes }}
+        run: ./tools/fill-package-hashes.ps1 -MaxMinutes $env:MAX_MINUTES
+      - name: Commit the hashes with signatures
+        if: ${{ !cancelled() }}
+        shell: pwsh
+        env:
+          PORTLY_MANIFEST_KEY: ${{ secrets.PORTLY_MANIFEST_KEY }}
+          PORTLY_MANIFEST_KEY_2: ${{ secrets.PORTLY_MANIFEST_KEY_2 }}
+        run: ./tools/push-signed-manifests.ps1 -Message "Fill package hashes" -HashState

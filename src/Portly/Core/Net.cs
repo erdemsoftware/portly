@@ -57,14 +57,24 @@ namespace Portly.Core
         {
             return Task.Run(() =>
             {
-                using (var c = NewClient(timeoutMs))
-                {
-                    // avoid stale CDN copies of manifests
-                    var u = url + (url.Contains("?") ? "&" : "?") + "t=" + DateTime.UtcNow.Ticks / TimeSpan.TicksPerMinute;
-                    if (url.Contains("windows.php.net")) u = url;
-                    return c.DownloadString(u);
-                }
+                using (var c = NewClient(timeoutMs)) return c.DownloadString(FreshUrl(url));
             });
+        }
+
+        /// <summary>The exact bytes of a URL, for content that is verified against a signature.</summary>
+        public static Task<byte[]> GetBytesAsync(string url, int timeoutMs = 20000)
+        {
+            return Task.Run(() =>
+            {
+                using (var c = NewClient(timeoutMs)) return c.DownloadData(FreshUrl(url));
+            });
+        }
+
+        /// <summary>Avoid stale CDN copies of manifests. Within a minute a manifest and its .sig get the same query.</summary>
+        static string FreshUrl(string url)
+        {
+            if (url.Contains("windows.php.net")) return url;
+            return url + (url.Contains("?") ? "&" : "?") + "t=" + DateTime.UtcNow.Ticks / TimeSpan.TicksPerMinute;
         }
 
         /// <summary>Download with progress (0..100, -1 when the size is unknown) and cancellation.</summary>

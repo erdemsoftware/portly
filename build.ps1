@@ -123,6 +123,6 @@ if ($UpdateManifest) {
     $app.url = "https://github.com/erdemsoftware/portly/releases/download/v$Version/Portly-$Version-win10.zip"
     $app.sha256 = $modernHash
     ($app | ConvertTo-Json -Depth 5) | Set-Content $manifest -Encoding utf8
-    Write-Host "manifest\app.json updated (commit it AFTER the GitHub release is published)" -ForegroundColor Yellow
+    Write-Host "manifest\app.json updated (sign and commit it AFTER the GitHub release is published)" -ForegroundColor Yellow
 }
 Write-Host "Done." -ForegroundColor Cyan
