@@ -39,6 +39,8 @@ $rsa.ToXmlString($false)                                                        
 2. Özel anahtar dosyasının içeriğini GitHub'da **Settings > Secrets and variables > Actions** altına `PORTLY_MANIFEST_KEY` adıyla ekleyin. PEM de kabul edilir (PowerShell 7 gerekir). Dosyayı güvenli bir yerde saklayıp diskten silin.
 3. Önerilen: **Settings > Environments > `manifest-signing`** ortamına zorunlu onaylayıcı ekleyin ve gizli değeri bu ortama koyun. Üç iş akışı da bu ortamı kullanır. Onaylayıcı yoksa `main` dalına yazabilen herkes (ya da çalınmış bir erişim) değiştirdiği manifesti `sign-manifests` ile imzalatmış olur; imza o zaman yalnızca barındırma yolunu korur, depoyu değil.
 
+4. **İlk devreye alma sırası:** anahtar kaynağa ve gizli değere girdikten sonra kodu `main` dalına alın, sonra **Actions > sign-manifests > Run workflow** ile elle çalıştırın (birleştirme `manifest/*.json` dosyalarını değiştirmediği için iş kendiliğinden başlamaz). `.sig` dosyaları `main` üzerinde görününce etiketi atın. İlk imzalı sürüme geçiş, eski istemcilerde hâlâ imzasız yoldan olur; korumayı o sürümden sonraki güncellemeler alır.
+
 ### Ne zaman imzalanır
 
 - **Yeni sürüm:** `release.yml` en başta anahtarı denetler (`sign-manifests.ps1 -CheckKey`). Gizli değer yoksa, kaynakta hâlâ yer tutucu varsa ya da anahtar `ManifestKeys.cs` ile eşleşmiyorsa sürüm hiçbir şey yayınlanmadan **başarısız olur**. En sonda `app.json` doldurulduktan sonra `main` üzerindeki tüm manifestleri imzalar, işlenen baytları açık anahtarlarla doğrular ve gönderir.
