@@ -26,6 +26,7 @@ namespace Portly.Tools
     public static class LanShare
     {
         const int FirstPort = 8900;
+        const long MaxChunkedBody = 64 * 1024 * 1024;
         static readonly Encoding Latin1 = Encoding.GetEncoding(28591); // header bytes kept as they are
 
         class Entry
@@ -281,7 +282,9 @@ namespace Portly.Tools
         /// can be rewritten: Host = the site, X-Forwarded-Host = the address the device used. In the answer the site's own
         /// address (https://shop.test) becomes the shared one: redirects, links in pages, cookies. A site that sends every
         /// http request to https is reached on the local HTTPS port from then on (it sees HTTPS=on and stops redirecting).
-        /// WebSocket upgrades (Vite) are passed through as they are.
+        /// A WebSocket upgrade (Vite) goes out as it came, and only after the web server answered 101 does the connection
+        /// become a raw tunnel: until then every byte is the request Portly checked, or nothing could stop a second request
+        /// reaching the web server from 127.0.0.1 with its own Host.
         /// </summary>
         static async Task Serve(TcpClient client, Entry entry, string host)
         {
@@ -302,6 +305,7 @@ namespace Portly.Tools
                         secure = true;
                         head = ReadHead(cs, out rest);
                         if (head == null) return;
+                        if (!WellFormed(head)) { await Refuse(cs, "400 Bad Request"); return; }
                         var hostLine = head.Split(new[] { "\r\n" }, StringSplitOptions.None).FirstOrDefault(l => Is(Name(l), "Host"));
                         pub = hostLine == null ? "" : hostLine.Substring(hostLine.IndexOf(':') + 1).Trim();
                         if (!Regex.IsMatch(pub, @"^[A-Za-z0-9.-]+(:\d+)?$")) return;
@@ -324,6 +328,7 @@ namespace Portly.Tools
                         }
                         head = ReadHead(cs, out rest);
                         if (head == null) return;
+                        if (!WellFormed(head)) { await Refuse(cs, "400 Bad Request"); return; }
                         if (await ServeCa(cs, head, pub, entry.Https)) return;
                     }
                     // who is looking: local network = the device's IP, internet = the visitor's IP that Cloudflare passes on
@@ -339,12 +344,27 @@ namespace Portly.Tools
                         head = allowed;
                     }
                     var lines = head.Split(new[] { "\r\n" }, StringSplitOptions.None).ToList();
-                    bool upgrade = lines.Any(l => l.StartsWith("Upgrade:", StringComparison.OrdinalIgnoreCase));
                     var method = lines[0].Split(' ')[0].ToUpperInvariant();
                     long length = 0;
-                    var cl = lines.FirstOrDefault(l => Is(Name(l), "Content-Length"));
-                    if (cl != null) long.TryParse(cl.Substring(cl.IndexOf(':') + 1).Trim(), out length);
-                    bool moreBody = upgrade || length > rest.Length || lines.Any(l => Is(Name(l), "Transfer-Encoding"));
+                    var cl = HeaderValue(lines, "Content-Length");
+                    if (cl != null) length = long.Parse(cl); // WellFormed checked it
+                    bool chunked = HeaderValue(lines, "Transfer-Encoding") != null;
+                    bool upgrade = !chunked && length == 0 && AsksUpgrade(lines);
+                    if (chunked)
+                    {
+                        // the request goes out as HTTP/1.0: the web server gets the plain body with its length
+                        var refused = ReadChunked(cs, ref rest);
+                        if (refused != null) { await Refuse(cs, refused); return; }
+                        length = rest.Length;
+                        lines.RemoveAll(l => Is(Name(l), "Transfer-Encoding"));
+                        lines.Add("Content-Length: " + length);
+                    }
+                    // what the device sent past the head: for an upgrade it waits for the 101, otherwise only the
+                    // declared body goes on, and anything after that is dropped (it would be a request of its own)
+                    var tunnel = new byte[0];
+                    if (upgrade) { tunnel = rest; rest = new byte[0]; }
+                    else if (rest.Length > length) rest = rest.Take((int)length).ToArray();
+                    long moreBody = length - rest.Length;
 
                     bool tls = entry.Tls;
                     for (int attempt = 0; attempt < 2; attempt++)
@@ -373,21 +393,27 @@ namespace Portly.Tools
                             long phpLogBefore = upgrade ? -1 : PhpLogLength();
                             await ss.WriteAsync(req, 0, req.Length);
                             if (rest.Length > 0) await ss.WriteAsync(rest, 0, rest.Length);
-                            var up = moreBody ? cs.CopyToAsync(ss) : null;
+                            if (moreBody > 0) { var _ = CopyBytes(cs, ss, moreBody); }
 
                             byte[] body;
                             var resp = ReadHead(ss, out body);
                             if (resp == null) return;
                             // http -> https of the same site: use the local HTTPS port (only a request without a body can be sent again)
-                            if (!tls && attempt == 0 && Settings.Current.Ssl && !moreBody && Regex.IsMatch(resp, @"^HTTP/\S+ 30[1278] ")
+                            if (!tls && attempt == 0 && Settings.Current.Ssl && moreBody == 0 && Regex.IsMatch(resp, @"^HTTP/\S+ 30[1278] ")
                                 && Regex.IsMatch(resp, @"(?im)^Location:\s*https://" + Regex.Escape(host) + @"(:\d+)?(/|\s*$)"))
                             {
                                 entry.Tls = tls = true;
                                 continue;
                             }
+                            if (upgrade && Switched(resp))
+                            {
+                                if (tunnel.Length > 0) await ss.WriteAsync(tunnel, 0, tunnel.Length);
+                                // whichever side closes first ends the tunnel
+                                await Task.WhenAny(cs.CopyToAsync(ss), Answer(cs, ss, resp, body, true, false, secure, host, pub));
+                                return;
+                            }
                             await Answer(cs, ss, resp, body, upgrade, method == "HEAD", secure, host, pub);
                             if (!upgrade) ReportErrors(entry, host, remote, lines[0], resp, phpLogBefore);
-                            if (up != null && upgrade) await up;
                             return;
                         }
                     }
@@ -480,7 +506,7 @@ namespace Portly.Tools
         static string HeaderValue(IEnumerable<string> lines, string name)
         {
             var l = lines.Skip(1).FirstOrDefault(x => Is(Name(x), name));
-            return l == null ? null : l.Substring(l.IndexOf(':') + 1).Trim();
+            return l == null ? null : l.Substring(l.IndexOf(':') + 1).Trim(' ', '\t');
         }
 
         static void Seen(Entry e, string host, string ip, string userAgent, string country)
@@ -659,6 +685,49 @@ namespace Portly.Tools
         static bool Is(string a, string b) { return string.Equals(a, b, StringComparison.OrdinalIgnoreCase); }
         static string Name(string headerLine) { var i = headerLine.IndexOf(':'); return i < 0 ? "" : headerLine.Substring(0, i).Trim(); }
 
+        static readonly Regex RequestLine = new Regex(@"^[!#$%&'*+.^_`|~0-9A-Za-z-]+ (/[^\x00-\x20\x7f]*|\*) HTTP/1\.[01]\z");
+        static readonly Regex HeaderLine = new Regex(@"^[!#$%&'*+.^_`|~0-9A-Za-z-]+:[\t\x20-\x7e\x80-\xff]*\z");
+
+        /// <summary>
+        /// Only a head that this proxy and the web server cannot read differently goes on. Refused: bare CR/LF and other control
+        /// characters, folded lines, spaces around a header name, a repeated Host / Content-Length / Transfer-Encoding / Upgrade,
+        /// a body framed two ways, and an address in the request line ("GET http://localhost/ ..." would override the Host).
+        /// </summary>
+        static bool WellFormed(string head)
+        {
+            var lines = head.Split(new[] { "\r\n" }, StringSplitOptions.None);
+            if (!RequestLine.IsMatch(lines[0]) || !lines.Skip(1).All(l => HeaderLine.IsMatch(l))) return false;
+            foreach (var single in new[] { "Host", "Content-Length", "Transfer-Encoding", "Upgrade" })
+                if (lines.Skip(1).Count(l => Is(Name(l), single)) > 1) return false;
+            var length = HeaderValue(lines, "Content-Length");
+            var encoding = HeaderValue(lines, "Transfer-Encoding");
+            if (length != null && encoding != null) return false;
+            if (encoding != null && !Is(encoding, "chunked")) return false;
+            long parsed;
+            return length == null || Regex.IsMatch(length, @"^[0-9]+\z") && long.TryParse(length, out parsed);
+        }
+
+        /// <summary>
+        /// A real WebSocket handshake. Any other upgrade stays a plain request: "h2c" would turn the tunnel into HTTP/2 requests
+        /// of the device's own making, with the same effect as a request smuggled past the checks here.
+        /// </summary>
+        static bool AsksUpgrade(List<string> lines)
+        {
+            return lines[0].StartsWith("GET ", StringComparison.Ordinal) && lines[0].EndsWith(" HTTP/1.1", StringComparison.Ordinal)
+                && Is(HeaderValue(lines, "Upgrade"), "websocket")
+                && lines.Skip(1).Where(l => Is(Name(l), "Connection"))
+                    .Any(l => l.Substring(l.IndexOf(':') + 1).Split(',').Any(t => Is(t.Trim(' ', '\t'), "upgrade")));
+        }
+
+        static bool Switched(string resp) { return Regex.IsMatch(resp, @"^HTTP/1\.1 101(\s|$)"); }
+
+        /// <summary>Answer of Portly itself to a request that does not go on.</summary>
+        static async Task Refuse(Stream cs, string status)
+        {
+            var h = Latin1.GetBytes("HTTP/1.1 " + status + "\r\nContent-Length: 0\r\nConnection: close\r\n\r\n");
+            await cs.WriteAsync(h, 0, h.Length);
+        }
+
         static List<string> RequestLines(List<string> lines, bool upgrade, bool tls, bool secure, string host, string pub, string remote)
         {
             var site = (tls ? "https://" : "http://") + host;
@@ -668,8 +737,10 @@ namespace Portly.Tools
                 if (l == "") continue;
                 var name = Name(l);
                 // plain answers (no Accept-Encoding): the site's address in pages can be rewritten
-                if (Is(name, "Host") || name.StartsWith("X-Forwarded-", StringComparison.OrdinalIgnoreCase)
-                    || !upgrade && (Is(name, "Connection") || Is(name, "Keep-Alive") || Is(name, "Accept-Encoding")))
+                // (PHP reads "_" in a header name as "-")
+                if (Is(name, "Host") || name.Replace('_', '-').StartsWith("X-Forwarded-", StringComparison.OrdinalIgnoreCase)
+                    || !upgrade && (Is(name, "Connection") || Is(name, "Keep-Alive") || Is(name, "Accept-Encoding") || Is(name, "Upgrade"))
+                    || upgrade && Is(name, "Expect"))
                     continue;
                 // for the site, a form sent from the device comes from its own address (CSRF / referer checks)
                 if (Is(name, "Origin") || Is(name, "Referer"))
@@ -714,8 +785,16 @@ namespace Portly.Tools
                 && !Regex.IsMatch(resp, @"(?im)^(Content-Encoding:\s*(?!identity)\S|Transfer-Encoding:)");
             if (!rewrite)
             {
+                // an upgrade the web server refused: its connection stays open (HTTP/1.1), this answer is the last one
+                bool refused = upgrade && !Switched(resp);
+                if (refused)
+                {
+                    outLines.RemoveAll(l => Is(Name(l), "Connection") || Is(Name(l), "Keep-Alive"));
+                    outLines.Add("Connection: close");
+                }
                 var h = Latin1.GetBytes(string.Join("\r\n", outLines) + "\r\n\r\n");
                 await cs.WriteAsync(h, 0, h.Length);
+                if (refused) { CopyAnswer(ss, body, resp, cs); return; }
                 if (body.Length > 0) await cs.WriteAsync(body, 0, body.Length);
                 await ss.CopyToAsync(cs);
                 return;
@@ -755,6 +834,130 @@ namespace Portly.Tools
             o.Write(data, from, data.Length - from);
             return o.ToArray();
         }
+
+        /// <summary>Exactly <paramref name="count"/> bytes, the rest of a request body; less when the device stops sending.</summary>
+        static async Task CopyBytes(Stream from, Stream to, long count)
+        {
+            var buf = new byte[81920];
+            while (count > 0)
+            {
+                int n = await from.ReadAsync(buf, 0, (int)Math.Min(buf.Length, count));
+                if (n <= 0) return;
+                await to.WriteAsync(buf, 0, n);
+                count -= n;
+            }
+        }
+
+        /// <summary>
+        /// The rest of an answer on a connection that stays open: up to where the answer says it ends, not to the end of the
+        /// connection. Blocking reads, so the socket's receive timeout counts.
+        /// </summary>
+        static void CopyAnswer(Stream ss, byte[] body, string resp, Stream cs)
+        {
+            var lines = resp.Split(new[] { "\r\n" }, StringSplitOptions.None);
+            var status = Regex.Match(lines[0], @"^HTTP/\S+ (\d{3})").Groups[1].Value;
+            if (status.StartsWith("1", StringComparison.Ordinal) || status == "204" || status == "304") return;
+            var from = new Source(ss, body);
+            var encoding = HeaderValue(lines, "Transfer-Encoding");
+            long length;
+            if (encoding != null && encoding.IndexOf("chunked", StringComparison.OrdinalIgnoreCase) >= 0) CopyChunked(from, cs, null, long.MaxValue);
+            else if (long.TryParse(HeaderValue(lines, "Content-Length"), out length)) from.Copy(length, cs, null);
+            else from.CopyToEnd(cs);
+        }
+
+        /// <summary>Reads a chunked request body from the device into <paramref name="rest"/>. Returns the status to refuse it with, or null.</summary>
+        static string ReadChunked(Stream cs, ref byte[] rest)
+        {
+            var decoded = new MemoryStream();
+            try { CopyChunked(new Source(cs, rest), null, decoded, MaxChunkedBody); }
+            catch (InvalidDataException) { return "400 Bad Request"; }
+            catch (OverflowException) { return "413 Payload Too Large"; }
+            rest = decoded.ToArray();
+            return null;
+        }
+
+        /// <summary>One chunked body and nothing after it: <paramref name="raw"/> gets it as it is, <paramref name="data"/> without the framing.</summary>
+        static void CopyChunked(Source from, Stream raw, Stream data, long limit)
+        {
+            Func<string> line = () =>
+            {
+                var l = from.Line();
+                if (raw != null) { var b = Latin1.GetBytes(l + "\r\n"); raw.Write(b, 0, b.Length); }
+                return l;
+            };
+            while (true)
+            {
+                var m = Regex.Match(line(), @"^([0-9A-Fa-f]{1,8})(;[\t\x20-\x7e\x80-\xff]*)?\z");
+                if (!m.Success) throw new InvalidDataException();
+                long size = Convert.ToInt64(m.Groups[1].Value, 16);
+                if (size == 0) break;
+                if (size > limit) throw new OverflowException();
+                limit -= size;
+                from.Copy(size, raw, data);
+                if (line() != "") throw new InvalidDataException();
+            }
+            while (line() != "") { } // trailers
+        }
+
+        /// <summary>Blocking reads from a stream, the bytes already taken from it first.</summary>
+        class Source
+        {
+            readonly Stream _s;
+            byte[] _buf;
+            int _pos, _end;
+
+            public Source(Stream s, byte[] first) { _s = s; _buf = first; _end = first.Length; }
+
+            bool Fill()
+            {
+                if (_pos < _end) return true;
+                if (_buf.Length < 8192) _buf = new byte[8192];
+                _pos = 0;
+                _end = Math.Max(0, _s.Read(_buf, 0, _buf.Length));
+                return _end > 0;
+            }
+
+            /// <summary>A line ending in CRLF, without it.</summary>
+            public string Line()
+            {
+                var sb = new StringBuilder();
+                while (true)
+                {
+                    if (!Fill()) throw new EndOfStreamException();
+                    var c = (char)_buf[_pos++];
+                    if (c == '\n')
+                    {
+                        if (sb.Length == 0 || sb[sb.Length - 1] != '\r') throw new InvalidDataException();
+                        return sb.ToString(0, sb.Length - 1);
+                    }
+                    if (sb.Length >= 8192) throw new InvalidDataException();
+                    sb.Append(c);
+                }
+            }
+
+            public void Copy(long count, Stream raw, Stream data)
+            {
+                while (count > 0)
+                {
+                    if (!Fill()) throw new EndOfStreamException();
+                    int n = (int)Math.Min(_end - _pos, count);
+                    if (raw != null) raw.Write(_buf, _pos, n);
+                    if (data != null) data.Write(_buf, _pos, n);
+                    _pos += n;
+                    count -= n;
+                }
+            }
+
+            public void CopyToEnd(Stream to)
+            {
+                while (Fill())
+                {
+                    to.Write(_buf, _pos, _end - _pos);
+                    _pos = _end;
+                }
+            }
+        }
+
         /// <summary>Reads up to the empty line after the headers (max 64 KB); what came after it goes to <paramref name="rest"/>.</summary>
         static string ReadHead(Stream s, out byte[] rest)
         {
