@@ -82,6 +82,7 @@ namespace Portly.UI
             int jobsShown = 0;
             Jobs.Changed += () => SafeInvoke(() => { var n = Jobs.ActiveCountAll(); if (n != jobsShown) { jobsShown = n; FillSites(); } });
             Log.Written += line => SafeInvoke(() => AppendLog(line));
+            ServiceManager.Php.Problem += text => SafeInvoke(() => { SetStatus(text); if (!Visible) _tray.ShowBalloonTip(8000, "Portly", text, ToolTipIcon.Warning); });
             Catalog.Changed += () => SafeInvoke(UpdateBanner);
             SystemEvents.UserPreferenceChanged += OnSystemThemeChanged;
 

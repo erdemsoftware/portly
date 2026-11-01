@@ -14,7 +14,7 @@ namespace Portly.Services
     /// PHP FastCGI pool: one php-cgi.exe (with child workers) per PHP version that is in use.
     /// Ports: PhpBasePort + index of the version among the installed ones (stable while nothing is installed/removed).
     /// </summary>
-    public class PhpService : Service
+    public partial class PhpService : Service
     {
         public override string Id { get { return "php"; } }
         public override string Title { get { return "PHP"; } }
@@ -56,7 +56,7 @@ namespace Portly.Services
         {
             if (folders.Count == 0) { SetState(ServiceState.Error, I18n.T("err.notInstalled", "PHP")); return; }
             StopRequested = false;
-            lock (Sync) _crashes.Clear();
+            lock (Sync) { _crashes.Clear(); _hangs.Clear(); }
             SetState(ServiceState.Starting);
             var errors = new List<string>();
             foreach (var folder in folders)
@@ -70,6 +70,7 @@ namespace Portly.Services
             {
                 foreach (var e in errors) Log.Error("PHP " + e);
                 SetState(ServiceState.Running);
+                StartWatch();
             }
         }
 
@@ -126,23 +127,27 @@ namespace Portly.Services
             }
             if (StopRequested) return;
             // restart a crashed PHP, but give up when it crashes again and again (broken php.ini, missing DLL ...)
+            // (a hung pool ended by the health check comes this way too: it has its own count and its own log line)
             List<DateTime> times;
+            bool hung;
             lock (Sync)
             {
+                hung = _endedHung.Remove(p);
                 if (!_crashes.TryGetValue(folder, out times)) _crashes[folder] = times = new List<DateTime>();
                 times.RemoveAll(t => t < DateTime.Now.AddMinutes(-1));
-                times.Add(DateTime.Now);
+                if (!hung) times.Add(DateTime.Now);
             }
             if (times.Count > 3)
             {
                 SetState(ServiceState.Error, "PHP " + PackageTypes.Label(folder) + " " + ExitReason(p) + " " + I18n.T("err.seeLog", "php-" + PackageTypes.Label(folder) + ".log"));
                 return;
             }
-            Log.Warn("PHP " + PackageTypes.Label(folder) + " " + ExitReason(p) + " - " + I18n.T("log.restarting"));
+            if (!hung) Log.Warn("PHP " + PackageTypes.Label(folder) + " " + ExitReason(p) + " - " + I18n.T("log.restarting"));
             Task.Run(async () =>
             {
                 await Task.Delay(1000);
                 if (StopRequested) return;
+                lock (Sync) if (_procs.ContainsKey(folder)) return; // stopped and started by hand in that second
                 var err = await StartOne(folder);
                 if (err != null) SetState(ServiceState.Error, err);
             });
@@ -151,6 +156,7 @@ namespace Portly.Services
         public override async Task StopAsync()
         {
             StopRequested = true;
+            StopWatch();
             List<Process> list;
             lock (Sync) { list = _procs.Values.ToList(); _procs.Clear(); }
             if (list.Count == 0) { SetState(ServiceState.Stopped); return; }

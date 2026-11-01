@@ -503,7 +503,7 @@ namespace Portly.Tools
                 "</script></body></html>";
         }
 
-        static string HeaderValue(IEnumerable<string> lines, string name)
+        internal static string HeaderValue(IEnumerable<string> lines, string name)
         {
             var l = lines.Skip(1).FirstOrDefault(x => Is(Name(x), name));
             return l == null ? null : l.Substring(l.IndexOf(':') + 1).Trim(' ', '\t');
@@ -682,8 +682,8 @@ namespace Portly.Tools
 
         static string Html(string s) { return System.Net.WebUtility.HtmlEncode(s ?? ""); }
 
-        static bool Is(string a, string b) { return string.Equals(a, b, StringComparison.OrdinalIgnoreCase); }
-        static string Name(string headerLine) { var i = headerLine.IndexOf(':'); return i < 0 ? "" : headerLine.Substring(0, i).Trim(); }
+        internal static bool Is(string a, string b) { return string.Equals(a, b, StringComparison.OrdinalIgnoreCase); }
+        internal static string Name(string headerLine) { var i = headerLine.IndexOf(':'); return i < 0 ? "" : headerLine.Substring(0, i).Trim(); }
 
         static readonly Regex RequestLine = new Regex(@"^[!#$%&'*+.^_`|~0-9A-Za-z-]+ (/[^\x00-\x20\x7f]*|\*) HTTP/1\.[01]\z");
         static readonly Regex HeaderLine = new Regex(@"^[!#$%&'*+.^_`|~0-9A-Za-z-]+:[\t\x20-\x7e\x80-\xff]*\z");
@@ -693,7 +693,7 @@ namespace Portly.Tools
         /// characters, folded lines, spaces around a header name, a repeated Host / Content-Length / Transfer-Encoding / Upgrade,
         /// a body framed two ways, and an address in the request line ("GET http://localhost/ ..." would override the Host).
         /// </summary>
-        static bool WellFormed(string head)
+        internal static bool WellFormed(string head)
         {
             var lines = head.Split(new[] { "\r\n" }, StringSplitOptions.None);
             if (!RequestLine.IsMatch(lines[0]) || !lines.Skip(1).All(l => HeaderLine.IsMatch(l))) return false;
@@ -711,7 +711,7 @@ namespace Portly.Tools
         /// A real WebSocket handshake. Any other upgrade stays a plain request: "h2c" would turn the tunnel into HTTP/2 requests
         /// of the device's own making, with the same effect as a request smuggled past the checks here.
         /// </summary>
-        static bool AsksUpgrade(List<string> lines)
+        internal static bool AsksUpgrade(List<string> lines)
         {
             return lines[0].StartsWith("GET ", StringComparison.Ordinal) && lines[0].EndsWith(" HTTP/1.1", StringComparison.Ordinal)
                 && Is(HeaderValue(lines, "Upgrade"), "websocket")
@@ -719,7 +719,7 @@ namespace Portly.Tools
                     .Any(l => l.Substring(l.IndexOf(':') + 1).Split(',').Any(t => Is(t.Trim(' ', '\t'), "upgrade")));
         }
 
-        static bool Switched(string resp) { return Regex.IsMatch(resp, @"^HTTP/1\.1 101(\s|$)"); }
+        internal static bool Switched(string resp) { return Regex.IsMatch(resp, @"^HTTP/1\.1 101(\s|$)"); }
 
         /// <summary>Answer of Portly itself to a request that does not go on.</summary>
         static async Task Refuse(Stream cs, string status)
@@ -836,7 +836,7 @@ namespace Portly.Tools
         }
 
         /// <summary>Exactly <paramref name="count"/> bytes, the rest of a request body; less when the device stops sending.</summary>
-        static async Task CopyBytes(Stream from, Stream to, long count)
+        internal static async Task CopyBytes(Stream from, Stream to, long count)
         {
             var buf = new byte[81920];
             while (count > 0)
@@ -852,7 +852,7 @@ namespace Portly.Tools
         /// The rest of an answer on a connection that stays open: up to where the answer says it ends, not to the end of the
         /// connection. Blocking reads, so the socket's receive timeout counts.
         /// </summary>
-        static void CopyAnswer(Stream ss, byte[] body, string resp, Stream cs)
+        internal static void CopyAnswer(Stream ss, byte[] body, string resp, Stream cs)
         {
             var lines = resp.Split(new[] { "\r\n" }, StringSplitOptions.None);
             var status = Regex.Match(lines[0], @"^HTTP/\S+ (\d{3})").Groups[1].Value;
@@ -959,7 +959,7 @@ namespace Portly.Tools
         }
 
         /// <summary>Reads up to the empty line after the headers (max 64 KB); what came after it goes to <paramref name="rest"/>.</summary>
-        static string ReadHead(Stream s, out byte[] rest)
+        internal static string ReadHead(Stream s, out byte[] rest)
         {
             var buf = new MemoryStream();
             var one = new byte[8192];
