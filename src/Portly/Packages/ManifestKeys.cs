@@ -16,7 +16,7 @@ namespace Portly.Packages
     {
         public const string Placeholder = "PASTE_RSA3072_PUBLIC_KEY_XML_HERE";
 
-        public const string PublicKey1 = Placeholder;
+        public const string PublicKey1 = "<RSAKeyValue><Modulus>uqWRpUIoK3ZIChUEFctCbj/+VxnO7hKakN5hLo2mo/oOMpvI97n/R0r9WZ4vXfbb6WH2H+k54ot5zAuyEO/BtxAT7a4018HcTsqVkSkFhJG32oe2RN5O+gOncaEjRtIEQVlSJQR4pSmBbdX3pnOSODLoKrNxtZK2q0SKkU7oFkSg21J4xRvNW4oCTj37VqrZciAzfoN9fQq31PuLdznO2sLhnaHYtUxTpkKdkyzd9Be5TAI6XJBwSSI7FYmOeP+6vGpmkhIMdZI9gkIplUPGYwooDQf65pgzzU+6U9wampG3CzYtQABRV5948Em220AjFYY6GX5NOarkAJv/QviK64CI4qQCbIo4v3ytISfqrpS7H13XHO1HtDD9nrUSFmi0DuQ0e+IgcC8cLIZoyALLzyL9NBHr3u8St1uIgLcvTuDhChoUGqTXAMnqetOEdDpniS7cG4A4RKSUn7b10q4x/w19aQmD9xVwR+U5GIj9hiFOCNH/WpWvopSOHnYzB9Jh</Modulus><Exponent>AQAB</Exponent></RSAKeyValue>";
 
         public static readonly string[] Trusted = { PublicKey1 };
     }

@@ -3,8 +3,8 @@
   "url": "https://github.com/erdemsoftware/portly/releases/download/v1.2.0/Portly-1.2.0-win10.zip",
   "sha256": "82dc47d845b401bcc234d64111646df60ea3c0bd9dfacb56c06ddbc384543e98",
   "notes": {
-    "tr": "Yeni: her servisin yanında \"Yeniden başlat\" düğmesi; Servisler ve Projeler sayfalarında hosts dosyasına hızlı erişim (düzenle, kayıtları yeniden yaz, klasörü aç); yeni sürüm hazır olunca Servisler sayfasının üstünde yeşil güncelleme düğmesi (kontrol artık her 3 saatte bir); Hızlı erişimde \"Hızlı kur\" kutusu.",
-    "en": "New: a \"Restart\" button next to every service; quick access to the hosts file on the Services and Projects pages (edit, write the entries again, open the folder); a green update button at the top of the Services page when a new version is ready (checked every 3 hours now); a \"Quick install\" tile in Quick access."
+    "tr": "Önemli güvenlik güncellemesi, herkesin güncellemesi önerilir. Site paylaşımı, yerel araçlar (phpMyAdmin, pano, posta) ve MySQL korumaları güçlendirildi; paylaşım şifresine deneme sınırı eklendi. Güncellemeler artık imzalı olarak denetleniyor. Takılan PHP kendiliğinden yeniden başlıyor. Yeni: MySQL root şifresi ayarı, sınırlı yerel sertifika yetkilisi (SSL onarım penceresinden) ve Portly içinde hosts düzenleyici. Not: Araçlar ve pano artık yalnızca localhost, 127.0.0.1 ve ::1 adlarıyla açılır.",
+    "en": "Important security update, everyone should update. Site sharing, local tools (phpMyAdmin, dashboard, mail) and MySQL protections were strengthened, and share passwords now have an attempt limit. Updates are now checked with signatures. A hung PHP restarts by itself. New: a MySQL root password setting, a restricted local certificate authority (in the Fix SSL window) and a hosts editor inside Portly. Note: tools and the dashboard now open only as localhost, 127.0.0.1 and ::1."
   },
   "donateUrl": ""
 }
