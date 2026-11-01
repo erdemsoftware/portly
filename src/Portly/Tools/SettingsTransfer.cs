@@ -34,6 +34,10 @@ namespace Portly.Tools
             new[] { "mysql", "RootPassword" }, new[] { "mysql", "LastAutoBackup" },
             new[] { "general", "LastUpdateCheck" }, new[] { "general", "HealthShown" }, new[] { "general", "SkippedVersion" },
             new[] { "general", "DocumentRootHome" },
+            // DPAPI values are bound to this PC / Windows user; the phpMyAdmin secret and the service's Windows user too
+            new[] { "service", "RootPassword" }, new[] { "service", "ControllerSid" }, new[] { "network", "ProxyPassword" },
+            new[] { "phpmyadmin", "Secret" }, new[] { "phpmyadmin", "OtherUsers" },
+            new[] { "ssl", "OldCaThumbprint" },
         };
 
         /// <summary>Keys that only make sense on the platform that wrote them (Windows terminal, PATH, autostart ...).</summary>

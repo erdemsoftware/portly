@@ -65,7 +65,13 @@ namespace Portly.Core
                     p.Start();
                     p.BeginOutputReadLine();
                     p.BeginErrorReadLine();
-                    if (stdin != null) { p.StandardInput.Write(stdin); p.StandardInput.Close(); }
+                    if (stdin != null)
+                    {
+                        // .NET Framework would use the console code page: "ş" must reach mysql.exe as UTF-8
+                        var bytes = new UTF8Encoding(false).GetBytes(stdin);
+                        p.StandardInput.BaseStream.Write(bytes, 0, bytes.Length);
+                        p.StandardInput.Close();
+                    }
                     if (!p.WaitForExit(timeoutMs))
                     {
                         res.TimedOut = true;

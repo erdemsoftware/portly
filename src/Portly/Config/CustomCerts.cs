@@ -150,7 +150,7 @@ namespace Portly.Config
             return list;
         }
 
-        static int ReadLen(byte[] d, ref int i)
+        internal static int ReadLen(byte[] d, ref int i)
         {
             int b = d[i++];
             if (b < 0x80) return b;
@@ -189,7 +189,7 @@ namespace Portly.Config
             return Der(0x02, t.ToArray());
         }
 
-        static byte[] Der(byte tag, byte[] content)
+        internal static byte[] Der(byte tag, byte[] content)
         {
             var r = new List<byte> { tag };
             int n = content.Length;

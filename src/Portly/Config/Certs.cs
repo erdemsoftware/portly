@@ -6,6 +6,7 @@ using System.Net;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Portly.Core;
 
@@ -16,6 +17,12 @@ namespace Portly.Config
     ///  1. A personal root authority "Portly Local CA" is created once (usr\ssl) and trusted once by the user.
     ///  2. Every site gets its own certificate signed by that authority (etc\ssl\sites).
     /// New sites never need a new trust step. Built only on .NET Framework 4.7.2+ APIs (works on Windows 7).
+    ///
+    /// A new authority carries X.509 name constraints: if its key ever leaks, it can only forge local names and private
+    /// addresses, not google.com. Sites may use any name (real domains as folders, aliases, a free ending), so the list
+    /// is made from the names in use when the authority is created; a later name outside it is reported by "Fix SSL",
+    /// which can replace the authority (SslRepair.UpgradeCaAsync). An older unrestricted authority keeps working until
+    /// the user chooses that step: a trusted authority is never replaced silently.
     /// </summary>
     public static class Certs
     {
@@ -25,10 +32,16 @@ namespace Portly.Config
         /// <summary>Plain-text key written by Portly 1.0 builds; migrated to CaKey on first use.</summary>
         static string CaKeyPlain { get { return Path.Combine(Paths.UserSsl, "portly-ca.key"); } }
 
-        static void SaveCaKey(byte[] pkcs8)
+        /// <summary>Authority made by PrepareNewCa: waits here until Windows trusts it.</summary>
+        static string NewCaCrt { get { return Path.Combine(Paths.UserSsl, "portly-ca.new.crt"); } }
+        static string NewCaKey { get { return Path.Combine(Paths.UserSsl, "portly-ca.new.key.dpapi"); } }
+
+        static void SaveCaKey(byte[] pkcs8) { SaveCaKey(pkcs8, CaKey); }
+
+        static void SaveCaKey(byte[] pkcs8, string file)
         {
             var blob = ProtectedData.Protect(pkcs8, Encoding.ASCII.GetBytes("Portly CA"), DataProtectionScope.CurrentUser);
-            File.WriteAllText(CaKey, Convert.ToBase64String(blob));
+            File.WriteAllText(file, Convert.ToBase64String(blob));
         }
 
         static byte[] LoadCaKey()
@@ -65,24 +78,144 @@ namespace Portly.Config
                     }
                     catch (Exception ex) { Log.Warn("CA unreadable, creating a new one: " + ex.Message); }
                 }
-                using (var rsa = NewRsa())
-                {
-                    var name = new X500DistinguishedName("CN=Portly Local CA (" + Environment.MachineName + "), O=Portly by Erdem Software, OU=Local development only");
-                    var req = new CertificateRequest(name, rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
-                    req.CertificateExtensions.Add(new X509BasicConstraintsExtension(true, true, 0, true));
-                    req.CertificateExtensions.Add(new X509KeyUsageExtension(X509KeyUsageFlags.KeyCertSign | X509KeyUsageFlags.CrlSign | X509KeyUsageFlags.DigitalSignature, true));
-                    req.CertificateExtensions.Add(new X509SubjectKeyIdentifierExtension(req.PublicKey, false));
-                    var ca = req.CreateSelfSigned(DateTimeOffset.Now.AddDays(-1), DateTimeOffset.Now.AddYears(10));
-                    File.WriteAllText(CaCrt, Pem("CERTIFICATE", ca.RawData));
-                    SaveCaKey(rsa.Key.Export(CngKeyBlobFormat.Pkcs8PrivateBlob));
-                    try { if (File.Exists(CaKeyPlain)) File.Delete(CaKeyPlain); } catch { }
-                    Log.Info(I18n.T("log.caCreated"));
-                    // old site certificates were signed by another authority
-                    try { if (Directory.Exists(SitesDir)) Directory.Delete(SitesDir, true); } catch { }
-                    WriteBundle();
-                    return new X509Certificate2(ca.RawData);
-                }
+                byte[] key;
+                var ca = CreateCa(out key);
+                File.WriteAllText(CaCrt, Pem("CERTIFICATE", ca.RawData));
+                SaveCaKey(key);
+                try { if (File.Exists(CaKeyPlain)) File.Delete(CaKeyPlain); } catch { }
+                Log.Info(I18n.T("log.caCreated"));
+                // old site certificates were signed by another authority
+                try { if (Directory.Exists(SitesDir)) Directory.Delete(SitesDir, true); } catch { }
+                WriteBundle();
+                return ca;
             }
+        }
+
+        /// <summary>A new authority and its key as PKCS#8, restricted to the names Portly uses now.</summary>
+        static X509Certificate2 CreateCa(out byte[] pkcs8)
+        {
+            using (var rsa = NewRsa())
+            {
+                var name = new X500DistinguishedName("CN=Portly Local CA (" + Environment.MachineName + "), O=Portly by Erdem Software, OU=Local development only");
+                var req = new CertificateRequest(name, rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+                req.CertificateExtensions.Add(new X509BasicConstraintsExtension(true, true, 0, true));
+                req.CertificateExtensions.Add(new X509KeyUsageExtension(X509KeyUsageFlags.KeyCertSign | X509KeyUsageFlags.CrlSign | X509KeyUsageFlags.DigitalSignature, true));
+                req.CertificateExtensions.Add(new X509SubjectKeyIdentifierExtension(req.PublicKey, false));
+                req.CertificateExtensions.Add(new X509Extension(NameConstraintsOid, NameConstraintsDer(PermittedNames()), true));
+                // web servers only: name constraints say nothing about code signing or e-mail, a leaked key could still forge those
+                req.CertificateExtensions.Add(new X509EnhancedKeyUsageExtension(new OidCollection { new Oid("1.3.6.1.5.5.7.3.1") }, false));
+                var ca = req.CreateSelfSigned(DateTimeOffset.Now.AddDays(-1), DateTimeOffset.Now.AddYears(10));
+                pkcs8 = rsa.Key.Export(CngKeyBlobFormat.Pkcs8PrivateBlob);
+                return new X509Certificate2(ca.RawData);
+            }
+        }
+
+        // ---------------- name constraints ----------------
+        const string NameConstraintsOid = "2.5.29.30";
+
+        /// <summary>Loopback, private networks, link-local and CGNAT (Tailscale): every address "Share on the local network" normally has.</summary>
+        public static readonly string[] PermittedNetworks =
+        {
+            "127.0.0.0/8", "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "169.254.0.0/16", "100.64.0.0/10",
+            "::1/128", "fc00::/7", "fe80::/10",
+        };
+
+        // no leading dot: Java refuses that form, and without one every library also matches the subdomains
+        static readonly Regex DnsNameRx = new Regex(@"^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*$");
+
+        /// <summary>
+        /// DNS names a new authority may sign: endings that never exist on the internet, the ending and address format
+        /// from Settings, plus every name the projects use now (real domains, aliases).
+        /// </summary>
+        public static List<string> PermittedNames()
+        {
+            var names = new List<string>(Sites.LocalEndings) { Settings.DefaultTld };
+            var s = Settings.Current;
+            if (s != null)
+            {
+                names.Add(s.Tld);
+                // "{name}.{tld}.corp" -> every future project ends with portly.corp
+                var t = s.HostTemplate;
+                var rest = t.Substring(t.IndexOf("{name}", StringComparison.Ordinal) + 6).TrimStart('.').Replace("{tld}", s.Tld);
+                if (rest != "") names.Add(rest);
+                try { foreach (var site in Sites.ScanAll()) names.AddRange(site.AllNames); }
+                catch (Exception ex) { Log.Warn("Certificate names: " + ex.Message); }
+            }
+            return ReduceNames(names);
+        }
+
+        /// <summary>Lower case, without "*.", and without names another entry already covers ("a.portly" under "portly").</summary>
+        public static List<string> ReduceNames(IEnumerable<string> names)
+        {
+            var clean = names.Select(n => (n ?? "").Trim().TrimEnd('.').ToLowerInvariant()).Select(n => n.StartsWith("*.") ? n.Substring(2) : n)
+                             .Where(n => DnsNameRx.IsMatch(n)).Distinct().ToList();
+            return clean.Where(n => !clean.Any(o => n.EndsWith("." + o))).OrderBy(n => n, StringComparer.Ordinal).ToList();
+        }
+
+        /// <summary>NameConstraints ::= SEQUENCE { permittedSubtrees [0] SEQUENCE OF SEQUENCE { base GeneralName } } (RFC 5280).</summary>
+        public static byte[] NameConstraintsDer(IEnumerable<string> dnsNames)
+        {
+            var subtrees = new List<byte>();
+            foreach (var n in dnsNames) subtrees.AddRange(CustomCerts.Der(0x30, CustomCerts.Der(0x82, Encoding.ASCII.GetBytes(n))));   // dNSName
+            foreach (var net in PermittedNetworks) subtrees.AddRange(CustomCerts.Der(0x30, CustomCerts.Der(0x87, NetworkBytes(net))));  // iPAddress
+            return CustomCerts.Der(0x30, CustomCerts.Der(0xA0, subtrees.ToArray()));
+        }
+
+        /// <summary>"10.0.0.0/8" -> address followed by its mask, as the iPAddress form of a constraint wants it.</summary>
+        static byte[] NetworkBytes(string cidr)
+        {
+            var parts = cidr.Split('/');
+            var ip = IPAddress.Parse(parts[0]).GetAddressBytes();
+            int bits = int.Parse(parts[1]);
+            var mask = new byte[ip.Length];
+            for (int i = 0; i < mask.Length; i++, bits -= 8) mask[i] = (byte)(bits >= 8 ? 0xFF : bits <= 0 ? 0 : 0xFF << (8 - bits));
+            return ip.Concat(mask).ToArray();
+        }
+
+        public static bool IsRestricted(X509Certificate2 ca) { return ca.Extensions[NameConstraintsOid] != null; }
+
+        /// <summary>dNSName entries of an authority's permitted subtrees.</summary>
+        public static List<string> PermittedDns(X509Certificate2 ca)
+        {
+            var list = new List<string>();
+            var ext = ca.Extensions[NameConstraintsOid];
+            if (ext == null) return list;
+            var d = ext.RawData;
+            int i = 1;
+            CustomCerts.ReadLen(d, ref i);    // SEQUENCE
+            i++;
+            int end = CustomCerts.ReadLen(d, ref i);    // [0]
+            end += i;
+            while (i < end)
+            {
+                i++;
+                int len = CustomCerts.ReadLen(d, ref i);    // GeneralSubtree
+                int next = i + len;
+                byte tag = d[i++];
+                int nameLen = CustomCerts.ReadLen(d, ref i);
+                if (tag == 0x82) list.Add(Encoding.ASCII.GetString(d, i, nameLen));
+                i = next;
+            }
+            return list;
+        }
+
+        /// <summary>The names this authority cannot sign: browsers refuse such a certificate whatever Portly issues.</summary>
+        public static List<string> OutsideCa(X509Certificate2 ca, IEnumerable<string> names)
+        {
+            if (!IsRestricted(ca)) return new List<string>();
+            var permitted = PermittedDns(ca);
+            return names.Where(n =>
+            {
+                var h = n.StartsWith("*.") ? n.Substring(2) : n;
+                return !permitted.Any(p => h.Equals(p, StringComparison.OrdinalIgnoreCase) || h.EndsWith("." + p, StringComparison.OrdinalIgnoreCase));
+            }).ToList();
+        }
+
+        /// <summary>An authority exists and it has no name constraints.</summary>
+        public static bool CaIsUnrestricted()
+        {
+            try { return File.Exists(CaCrt) && !IsRestricted(new X509Certificate2(Encoding.ASCII.GetBytes(File.ReadAllText(CaCrt)))); }
+            catch { return false; }
         }
 
         static RSACng NewRsa()
@@ -133,6 +266,8 @@ namespace Portly.Config
             {
                 // the CA first: making a new CA clears the site certificate folder
                 var ca = EnsureCa();
+                var outside = OutsideCa(ca, list);
+                if (outside.Count > 0 && WarnedOutside.Add(namesText)) Log.Warn(I18n.T("sslfix.outsideLog", string.Join(", ", outside)));
                 Directory.CreateDirectory(SitesDir);
                 var crt = Path.Combine(SitesDir, host + ".crt");
                 var key = Path.Combine(SitesDir, host + ".key");
@@ -179,6 +314,7 @@ namespace Portly.Config
             }
         }
 
+        static readonly HashSet<string> WarnedOutside = new HashSet<string>();
         static readonly Dictionary<string, X509Certificate2> LanCerts = new Dictionary<string, X509Certificate2>();
 
         /// <summary>
@@ -195,7 +331,8 @@ namespace Portly.Config
                 using (var caKey = CaKeyRsa())
                 using (var rsa = new RSACryptoServiceProvider(2048)) // a CSP key: CopyWithPrivateKey works with it on .NET Framework
                 {
-                    var req = new CertificateRequest(new X500DistinguishedName("CN=" + ip + ", O=Portly"), rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+                    // no CN: Windows and OpenSSL check a CN against the DNS name constraints when the SAN has no dNSName
+                    var req = new CertificateRequest(new X500DistinguishedName("O=Portly, OU=LAN share"), rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
                     var san = new SubjectAlternativeNameBuilder();
                     san.AddIpAddress(ip);
                     req.CertificateExtensions.Add(san.Build());
@@ -226,7 +363,8 @@ namespace Portly.Config
         /// <summary>
         /// Why a site's certificate would show a browser warning, or null when it is fine: "missing", "expiring"
         /// (under 30 days), "otherCa" (signed by an older Portly CA), "names" (not made for the site's current names),
-        /// "broken" (unreadable). Same rules as EnsureSite uses to decide on a new certificate.
+        /// "constraint" (a name the authority may not sign: a new certificate would not help), "broken" (unreadable).
+        /// Same rules as EnsureSite uses to decide on a new certificate.
         /// </summary>
         public static string SiteProblem(string host, IEnumerable<string> names)
         {
@@ -239,6 +377,7 @@ namespace Portly.Config
             try
             {
                 var ca = EnsureCa();
+                if (OutsideCa(ca, list).Count > 0) return "constraint";
                 var cert = new X509Certificate2(Encoding.ASCII.GetBytes(FirstPem(File.ReadAllText(crt))));
                 if (cert.Issuer != ca.Subject || !VerifiedBy(cert, ca)) return "otherCa";
                 if (cert.NotAfter <= DateTime.Now.AddDays(30) || cert.NotBefore > DateTime.Now) return "expiring";
@@ -255,7 +394,8 @@ namespace Portly.Config
             using (var chain = new X509Chain())
             {
                 chain.ChainPolicy.RevocationMode = X509RevocationMode.NoCheck;
-                chain.ChainPolicy.VerificationFlags = X509VerificationFlags.AllowUnknownCertificateAuthority;
+                // only the signature counts here: a name outside the constraints is reported as such
+                chain.ChainPolicy.VerificationFlags = X509VerificationFlags.AllowUnknownCertificateAuthority | X509VerificationFlags.IgnoreInvalidName;
                 chain.ChainPolicy.ExtraStore.Add(ca);
                 if (!chain.Build(cert)) return false;
                 var root = chain.ChainElements[chain.ChainElements.Count - 1].Certificate;
@@ -280,17 +420,20 @@ namespace Portly.Config
             if (!File.Exists(CaCrt)) return false;
             try
             {
-                var ca = new X509Certificate2(Encoding.ASCII.GetBytes(File.ReadAllText(CaCrt)));
-                foreach (var loc in new[] { StoreLocation.CurrentUser, StoreLocation.LocalMachine })
-                {
-                    using (var store = new X509Store(StoreName.Root, loc))
-                    {
-                        store.Open(OpenFlags.ReadOnly);
-                        if (store.Certificates.Find(X509FindType.FindByThumbprint, ca.Thumbprint, false).Count > 0) return true;
-                    }
-                }
+                return InRootStore(new X509Certificate2(Encoding.ASCII.GetBytes(File.ReadAllText(CaCrt))).Thumbprint, StoreLocation.CurrentUser, StoreLocation.LocalMachine);
             }
             catch { }
+            return false;
+        }
+
+        static bool InRootStore(string thumbprint, params StoreLocation[] locations)
+        {
+            foreach (var loc in locations)
+                using (var store = new X509Store(StoreName.Root, loc))
+                {
+                    store.Open(OpenFlags.ReadOnly);
+                    if (store.Certificates.Find(X509FindType.FindByThumbprint, thumbprint, false).Count > 0) return true;
+                }
             return false;
         }
 
@@ -304,9 +447,19 @@ namespace Portly.Config
             try
             {
                 EnsureCa();
-                var code = WinUtil.RunElevated(Paths.Exe, "--trust-ca \"" + CaCrt + "\"");
-                if (code == 0 && IsCaTrusted()) { Log.Info(I18n.T("log.caTrusted")); Tools.FirefoxTrust.EnableAll(); return true; }
-                var ca = new X509Certificate2(Encoding.ASCII.GetBytes(File.ReadAllText(CaCrt)));
+                return TrustFile(CaCrt);
+            }
+            catch (Exception ex) { Log.Warn("Trust CA: " + ex.Message); return false; }
+        }
+
+        /// <summary>The steps of TrustCa for a certificate file (the current authority or the one that replaces it).</summary>
+        public static bool TrustFile(string file)
+        {
+            try
+            {
+                var ca = new X509Certificate2(Encoding.ASCII.GetBytes(File.ReadAllText(file)));
+                var code = WinUtil.RunElevated(Paths.Exe, "--trust-ca \"" + file + "\"");
+                if (code == 0 && InRootStore(ca.Thumbprint, StoreLocation.CurrentUser, StoreLocation.LocalMachine)) { Log.Info(I18n.T("log.caTrusted")); Tools.FirefoxTrust.EnableAll(); return true; }
                 using (var store = new X509Store(StoreName.Root, StoreLocation.CurrentUser))
                 {
                     store.Open(OpenFlags.ReadWrite);
@@ -315,7 +468,7 @@ namespace Portly.Config
                 Log.Info(I18n.T("log.caTrusted"));
                 // Firefox keeps its own list: let it read the Windows store too
                 Tools.FirefoxTrust.EnableAll();
-                return IsCaTrusted();
+                return InRootStore(ca.Thumbprint, StoreLocation.CurrentUser, StoreLocation.LocalMachine);
             }
             catch (Exception ex) { Log.Warn("Trust CA: " + ex.Message); return false; }
         }
@@ -335,6 +488,102 @@ namespace Portly.Config
                 return 0;
             }
             catch { return 2; }
+        }
+
+        // ---------------- replacing the authority (SslRepair.UpgradeCaAsync) ----------------
+        const string OldCaKey = "OldCaThumbprint";
+
+        /// <summary>
+        /// Thumbprints of replaced authorities still to be removed from the trust store. Only these: another Portly
+        /// folder on this PC has its own authority under the same name.
+        /// </summary>
+        public static List<string> OldCas
+        {
+            get { return Settings.Current.Raw.Get("ssl", OldCaKey, "").Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).ToList(); }
+        }
+
+        static void SetOldCas(IEnumerable<string> list)
+        {
+            Settings.Current.Raw.Set("ssl", OldCaKey, string.Join(",", list));
+            Settings.Current.Save();
+        }
+
+        /// <summary>Make the replacement next to the current authority, which stays in use. Returns its certificate file.</summary>
+        public static string PrepareNewCa()
+        {
+            lock (Sync)
+            {
+                byte[] key;
+                var ca = CreateCa(out key);
+                File.WriteAllText(NewCaCrt, Pem("CERTIFICATE", ca.RawData));
+                SaveCaKey(key, NewCaKey);
+                return NewCaCrt;
+            }
+        }
+
+        public static void DiscardNewCa()
+        {
+            lock (Sync) foreach (var f in new[] { NewCaCrt, NewCaKey }) try { File.Delete(f); } catch { }
+        }
+
+        /// <summary>The prepared authority becomes the current one. The old one is remembered for RemoveOldCas.</summary>
+        public static void ActivateNewCa()
+        {
+            lock (Sync)
+            {
+                var old = File.Exists(CaCrt) ? new X509Certificate2(Encoding.ASCII.GetBytes(File.ReadAllText(CaCrt))).Thumbprint : null;
+                File.Copy(NewCaKey, CaKey, true);
+                File.Copy(NewCaCrt, CaCrt, true);
+                DiscardNewCa();
+                if (old != null) SetOldCas(OldCas.Concat(new[] { old }).Distinct());
+                LanCerts.Clear();
+                try { if (Directory.Exists(SitesDir)) Directory.Delete(SitesDir, true); } catch { }
+                WriteBundle();
+            }
+        }
+
+        /// <summary>Remove one replaced authority from the user's and the machine's trusted roots (UAC for the machine's).</summary>
+        public static bool UntrustCa(string thumbprint)
+        {
+            try
+            {
+                using (var store = new X509Store(StoreName.Root, StoreLocation.CurrentUser))
+                {
+                    store.Open(OpenFlags.ReadWrite);
+                    foreach (var c in store.Certificates.Find(X509FindType.FindByThumbprint, thumbprint, false)) store.Remove(c);
+                }
+                if (InRootStore(thumbprint, StoreLocation.LocalMachine)) WinUtil.RunElevated(Paths.Exe, "--untrust-ca " + thumbprint);
+                return !InRootStore(thumbprint, StoreLocation.CurrentUser, StoreLocation.LocalMachine);
+            }
+            catch (Exception ex) { Log.Warn("Untrust CA: " + ex.Message); return false; }
+        }
+
+        /// <summary>Runs in the elevated helper ("Portly.exe --untrust-ca thumbprint"). Only removes a Portly CA.</summary>
+        public static int UntrustCaElevated(string thumbprint)
+        {
+            try
+            {
+                if (!Regex.IsMatch(thumbprint, "^[0-9A-Fa-f]{40}$")) return 3;
+                using (var store = new X509Store(StoreName.Root, StoreLocation.LocalMachine))
+                {
+                    store.Open(OpenFlags.ReadWrite);
+                    foreach (var c in store.Certificates.Find(X509FindType.FindByThumbprint, thumbprint, false))
+                    {
+                        if (!c.Subject.Contains("Portly Local CA") || c.Subject != c.Issuer) return 3;
+                        store.Remove(c);
+                    }
+                }
+                return 0;
+            }
+            catch { return 2; }
+        }
+
+        /// <summary>Try the removal of every replaced authority; those that stay are tried again by the next "Fix SSL".</summary>
+        public static bool RemoveOldCas(Func<string, bool> untrust)
+        {
+            var left = OldCas.Where(t => !untrust(t)).ToList();
+            SetOldCas(left);
+            return left.Count == 0;
         }
 
         public static void RegenerateSiteCertificates()

@@ -18,9 +18,11 @@ namespace Portly.Tools
         public static bool IsValidName(string name) { return name != null && DbName.IsMatch(name); }
 
         /// <summary>Temporary option file with the root credentials (never put passwords on the command line).</summary>
-        static string ClientFile()
+        static string ClientFile() { return ClientFile(Settings.Current.MysqlRootPassword); }
+
+        static string ClientFile(string password)
         {
-            var pass = Settings.Current.MysqlRootPassword.Replace("\\", "\\\\").Replace("\"", "\\\"");
+            var pass = password.Replace("\\", "\\\\").Replace("\"", "\\\"");
             var f = Path.Combine(Paths.Tmp, "my-client-" + Guid.NewGuid().ToString("N").Substring(0, 8) + ".cnf");
             File.WriteAllText(f, "[client]\r\nuser=root\r\npassword=\"" + pass + "\"\r\nhost=127.0.0.1\r\nport=" + Settings.Current.MysqlPort + "\r\n", new UTF8Encoding(false));
             return f;
@@ -35,10 +37,15 @@ namespace Portly.Tools
         /// </summary>
         public static System.Diagnostics.Process StartClient(string exe, string args, out string cnf)
         {
+            return StartClient(exe, args, out cnf, Settings.Current.MysqlRootPassword);
+        }
+
+        static System.Diagnostics.Process StartClient(string exe, string args, out string cnf, string password)
+        {
             cnf = null;
             var bin = MySqlService.BinDir;
             if (bin == null) throw new Exception(I18n.T("err.notInstalled", "MySQL"));
-            cnf = ClientFile();
+            cnf = ClientFile(password);
             var psi = new System.Diagnostics.ProcessStartInfo(Path.Combine(bin, exe), "--defaults-extra-file=\"" + cnf + "\" " + args)
             {
                 UseShellExecute = false, CreateNoWindow = true, WorkingDirectory = bin,
@@ -52,9 +59,14 @@ namespace Portly.Tools
 
         static RunResult Client(string exe, string args, string stdin, int timeout)
         {
+            return Client(exe, args, stdin, timeout, Settings.Current.MysqlRootPassword);
+        }
+
+        static RunResult Client(string exe, string args, string stdin, int timeout, string password)
+        {
             var bin = MySqlService.BinDir;
             if (bin == null) return new RunResult { Output = I18n.T("err.notInstalled", "MySQL") };
-            var cnf = ClientFile();
+            var cnf = ClientFile(password);
             try
             {
                 return ProcessUtil.Run(Path.Combine(bin, exe), "--defaults-extra-file=\"" + cnf + "\" " + args, bin, null, timeout, stdin);
@@ -155,15 +167,186 @@ namespace Portly.Tools
 
         public static string SqlString(string s) { return "'" + s.Replace("\\", "\\\\").Replace("'", "''") + "'"; }
 
-        public static string ChangeRootPassword(string newPassword)
+        // ---------------- root password ----------------
+        static readonly Regex RootAccountRx = new Regex(@"^'root'@'[^']*'$");
+
+        /// <summary>
+        /// Root has no password while the server listens beyond this computer (LAN access, or the WSL adapter).
+        /// The default root@localhost is still not reachable from there, but a project or tool on that network is.
+        /// </summary>
+        public static bool RootPasswordExposed
         {
+            get
+            {
+                var s = Settings.Current;
+                return !s.HasRootPassword && (s.AllowLan || (s.WslAccess && Features.IsOn("wsl")));
+            }
+        }
+
+        /// <summary>A new connection as root with this password.</summary>
+        public static bool LoginWorks(string password)
+        {
+            return Client("mysql.exe", "--batch --skip-column-names", "SELECT 1;", 15000, password ?? "").Ok;
+        }
+
+        /// <summary>
+        /// 'root'@'host' of every root account: one on MySQL; on MariaDB also 127.0.0.1, ::1 and the computer's name.
+        /// null when this password does not log in.
+        /// </summary>
+        static List<string> RootAccounts(string password)
+        {
+            var r = Client("mysql.exe", "--batch --skip-column-names", "SELECT CONCAT(QUOTE(User), '@', QUOTE(Host)) FROM mysql.user WHERE User = 'root';", 15000, password);
+            if (!r.Ok) return null;
+            return r.Output.Split('\n').Select(l => l.Trim()).Where(l => RootAccountRx.IsMatch(l)).ToList();
+        }
+
+        /// <summary>One statement: atomic on MySQL 8+, on the others the first error stops it and the caller puts things back.</summary>
+        static string AlterRootSql(IEnumerable<string> accounts, string password)
+        {
+            return "ALTER USER " + string.Join(", ", accounts.Select(a => a + " IDENTIFIED BY " + SqlString(password))) + ";";
+        }
+
+        /// <summary>
+        /// Script for --init-file, which runs before anyone could ask for the accounts, so SQL finds them itself. The first
+        /// line alone covers the accounts that decide whether Portly gets in.
+        /// </summary>
+        public static string ResetRootSql()
+        {
+            return "ALTER USER IF EXISTS 'root'@'localhost' IDENTIFIED BY '', 'root'@'127.0.0.1' IDENTIFIED BY '', 'root'@'::1' IDENTIFIED BY '';\n" +
+                   "SET @portly = (SELECT GROUP_CONCAT(CONCAT(QUOTE(User), '@', QUOTE(Host), ' IDENTIFIED BY ''''') SEPARATOR ', ') FROM mysql.user WHERE User = 'root');\n" +
+                   "SET @portly = CONCAT('ALTER USER ', @portly);\n" +
+                   "PREPARE portly FROM @portly;\nEXECUTE portly;\nDEALLOCATE PREPARE portly;\nFLUSH PRIVILEGES;\n";
+        }
+
+        /// <summary>
+        /// A mysql.exe connection that stays open: after ALTER USER only this connection is sure to still be logged in,
+        /// so a change that turns out wrong can be taken back through it.
+        /// </summary>
+        sealed class SqlSession : IDisposable
+        {
+            readonly System.Diagnostics.Process _p;
+            readonly string _cnf;
+            readonly StringBuilder _errors = new StringBuilder();
+            readonly System.Threading.ManualResetEventSlim _done = new System.Threading.ManualResetEventSlim(false);
+            string _marker;
+            int _failed = -1;
+
+            public SqlSession(string password)
+            {
+                // --force: an error does not end the connection; --unbuffered: answers arrive while stdin stays open
+                _p = StartClient("mysql.exe", "--default-character-set=utf8mb4 --batch --skip-column-names --unbuffered --force", out _cnf, password);
+                _p.ErrorDataReceived += (s, e) => { if (e.Data != null) lock (_errors) _errors.AppendLine(e.Data); };
+                _p.OutputDataReceived += (s, e) =>
+                {
+                    if (e.Data == null) { _done.Set(); return; }
+                    var m = _marker;
+                    if (m == null || !e.Data.StartsWith(m + ":")) return;
+                    int.TryParse(e.Data.Substring(m.Length + 1).Trim(), out _failed);
+                    _done.Set();
+                };
+                _p.BeginOutputReadLine();
+                _p.BeginErrorReadLine();
+            }
+
+            /// <summary>True when the statement ran without an error; otherwise <paramref name="error"/> says why.</summary>
+            public bool Run(string sql, out string error)
+            {
+                error = null;
+                _done.Reset();
+                _failed = -1;
+                _marker = "portly-" + Guid.NewGuid().ToString("N");
+                try
+                {
+                    var bytes = new UTF8Encoding(false).GetBytes(sql + "\nSELECT CONCAT('" + _marker + ":', @@error_count);\n");
+                    _p.StandardInput.BaseStream.Write(bytes, 0, bytes.Length);
+                    _p.StandardInput.BaseStream.Flush();
+                }
+                catch (Exception ex) { error = ex.Message; return false; }
+                bool answered = _done.Wait(30000);
+                if (answered && _failed == 0) return true;
+                System.Threading.Thread.Sleep(100);   // stderr has its own reader
+                lock (_errors) error = Clean(new RunResult { Output = _errors.ToString() });
+                if (error == "") error = I18n.T("err.timeout");
+                return false;
+            }
+
+            public void Dispose()
+            {
+                try { _p.StandardInput.Close(); if (!_p.WaitForExit(5000)) ProcessUtil.KillTree(_p.Id); } catch { }
+                try { File.Delete(_cnf); } catch { }
+                _p.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// Change every root account, then prove it with a new connection before anything is stored: the new password
+        /// must log in and the old one must no longer do so. Otherwise the open connection puts the old password back.
+        /// Returns null on success, otherwise the error text.
+        /// </summary>
+        static string ApplyRootPassword(string current, string next, Func<string, bool> verify, Action save)
+        {
+            var accounts = RootAccounts(current);
+            if (accounts == null) return I18n.T("db.rootLoginFailed");
+            if (accounts.Count == 0) return I18n.T("db.rootNoAccounts");
+            Func<string, string> hide = t => next == "" ? t : t.Replace(next, "***");
+            using (var session = new SqlSession(current))
+            {
+                string error;
+                bool ok = session.Run(AlterRootSql(accounts, next), out error);
+                if (ok && !(verify(next) && (next == current || !verify(current))))
+                {
+                    ok = false;
+                    error = I18n.T("db.rootNotVerified");
+                }
+                if (ok && save != null)
+                {
+                    try { save(); }
+                    catch (Exception ex) { ok = false; error = ex.Message; }
+                }
+                if (ok) return null;
+                string undo;
+                if (!session.Run(AlterRootSql(accounts, current), out undo)) return I18n.T("db.rootRollbackFailed", hide(error), hide(undo));
+                return I18n.T("db.rootChangeFailed", hide(error));
+            }
+        }
+
+        /// <summary>Set, change or (with "") remove the root password. Returns null on success, otherwise the error text.</summary>
+        public static string ChangeRootPassword(string newPassword) { return ChangeRootPassword(newPassword, null); }
+
+        /// <summary><paramref name="verify"/> replaces the login check (the tests make it fail on purpose).</summary>
+        public static string ChangeRootPassword(string newPassword, Func<string, bool> verify)
+        {
+            newPassword = newPassword ?? "";
             if (ServiceManager.MySql.State != ServiceState.Running) return I18n.T("err.mysqlNotRunning");
-            var r = Sql("ALTER USER 'root'@'localhost' IDENTIFIED BY " + SqlString(newPassword ?? "") + "; FLUSH PRIVILEGES;");
-            if (!r.Ok) return Clean(r);
-            Settings.Current.MysqlRootPassword = newPassword;
-            Settings.Current.Save();
+            if (newPassword.Any(char.IsControl)) return I18n.T("db.rootBadChars");
+            var s = Settings.Current;
+            var err = ApplyRootPassword(s.MysqlRootPassword, newPassword, verify ?? LoginWorks, () =>
+            {
+                s.MysqlRootPassword = newPassword;
+                s.Save();
+            });
+            if (err != null) return err;
+            if (s.RunAsService) ServiceMode.PasswordChanged();
             Log.Info(I18n.T("log.rootPassword"));
             return null;
+        }
+
+        /// <summary>
+        /// After every start. Each engine / version line has its own data folder, and a new one starts with an empty
+        /// root: the stored password would lock Portly out of it, so the same password is set there too.
+        /// </summary>
+        public static void ReconcileRootPassword()
+        {
+            var stored = Settings.Current.MysqlRootPassword;
+            if (LoginWorks(stored)) return;
+            if (stored != "" && LoginWorks(""))
+            {
+                var err = ApplyRootPassword("", stored, LoginWorks, null);
+                if (err == null) Log.Info(I18n.T("db.rootApplied"));
+                else Log.Warn(err);
+                return;
+            }
+            Log.Warn(I18n.T("db.rootLoginFailed"));
         }
 
         /// <summary>Dump all databases to backup\mysql. Returns the file, or throws with the error.</summary>

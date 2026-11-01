@@ -169,6 +169,15 @@ namespace Portly.Services
             s.Save();
         }
 
+        /// <summary>The root password changed while the service runs: it needs the new one for mysqladmin shutdown and backups.</summary>
+        public static void PasswordChanged()
+        {
+            SyncPassword();
+            if (Status() != ServiceControllerStatus.Running) return;
+            try { Send("password", 10000); }
+            catch (Exception ex) { Log.Warn("Service password: " + ex.Message); }
+        }
+
         static async Task StartWindowsServiceAsync(params string[] args)
         {
             SyncPassword();
@@ -388,6 +397,7 @@ namespace Portly.Services
                     case "stop": { var s = Find(arg); if (s != null) ServiceManager.StopAsync(s).Wait(); break; }
                     case "restart": { var s = Find(arg); if (s != null) { ServiceManager.StopAsync(s).Wait(); ServiceManager.StartAsync(s).Wait(); } break; }
                     case "startall": ServiceManager.StartAllAsync().Wait(); break;
+                    case "password": LoadSettings(); break;
                     case "reloadweb":
                         LoadSettings();
                         ServiceManager.ReloadWebAsync().Wait();

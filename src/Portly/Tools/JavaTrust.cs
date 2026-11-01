@@ -54,6 +54,17 @@ namespace Portly.Tools
             return r.Ok;
         }
 
+        /// <summary>The store's copy is the current authority (SHA-256 fingerprint: hex looks the same in every language).</summary>
+        static bool HoldsCurrentCa(string home)
+        {
+            var cacerts = Cacerts(home);
+            if (cacerts == null) return false;
+            var r = ProcessUtil.Run(Keytool(home), "-list -noprompt " + StoreArgs(cacerts) + " -alias " + Alias, null, null, 30000);
+            using (var sha = System.Security.Cryptography.SHA256.Create())
+            using (var ca = new System.Security.Cryptography.X509Certificates.X509Certificate2(Certs.CaCertPath))
+                return r.Ok && r.Output.Contains(BitConverter.ToString(sha.ComputeHash(ca.RawData)).Replace("-", ":"));
+        }
+
         /// <summary>The exact command shown in the confirmation before it runs.</summary>
         public static string ImportCommand(string home)
         {
@@ -73,17 +84,21 @@ namespace Portly.Tools
             if (cacerts == null) return I18n.T("java.noCacerts", home);
             Certs.EnsureCa();
             var args = "-importcert -noprompt -trustcacerts " + StoreArgs(cacerts) + " -alias " + Alias + " -file \"" + Certs.CaCertPath + "\"";
+            // keytool refuses an alias that exists: a replaced authority goes first
+            var remove = IsImported(home) ? "-delete -noprompt " + StoreArgs(cacerts) + " -alias " + Alias : null;
             if (CanWrite(cacerts))
             {
+                if (remove != null) ProcessUtil.Run(Keytool(home), remove, null, null, 60000);
                 var r = ProcessUtil.Run(Keytool(home), args, null, null, 60000);
                 if (!r.Ok && !IsImported(home)) return r.Output.Trim();
             }
             else
             {
-                var code = WinUtil.RunElevated(Keytool(home), args);
+                var tool = "\"" + Keytool(home) + "\" ";
+                var code = remove != null ? WinUtil.RunElevated("cmd.exe", "/c \"" + tool + remove + " & " + tool + args + "\"") : WinUtil.RunElevated(Keytool(home), args);
                 if (code == -2) return I18n.T("java.cancelled");
             }
-            if (!IsImported(home)) return I18n.T("java.failed");
+            if (!HoldsCurrentCa(home)) return I18n.T("java.failed");
             Log.Info(I18n.T("java.done", home));
             return null;
         }

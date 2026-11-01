@@ -346,6 +346,7 @@ namespace Portly.UI
             page.Controls.Add(list);
             // "PHP 8.6.0 is out" cards between the header and the services
             _notices = new UpdateNoticeBar { ApplyVersionChange = ApplyVersionChange, OpenPackages = t => OpenPackages(t), Changed = () => { RefreshVersions(); UpdateBanner(); } };
+            page.Controls.Add(new RootPasswordNotice());
             page.Controls.Add(_notices);
             page.Controls.Add(header);
             return page;
@@ -1581,12 +1582,7 @@ namespace Portly.UI
         void ChangeRootPassword()
         {
             ShowFromTray();
-            if (ServiceManager.MySql.State != ServiceState.Running) { Ui.Error(this, I18n.T("err.mysqlNotRunning")); return; }
-            var pass = Ui.Prompt(this, I18n.T("db.password"), I18n.T("db.newPassword"), "", true);
-            if (pass == null) return;
-            var err = Database.ChangeRootPassword(pass);
-            if (err != null) Ui.Error(this, err);
-            else Ui.Info(this, I18n.T("db.passwordChanged"));
+            DatabaseUi.RootPassword(this);
         }
 
         void TrustCa()

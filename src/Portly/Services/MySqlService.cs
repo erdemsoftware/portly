@@ -106,6 +106,8 @@ namespace Portly.Services
                 SetState(ServiceState.Running);
                 Tools.DbVersionChange.WriteMarker(data, engine, folder);
                 Log.Info(I18n.T("log.started", Title + " " + VersionLabel));
+                // each engine / version line has its own data folder, and so its own root account
+                if (_extraArgs == null) await Task.Run(() => Tools.Database.ReconcileRootPassword());
             }
             else SetState(ServiceState.Error, (_p.HasExited ? ExitReason(_p) + " " + I18n.T("err.seeLog", "mysql-error.log") : I18n.T("err.timeout")) + RecoveryHint());
         }
@@ -141,7 +143,7 @@ namespace Portly.Services
         {
             await StopAsync();
             var f = ResetFile;
-            File.WriteAllText(f, "ALTER USER 'root'@'localhost' IDENTIFIED BY '';\nFLUSH PRIVILEGES;\n");
+            File.WriteAllText(f, Tools.Database.ResetRootSql());
             var old = Settings.Current.MysqlRootPassword;
             // mysqld reads the init file some time after it opens the port, so the file is not deleted here
             // (the next normal start removes it); success = the empty password works and the server stays up
