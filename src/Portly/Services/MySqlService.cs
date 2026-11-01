@@ -1,7 +1,12 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Sockets;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading.Tasks;
 using Portly.Config;
 using Portly.Core;
@@ -269,6 +274,7 @@ namespace Portly.Services
     {
         Process _p;
         string _runningTool;
+        HostGuard _guard;
         public static readonly string[] Tools = { "mailpit", "mailhog", "smtp4dev" };
 
         public override string Id { get { return "mailpit"; } }
@@ -290,11 +296,19 @@ namespace Portly.Services
             var data = Path.Combine(Paths.Data, tool);
             Directory.CreateDirectory(data);
             string exe, args;
+            Dictionary<string, string> env = null;
+            int web = s.MailpitWebPort;     // where the tool itself listens
+            string secret = null, authFile = Path.Combine(data, "portly-ui-auth");
             switch (tool)
             {
                 case "mailhog":
+                    // no Host check and a WebSocket open to every site: only reachable through HostGuard
                     exe = Path.Combine(dir, "MailHog.exe");
-                    args = "-api-bind-addr 127.0.0.1:" + s.MailpitWebPort + " -ui-bind-addr 127.0.0.1:" + s.MailpitWebPort + " -smtp-bind-addr 127.0.0.1:" + s.MailpitSmtpPort;
+                    web = PrivatePort();
+                    secret = Guid.NewGuid().ToString("N");
+                    var hash = ProcessUtil.Run(exe, "bcrypt " + secret, dir, null, 15000).Output.Trim();
+                    File.WriteAllText(authFile, GuardUser + ":" + hash + "\n");
+                    args = "-api-bind-addr 127.0.0.1:" + web + " -ui-bind-addr 127.0.0.1:" + web + " -smtp-bind-addr 127.0.0.1:" + s.MailpitSmtpPort + " -auth-file \"" + authFile + "\"";
                     break;
                 case "smtp4dev":
                     exe = Path.Combine(dir, "Rnwood.Smtp4dev.exe");
@@ -302,16 +316,31 @@ namespace Portly.Services
                     args = "--urls=http://127.0.0.1:" + s.MailpitWebPort + " --smtpport=" + s.MailpitSmtpPort +
                            " --allowremoteconnections- --imapport=\"\" --pop3port=\"\" --nousersettings" +
                            " --baseappdatapath=\"" + data + "\" --db=\"" + Path.Combine(data, "database.db") + "\"";
+                    env = new Dictionary<string, string> { { "AllowedHosts", "localhost;127.0.0.1;[::1]" } }; // ASP.NET's Host filter
                     break;
                 default:
                     exe = Path.Combine(dir, "mailpit.exe");
-                    args = "--listen 127.0.0.1:" + s.MailpitWebPort + " --smtp 127.0.0.1:" + s.MailpitSmtpPort + " --database \"" + Path.Combine(data, "mailpit.db") + "\"";
+                    string hostCheck;
+                    if (KnowsAllowedHosts(exe)) hostCheck = " --allowed-hosts localhost,127.0.0.1,[::1]";
+                    else
+                    {
+                        // before 1.31.1: same answer as MailHog
+                        web = PrivatePort();
+                        secret = Guid.NewGuid().ToString("N");
+                        using (var sha = SHA1.Create())
+                            File.WriteAllText(authFile, GuardUser + ":{SHA}" + Convert.ToBase64String(sha.ComputeHash(Encoding.UTF8.GetBytes(secret))) + "\n");
+                        hostCheck = " --ui-auth-file \"" + authFile + "\"";
+                    }
+                    args = "--listen 127.0.0.1:" + web + " --smtp 127.0.0.1:" + s.MailpitSmtpPort + " --database \"" + Path.Combine(data, "mailpit.db") + "\"" + hostCheck;
                     break;
             }
             _runningTool = tool;
-            _p = Launch(exe, args, dir, null, tool, OnExit);
-            if (await WaitForPort(s.MailpitWebPort, _p, 30000) && await WaitForPort(s.MailpitSmtpPort, _p, 10000))
+            _p = Launch(exe, args, dir, env, tool, OnExit);
+            bool up = await WaitForPort(web, _p, 30000) && await WaitForPort(s.MailpitSmtpPort, _p, 10000);
+            try { File.Delete(authFile); } catch { } // the tool read it at its start
+            if (up)
             {
+                if (secret != null && !StartGuard(web, secret)) return;
                 SetState(ServiceState.Running);
                 Log.Info(I18n.T("log.started", Title + " " + VersionLabel));
             }
@@ -320,13 +349,68 @@ namespace Portly.Services
 
         void OnExit(Process p)
         {
-            if (p != _p || StopRequested) return;
+            if (p != _p) return;
+            StopGuard();
+            if (StopRequested) return;
             SetState(ServiceState.Error, ExitReason(p) + " " + I18n.T("err.seeLog", LogName + ".log"));
+        }
+
+        const string GuardUser = "portly";
+        static readonly Dictionary<string, bool> AllowedHostsOption = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>Only for the smoke test: treat the installed Mailpit like one that has no --allowed-hosts.</summary>
+        public static bool IgnoreAllowedHosts;
+
+        /// <summary>--allowed-hosts came with Mailpit 1.31.1 (Host and WebSocket Origin); older ones stop at an unknown flag.</summary>
+        static bool KnowsAllowedHosts(string exe)
+        {
+            if (IgnoreAllowedHosts) return false;
+            bool known;
+            lock (AllowedHostsOption)
+            {
+                if (!AllowedHostsOption.TryGetValue(exe, out known))
+                    AllowedHostsOption[exe] = known = ProcessUtil.Run(exe, "--help", null, null, 15000).Output.Contains("--allowed-hosts");
+            }
+            return known;
+        }
+
+        static int PrivatePort()
+        {
+            var l = new TcpListener(IPAddress.Loopback, 0);
+            l.Start();
+            int port = ((IPEndPoint)l.LocalEndpoint).Port;
+            l.Stop();
+            return port;
+        }
+
+        /// <summary>The configured web port opens only now, in front of the running tool. The tool does not stay up without it.</summary>
+        bool StartGuard(int web, string secret)
+        {
+            var port = Settings.Current.MailpitWebPort;
+            var auth = "Basic " + Convert.ToBase64String(Encoding.ASCII.GetBytes(GuardUser + ":" + secret));
+            try { _guard = HostGuard.Start(port, web, auth); }
+            catch (SocketException)
+            {
+                StopRequested = true;
+                StopProcess(_p, false, 0);
+                SetState(ServiceState.Error, I18n.T("err.portInUse", port, ProcessUtil.PortOwner(port)));
+                return false;
+            }
+            if (_p.HasExited) StopGuard(); // crashed right then: OnExit has already looked
+            return true;
+        }
+
+        void StopGuard()
+        {
+            var g = _guard;
+            _guard = null;
+            if (g != null) g.Stop();
         }
 
         public override async Task StopAsync()
         {
             StopRequested = true;
+            StopGuard();
             var p = _p;
             if (p == null || p.HasExited) { _p = null; SetState(ServiceState.Stopped); return; }
             SetState(ServiceState.Stopping);
