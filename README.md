@@ -6,7 +6,7 @@
   <sub>by <a href="https://erdemsoftware.com">Erdem Software</a> · MIT · no ads, no tracking</sub>
 </p>
 
-<p align="center"><b>English</b> · <a href="README.tr.md">Türkçe</a></p>
+<p align="center"><b>English</b> · <a href="README.tr.md">Türkçe</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.es.md">Español</a> · <a href="README.pt-BR.md">Português (BR)</a> · <a href="README.de.md">Deutsch</a> · <a href="README.fr.md">Français</a> · <a href="README.ru.md">Русский</a> · <a href="README.ja.md">日本語</a> · <a href="README.ko.md">한국어</a> · <a href="README.ar.md">العربية</a> · <a href="README.id.md">Bahasa Indonesia</a></p>
 <p align="center"><sub>The app itself speaks 31 languages (Arabic, Persian and Urdu right-to-left).</sub></p>
 
 ---
