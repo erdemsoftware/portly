@@ -1,7 +1,7 @@
 {
-  "version": "1.2.1",
-  "url": "https://github.com/erdemsoftware/portly/releases/download/v1.2.1/Portly-1.2.1-win10-11.zip",
-  "sha256": "2325dbcd72074e7f8a7d2b3099a2f09f8d3106c8206607be08add34b9e2fc879",
+  "version": "1.2.2",
+  "url": "https://github.com/erdemsoftware/portly/releases/download/v1.2.2/Portly-1.2.2-win10-11.zip",
+  "sha256": "9da08b104f78bb35c26fd0209971ecea8c964420bb516b6d1ad859933b7c67c0",
   "notes": {
     "tr": "Düzeltme: PHP geç açıldığında \"zamanında yanıt vermedi\" hatası çıkıyor ve arkada kapanmayan php-cgi işlemleri kalıyordu. Portly artık 30 saniye bekliyor ve vazgeçtiği PHP'yi kapatıyor. 1.2.1'deki önemli güvenlik güncellemesini de içerir; 1.2.0 ve öncesini kullananların güncellemesi önerilir. Not: Araçlar ve pano yalnızca localhost, 127.0.0.1 ve ::1 adlarıyla açılır.",
     "en": "Fix: when PHP was slow to start, Portly showed \"did not answer in time\" and left php-cgi processes running that were never closed. Portly now waits up to 30 seconds and closes a PHP it gives up on. Includes the important security update of 1.2.1; everyone on 1.2.0 or older should update. Note: tools and the dashboard open only as localhost, 127.0.0.1 and ::1."
