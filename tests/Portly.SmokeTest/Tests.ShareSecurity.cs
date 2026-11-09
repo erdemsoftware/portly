@@ -743,9 +743,14 @@ namespace Portly.SmokeTest
             using (var web = new FakeWeb(h => Ok200))
             {
                 int port = ShareProxy(s, web, "secret");
-                var answers = Task.WhenAll(Enumerable.Range(0, 24).Select(i => Task.Run(() => Login(port, "guess" + i, "198.51.100.3")))).GetAwaiter().GetResult();
+                // own threads, not the thread pool: on a 2-core CI runner the pool grows too slowly for 24 blocking logins
+                var answers = new string[24];
+                var threads = Enumerable.Range(0, answers.Length).Select(i => new Thread(() => answers[i] = Login(port, "guess" + i, "198.51.100.3"))).ToList();
+                threads.ForEach(t => t.Start());
+                threads.ForEach(t => t.Join());
                 int unlocked = answers.Count(a => a.StartsWith("HTTP/1.1 401 "));
-                Check("share: guesses sent side by side cannot pass the limit", unlocked == 4 && answers.Count(a => a.StartsWith("HTTP/1.1 429 ")) == 20, unlocked.ToString());
+                Check("share: guesses sent side by side cannot pass the limit", unlocked == 4 && answers.Count(a => a.StartsWith("HTTP/1.1 429 ")) == 20,
+                    string.Join(", ", answers.GroupBy(a => a.Length == 0 ? "(nothing)" : a.Split('\r')[0]).Select(g => g.Count() + "x " + g.Key)));
             }
         }
 
