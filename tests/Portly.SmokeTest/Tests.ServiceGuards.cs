@@ -40,6 +40,7 @@ namespace Portly.SmokeTest
             try
             {
                 PhpWatchChecks(s).GetAwaiter().GetResult();
+                PhpSlowStartCheck().GetAwaiter().GetResult();
                 MailpitOwnCheck().GetAwaiter().GetResult();
                 MailpitForwarderChecks(s).GetAwaiter().GetResult();
                 MailHogChecks(s).GetAwaiter().GetResult();
@@ -51,6 +52,38 @@ namespace Portly.SmokeTest
         }
 
         // ---------------------------------------------- PHP ----------------------------------------------
+
+        /// <summary>A php-cgi that never opens its port (issue #3): the start fails and the process does not stay behind.</summary>
+        static async Task PhpSlowStartCheck()
+        {
+            var folder = "php-0.0.0-neverlistens";
+            var dir = Path.Combine(Paths.BinOf("php"), folder);
+            var exe = Path.Combine(dir, "php-cgi.exe");
+            Directory.CreateDirectory(dir);
+            using (var cs = new Microsoft.CSharp.CSharpCodeProvider())
+            {
+                var o = new System.CodeDom.Compiler.CompilerParameters { GenerateExecutable = true, OutputAssembly = exe };
+                var r = cs.CompileAssemblyFromSource(o, "class P { static void Main() { System.Threading.Thread.Sleep(300000); } }");
+                if (r.Errors.HasErrors) { Check("Guards: fake php-cgi compiled", false, r.Errors[0].ToString()); return; }
+            }
+            try
+            {
+                var php = new PhpService();
+                var t = DateTime.Now;
+                await php.StartAsync(new List<string> { folder });
+                var left = Process.GetProcessesByName("php-cgi").Where(p =>
+                {
+                    try { return string.Equals(p.MainModule.FileName, exe, StringComparison.OrdinalIgnoreCase); } catch { return false; }
+                }).ToList();
+                Check("Guards: PHP that never opens its port is reported, after the full wait", php.State == ServiceState.Error && (php.LastError ?? "").Contains(I18n.T("err.timeout")) && (DateTime.Now - t).TotalSeconds >= 29, php.State + " " + php.LastError);
+                Check("Guards: that php-cgi is closed, not left running (issue #3)", left.Count == 0, left.Count + " left");
+                foreach (var p in left) try { p.Kill(); } catch { }
+            }
+            finally
+            {
+                for (int i = 0; i < 10 && Directory.Exists(dir); i++) { try { Directory.Delete(dir, true); } catch { Thread.Sleep(300); } }
+            }
+        }
 
         static int ListenerPid(int port)
         {

@@ -108,10 +108,14 @@ namespace Portly.Services
             Process p = null;
             p = Launch(exe, "-b 127.0.0.1:" + port + " -c \"" + PhpConfig.IniPath(dir) + "\"", dir, env, "php-" + PackageTypes.Label(folder), proc => OnExit(folder, proc));
             lock (Sync) _procs[folder] = p;
-            if (!await WaitForPort(port, p, 10000))
+            // 30 s: the first start after an update can be slow while antivirus scans php-cgi and its extensions
+            if (!await WaitForPort(port, p, 30000))
             {
                 lock (Sync) _procs.Remove(folder);
-                return p.HasExited ? ExitReason(p) : I18n.T("err.timeout");
+                var reason = p.HasExited ? ExitReason(p) : I18n.T("err.timeout");
+                // no longer tracked, so close it: a pool left running would outlive Stop and block the next start
+                if (!p.HasExited) StopProcess(p, false, 0);
+                return reason;
             }
             Log.Info(I18n.T("log.started", "PHP " + PackageTypes.Label(folder) + " (127.0.0.1:" + port + ")"));
             return null;
