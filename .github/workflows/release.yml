@@ -16,11 +16,11 @@ jobs:
       # empty when the secret is not set: then signing is skipped
       SIGN_PFX_BASE64: ${{ secrets.SIGN_PFX_BASE64 }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: main
           fetch-depth: 0
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '8.0.x'
       - name: Use the tagged sources
@@ -68,7 +68,7 @@ jobs:
           gh release create '${{ github.ref_name }}' dist/* --title "Portly ${{ github.ref_name }}" --notes "$body"
       # winget / Scoop manifests filled with this release's URLs and SHA-256 (see docs/03-yayinlama.md)
       - name: Keep package manager manifests
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: package-manifests
           path: build/manifests

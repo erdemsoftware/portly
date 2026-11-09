@@ -18,7 +18,7 @@ jobs:
     environment: manifest-signing
     timeout-minutes: 345
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: main
       - name: Check the signing key before hours of downloads
