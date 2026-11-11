@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Drives the real Portly 2 window headless (Avalonia.Headless + Skia): clicks, dialogs, real services. Runs in CI on every OS. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AssemblyName>Portly.UiTests</AssemblyName>
+    <NoWarn>$(NoWarn);CA1416</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Avalonia.Headless" Version="12.1.6" />
+    <ProjectReference Include="..\..\src\Portly.Desktop\Portly.Desktop.csproj" />
+  </ItemGroup>
+</Project>

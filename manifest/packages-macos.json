@@ -489,6 +489,37 @@
       "url": "https://files.phpmyadmin.net/phpMyAdmin/4.9.11/phpMyAdmin-4.9.11-all-languages.zip",
       "note": "PHP 5.5 - 7.4",
       "sha256": "d17c762d312b85ae3a8a2c452633372f686502c7c2682f9ef0e8a844fa0ff1b0"
+    },
+    {
+      "type": "composer",
+      "version": "2.11.2",
+      "folder": "composer-2.11.2",
+      "url": "https://getcomposer.org/download/2.11.2/composer.phar",
+      "sha256": "dd158c0afd41d15fac89e1b4e47b5d42911fe316c3687cd5edac98319b25d028",
+      "kind": "file",
+      "fileName": "composer.phar",
+      "recommended": true
+    },
+    {
+      "type": "composer",
+      "version": "2.2.32 LTS",
+      "folder": "composer-2.2.32",
+      "url": "https://getcomposer.org/download/2.2.32/composer.phar",
+      "sha256": "241a3d13b7c6d35d970b1f69a000298b66943541302148a438a932f5dd44a9fc",
+      "kind": "file",
+      "fileName": "composer.phar",
+      "note": "for PHP 5.3 - 7.1 projects"
+    },
+    {
+      "type": "wpcli",
+      "version": "2.12.0",
+      "folder": "wp-cli-2.12.0",
+      "url": "https://github.com/wp-cli/wp-cli/releases/download/v2.12.0/wp-cli-2.12.0.phar",
+      "sha256": "ce34ddd838f7351d6759068d09793f26755463b4a4610a5a5c0a97b68220d85c",
+      "kind": "file",
+      "fileName": "wp-cli.phar",
+      "note": "used for one-click WordPress",
+      "recommended": true
     }
   ]
 }

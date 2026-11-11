@@ -67,6 +67,8 @@ namespace Portly.Desktop
             var choose = Ui.Button(I18n.T("main.chooseServices"), (Action)null, null, "list");
             choose.MinHeight = 40;
             var menu = new MenuFlyout { Placement = PlacementMode.BottomEdgeAlignedLeft };
+            // Avalonia 12 opens an empty menu when it has no item at all: a placeholder until Opening fills it
+            menu.Items.Add(new MenuItem { Header = "…" });
             menu.Opening += (s, e) => FillChooseServices(menu);
             choose.Flyout = menu;
             // "Portly x.y is ready": also at the top of this page; UpdateBanner (shell) sets its text, visibility and click
@@ -246,6 +248,7 @@ namespace Portly.Desktop
             row.Card = Ui.Card(body, new Thickness(17, 15));
             row.Card.MinHeight = 72;
             var cm = new ContextMenu();
+            cm.Items.Add(new MenuItem { Header = "…" });
             cm.Opening += (s, e) => BuildCardMenu(cm, row);
             row.Card.ContextMenu = cm;
             UpdateRow(svc, row);

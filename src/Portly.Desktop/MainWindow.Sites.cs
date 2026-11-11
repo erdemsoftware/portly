@@ -313,9 +313,7 @@ namespace Portly.Desktop
                 };
             }
             ToolTip.SetTip(card, site.DocRoot);
-            var cm = new MenuFlyout();
-            cm.Opening += (s, e) => BuildSiteMenu(cm.Items, site);
-            card.ContextFlyout = cm;
+            card.ContextFlyout = LazyMenu(null, items => BuildSiteMenu(items, site));
             return card;
         }
 
@@ -328,10 +326,21 @@ namespace Portly.Desktop
             b.MinHeight = 0;
             ToolTip.SetTip(b, tip);
             Avalonia.Automation.AutomationProperties.SetName(b, name);
-            var fly = new MenuFlyout { Placement = PlacementMode.BottomEdgeAlignedRight };
-            fly.Opening += (s, e) => build(fly.Items);
-            b.Flyout = fly;
+            b.Flyout = LazyMenu(PlacementMode.BottomEdgeAlignedRight, build);
             return b;
+        }
+
+        /// <summary>
+        /// Menu filled each time it opens. Avalonia 12 shows an empty menu when the flyout has no item at all while it opens,
+        /// so one placeholder item is there from the start (the real items replace it in Opening).
+        /// </summary>
+        static MenuFlyout LazyMenu(PlacementMode? placement, Action<IList> build)
+        {
+            var fly = new MenuFlyout();
+            if (placement.HasValue) fly.Placement = placement.Value;
+            fly.Items.Add(new MenuItem { Header = "…" });
+            fly.Opening += (s, e) => build(fly.Items);
+            return fly;
         }
 
         static MenuItem SiteItem(string text, Func<Task> click)

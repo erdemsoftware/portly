@@ -14,6 +14,7 @@ namespace Portly.Desktop
     {
         public override void Initialize()
         {
+            Name = "Portly";   // macOS menu bar and dock
             Styles.Add(new FluentTheme());
             Styles.Add(new StyleInclude(new Uri("avares://Portly/")) { Source = new Uri("avares://Portly/UI/Styles.axaml") });
             Theme.Apply(this, Settings.Current.Theme);

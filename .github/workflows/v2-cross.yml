@@ -145,3 +145,127 @@ jobs:
           test ! -e "$RUNNER_TEMP/apps-bad/Portly.app"
           test ! -e "$RUNNER_TEMP/inst-bad/share/portly"
       # ===== end of the install.sh test =====
+
+  ui:
+    name: ui ${{ matrix.os }}
+    needs: test
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, ubuntu-24.04-arm, macos-15, macos-15-intel, windows-2025]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.0.x'
+
+      # the real main window runs headless (Skia) and is clicked through: services, navigation, projects, dialogs, packages
+      - name: UI flow tests (real packages, real services)
+        shell: bash
+        run: |
+          export PORTLY_HOME="$RUNNER_TEMP/portly-ui" PORTLY_UI_SHOTS="$GITHUB_WORKSPACE/ui-shots"
+          dotnet run --project tests/Portly.UiTests -c Release
+
+      - uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: ui-shots-${{ matrix.os }}
+          path: ui-shots/
+          if-no-files-found: ignore
+
+      - uses: actions/upload-artifact@v5
+        if: failure()
+        with:
+          name: ui-logs-${{ matrix.os }}
+          path: |
+            ${{ runner.temp }}/portly-ui/logs/
+            ${{ runner.temp }}/portly-ui/etc/
+          if-no-files-found: ignore
+
+  smoke:
+    name: real window ${{ matrix.rid }}
+    needs: package
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { rid: linux-x64, os: ubuntu-24.04 }
+          - { rid: linux-arm64, os: ubuntu-24.04-arm }
+          - { rid: osx-arm64, os: macos-15 }
+          - { rid: osx-x64, os: macos-15-intel }
+          - { rid: win-x64, os: windows-2025 }
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+
+      # macOS / Linux: the packaged app that the package job made
+      - uses: actions/download-artifact@v5
+        if: runner.os != 'Windows'
+        with:
+          name: portly-${{ matrix.rid }}
+          path: pkg
+
+      - name: Linux - the packaged app in a virtual X display
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq xvfb imagemagick x11-apps
+          mkdir -p "$RUNNER_TEMP/x" && tar -xzf pkg/dist/Portly-[0-9]*.tar.gz -C "$RUNNER_TEMP/x"
+          PROGRAM=$(ls "$RUNNER_TEMP"/x/Portly-*/Portly)
+          export PORTLY_HOME="$RUNNER_TEMP/portly-smoke"
+          xvfb-run -a --server-args="-screen 0 1280x800x24" bash tests/smoke/smoke-window.sh "$PROGRAM" "$GITHUB_WORKSPACE/smoke/window-${{ matrix.rid }}.png" linux
+
+      - name: macOS - Portly.app on the runner's desktop
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          hdiutil attach pkg/dist/Portly-[0-9]*.dmg -mountpoint /tmp/portly-dmg -nobrowse
+          export PORTLY_HOME="$RUNNER_TEMP/portly-smoke"
+          bash tests/smoke/smoke-window.sh /tmp/portly-dmg/Portly.app/Contents/MacOS/Portly "$GITHUB_WORKSPACE/smoke/window-${{ matrix.rid }}.png" mac || rc=$?
+          for i in 1 2 3 4 5; do hdiutil detach /tmp/portly-dmg && break; sleep 3; done || hdiutil detach -force /tmp/portly-dmg
+          exit ${rc:-0}
+
+      - uses: actions/setup-dotnet@v5
+        if: runner.os == 'Windows'
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Windows - build/desktop/Portly.exe on the runner's desktop
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          dotnet build src/Portly.Desktop/Portly.Desktop.csproj -c Release --nologo -v:q
+          $env:PORTLY_HOME = Join-Path $env:RUNNER_TEMP 'portly-smoke'
+          New-Item -ItemType Directory -Force -Path smoke | Out-Null
+          $p = Start-Process -FilePath (Resolve-Path build/desktop/Portly.exe) -PassThru
+          Start-Sleep -Seconds 25
+          $fail = 0
+          if (-not $p.HasExited) { 'PASS process alive after 25 s' } else { 'FAIL process died early, exit code ' + $p.ExitCode; $fail = 1 }
+          Add-Type -AssemblyName System.Windows.Forms, System.Drawing
+          $b = [System.Windows.Forms.SystemInformation]::VirtualScreen
+          $bmp = New-Object System.Drawing.Bitmap $b.Width, $b.Height
+          $g = [System.Drawing.Graphics]::FromImage($bmp)
+          $g.CopyFromScreen($b.Left, $b.Top, 0, 0, $bmp.Size)
+          $shot = Join-Path (Get-Location) 'smoke/window-win-x64.png'
+          $bmp.Save($shot, [System.Drawing.Imaging.ImageFormat]::Png)
+          if ((Get-Item $shot).Length -gt 0) { 'PASS screenshot ' + (Get-Item $shot).Length + ' bytes' } else { 'FAIL no screenshot'; $fail = 1 }
+          Start-Sleep -Seconds 5
+          if (-not $p.HasExited) { 'PASS process alive after 30 s' } else { 'FAIL process died'; $fail = 1 }
+          $log = Join-Path $env:PORTLY_HOME 'logs/portly.log'
+          if (Test-Path $log) {
+            '---- portly.log'; Get-Content $log; '----'
+            if (Select-String -Path $log -Pattern 'ERROR' -Quiet) { 'FAIL ERROR line in portly.log'; $fail = 1 } else { 'PASS no ERROR in portly.log' }
+          } else { 'FAIL no portly.log written'; $fail = 1 }
+          if (-not $p.HasExited) { Stop-Process -Id $p.Id -Force }
+          exit $fail
+
+      - uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: smoke-${{ matrix.rid }}
+          path: smoke/
+          if-no-files-found: ignore
