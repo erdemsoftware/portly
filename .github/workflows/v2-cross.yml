@@ -109,3 +109,39 @@ jobs:
           path: |
             dist/
             shots/
+
+      # ===== install.sh test (agent "updates"): one-line installer against the files built above, no network =====
+      - name: install.sh installs the packages built above and the app starts
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PORTLY_HOME="$RUNNER_TEMP/portly-inst-home"
+          mkdir -p shots
+          test -s dist/SHA256SUMS
+          if [[ "${{ matrix.rid }}" == osx-* ]]; then
+            PORTLY_INSTALL_FROM="$PWD/dist" PORTLY_APPS_DIR="$RUNNER_TEMP/apps" sh tools/install.sh
+            APP="$RUNNER_TEMP/apps/Portly.app"
+            if xattr -p com.apple.quarantine "$APP" >/dev/null 2>&1; then echo "quarantine flag is still set"; exit 1; fi
+            codesign --verify --deep --strict "$APP"
+            "$APP/Contents/MacOS/Portly" --screenshot shots/installed.png 1100 760
+          else
+            PORTLY_INSTALL_FROM="$PWD/dist" PORTLY_PREFIX="$RUNNER_TEMP/inst" sh tools/install.sh
+            test -x "$RUNNER_TEMP/inst/bin/portly"
+            grep -q '^Exec=' "$RUNNER_TEMP/inst/share/applications/portly.desktop"
+            test -f "$RUNNER_TEMP/inst/share/icons/hicolor/256x256/apps/portly.png"
+            "$RUNNER_TEMP/inst/bin/portly" --screenshot shots/installed.png 1100 760
+          fi
+          test -s shots/installed.png
+      - name: install.sh refuses a wrong checksum
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf "$RUNNER_TEMP/bad" && mkdir -p "$RUNNER_TEMP/bad"
+          cp dist/Portly-*-*.* "$RUNNER_TEMP/bad/"
+          sed 's/^[0-9a-f]{8}/00000000/' dist/SHA256SUMS > "$RUNNER_TEMP/bad/SHA256SUMS"
+          if PORTLY_INSTALL_FROM="$RUNNER_TEMP/bad" PORTLY_APPS_DIR="$RUNNER_TEMP/apps-bad" PORTLY_PREFIX="$RUNNER_TEMP/inst-bad" sh tools/install.sh; then
+            echo "the installer accepted a wrong checksum"; exit 1
+          fi
+          test ! -e "$RUNNER_TEMP/apps-bad/Portly.app"
+          test ! -e "$RUNNER_TEMP/inst-bad/share/portly"
+      # ===== end of the install.sh test =====

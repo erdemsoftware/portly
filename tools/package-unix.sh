@@ -4,6 +4,7 @@
 #   rid: osx-arm64 | osx-x64 (run on macOS)  |  linux-x64 | linux-arm64 (run on Linux)
 # macOS: Portly.app (ad-hoc signed) in Portly-<v>-macos-<arch>.dmg and .zip
 # Linux: Portly-<v>-linux-<arch>.tar.gz, .deb and .AppImage
+# Also: a version-less copy of every file (Portly-macos-arm64.zip ...) and dist/SHA256SUMS (both names listed)
 set -euo pipefail
 
 RID="${1:?rid}"
@@ -127,5 +128,17 @@ EOF
 *)
   echo "unknown rid $RID" >&2; exit 1 ;;
 esac
+
+# stable names (Portly-macos-arm64.zip ...) for https://github.com/erdemsoftware/portly/releases/latest/download/<name>
+# and tools/install.sh, plus the checksums install.sh verifies
+for f in "$DIST/Portly-$VERSION-"*; do
+  [ -f "$f" ] || continue
+  n="$(basename "$f")"
+  cp -f "$f" "$DIST/Portly-${n#Portly-$VERSION-}"
+done
+(
+  cd "$DIST"
+  if command -v sha256sum >/dev/null 2>&1; then sha256sum Portly-*; else shasum -a 256 Portly-*; fi > SHA256SUMS
+)
 
 ls -la "$DIST"
