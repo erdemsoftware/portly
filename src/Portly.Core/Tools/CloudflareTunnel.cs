@@ -83,6 +83,10 @@ namespace Portly.Tools
                 if (!File.Exists(LoginCert)) throw new Exception(I18n.T("cf.loginTimeout"));
             }
             File.Copy(LoginCert, CertFile, true);
+#if !NETFRAMEWORK
+            // the account certificate is a secret: only this user on macOS / Linux
+            if (!OS.IsWindows) try { File.SetUnixFileMode(CertFile, UnixFileMode.UserRead | UnixFileMode.UserWrite); } catch { }
+#endif
             // a new account (or domain): the old tunnel and DNS records belong to the old one
             foreach (var f in new[] { IdFile, CredFile, DnsFile }) try { File.Delete(f); } catch { }
             Log.Info(I18n.T("cf.connected"));
@@ -159,7 +163,7 @@ namespace Portly.Tools
         static string Exe()
         {
             var dir = Packages.PackageTypes.ActiveDir("cloudflared");
-            return dir == null ? null : Path.Combine(dir, "cloudflared.exe");
+            return dir == null ? null : Path.Combine(dir, OS.Exe("cloudflared"));
         }
 
         /// <summary>Write config.yml with every address and (re)start the one cloudflared process; waits for the connection.</summary>

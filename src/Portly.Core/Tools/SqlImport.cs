@@ -68,7 +68,7 @@ namespace Portly.Tools
             {
                 using (var input = Open(file, out counter, out total))
                 {
-                    p = Database.StartClient("mysql.exe", "--default-character-set=utf8mb4" + (force ? " --force" : "") + (database != null ? " \"" + database + "\"" : ""), out cnf);
+                    p = Database.StartClient("mysql", "--default-character-set=utf8mb4" + (force ? " --force" : "") + (database != null ? " \"" + database + "\"" : ""), out cnf);
                     var proc = p;
                     p.ErrorDataReceived += (o, e) =>
                     {

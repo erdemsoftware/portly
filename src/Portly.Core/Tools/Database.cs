@@ -17,15 +17,56 @@ namespace Portly.Tools
 
         public static bool IsValidName(string name) { return name != null && DbName.IsMatch(name); }
 
+        /// <summary>"mysql", "mysql.exe", "mysqldump"... as the file name on this system (".exe" only on Windows).</summary>
+        public static string ClientExe(string name)
+        {
+            name = name ?? "";
+            if (name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)) name = name.Substring(0, name.Length - 4);
+            return OS.Exe(name);
+        }
+
         /// <summary>Temporary option file with the root credentials (never put passwords on the command line).</summary>
         static string ClientFile() { return ClientFile(Settings.Current.MysqlRootPassword); }
+
+        /// <summary>Option file text: CRLF on Windows, LF elsewhere.</summary>
+        internal static string Nl { get { return OS.IsWindows ? "\r\n" : "\n"; } }
+
+        /// <summary>Writes a file that holds a secret; on Unix it is created readable by the current user only.</summary>
+        internal static void WriteSecretFile(string path, string text)
+        {
+#if !NETFRAMEWORK
+            if (!OS.IsWindows)
+            {
+                File.WriteAllText(path, "");
+                File.SetUnixFileMode(path, UnixFileMode.UserRead | UnixFileMode.UserWrite);
+            }
+#endif
+            File.WriteAllText(path, text, new UTF8Encoding(false));
+        }
 
         static string ClientFile(string password)
         {
             var pass = password.Replace("\\", "\\\\").Replace("\"", "\\\"");
             var f = Path.Combine(Paths.Tmp, "my-client-" + Guid.NewGuid().ToString("N").Substring(0, 8) + ".cnf");
-            File.WriteAllText(f, "[client]\r\nuser=root\r\npassword=\"" + pass + "\"\r\nhost=127.0.0.1\r\nport=" + Settings.Current.MysqlPort + "\r\n", new UTF8Encoding(false));
+            WriteSecretFile(f, "[client]" + Nl + "user=root" + Nl + "password=\"" + pass + "\"" + Nl + "host=127.0.0.1" + Nl + "port=" + Settings.Current.MysqlPort + Nl);
             return f;
+        }
+
+        /// <summary>
+        /// Copy a folder tree into <paramref name="to"/> (which must not exist or be empty): robocopy on Windows, cp -a on
+        /// macOS / Linux (keeps modes and times). Throws with the tool's output when it fails.
+        /// </summary>
+        public static void CopyDirectory(string from, string to)
+        {
+            if (OS.IsWindows)
+            {
+                var r = ProcessUtil.Run("robocopy.exe", "\"" + from + "\" \"" + to + "\" /E /R:1 /W:1 /NFL /NDL /NJH /NJS /NP", null, null, 24 * 3600 * 1000);
+                if (r.ExitCode >= 8 || r.TimedOut) throw new Exception("robocopy: " + r.Output);
+                return;
+            }
+            Directory.CreateDirectory(to);
+            var c = ProcessUtil.Run("cp", "-a \"" + from.TrimEnd('/') + "/.\" \"" + to + "\"", null, null, 24 * 3600 * 1000);
+            if (!c.Ok) throw new Exception("cp: " + c.Output);
         }
 
         /// <summary>Run one of the bundled client tools (mysqlcheck, mysqldump, mariadb-upgrade ...) as root.</summary>
@@ -46,7 +87,7 @@ namespace Portly.Tools
             var bin = MySqlService.BinDir;
             if (bin == null) throw new Exception(I18n.T("err.notInstalled", "MySQL"));
             cnf = ClientFile(password);
-            var psi = new System.Diagnostics.ProcessStartInfo(Path.Combine(bin, exe), "--defaults-extra-file=\"" + cnf + "\" " + args)
+            var psi = new System.Diagnostics.ProcessStartInfo(Path.Combine(bin, ClientExe(exe)), "--defaults-extra-file=\"" + cnf + "\" " + args)
             {
                 UseShellExecute = false, CreateNoWindow = true, WorkingDirectory = bin,
                 RedirectStandardInput = true, RedirectStandardOutput = true, RedirectStandardError = true,
@@ -69,16 +110,16 @@ namespace Portly.Tools
             var cnf = ClientFile(password);
             try
             {
-                return ProcessUtil.Run(Path.Combine(bin, exe), "--defaults-extra-file=\"" + cnf + "\" " + args, bin, null, timeout, stdin);
+                return ProcessUtil.Run(Path.Combine(bin, ClientExe(exe)), "--defaults-extra-file=\"" + cnf + "\" " + args, bin, null, timeout, stdin);
             }
             finally { try { File.Delete(cnf); } catch { } }
         }
 
-        public static RunResult Admin(string command, int timeout) { return Client("mysqladmin.exe", command, null, timeout); }
+        public static RunResult Admin(string command, int timeout) { return Client("mysqladmin", command, null, timeout); }
 
         public static RunResult Sql(string sql, int timeout = 30000)
         {
-            return Client("mysql.exe", "--default-character-set=utf8mb4 --batch --skip-column-names", sql, timeout);
+            return Client("mysql", "--default-character-set=utf8mb4 --batch --skip-column-names", sql, timeout);
         }
 
         public static string Clean(RunResult r)
@@ -186,7 +227,7 @@ namespace Portly.Tools
         /// <summary>A new connection as root with this password.</summary>
         public static bool LoginWorks(string password)
         {
-            return Client("mysql.exe", "--batch --skip-column-names", "SELECT 1;", 15000, password ?? "").Ok;
+            return Client("mysql", "--batch --skip-column-names", "SELECT 1;", 15000, password ?? "").Ok;
         }
 
         /// <summary>
@@ -195,7 +236,7 @@ namespace Portly.Tools
         /// </summary>
         static List<string> RootAccounts(string password)
         {
-            var r = Client("mysql.exe", "--batch --skip-column-names", "SELECT CONCAT(QUOTE(User), '@', QUOTE(Host)) FROM mysql.user WHERE User = 'root';", 15000, password);
+            var r = Client("mysql", "--batch --skip-column-names", "SELECT CONCAT(QUOTE(User), '@', QUOTE(Host)) FROM mysql.user WHERE User = 'root';", 15000, password);
             if (!r.Ok) return null;
             return r.Output.Split('\n').Select(l => l.Trim()).Where(l => RootAccountRx.IsMatch(l)).ToList();
         }
@@ -234,7 +275,7 @@ namespace Portly.Tools
             public SqlSession(string password)
             {
                 // --force: an error does not end the connection; --unbuffered: answers arrive while stdin stays open
-                _p = StartClient("mysql.exe", "--default-character-set=utf8mb4 --batch --skip-column-names --unbuffered --force", out _cnf, password);
+                _p = StartClient("mysql", "--default-character-set=utf8mb4 --batch --skip-column-names --unbuffered --force", out _cnf, password);
                 _p.ErrorDataReceived += (s, e) => { if (e.Data != null) lock (_errors) _errors.AppendLine(e.Data); };
                 _p.OutputDataReceived += (s, e) =>
                 {
@@ -386,7 +427,7 @@ namespace Portly.Tools
             var dir = Path.Combine(Paths.Backup, "mysql");
             Directory.CreateDirectory(dir);
             var file = Path.Combine(dir, prefix + Settings.Current.DbEngine + "-" + PackageTypes.Branch(PackageTypes.ActiveFolder(Settings.Current.DbEngine)) + "-" + DateTime.Now.ToString("yyyy-MM-dd_HHmmss") + ".sql");
-            var r = Client("mysqldump.exe", "--all-databases --routines --events --triggers --single-transaction --default-character-set=utf8mb4 --result-file=\"" + file + "\"", null, 3600000);
+            var r = Client("mysqldump", "--all-databases --routines --events --triggers --single-transaction --default-character-set=utf8mb4 --result-file=\"" + file + "\"", null, 3600000);
             if (!r.Ok || !File.Exists(file)) throw new Exception(Clean(r));
             Log.Info(I18n.T("log.backup", file));
             return file;

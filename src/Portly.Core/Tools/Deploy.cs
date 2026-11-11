@@ -66,9 +66,21 @@ namespace Portly.Tools
         public static readonly string[] DefaultExcludes = { ".git", "node_modules", ".env", "*.log", "storage/logs", "wp-content/cache", "wp-config.php" };
 
         static string Sys32 { get { return Environment.GetFolderPath(Environment.SpecialFolder.System); } }
-        public static string SshExe { get { return Path.Combine(Sys32, "OpenSSH", "ssh.exe"); } }
-        public static string SshKeygenExe { get { return Path.Combine(Sys32, "OpenSSH", "ssh-keygen.exe"); } }
-        public static string TarExe { get { return Path.Combine(Sys32, "tar.exe"); } }
+        public static string SshExe { get { return OS.IsWindows ? Path.Combine(Sys32, "OpenSSH", "ssh.exe") : UnixTool("ssh"); } }
+        public static string SshKeygenExe { get { return OS.IsWindows ? Path.Combine(Sys32, "OpenSSH", "ssh-keygen.exe") : UnixTool("ssh-keygen"); } }
+        public static string TarExe { get { return OS.IsWindows ? Path.Combine(Sys32, "tar.exe") : UnixTool("tar"); } }
+
+        /// <summary>ssh, ssh-keygen, tar on macOS / Linux: the first one found in PATH or the usual folders (/usr/bin ...).</summary>
+        public static string UnixTool(string name)
+        {
+            foreach (var dir in (Environment.GetEnvironmentVariable("PATH") ?? "").Split(Path.PathSeparator).Concat(new[] { "/usr/bin", "/bin", "/usr/local/bin", "/opt/homebrew/bin" }))
+            {
+                if (dir == "") continue;
+                var f = Path.Combine(dir, name);
+                if (File.Exists(f)) return f;
+            }
+            return Path.Combine("/usr/bin", name);
+        }
         public static string IniFile { get { return Path.Combine(Paths.Usr, "deploy.ini"); } }
         public static string SshDir { get { return Path.Combine(Paths.Usr, "ssh"); } }
         public static string KnownHosts { get { return Path.Combine(SshDir, "known_hosts"); } }
@@ -78,7 +90,7 @@ namespace Portly.Tools
         /// <summary>Feature on, Modern edition, Windows 10 with the OpenSSH client and tar.</summary>
         public static bool IsAvailable
         {
-            get { return !AppInfo.IsLegacy && OsInfo.IsWin10OrLater && Features.IsOn("deploy") && File.Exists(SshExe) && File.Exists(TarExe); }
+            get { return !AppInfo.IsLegacy && (!OS.IsWindows || OsInfo.IsWin10OrLater) && Features.IsOn("deploy") && File.Exists(SshExe) && File.Exists(TarExe); }
         }
 
         // ---------------- profiles ----------------
@@ -447,7 +459,7 @@ namespace Portly.Tools
                 try { items = d.GetFileSystemInfos(); } catch { continue; }
                 foreach (var i in items)
                 {
-                    var rel = i.FullName.Substring(root.Length).TrimStart('\\');
+                    var rel = PathRules.RelativeTo(i.FullName, root);
                     if (IsExcluded(rel, excludes)) continue;
                     // junctions / symlinks are not followed (a linked node_modules or vendor could be huge or loop)
                     if ((i.Attributes & FileAttributes.ReparsePoint) != 0) continue;
@@ -502,7 +514,7 @@ namespace Portly.Tools
                 var cnf = LocalClientFile();
                 try
                 {
-                    var mysql = Start(Path.Combine(MySqlService.BinDir, "mysql.exe"), "--defaults-extra-file=" + Arg(cnf) + " --default-character-set=utf8mb4 " + p.LocalDb, true, false);
+                    var mysql = Start(Path.Combine(MySqlService.BinDir, Database.ClientExe("mysql")), "--defaults-extra-file=" + Arg(cnf) + " --default-character-set=utf8mb4 " + p.LocalDb, true, false);
                     var myErrTask = mysql.StandardError.ReadToEndAsync();
                     var err = new StringBuilder();
                     long bytes = 0;
@@ -590,7 +602,7 @@ namespace Portly.Tools
                         var cnf = LocalClientFile();
                         try
                         {
-                            var r = await Task.Run(() => ProcessUtil.Run(Path.Combine(MySqlService.BinDir, "mysqldump.exe"),
+                            var r = await Task.Run(() => ProcessUtil.Run(Path.Combine(MySqlService.BinDir, Database.ClientExe("mysqldump")),
                                 "--defaults-extra-file=" + Arg(cnf) + " --single-transaction --routines --triggers --default-character-set=utf8mb4 --result-file=" + Arg(dump) + " " + p.LocalDb,
                                 MySqlService.BinDir, null, 3600000), ct);
                             if (!r.Ok || !File.Exists(dump)) throw new Exception("mysqldump: " + Last(r.Output));
@@ -637,7 +649,7 @@ namespace Portly.Tools
             var zip = Path.Combine(BackupDir, Regex.Replace(site.Name, "[^A-Za-z0-9_-]", "_") + "-" + stamp + ".zip");
             using (var z = ZipFile.Open(zip, ZipArchiveMode.Create))
                 foreach (var f in EnumerateFiles(site.Folder, p.Excludes))
-                    z.CreateEntryFromFile(f.FullName, f.FullName.Substring(site.Folder.Length).TrimStart('\\').Replace('\\', '/'), CompressionLevel.Fastest);
+                    z.CreateEntryFromFile(f.FullName, PathRules.RelativeTo(f.FullName, site.Folder), CompressionLevel.Fastest);
             return zip;
         }
 
@@ -652,7 +664,7 @@ namespace Portly.Tools
         {
             foreach (var e in Directory.GetFileSystemEntries(dir))
             {
-                var rel = e.Substring(root.Length).TrimStart('\\');
+                var rel = PathRules.RelativeTo(e, root);
                 if (IsExcluded(rel, excludes)) continue;
                 var attr = File.GetAttributes(e);
                 if ((attr & FileAttributes.Directory) != 0)
@@ -710,7 +722,7 @@ namespace Portly.Tools
             if (MySqlService.BinDir == null) throw new Exception(I18n.T("err.notInstalled", "MySQL"));
             var pass = Settings.Current.MysqlRootPassword.Replace("\\", "\\\\").Replace("\"", "\\\"");
             var f = Path.Combine(Paths.Tmp, "my-deploy-" + Guid.NewGuid().ToString("N").Substring(0, 8) + ".cnf");
-            File.WriteAllText(f, "[client]\r\nuser=root\r\npassword=\"" + pass + "\"\r\nhost=127.0.0.1\r\nport=" + Settings.Current.MysqlPort + "\r\n", new UTF8Encoding(false));
+            Database.WriteSecretFile(f, "[client]" + Database.Nl + "user=root" + Database.Nl + "password=\"" + pass + "\"" + Database.Nl + "host=127.0.0.1" + Database.Nl + "port=" + Settings.Current.MysqlPort + Database.Nl);
             return f;
         }
 
@@ -727,7 +739,7 @@ namespace Portly.Tools
             if (phpDir == null) throw new Exception(I18n.T("err.notInstalled", "PHP"));
             var phar = Path.Combine(PackageTypes.ActiveDir("wpcli"), "wp-cli.phar");
             log("wp " + args);
-            var r = await Task.Run(() => ProcessUtil.Run(Path.Combine(phpDir, "php.exe"),
+            var r = await Task.Run(() => ProcessUtil.Run(ProjectCreator.PhpCli(phpDir),
                 "-d error_reporting=24575 -d display_errors=stderr " + Arg(phar) + " " + args + " --path=" + Arg(site.Folder), site.Folder, null, 1800000), ct);
             if (!r.Ok) throw new Exception("WP-CLI: " + Last(r.Output));
             log(Last(r.Output));
@@ -745,6 +757,8 @@ namespace Portly.Tools
                 RedirectStandardError = true,
                 WorkingDirectory = Paths.Tmp,
             };
+            // macOS tar would add "._" AppleDouble files for extended attributes
+            if (OS.IsMac) psi.EnvironmentVariables["COPYFILE_DISABLE"] = "1";
             var p = Process.Start(psi);
             JobObject.Add(p);
             return p;

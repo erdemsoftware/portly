@@ -7,6 +7,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Portly.Config;
 using Portly.Core;
 using Portly.Packages;
 using Portly.Services;
@@ -54,27 +55,51 @@ namespace Portly.Tools
         public static List<ImportSource> Detect()
         {
             var list = new List<ImportSource>();
-            var drives = DriveInfo.GetDrives().Where(d => d.DriveType == DriveType.Fixed && d.IsReady).Select(d => d.RootDirectory.FullName).ToList();
-            foreach (var drive in drives)
+            // the AMP stacks below are Windows programs; on macOS / Linux only the folders that exist there are offered
+            if (OS.IsWindows)
             {
-                var lr = Path.Combine(drive, "laragon");
-                if (File.Exists(Path.Combine(lr, "laragon.exe"))) { var s = Laragon(lr); if (s != null) list.Add(s); }
-                var xr = Path.Combine(drive, "xampp");
-                if (Directory.Exists(Path.Combine(xr, "htdocs"))) { var s = Xampp(xr); if (s != null) list.Add(s); }
-                foreach (var st in Stacks)
-                    foreach (var pattern in st[1].Split('|'))
-                        foreach (var root in Match(drive, pattern))
-                        {
-                            if (list.Any(x => string.Equals(x.Root, root, StringComparison.OrdinalIgnoreCase))) continue;
-                            var s = Generic(st[0], root, st[2].Split('|'));
-                            if (s != null) list.Add(s);
-                        }
+                var drives = DriveInfo.GetDrives().Where(d => d.DriveType == DriveType.Fixed && d.IsReady).Select(d => d.RootDirectory.FullName).ToList();
+                foreach (var drive in drives)
+                {
+                    var lr = Path.Combine(drive, "laragon");
+                    if (File.Exists(Path.Combine(lr, "laragon.exe"))) { var s = Laragon(lr); if (s != null) list.Add(s); }
+                    var xr = Path.Combine(drive, "xampp");
+                    if (Directory.Exists(Path.Combine(xr, "htdocs"))) { var s = Xampp(xr); if (s != null) list.Add(s); }
+                    foreach (var st in Stacks)
+                        foreach (var pattern in st[1].Split('|'))
+                            foreach (var root in Match(drive, pattern))
+                            {
+                                if (list.Any(x => PathRules.Same(x.Root, root))) continue;
+                                var s = Generic(st[0], root, st[2].Split('|'));
+                                if (s != null) list.Add(s);
+                            }
+                }
             }
-            // projects only: these keep their databases inside their own app
-            var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-            foreach (var pair in new[] { new[] { "Laravel Herd", Path.Combine(home, "Herd") }, new[] { "Local (Flywheel)", Path.Combine(home, "Local Sites") } })
-                if (Directory.Exists(pair[1]) && Count(pair[1]) > 0)
+            // projects only: these keep their databases inside their own app (or, for XAMPP / MAMP on Unix, run as another user)
+            foreach (var pair in ProjectOnlySources())
+                if (Directory.Exists(pair[1]) && Count(pair[1]) > 0 && !list.Any(x => PathRules.Same(x.ProjectsDir, pair[1])))
                     list.Add(new ImportSource { Kind = "projects", Product = pair[0], Root = pair[1], ProjectsDir = pair[1], ProjectCount = Count(pair[1]) });
+            return list;
+        }
+
+        /// <summary>Product name and projects folder of every source that only offers projects on this system.</summary>
+        public static List<string[]> ProjectOnlySources()
+        {
+            var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            var list = new List<string[]>
+            {
+                new[] { "Laravel Herd", Path.Combine(home, "Herd") },
+                new[] { "Local (Flywheel)", Path.Combine(home, "Local Sites") },
+            };
+            if (OS.IsMac)
+            {
+                list.Add(new[] { "MAMP", "/Applications/MAMP/htdocs" });
+                list.Add(new[] { "Laravel Valet / Apache", Path.Combine(home, "Sites") });
+            }
+            else if (OS.IsLinux)
+            {
+                list.Add(new[] { "XAMPP", "/opt/lampp/htdocs" });
+            }
             return list;
         }
 
@@ -92,7 +117,7 @@ namespace Portly.Tools
             var projects = projectDirs.Select(d => Path.Combine(root, d)).FirstOrDefault(Directory.Exists);
             if (projects == null) return null;
             var src = new ImportSource { Kind = "generic", Product = product, Root = root, ProjectsDir = projects, ProjectCount = Count(projects) };
-            var mysqld = FindFiles(root, "mysqld.exe", 6).OrderByDescending(f => PackageTypes.ParseVersion(f)).FirstOrDefault();
+            var mysqld = FindFiles(root, OS.Exe("mysqld"), 6).OrderByDescending(f => PackageTypes.ParseVersion(f)).FirstOrDefault();
             if (mysqld != null)
             {
                 src.MysqlBin = Path.GetDirectoryName(mysqld);
@@ -167,13 +192,13 @@ namespace Portly.Tools
         {
             var src = new ImportSource { Kind = "xampp", Product = "XAMPP", Root = root, ProjectsDir = Path.Combine(root, "htdocs") };
             var bin = Path.Combine(root, @"mysql\bin");
-            if (File.Exists(Path.Combine(bin, "mysqld.exe")))
+            if (File.Exists(Path.Combine(bin, OS.Exe("mysqld"))))
             {
                 src.MysqlBin = bin;
                 src.MysqlIni = File.Exists(Path.Combine(bin, "my.ini")) ? Path.Combine(bin, "my.ini") : null;
                 src.MysqlData = Path.Combine(root, @"mysql\data");
                 ReadMyIni(src);
-                var r = ProcessUtil.Run(Path.Combine(bin, "mysqld.exe"), "--version", bin, null, 15000);
+                var r = ProcessUtil.Run(Path.Combine(bin, OS.Exe("mysqld")), "--version", bin, null, 15000);
                 var m = Regex.Match(r.Output, @"Ver\s+([\d.]+)(-MariaDB)?", RegexOptions.IgnoreCase);
                 if (m.Success) src.MysqlVersion = m.Groups[1].Value + (m.Groups[2].Success ? " MariaDB" : "");
             }
@@ -211,7 +236,7 @@ namespace Portly.Tools
         public static int CopyProjects(ImportSource src, Action<string> status, CancellationToken ct)
         {
             var target = Settings.Current.DocumentRoot;
-            if (string.Equals(Path.GetFullPath(target).TrimEnd('\\'), Path.GetFullPath(src.ProjectsDir).TrimEnd('\\'), StringComparison.OrdinalIgnoreCase)) return 0;
+            if (PathRules.Same(target, src.ProjectsDir)) return 0;
             int copied = 0;
             foreach (var dir in Directory.GetDirectories(src.ProjectsDir))
             {
@@ -220,10 +245,9 @@ namespace Portly.Tools
                 var dest = Path.Combine(target, name);
                 if (Directory.Exists(dest)) { Log.Warn(I18n.T("import.skipExists", name)); continue; }
                 status(I18n.T("import.copying", name));
-                // robocopy is on every Windows since Vista and keeps attributes and long paths
-                var r = ProcessUtil.Run("robocopy.exe", "\"" + dir + "\" \"" + dest + "\" /E /R:1 /W:1 /NFL /NDL /NJH /NJS /NP", null, null, 24 * 3600 * 1000);
-                if (r.ExitCode >= 8) Log.Warn("robocopy " + name + ": " + r.Output);
-                else copied++;
+                // robocopy is on every Windows since Vista and keeps attributes and long paths; cp -a elsewhere
+                try { Database.CopyDirectory(dir, dest); copied++; }
+                catch (Exception ex) { Log.Warn("copy " + name + ": " + ex.Message); }
             }
             Log.Info(I18n.T("import.projectsCopied", copied, target));
             return copied;
@@ -250,7 +274,8 @@ namespace Portly.Tools
         static string WriteCnf(string password, int port)
         {
             var f = Path.Combine(Paths.Tmp, "import-" + Guid.NewGuid().ToString("N").Substring(0, 8) + ".cnf");
-            File.WriteAllText(f, "[client]\r\nuser=root\r\npassword=\"" + (password ?? "").Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"\r\nhost=127.0.0.1\r\nport=" + port + "\r\n", new UTF8Encoding(false));
+            var pass = (password ?? "").Replace("\\", "\\\\").Replace("\"", "\\\"");
+            Database.WriteSecretFile(f, "[client]" + Database.Nl + "user=root" + Database.Nl + "password=\"" + pass + "\"" + Database.Nl + "host=127.0.0.1" + Database.Nl + "port=" + port + Database.Nl);
             return f;
         }
 
@@ -259,7 +284,7 @@ namespace Portly.Tools
         {
             var s = new Source();
             var owner = ProcessUtil.IsPortInUse(src.MysqlPort) ? ProcessUtil.PortOwnerInfo(src.MysqlPort) : null;
-            if (owner != null && owner.Path.StartsWith(src.Root, StringComparison.OrdinalIgnoreCase))
+            if (owner != null && PathRules.IsUnder(owner.Path, src.Root))
             {
                 s.Port = src.MysqlPort;
             }
@@ -269,7 +294,7 @@ namespace Portly.Tools
                 s.Port = ProcessUtil.FreePort(Enumerable.Range(3390, 40), new HashSet<int>());
                 var args = (src.MysqlIni != null ? "--defaults-file=\"" + src.MysqlIni + "\"" : "--no-defaults") +
                            " --datadir=\"" + src.MysqlData + "\" --port=" + s.Port + " --bind-address=127.0.0.1 --console";
-                var psi = new ProcessStartInfo(Path.Combine(src.MysqlBin, "mysqld.exe"), args)
+                var psi = new ProcessStartInfo(Path.Combine(src.MysqlBin, OS.Exe("mysqld")), args)
                 {
                     UseShellExecute = false, CreateNoWindow = true, RedirectStandardError = true, RedirectStandardOutput = true,
                     WorkingDirectory = src.MysqlBin,
@@ -295,7 +320,7 @@ namespace Portly.Tools
             {
                 var sql = "SELECT s.schema_name, COALESCE(SUM(t.data_length + t.index_length), 0) FROM information_schema.schemata s " +
                           "LEFT JOIN information_schema.tables t ON t.table_schema = s.schema_name GROUP BY s.schema_name;";
-                var r = ProcessUtil.Run(Path.Combine(src.MysqlBin, "mysql.exe"), "--defaults-extra-file=\"" + s.Cnf + "\" --batch --skip-column-names", src.MysqlBin, null, 60000, sql);
+                var r = ProcessUtil.Run(Path.Combine(src.MysqlBin, OS.Exe("mysql")), "--defaults-extra-file=\"" + s.Cnf + "\" --batch --skip-column-names", src.MysqlBin, null, 60000, sql);
                 if (!r.Ok) throw new Exception(Clean(r.Output));
                 var list = new List<DbInfo>();
                 foreach (var line in r.Output.Split('\n'))
@@ -321,7 +346,7 @@ namespace Portly.Tools
                 status(I18n.T("import.dumping", names.Count));
                 var args = "--defaults-extra-file=\"" + s.Cnf + "\" --databases " + string.Join(" ", names.Select(n => "\"" + n + "\"")) +
                            " --routines --events --triggers --single-transaction --default-character-set=utf8mb4 --result-file=\"" + dump + "\"";
-                var r = await Task.Run(() => ProcessUtil.Run(Path.Combine(src.MysqlBin, "mysqldump.exe"), args, src.MysqlBin, null, 6 * 3600 * 1000), ct);
+                var r = await Task.Run(() => ProcessUtil.Run(Path.Combine(src.MysqlBin, OS.Exe("mysqldump")), args, src.MysqlBin, null, 6 * 3600 * 1000), ct);
                 if (!r.Ok || !File.Exists(dump)) throw new Exception(Clean(r.Output));
             }
 
@@ -346,7 +371,7 @@ namespace Portly.Tools
             int errors = 0;
             try
             {
-                var psi = new ProcessStartInfo(Path.Combine(bin, "mysql.exe"), "--defaults-extra-file=\"" + cnf + "\" --default-character-set=utf8mb4 --force")
+                var psi = new ProcessStartInfo(Path.Combine(bin, Database.ClientExe("mysql")), "--defaults-extra-file=\"" + cnf + "\" --default-character-set=utf8mb4 --force")
                 {
                     UseShellExecute = false, CreateNoWindow = true, RedirectStandardInput = true, RedirectStandardError = true, RedirectStandardOutput = true,
                     WorkingDirectory = bin,

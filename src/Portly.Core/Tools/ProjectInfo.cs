@@ -78,7 +78,7 @@ namespace Portly.Tools
                 info.DbEngine = EngineName(conn);
                 string name;
                 if (env.TryGetValue("DB_DATABASE", out name))
-                    info.DbName = info.DbEngine == "SQLite" ? Path.GetFileName(name.Replace('/', '\\')) : name;
+                    info.DbName = info.DbEngine == "SQLite" ? Path.GetFileName(name.Replace('/', '\\').Replace('\\', Path.DirectorySeparatorChar)) : name;
             }
             else if (env.TryGetValue("DATABASE_URL", out conn))
             {
@@ -124,7 +124,7 @@ namespace Portly.Tools
         static void FromConfigFiles(string dir, ProjectInfo info)
         {
             var files = new List<string>();
-            foreach (var sub in new[] { "", "config", "app", "app\\Config", "includes", "inc", "core", "src" })
+            foreach (var sub in new[] { "", "config", "app", Path.Combine("app", "Config"), "includes", "inc", "core", "src" })
             {
                 var d = Path.Combine(dir, sub);
                 if (!Directory.Exists(d)) continue;

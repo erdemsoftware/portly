@@ -25,7 +25,7 @@ namespace Portly.Core
 #else
         public static readonly bool IsLegacy = false;
         public const string EditionId = "modern";
-        public const string EditionName = "Windows 10 / 11";
+        public static string EditionName { get { return OS.IsWindows ? "Windows 10 / 11" : OS.IsMac ? "macOS" : "Linux"; } }
 #endif
 
         public static readonly Version Version = typeof(AppInfo).Assembly.GetName().Version;

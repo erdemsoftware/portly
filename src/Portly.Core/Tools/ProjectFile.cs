@@ -115,7 +115,7 @@ namespace Portly.Tools
             if (map.TryGetValue("node", out v) && v != null) spec.Node = Scalar(v, "node");
             if (map.TryGetValue("root", out v) && v != null)
             {
-                spec.Root = Scalar(v, "root").Replace('/', '\\').Trim('\\');
+                spec.Root = Scalar(v, "root").Replace('/', Path.DirectorySeparatorChar).Replace('\\', Path.DirectorySeparatorChar).Trim(Path.DirectorySeparatorChar);
                 if (spec.Root.Contains("..") || Path.IsPathRooted(spec.Root) || spec.Root.IndexOfAny(Path.GetInvalidPathChars()) >= 0)
                     throw new FormatException(I18n.T("pf.badValue", "root", spec.Root));
             }
@@ -428,8 +428,8 @@ namespace Portly.Tools
             if (site.PhpFolder != "") sb.Append("php: \"").Append(PackageTypes.Branch(site.PhpFolder)).Append("\"\n");
             var node = PackageTypes.ActiveFolder("nodejs");
             if (node != "") sb.Append("node: \"").Append(PackageTypes.ParseVersion(node).Major).Append("\"\n");
-            if (!string.Equals(site.DocRoot, site.Folder, StringComparison.OrdinalIgnoreCase) && site.DocRoot.StartsWith(site.Folder + "\\", StringComparison.OrdinalIgnoreCase))
-                sb.Append("root: ").Append(Yaml.Quote(site.DocRoot.Substring(site.Folder.Length + 1).Replace('\\', '/'))).Append('\n');
+            if (!PathRules.Same(site.DocRoot, site.Folder) && PathRules.IsUnder(site.DocRoot, site.Folder))
+                sb.Append("root: ").Append(Yaml.Quote(PathRules.RelativeTo(site.DocRoot, site.Folder))).Append('\n');
             if (site.Aliases.Count > 0) sb.Append("domains: [").Append(string.Join(", ", site.Aliases.Select(Yaml.Quote))).Append("]\n");
             var s = Settings.Current;
             var services = new List<string>();
@@ -462,7 +462,7 @@ namespace Portly.Tools
                 sb.Append("hooks:\n");
                 foreach (var h in hooks) sb.Append("  ").Append(h.Key).Append(": ").Append(Yaml.Quote(h.Value)).Append('\n');
             }
-            return sb.ToString().Replace("\n", "\r\n");
+            return OS.IsWindows ? sb.ToString().Replace("\n", "\r\n") : sb.ToString();
         }
 
         /// <summary>Writes portly.yml and marks it applied (it describes the current state).</summary>
