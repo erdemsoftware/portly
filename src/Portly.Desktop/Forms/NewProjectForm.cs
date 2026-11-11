@@ -22,7 +22,8 @@ namespace Portly.Desktop.Forms
         readonly ComboBox _parent;
         readonly TextBlock _status, _url;
         readonly Button _create, _cancel;
-        readonly List<Border> _tiles = new List<Border>();
+        readonly List<Button> _tiles = new List<Button>();
+        readonly Dictionary<string, IBrush> _tileColors = new Dictionary<string, IBrush>();
         string _template = "blank";
         CancellationTokenSource _cts;
 
@@ -39,7 +40,7 @@ namespace Portly.Desktop.Forms
         /// <param name="parent">Opened from a project's "Add sub-project": that project is already picked.</param>
         public NewProjectForm(string template = null, string parent = null) : base(I18n.T("project.title"), 640)
         {
-            _name = new TextBox();
+            _name = new TextBox { Width = 400, HorizontalAlignment = HorizontalAlignment.Left };
             _url = Ui.Label(" ", "muted small");
             _name.TextChanged += (s, e) => UpdateUrl();
             Body.Children.Add(Ui.Label(I18n.T("project.title"), "title"));
@@ -47,7 +48,7 @@ namespace Portly.Desktop.Forms
 
             // sub-project: created in its own folder inside the chosen project (name.parent.tld)
             _sub = new CheckBox { Content = I18n.T("project.isSub") };
-            _parent = new ComboBox { HorizontalAlignment = HorizontalAlignment.Stretch, IsEnabled = false, Margin = new Thickness(26, 0, 0, 0) };
+            _parent = new ComboBox { Width = 400, HorizontalAlignment = HorizontalAlignment.Left, IsEnabled = false, Margin = new Thickness(20, 0, 0, 0) };
             foreach (var p in Portly.Config.Sites.Scan().Where(x => x.Name.IndexOf('/') < 0 && x.Valid && !x.Archived).OrderBy(x => x.Name, StringComparer.OrdinalIgnoreCase))
                 _parent.Items.Add(p.Name);
             if (_parent.Items.Count == 0) _sub.IsEnabled = false;
@@ -62,13 +63,13 @@ namespace Portly.Desktop.Forms
             _parent.SelectionChanged += (s, e) => UpdateUrl();
             Body.Children.Add(Ui.Column(6, _sub, _parent));
 
-            var php = new WrapPanel { Orientation = Orientation.Horizontal };
+            var php = new WrapPanel { Orientation = Orientation.Horizontal, ItemSpacing = 8, LineSpacing = 8, MaxWidth = 600, HorizontalAlignment = HorizontalAlignment.Left };
             php.Children.Add(TemplateTile("blank", I18n.T("project.blankShort"), Ui.Gray));
             php.Children.Add(TemplateTile("wordpress", "WordPress", Color.Parse("#21759B")));
             foreach (var tt in ProjectCreator.TerminalTemplates.Where(x => x.Item3 == "composer"))
                 php.Children.Add(TemplateTile(tt.Item1, tt.Item2, Brand(tt.Item1)));
             Body.Children.Add(Ui.Column(6, Ui.Section("PHP"), php));
-            var js = new WrapPanel { Orientation = Orientation.Horizontal };
+            var js = new WrapPanel { Orientation = Orientation.Horizontal, ItemSpacing = 8, LineSpacing = 8, MaxWidth = 600, HorizontalAlignment = HorizontalAlignment.Left };
             foreach (var tt in ProjectCreator.TerminalTemplates.Where(x => x.Item3 == "node"))
                 js.Children.Add(TemplateTile(tt.Item1, tt.Item2, Brand(tt.Item1)));
             Body.Children.Add(Ui.Column(6, Ui.Section("JavaScript (Node.js)"), js));
@@ -112,28 +113,34 @@ namespace Portly.Desktop.Forms
             }
         }
 
-        Border TemplateTile(string key, string text, Color color) { return TemplateTile(key, text, new SolidColorBrush(color)); }
+        Button TemplateTile(string key, string text, Color color) { return TemplateTile(key, text, new SolidColorBrush(color)); }
 
-        Border TemplateTile(string key, string text, IBrush color)
+        /// <summary>112 x 40 outlined button; the chosen template is filled with its brand color (as in the Windows app).</summary>
+        Button TemplateTile(string key, string text, IBrush color)
         {
-            var dot = new Border { Width = 14, Height = 14, CornerRadius = new CornerRadius(4), Background = color, BorderBrush = Ui.Line, BorderThickness = new Thickness(1), VerticalAlignment = VerticalAlignment.Center };
-            var content = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-            content.Children.Add(dot);
-            content.Children.Add(new TextBlock { Text = text, FontWeight = FontWeight.SemiBold, TextTrimming = TextTrimming.CharacterEllipsis, VerticalAlignment = VerticalAlignment.Center });
-            var b = new Button { Content = content, Width = 138, Height = 42, MinWidth = 0, Padding = new Thickness(10, 0), HorizontalContentAlignment = HorizontalAlignment.Left };
-            b.Classes.Add("tile");
+            var b = new Button
+            {
+                Content = new TextBlock { Text = text, TextTrimming = TextTrimming.CharacterEllipsis, VerticalAlignment = VerticalAlignment.Center },
+                Width = 112, Height = 40, Padding = new Thickness(6, 0), Tag = key,
+            };
+            b.Classes.Add("bold");
             Avalonia.Automation.AutomationProperties.SetName(b, text);
             b.Click += (s, e) => Select(key);
-            // the ring around the tile marks the chosen template
-            var ring = new Border { Tag = key, BorderThickness = new Thickness(2), CornerRadius = new CornerRadius(12), Margin = new Thickness(0, 0, 6, 6), Child = b };
-            _tiles.Add(ring);
-            return ring;
+            _tiles.Add(b);
+            _tileColors[key] = color;
+            return b;
         }
 
         void Select(string key)
         {
             _template = key;
-            foreach (var r in _tiles) r.BorderBrush = (string)r.Tag == key ? Ui.Accent : Brushes.Transparent;
+            foreach (var b in _tiles)
+            {
+                bool on = (string)b.Tag == key;
+                b.Classes.Set("picked", on);
+                if (on) { b.Background = _tileColors[key]; b.Foreground = Brushes.White; b.BorderThickness = new Thickness(0); }
+                else { b.ClearValue(Button.BackgroundProperty); b.ClearValue(Button.ForegroundProperty); b.ClearValue(Button.BorderThicknessProperty); }
+            }
             var tt = ProjectCreator.TerminalTemplate(key);
             _wpFull.IsVisible = key == "wordpress";
             _db.IsEnabled = tt == null || tt.Item3 == "composer";

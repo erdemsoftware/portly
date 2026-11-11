@@ -21,6 +21,7 @@ namespace Portly.Desktop.UI
         protected readonly StackPanel Body = new StackPanel { Spacing = 12 };
         protected readonly StackPanel Buttons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, HorizontalAlignment = HorizontalAlignment.Right };
         readonly ScrollViewer _scroll;
+        readonly Border _bar;
 
         public PortlyDialog(string title, double width = 560)
         {
@@ -36,13 +37,20 @@ namespace Portly.Desktop.UI
             WindowStartupLocation = WindowStartupLocation.CenterOwner;
             FlowDirection = I18n.IsRtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
             _scroll = new ScrollViewer { Content = Body, Padding = new Thickness(24, 20, 24, 8) };
-            var bar = new Border { Child = Buttons, Padding = new Thickness(24, 12, 24, 18) };
+            _bar = new Border { Child = Buttons, Padding = new Thickness(24, 12, 24, 18) };
             var dock = new DockPanel();
-            DockPanel.SetDock(bar, Dock.Bottom);
-            dock.Children.Add(bar);
+            DockPanel.SetDock(_bar, Dock.Bottom);
+            dock.Children.Add(_bar);
             dock.Children.Add(_scroll);
             Content = dock;
             KeyDown += (s, e) => { if (e.Key == Key.Escape) Close(); };
+        }
+
+        /// <summary>Other margins around the content and the button bar (the Windows dialogs differ a little).</summary>
+        protected void SetPadding(Thickness content, Thickness bar)
+        {
+            _scroll.Padding = content;
+            _bar.Padding = bar;
         }
 
         /// <summary>Resizable dialog with a fixed size (log viewers, editors).</summary>
@@ -64,22 +72,43 @@ namespace Portly.Desktop.UI
     /// </summary>
     public class MessageDialog : PortlyDialog
     {
-        MessageDialog(string text, MessageKind kind, bool question) : base("Portly", 460)
+        MessageDialog(string text, MessageKind kind, bool question) : base("Portly", 540)
         {
+            // as wide as its text (up to 22 + 40 + 16 + 440 + 22 px), padding 22 / 20 / 22 / 16 like the Windows message window
+            SizeToContent = SizeToContent.WidthAndHeight;
+            Width = double.NaN;
+            MaxWidth = 540;
+            SetPadding(new Thickness(22, 20, 22, 0), new Thickness(22, 20, 22, 16));
             var parts = (text ?? "").Replace("\r\n", "\n").Split(new[] { "\n\n" }, 2, StringSplitOptions.None);
+            var accent = kind == MessageKind.Warning ? Ui.Orange : Ui.Accent;
+            var c = ((ISolidColorBrush)accent).Color;
+            // soft ring and a solid disc with the mark, like the Windows window
             var icon = new Border
             {
                 Width = 40, Height = 40, CornerRadius = new CornerRadius(20), VerticalAlignment = VerticalAlignment.Top,
-                Background = kind == MessageKind.Warning ? Ui.Orange : Ui.Accent,
-                Child = new TextBlock
+                Background = new SolidColorBrush(Color.FromArgb(40, c.R, c.G, c.B)),
+                Child = new Border
                 {
-                    Text = kind == MessageKind.Warning ? "!" : kind == MessageKind.Question ? "?" : "i",
-                    Foreground = Brushes.White, FontWeight = FontWeight.Bold, FontSize = 20,
-                    HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center,
+                    Width = 28, Height = 28, CornerRadius = new CornerRadius(14), Background = accent,
+                    Child = new TextBlock
+                    {
+                        Text = kind == MessageKind.Warning ? "!" : kind == MessageKind.Question ? "?" : "i",
+                        Foreground = Brushes.White, FontFamily = (FontFamily)Application.Current.FindResource("SemiboldFamily"),
+                        FontWeight = (FontWeight)Application.Current.FindResource("SemiboldWeight"), FontSize = 16 * UI.Theme.FontScale,
+                        HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center,
+                    },
                 },
             };
-            var texts = Ui.Column(10, Ui.Selectable(parts[0].Trim(), "subtitle"));
-            if (parts.Length > 1 && parts[1].Trim() != "") texts.Children.Add(Ui.Selectable(parts[1].Trim()));
+            var heading = Ui.Selectable(parts[0].Trim(), "subtitle");
+            heading.MaxWidth = 440;
+            var texts = Ui.Column(10, heading);
+            if (parts.Length > 1 && parts[1].Trim() != "")
+            {
+                // "- " lines are bullets
+                var body = Ui.Selectable(string.Join("\n", parts[1].Trim().Split('\n').Select(l => l.StartsWith("- ") ? "\u2022  " + l.Substring(2) : l)));
+                body.MaxWidth = 440;
+                texts.Children.Add(body);
+            }
             var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*"), ColumnSpacing = 16 };
             grid.Children.Add(icon);
             Grid.SetColumn(texts, 1);
