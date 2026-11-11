@@ -1,8 +1,8 @@
 {
   "schema": 1,
   "edition": "macos",
-  "updated": "2026-11-11",
-  "comment": "Portly package catalog for macOS (x64 and arm64; entries carry an arch). Served from GitHub (main branch) and embedded in Portly as a fallback. PHP comes as static builds (php-fpm + php-cli archives extracted into one folder) from dl.static-php.dev.",
+  "updated": "2026-11-12",
+  "comment": "Portly package catalog for macOS (x64 and arm64; entries carry an arch). Served from GitHub (main branch) and embedded in Portly as a fallback. PHP comes as static builds (php-fpm + php-cli archives extracted into one folder) from dl.static-php.dev. Redis (Redis Stack server), MongoDB and PostgreSQL (EDB universal binaries) come from their vendors; MariaDB publishes no macOS binaries.",
   "packages": [
     {
       "type": "php",
@@ -166,6 +166,153 @@
       "arch": "arm64",
       "tag": "LTS",
       "note": "needs macOS 15 or newer",
+      "recommended": true
+    },
+    {
+      "type": "redis",
+      "version": "7.4.0",
+      "folder": "redis-stack-server-7.4.0-v8",
+      "url": "https://packages.redis.io/redis-stack/redis-stack-server-7.4.0-v8.ventura.x86_64.zip",
+      "sha256": "7a1d6cfcfd80c6285e114c3169562a4a2fb0f2a2b70f2a65badf0ca689a4722d",
+      "kind": "zip",
+      "arch": "x64",
+      "note": "Redis Stack server build by Redis Ltd (Redis 7.4; RSALv2 / SSPLv1 licence), plain redis-server without modules; needs macOS 13 or newer",
+      "recommended": true
+    },
+    {
+      "type": "redis",
+      "version": "7.4.0",
+      "folder": "redis-stack-server-7.4.0-v8",
+      "url": "https://packages.redis.io/redis-stack/redis-stack-server-7.4.0-v8.sonoma.arm64.zip",
+      "sha256": "4b063a410120843f6e493fa52d433b17ad79b57adc751b9f8050aa81874f04da",
+      "kind": "zip",
+      "arch": "arm64",
+      "note": "Redis Stack server build by Redis Ltd (Redis 7.4; RSALv2 / SSPLv1 licence), plain redis-server without modules; needs macOS 12 or newer",
+      "recommended": true
+    },
+    {
+      "type": "postgresql",
+      "version": "18.6",
+      "folder": "postgresql-18.6",
+      "url": "https://get.enterprisedb.com/postgresql/postgresql-18.6-1-osx-binaries.zip",
+      "sha256": "2a6739fccbbc36474cb2446e4e7b4f377abb8471653d3a294e4e5092271e4796",
+      "kind": "zip",
+      "subdir": "pgsql",
+      "note": "universal build by EDB (Intel and Apple silicon), includes pgAdmin 4; needs macOS 13 or newer",
+      "recommended": true
+    },
+    {
+      "type": "postgresql",
+      "version": "17.11",
+      "folder": "postgresql-17.11",
+      "url": "https://get.enterprisedb.com/postgresql/postgresql-17.11-1-osx-binaries.zip",
+      "sha256": "a540ac46eea5a2c612a8e097fd9aa75e41ac3f3b49bf10ffd75ecf5b1efc2997",
+      "kind": "zip",
+      "subdir": "pgsql",
+      "note": "universal build by EDB (Intel and Apple silicon), includes pgAdmin 4; needs macOS 13 or newer",
+      "recommended": false
+    },
+    {
+      "type": "postgresql",
+      "version": "16.15",
+      "folder": "postgresql-16.15",
+      "url": "https://get.enterprisedb.com/postgresql/postgresql-16.15-1-osx-binaries.zip",
+      "sha256": "a976e52512622cbae06145a86ff7a6c65e9a6559674d0dd55e45c26b56dbbac1",
+      "kind": "zip",
+      "subdir": "pgsql",
+      "note": "universal build by EDB (Intel and Apple silicon), includes pgAdmin 4; needs macOS 13 or newer",
+      "recommended": false
+    },
+    {
+      "type": "postgresql",
+      "version": "15.19",
+      "folder": "postgresql-15.19",
+      "url": "https://get.enterprisedb.com/postgresql/postgresql-15.19-1-osx-binaries.zip",
+      "sha256": "6867ea93c402fa3b35ac748596a2160a67c8e960c0ed3f43f720a6b4b879169e",
+      "kind": "zip",
+      "subdir": "pgsql",
+      "note": "universal build by EDB (Intel and Apple silicon), includes pgAdmin 4; needs macOS 13 or newer",
+      "recommended": false
+    },
+    {
+      "type": "postgresql",
+      "version": "14.24",
+      "folder": "postgresql-14.24",
+      "url": "https://get.enterprisedb.com/postgresql/postgresql-14.24-1-osx-binaries.zip",
+      "sha256": "7b39786bdc8537d3a76b5d9a5ef96e8f8741d3e377dceca02be03f00995f2639",
+      "kind": "zip",
+      "subdir": "pgsql",
+      "note": "universal build by EDB (Intel and Apple silicon), includes pgAdmin 4; needs macOS 13 or newer",
+      "recommended": false
+    },
+    {
+      "type": "mongodb",
+      "version": "9.0.8",
+      "folder": "mongodb-9.0.8",
+      "url": "https://fastdl.mongodb.org/osx/mongodb-macos-x86_64-9.0.8.tgz",
+      "sha256": "8e8d7d147ff5cca0ece5acd2097b2ac21cbe096df75a737f756cf4bf99a71d4c",
+      "kind": "tar.gz",
+      "arch": "x64",
+      "tag": "newest",
+      "note": "official MongoDB Community build; needs macOS 14 or newer",
+      "recommended": false
+    },
+    {
+      "type": "mongodb",
+      "version": "9.0.8",
+      "folder": "mongodb-9.0.8",
+      "url": "https://fastdl.mongodb.org/osx/mongodb-macos-arm64-9.0.8.tgz",
+      "sha256": "8e057ec463a52cfdea4b1b8f5d5108a622d9116dfff76332854b3627db772833",
+      "kind": "tar.gz",
+      "arch": "arm64",
+      "tag": "newest",
+      "note": "official MongoDB Community build; needs macOS 14 or newer",
+      "recommended": false
+    },
+    {
+      "type": "mongodb",
+      "version": "8.2.12",
+      "folder": "mongodb-8.2.12",
+      "url": "https://fastdl.mongodb.org/osx/mongodb-macos-x86_64-8.2.12.tgz",
+      "sha256": "6848e8a4925bb5dc08dbac6b1ae407366505447b5ab79c77106a5d892ce818d9",
+      "kind": "tar.gz",
+      "arch": "x64",
+      "note": "official MongoDB Community build; needs macOS 14 or newer",
+      "recommended": false
+    },
+    {
+      "type": "mongodb",
+      "version": "8.2.12",
+      "folder": "mongodb-8.2.12",
+      "url": "https://fastdl.mongodb.org/osx/mongodb-macos-arm64-8.2.12.tgz",
+      "sha256": "8b1140dd745c23acafb812012fac3ff559c593065db631a5bec3dbafaf8dd1c2",
+      "kind": "tar.gz",
+      "arch": "arm64",
+      "note": "official MongoDB Community build; needs macOS 14 or newer",
+      "recommended": false
+    },
+    {
+      "type": "mongodb",
+      "version": "8.0.38",
+      "folder": "mongodb-8.0.38",
+      "url": "https://fastdl.mongodb.org/osx/mongodb-macos-x86_64-8.0.38.tgz",
+      "sha256": "2ae70efb0aaa182477a96f5dc9062ec03d048cf98528d87c20328219020c14c1",
+      "kind": "tar.gz",
+      "arch": "x64",
+      "tag": "LTS",
+      "note": "official MongoDB Community build; needs macOS 14 or newer",
+      "recommended": true
+    },
+    {
+      "type": "mongodb",
+      "version": "8.0.38",
+      "folder": "mongodb-8.0.38",
+      "url": "https://fastdl.mongodb.org/osx/mongodb-macos-arm64-8.0.38.tgz",
+      "sha256": "5c372533187a7789b6b2f4d7856f0651557dfbed572dbe5f4c23f43578fc74df",
+      "kind": "tar.gz",
+      "arch": "arm64",
+      "tag": "LTS",
+      "note": "official MongoDB Community build; needs macOS 14 or newer",
       "recommended": true
     },
     {

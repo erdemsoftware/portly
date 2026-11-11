@@ -48,9 +48,21 @@ namespace Portly.Services
             if (!EnsurePortFree(port)) return;
             // also ::1: "localhost" clients try it first and Windows needs ~2 s to refuse a connection
             var listen = Settings.Current.AllowLan ? "*" : Net.LoopbackV6 ? "127.0.0.1,::1" : "127.0.0.1";
-            _p = Launch(Path.Combine(_bin, OS.Exe("postgres")), "-D \"" + _data + "\" -p " + port + " -h " + listen, _bin, null, "postgresql", OnExit);
+            _p = Launch(Path.Combine(_bin, OS.Exe("postgres")), "-D \"" + _data + "\" -p " + port + " -h " + listen + SocketArg(port), _bin, null, "postgresql", OnExit);
             if (await WaitForPort(port, _p, 30000)) { SetState(ServiceState.Running); Log.Info(I18n.T("log.started", Title + " " + VersionLabel)); }
             else SetState(ServiceState.Error, _p.HasExited ? ExitReason(_p) + " " + I18n.T("err.seeLog", "postgresql.log") : I18n.T("err.timeout"));
+        }
+
+        /// <summary>
+        /// macOS / Linux: the Unix socket goes into Portly's tmp folder (the builds default to /tmp, shared by every PostgreSQL on the
+        /// machine). A socket path holds about 100 characters at most, so a deep Portly folder keeps the default.
+        /// </summary>
+        static string SocketArg(int port)
+        {
+            if (OS.IsWindows) return "";
+            var dir = Paths.Tmp;
+            if (Path.Combine(dir, ".s.PGSQL." + port + ".lock").Length > 96 || dir.Contains(",") || dir.Contains(" ")) return "";
+            return " -k \"" + dir + "\"";
         }
 
         void OnExit(Process p)
@@ -96,11 +108,19 @@ namespace Portly.Services
             var port = Settings.Current.MongoPort;
             var data = Path.Combine(Paths.Data, "mongodb-" + PackageTypes.Branch(Path.GetFileName(dir)));
             Directory.CreateDirectory(data);
+            var mongod = Path.Combine(dir, "bin", OS.Exe("mongod"));
+            if (OS.IsLinux)
+            {
+                // the official builds link libcurl and OpenSSL 3 of the system
+                var missing = await Task.Run(() => LinuxLibs.Fix(mongod, Path.Combine(dir, "lib")));
+                if (missing.Count > 0) { SetState(ServiceState.Error, I18n.T("err.linuxLibs", Title, string.Join(", ", missing), LinuxLibs.InstallHint(missing))); return; }
+            }
             if (!EnsurePortFree(port)) return;
             // also ::1: "localhost" clients try it first and Windows needs ~2 s to refuse a connection
             var bind = Settings.Current.AllowLan ? "--bind_ip_all --ipv6" : Net.LoopbackV6 ? "--bind_ip 127.0.0.1,::1 --ipv6" : "--bind_ip 127.0.0.1";
             var args = "--dbpath \"" + data + "\" --port " + port + " " + bind + " --logpath \"" + Path.Combine(Paths.Logs, "mongodb.log") + "\" --logappend";
-            _p = Launch(Path.Combine(dir, "bin", OS.Exe("mongod")), args, Path.Combine(dir, "bin"), null, "mongodb-console", OnExit);
+            if (!OS.IsWindows) args += " --nounixsocket"; // TCP only: no /tmp/mongodb-<port>.sock left behind
+            _p = Launch(mongod, args, Path.Combine(dir, "bin"), null, "mongodb-console", OnExit);
             if (await WaitForPort(port, _p, 60000)) { SetState(ServiceState.Running); Log.Info(I18n.T("log.started", Title + " " + VersionLabel)); }
             else SetState(ServiceState.Error, _p.HasExited ? ExitReason(_p) + " " + I18n.T("err.seeLog", "mongodb.log") : I18n.T("err.timeout"));
         }

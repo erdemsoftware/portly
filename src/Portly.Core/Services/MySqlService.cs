@@ -105,6 +105,8 @@ namespace Portly.Services
             var dir = Path.Combine(Paths.BinOf(engine), folder);
             var data = DataDirFor(folder);
             var mysqld = Path.Combine(dir, "bin", OS.Exe("mysqld"));
+            // MariaDB 11 warns about the old program name: use its own on macOS / Linux (the bintar has both)
+            if (engine == "mariadb" && !OS.IsWindows && File.Exists(Path.Combine(dir, "bin", "mariadbd"))) mysqld = Path.Combine(dir, "bin", "mariadbd");
             var port = Settings.Current.MysqlPort;
 
             string error = await Task.Run(() =>
@@ -112,8 +114,8 @@ namespace Portly.Services
                 try { WriteConfig(dir, data); } catch (Exception ex) { return ex.Message; }
                 if (OS.IsLinux)
                 {
-                    // MySQL builds look in lib/private first ($ORIGIN/../lib/private in their rpath)
-                    var missing = LinuxLibs.Fix(mysqld, Path.Combine(dir, "lib", "private"));
+                    // MySQL builds look in lib/private first ($ORIGIN/../lib/private in their rpath); MariaDB ones link system libraries only
+                    var missing = LinuxLibs.Fix(mysqld, Path.Combine(dir, "lib", engine == "mariadb" ? "" : "private"));
                     if (missing.Count > 0) return I18n.T("err.linuxLibs", Title, string.Join(", ", missing), LinuxLibs.InstallHint(missing));
                 }
                 if (!Directory.Exists(data) || !Directory.EnumerateFileSystemEntries(data).Any())
@@ -122,7 +124,7 @@ namespace Portly.Services
                     try { if (Directory.Exists(data)) Directory.Delete(data); } catch { }
                     // MySQL: --initialize-insecure; MariaDB: its own mysql_install_db tool (root without password)
                     var r = engine == "mariadb"
-                        ? ProcessUtil.Run(Path.Combine(dir, "bin", OS.Exe("mysql_install_db")), "--datadir=\"" + data + "\"", Path.Combine(dir, "bin"), null, 300000)
+                        ? MariaDbInstallDb(dir, data)
                         : ProcessUtil.Run(mysqld, "--defaults-file=\"" + ConfFile + "\"" + AsRoot + " --initialize-insecure --console", Path.Combine(dir, "bin"), null, 300000);
                     if (!Directory.Exists(data) || !Directory.EnumerateFileSystemEntries(data).Any())
                         return I18n.T("err.mysqlInit") + "\n" + ApacheService.LastLines(r.Output, 6);
@@ -146,6 +148,17 @@ namespace Portly.Services
         }
 
         string _extraArgs;
+
+        /// <summary>MariaDB: its own install tool; root without a password (like MySQL --initialize-insecure).</summary>
+        static RunResult MariaDbInstallDb(string dir, string data)
+        {
+            if (OS.IsWindows)
+                return ProcessUtil.Run(Path.Combine(dir, "bin", OS.Exe("mysql_install_db")), "--datadir=\"" + data + "\"", Path.Combine(dir, "bin"), null, 300000);
+            var script = Path.Combine(dir, "scripts", "mariadb-install-db");
+            if (!File.Exists(script)) script = Path.Combine(dir, "scripts", "mysql_install_db");
+            Installer.MakeExecutable(script);
+            return ProcessUtil.Run(script, "--defaults-file=\"" + ConfFile + "\" --basedir=\"" + dir + "\" --datadir=\"" + data + "\" --auth-root-authentication-method=normal" + AsRoot, dir, null, 300000);
+        }
 
         /// <summary>macOS / Linux: mysqld refuses to run as root unless told to (a container, or sudo).</summary>
         static string AsRoot { get { return !OS.IsWindows && string.Equals(Environment.UserName, "root", StringComparison.Ordinal) ? " --user=root" : ""; } }
@@ -283,7 +296,8 @@ namespace Portly.Services
             v["LOGS"] = pathFor(Paths.Logs);
             Templates.WriteIfChanged(conf, Templates.Render("redis.conf.tpl", v));
             if (!EnsurePortFree(port)) return;
-            _p = Launch(Path.Combine(dir, OS.Exe("redis-server")), "\"" + pathFor(conf) + "\"", dir, null, "redis-console", OnExit);
+            var exe = Path.Combine(dir, PackageTypes.ExeDir("redis"), OS.Exe("redis-server"));
+            _p = Launch(exe, "\"" + pathFor(conf) + "\"", Path.GetDirectoryName(exe), null, "redis-console", OnExit);
             if (await WaitForPort(port, _p, 10000)) { SetState(ServiceState.Running); Log.Info(I18n.T("log.started", "Redis " + VersionLabel)); }
             else SetState(ServiceState.Error, _p.HasExited ? ExitReason(_p) : I18n.T("err.timeout"));
         }
