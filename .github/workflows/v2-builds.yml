@@ -124,6 +124,7 @@ jobs:
   engine:
     name: Portly engine with the packages (${{ matrix.os }})
     needs: collect
+    if: ${{ !cancelled() && needs.collect.result == 'success' }}
     strategy:
       fail-fast: false
       matrix:
