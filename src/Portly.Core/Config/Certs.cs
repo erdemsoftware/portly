@@ -24,7 +24,7 @@ namespace Portly.Config
     /// which can replace the authority (SslRepair.UpgradeCaAsync). An older unrestricted authority keeps working until
     /// the user chooses that step: a trusted authority is never replaced silently.
     /// </summary>
-    public static class Certs
+    public static partial class Certs
     {
         static string CaCrt { get { return Path.Combine(Paths.UserSsl, "portly-ca.crt"); } }
         /// <summary>CA private key, encrypted with Windows DPAPI for the current user (useless on another PC / account).</summary>
@@ -105,7 +105,7 @@ namespace Portly.Config
                 // web servers only: name constraints say nothing about code signing or e-mail, a leaked key could still forge those
                 req.CertificateExtensions.Add(new X509EnhancedKeyUsageExtension(new OidCollection { new Oid("1.3.6.1.5.5.7.3.1") }, false));
                 var ca = req.CreateSelfSigned(DateTimeOffset.Now.AddDays(-1), DateTimeOffset.Now.AddYears(10));
-                pkcs8 = rsa.Key.Export(CngKeyBlobFormat.Pkcs8PrivateBlob);
+                pkcs8 = ExportPkcs8(rsa);
                 return new X509Certificate2(ca.RawData);
             }
         }
@@ -218,18 +218,51 @@ namespace Portly.Config
             catch { return false; }
         }
 
-        static RSACng NewRsa()
+        /// <summary>The key as PKCS#8. Windows keys are CNG (what the .NET Framework build needs); macOS / Linux use the portable RSA API.</summary>
+        static byte[] ExportPkcs8(RSA rsa)
         {
+            var cng = rsa as RSACng;
+            if (cng != null) return cng.Key.Export(CngKeyBlobFormat.Pkcs8PrivateBlob);
+#if !NETFRAMEWORK
+            return rsa.ExportPkcs8PrivateKey();
+#else
+            throw new NotSupportedException();
+#endif
+        }
+
+        static RSA NewRsa()
+        {
+#if !NETFRAMEWORK
+            if (!OS.IsWindows) return RSA.Create(2048);
+#endif
             var p = new CngKeyCreationParameters { ExportPolicy = CngExportPolicies.AllowPlaintextExport, KeyUsage = CngKeyUsages.AllUsages };
             p.Parameters.Add(new CngProperty("Length", BitConverter.GetBytes(2048), CngPropertyOptions.None));
             return new RSACng(CngKey.Create(CngAlgorithm.Rsa, null, p));
         }
 
         /// <summary>Signer for site certificates. (CopyWithPrivateKey does not work with in-memory CNG keys on .NET Framework.)</summary>
-        static RSACng CaKeyRsa()
+        static RSA CaKeyRsa()
         {
             var der = LoadCaKey();
+#if !NETFRAMEWORK
+            if (!OS.IsWindows)
+            {
+                var r = RSA.Create();
+                int read;
+                r.ImportPkcs8PrivateKey(der, out read);
+                return r;
+            }
+#endif
             return new RSACng(CngKey.Import(der, CngKeyBlobFormat.Pkcs8PrivateBlob));
+        }
+
+        /// <summary>Key of a LAN certificate: a CSP key on Windows (CopyWithPrivateKey works with it on .NET Framework).</summary>
+        static RSA NewLanRsa()
+        {
+#if !NETFRAMEWORK
+            if (!OS.IsWindows) return RSA.Create(2048);
+#endif
+            return new RSACryptoServiceProvider(2048);
         }
 
         /// <summary>authorityKeyIdentifier extension = SEQUENCE { [0] keyIdentifier } (helps chain building).</summary>
@@ -307,7 +340,7 @@ namespace Portly.Config
                     var signer = X509SignatureGenerator.CreateForRSA(caKey, RSASignaturePadding.Pkcs1);
                     var cert = req.Create(ca.SubjectName, signer, DateTimeOffset.Now.AddDays(-1), notAfter, serial);
                     File.WriteAllText(crt, Pem("CERTIFICATE", cert.RawData) + Pem("CERTIFICATE", ca.RawData));
-                    File.WriteAllText(key, Pem("PRIVATE KEY", rsa.Key.Export(CngKeyBlobFormat.Pkcs8PrivateBlob)));
+                    File.WriteAllText(key, Pem("PRIVATE KEY", ExportPkcs8(rsa)));
                     File.WriteAllText(namesFile, namesText);
                 }
                 return Tuple.Create(crt, key);
@@ -329,7 +362,7 @@ namespace Portly.Config
                 var ca = EnsureCa();
                 if (LanCerts.TryGetValue(ip.ToString(), out have) && have.Issuer == ca.Subject) return have;
                 using (var caKey = CaKeyRsa())
-                using (var rsa = new RSACryptoServiceProvider(2048)) // a CSP key: CopyWithPrivateKey works with it on .NET Framework
+                using (var rsa = NewLanRsa())
                 {
                     // no CN: Windows and OpenSSL check a CN against the DNS name constraints when the SAN has no dNSName
                     var req = new CertificateRequest(new X500DistinguishedName("O=Portly, OU=LAN share"), rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
@@ -352,7 +385,7 @@ namespace Portly.Config
                     {
                         // through a PFX: SChannel (SslStream) needs a key it can open itself
                         var pfx = withKey.Export(X509ContentType.Pkcs12, "portly");
-                        have = new X509Certificate2(pfx, "portly", X509KeyStorageFlags.UserKeySet);
+                        have = new X509Certificate2(pfx, "portly", OS.IsWindows ? X509KeyStorageFlags.UserKeySet : X509KeyStorageFlags.DefaultKeySet);
                     }
                 }
                 LanCerts[ip.ToString()] = have;
@@ -418,6 +451,7 @@ namespace Portly.Config
         public static bool IsCaTrusted()
         {
             if (!File.Exists(CaCrt)) return false;
+            if (!OS.IsWindows) return IsTrustedUnix(CaCrt);
             try
             {
                 return InRootStore(new X509Certificate2(Encoding.ASCII.GetBytes(File.ReadAllText(CaCrt))).Thumbprint, StoreLocation.CurrentUser, StoreLocation.LocalMachine);
@@ -455,10 +489,11 @@ namespace Portly.Config
         /// <summary>The steps of TrustCa for a certificate file (the current authority or the one that replaces it).</summary>
         public static bool TrustFile(string file)
         {
+            if (!OS.IsWindows) return TrustFileUnix(file);
             try
             {
                 var ca = new X509Certificate2(Encoding.ASCII.GetBytes(File.ReadAllText(file)));
-                var code = WinUtil.RunElevated(Paths.Exe, "--trust-ca \"" + file + "\"");
+                var code = Elevate.RunSelf("--trust-ca", file);
                 if (code == 0 && InRootStore(ca.Thumbprint, StoreLocation.CurrentUser, StoreLocation.LocalMachine)) { Log.Info(I18n.T("log.caTrusted")); Tools.FirefoxTrust.EnableAll(); return true; }
                 using (var store = new X509Store(StoreName.Root, StoreLocation.CurrentUser))
                 {
@@ -476,6 +511,7 @@ namespace Portly.Config
         /// <summary>Runs in the elevated helper ("Portly.exe --trust-ca file"). Only accepts the Portly CA.</summary>
         public static int TrustCaElevated(string file)
         {
+            if (!OS.IsWindows) return TrustCaElevatedUnix(file);
             try
             {
                 var ca = new X509Certificate2(Encoding.ASCII.GetBytes(File.ReadAllText(file)));
@@ -545,6 +581,7 @@ namespace Portly.Config
         /// <summary>Remove one replaced authority from the user's and the machine's trusted roots (UAC for the machine's).</summary>
         public static bool UntrustCa(string thumbprint)
         {
+            if (!OS.IsWindows) return UntrustUnix(thumbprint);
             try
             {
                 using (var store = new X509Store(StoreName.Root, StoreLocation.CurrentUser))
@@ -552,7 +589,7 @@ namespace Portly.Config
                     store.Open(OpenFlags.ReadWrite);
                     foreach (var c in store.Certificates.Find(X509FindType.FindByThumbprint, thumbprint, false)) store.Remove(c);
                 }
-                if (InRootStore(thumbprint, StoreLocation.LocalMachine)) WinUtil.RunElevated(Paths.Exe, "--untrust-ca " + thumbprint);
+                if (InRootStore(thumbprint, StoreLocation.LocalMachine)) Elevate.RunSelf("--untrust-ca", thumbprint);
                 return !InRootStore(thumbprint, StoreLocation.CurrentUser, StoreLocation.LocalMachine);
             }
             catch (Exception ex) { Log.Warn("Untrust CA: " + ex.Message); return false; }
@@ -561,6 +598,7 @@ namespace Portly.Config
         /// <summary>Runs in the elevated helper ("Portly.exe --untrust-ca thumbprint"). Only removes a Portly CA.</summary>
         public static int UntrustCaElevated(string thumbprint)
         {
+            if (!OS.IsWindows) return UntrustCaElevatedUnix(thumbprint);
             try
             {
                 if (!Regex.IsMatch(thumbprint, "^[0-9A-Fa-f]{40}$")) return 3;

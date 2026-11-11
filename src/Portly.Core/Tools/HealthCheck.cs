@@ -17,7 +17,8 @@ namespace Portly.Tools
 
     /// <summary>
     /// Environment problems that commonly break local stacks (see docs/05-yaygin-sorunlar.md):
-    /// OneDrive folders, non-ASCII paths, long paths off, another PHP on PATH, a global PHPRC.
+    /// OneDrive / iCloud folders, non-ASCII paths, long paths off, another PHP on PATH, a global PHPRC.
+    /// The Windows-only checks (long paths, Smart App Control, PATH of the registry) are skipped on macOS and Linux.
     /// </summary>
     public static class HealthCheck
     {
@@ -33,7 +34,8 @@ namespace Portly.Tools
             var od = Environment.GetEnvironmentVariable("OneDrive") ?? "";
             foreach (var p in new[] { root, docs })
             {
-                if ((od != "" && p.StartsWith(od, StringComparison.OrdinalIgnoreCase)) || p.IndexOf("\\OneDrive", StringComparison.OrdinalIgnoreCase) >= 0)
+                if ((od != "" && p.StartsWith(od, StringComparison.OrdinalIgnoreCase)) || p.IndexOf("\\OneDrive", StringComparison.OrdinalIgnoreCase) >= 0
+                    || (!OS.IsWindows && (p.IndexOf("/OneDrive", StringComparison.OrdinalIgnoreCase) >= 0 || p.IndexOf("/Mobile Documents/", StringComparison.Ordinal) >= 0 || p.IndexOf("/Library/CloudStorage/", StringComparison.Ordinal) >= 0)))
                 {
                     list.Add(new HealthIssue { Key = "onedrive", Text = I18n.T("health.onedrive", p) });
                     break;
@@ -42,11 +44,11 @@ namespace Portly.Tools
 
             // 2. non-ASCII characters (Turkish İ ş ğ, Cyrillic ...) in paths that tools pass around
             var temp = Path.GetTempPath();
-            var bad = new[] { root, docs, temp }.Where(p => !IsAscii(p)).ToList();
+            var bad = OS.IsWindows ? new[] { root, docs, temp }.Where(p => !IsAscii(p)).ToList() : new List<string>();
             if (bad.Count > 0) list.Add(new HealthIssue { Key = "nonascii", Text = I18n.T("health.nonAscii", string.Join(", ", bad)) });
 
             // 3. long paths (node_modules, vendor) beyond 260 characters
-            if (OsInfo.IsWin10OrLater && !LongPathsEnabled())
+            if (OS.IsWindows && OsInfo.IsWin10OrLater && !LongPathsEnabled())
                 list.Add(new HealthIssue
                 {
                     Key = "longpaths",
@@ -56,12 +58,13 @@ namespace Portly.Tools
                 });
 
             // 4. a global PHPRC makes every php.exe read another php.ini
-            var phprc = Environment.GetEnvironmentVariable("PHPRC", EnvironmentVariableTarget.Machine) ?? Environment.GetEnvironmentVariable("PHPRC", EnvironmentVariableTarget.User);
+            var phprc = !OS.IsWindows ? Environment.GetEnvironmentVariable("PHPRC")
+                : Environment.GetEnvironmentVariable("PHPRC", EnvironmentVariableTarget.Machine) ?? Environment.GetEnvironmentVariable("PHPRC", EnvironmentVariableTarget.User);
             if (!string.IsNullOrEmpty(phprc) && !phprc.StartsWith(root, StringComparison.OrdinalIgnoreCase))
                 list.Add(new HealthIssue { Key = "phprc", Text = I18n.T("health.phprc", phprc) });
 
             // 5. another php.exe earlier on PATH (XAMPP, old installs): editors and terminals pick the wrong PHP
-            var other = FirstOnPath("php.exe");
+            var other = OS.IsWindows ? FirstOnPath("php.exe") : null;   // a system PHP is normal on macOS / Linux
             if (other != null && !other.StartsWith(root, StringComparison.OrdinalIgnoreCase))
                 list.Add(new HealthIssue { Key = "otherphp:" + other, Text = I18n.T("health.otherPhp", other) });
 
@@ -105,6 +108,7 @@ namespace Portly.Tools
         /// </summary>
         public static int AddDefenderExclusion()
         {
+            if (!OS.IsWindows) return -1;   // Windows Defender only
             var paths = new[] { Paths.Root, Settings.Current.DocumentRoot }.Distinct(StringComparer.OrdinalIgnoreCase)
                 .Select(p => "'" + p.Replace("'", "''") + "'");
             var cmd = "-NoProfile -ExecutionPolicy Bypass -Command \"Add-MpPreference -ExclusionPath " + string.Join(",", paths) + "\"";
@@ -114,6 +118,8 @@ namespace Portly.Tools
         /// <summary>LAN access: inbound firewall rule for the web ports (removed again when LAN access is turned off).</summary>
         public static int SetFirewallRule(bool allow)
         {
+            // macOS asks the user itself when a program starts to listen; Linux desktops have no firewall rule to add by default
+            if (!OS.IsWindows) return 0;
             var s = Settings.Current;
             var del = "advfirewall firewall delete rule name=\"Portly web\"";
             if (!allow) return WinUtil.RunElevated("netsh.exe", del);
