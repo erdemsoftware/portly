@@ -40,7 +40,7 @@ namespace Portly.Tools
         static string CheckTool()
         {
             var bin = MySqlService.BinDir;
-            return bin != null && File.Exists(Path.Combine(bin, "mariadb-check.exe")) ? "mariadb-check.exe" : "mysqlcheck.exe";
+            return bin != null && File.Exists(Path.Combine(bin, OS.Exe("mariadb-check"))) ? "mariadb-check" : "mysqlcheck";
         }
 
         /// <summary>
@@ -163,7 +163,7 @@ namespace Portly.Tools
             var folder = PackageTypes.ActiveFolder("mariadb");
             var data = MySqlService.DataDirFor(folder);
             var bin = MySqlService.BinDir;
-            var ariaChk = bin == null ? null : Path.Combine(bin, "aria_chk.exe");
+            var ariaChk = bin == null ? null : Path.Combine(bin, OS.Exe("aria_chk"));
             if (ariaChk == null || !File.Exists(ariaChk)) throw new Exception(I18n.T("err.notInstalled", "aria_chk"));
             var backup = Path.Combine(Paths.Backup, "mysql", "aria-" + DateTime.Now.ToString("yyyy-MM-dd_HHmmss"));
             Directory.CreateDirectory(Path.Combine(backup, "mysql"));

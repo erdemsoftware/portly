@@ -65,7 +65,7 @@ namespace Portly.Tools
 
         public static string WordPressLog(Site site)
         {
-            foreach (var root in new[] { site.Folder, site.DocRoot }.Distinct(StringComparer.OrdinalIgnoreCase))
+            foreach (var root in new[] { site.Folder, site.DocRoot }.Distinct(PathRules.Comparer))
             {
                 if (root == null) continue;
                 if (Directory.Exists(Path.Combine(root, "wp-content")) || File.Exists(Path.Combine(root, "wp-config.php")))
@@ -77,10 +77,11 @@ namespace Portly.Tools
         /// <summary>Entry belongs to the site: its folder (\ or /) or its host name appears in it.</summary>
         public static Func<string, bool> SiteMatcher(Site site)
         {
-            var back = site.Folder.TrimEnd('\\') + "\\";
-            var fwd = Paths.Fwd(back);
+            var back = OS.IsWindows ? site.Folder.TrimEnd('\\') + "\\" : site.Folder.TrimEnd('/') + "/";
+            var fwd = OS.IsWindows ? Paths.Fwd(back) : back;
+            var cmp = PathRules.Comparison;
             var host = new Regex(@"(?<![a-z0-9.-])" + Regex.Escape(site.Host) + @"(?![a-z0-9-])", RegexOptions.IgnoreCase);
-            return e => e.IndexOf(back, StringComparison.OrdinalIgnoreCase) >= 0 || e.IndexOf(fwd, StringComparison.OrdinalIgnoreCase) >= 0 || host.IsMatch(e);
+            return e => e.IndexOf(back, cmp) >= 0 || e.IndexOf(fwd, cmp) >= 0 || host.IsMatch(e);
         }
 
         /// <summary>Last bytes of a file (shared read; works while PHP / Apache write to it). Returns "" when missing.</summary>

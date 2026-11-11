@@ -32,7 +32,8 @@ namespace Portly.Tools
             public string UserHost { get { var b = Ip.GetAddressBytes(); return b[0] + "." + b[1] + ".%"; } }
         }
 
-        public static bool Supported { get { return OsInfo.IsWin10OrLater; } }
+        /// <summary>Windows 10+ only (WSL does not exist on macOS / Linux).</summary>
+        public static bool Supported { get { return OS.IsWindows && OsInfo.IsWin10OrLater; } }
 
         /// <summary>networkingMode=mirrored in %UserProfile%\.wslconfig.</summary>
         public static bool IsMirrored()
@@ -82,6 +83,7 @@ namespace Portly.Tools
         /// <summary>Set up access. Returns the text with the connection details; throws with the error.</summary>
         public static string Enable()
         {
+            if (!OS.IsWindows) throw new NotSupportedException("WSL access exists on Windows only.");
             var s = Settings.Current;
             if (ServiceManager.MySql.State != ServiceState.Running) throw new Exception(I18n.T("err.mysqlNotRunning"));
             var a = Find();
@@ -119,6 +121,7 @@ namespace Portly.Tools
         /// <summary>Remove user, firewall rule and bind address. Returns false when the user cancelled UAC.</summary>
         public static bool Disable()
         {
+            if (!OS.IsWindows) return true;   // nothing was ever set up
             var s = Settings.Current;
             if (s.WslUserHost != "" && ServiceManager.MySql.State == ServiceState.Running) DropUser(s.WslUserHost);
             if (WinUtil.RunElevated("netsh.exe", "advfirewall firewall delete rule name=\"" + RuleName + "\"") == -2) return false;

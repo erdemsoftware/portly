@@ -89,7 +89,7 @@ namespace Portly.Config
         static readonly string[] ProjectMarkers =
         {
             "index.php", "index.html", "index.htm", "composer.json", "artisan", "wp-config.php", "wp-config-sample.php",
-            @"public\index.php", @"public\index.html", @"web\index.php", @"webroot\index.php", @"public_html\index.php",
+            "public/index.php", "public/index.html", "web/index.php", "webroot/index.php", "public_html/index.php",   // "/" is mapped to the OS separator
         };
 
         /// <summary>Apps of other platforms (Python, Flutter, Go, Rust, Java): not web sites, and not groups either.</summary>
@@ -202,7 +202,7 @@ namespace Portly.Config
             try
             {
                 if (IsOtherApp(dir)) return false;
-                if (ProjectMarkers.Any(m => File.Exists(Path.Combine(dir, m)))) return true;
+                if (ProjectMarkers.Any(m => File.Exists(Path.Combine(dir, m.Replace('/', Path.DirectorySeparatorChar))))) return true;
                 foreach (var sub in new[] { "public", "web", "webroot", "public_html" })
                 {
                     var p = Path.Combine(dir, sub);
@@ -312,6 +312,7 @@ namespace Portly.Config
             if (IsPublicName(host)) site.LocalHost = host + "." + Settings.Current.Tld;
 
             var customRoot = ini.Get(name, "root", "");
+            if (!OS.IsWindows) customRoot = customRoot.Replace('\\', '/');   // sites.ini written on Windows
             if (customRoot != "" && !customRoot.Contains("..") && Directory.Exists(Path.Combine(dir, customRoot)))
                 site.DocRoot = Path.Combine(dir, customRoot);
             else
@@ -395,6 +396,54 @@ namespace Portly.Config
                 if (f != "" && !list.Contains(f, StringComparer.OrdinalIgnoreCase)) list.Add(f);
             }
             return list;
+        }
+    }
+
+    /// <summary>
+    /// Path comparison that follows the file system: case-insensitive on Windows and macOS (the default there),
+    /// ordinal on Linux. Folder prefix checks always look at whole path segments ("C:\www2" is not inside "C:\www").
+    /// </summary>
+    public static class PathRules
+    {
+        public static StringComparison Comparison { get { return OS.IsLinux ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase; } }
+
+        public static StringComparer Comparer { get { return OS.IsLinux ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase; } }
+
+        static string Norm(string p)
+        {
+            if (string.IsNullOrEmpty(p)) return "";
+            try { p = Path.GetFullPath(p); } catch { }
+            var root = "";
+            try { root = Path.GetPathRoot(p) ?? ""; } catch { }
+            return p.Length > root.Length ? p.TrimEnd('\\', '/') : p;
+        }
+
+        /// <summary>Same folder / file (full paths, trailing separators ignored).</summary>
+        public static bool Same(string a, string b)
+        {
+            if (string.IsNullOrEmpty(a) || string.IsNullOrEmpty(b)) return false;
+            return string.Equals(Norm(a), Norm(b), Comparison);
+        }
+
+        /// <summary>The path is the folder itself or inside it (whole segments only).</summary>
+        public static bool IsUnder(string path, string folder)
+        {
+            if (string.IsNullOrEmpty(path) || string.IsNullOrEmpty(folder)) return false;
+            var p = Norm(path);
+            var f = Norm(folder);
+            if (string.Equals(p, f, Comparison)) return true;
+            var prefix = f.EndsWith(Path.DirectorySeparatorChar.ToString()) || f.EndsWith("/") ? f : f + Path.DirectorySeparatorChar;
+            return p.StartsWith(prefix, Comparison);
+        }
+
+        /// <summary>Path relative to <paramref name="root"/> with "/" separators (for archives and remote paths).</summary>
+        public static string RelativeTo(string path, string root)
+        {
+            var r = Norm(root);
+            var p = path ?? "";
+            if (p.Length > r.Length && p.StartsWith(r, Comparison)) p = p.Substring(r.Length);
+            p = p.TrimStart('\\', '/');
+            return OS.IsWindows ? p.Replace('\\', '/') : p;
         }
     }
 }

@@ -10,7 +10,14 @@ namespace Portly.Core
 {
     public static class Net
     {
-        public static string UserAgent { get { return "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Portly/" + AppInfo.VersionText + " (+" + AppInfo.GitHubUrl + ")"; } }
+        public static string UserAgent
+        {
+            get
+            {
+                var platform = OS.IsWindows ? "Windows NT 10.0; Win64; x64" : OS.IsMac ? "Macintosh; Intel Mac OS X 10_15_7" : "X11; Linux " + (OS.Arch == "arm64" ? "aarch64" : "x86_64");
+                return "Mozilla/5.0 (" + platform + ") Portly/" + AppInfo.VersionText + " (+" + AppInfo.GitHubUrl + ")";
+            }
+        }
 
         public static void Init()
         {
@@ -18,7 +25,7 @@ namespace Portly.Core
             // Windows 10+ lets the OS choose (TLS 1.2 / 1.3).
             try
             {
-                if (OsInfo.IsWin10OrLater) ServicePointManager.SecurityProtocol = SecurityProtocolType.SystemDefault;
+                if (!OS.IsWindows || OsInfo.IsWin10OrLater) ServicePointManager.SecurityProtocol = SecurityProtocolType.SystemDefault;
                 else ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls11;
             }
             catch { ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12; }

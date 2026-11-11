@@ -130,7 +130,7 @@ namespace Portly.Tools
                     }
                     // Node apps (Next, Nuxt, Angular ...) have no index file to recognise them by: keep them listed
                     if (tt.Item3 == "node") Sites.MarkNodeProject(siteName);
-                    var after = tt.Item3 == "node" ? " && echo. && echo " + I18n.T("project.nodeDone", name) : " && echo. && echo " + I18n.T("project.laravelDone");
+                    var after = EchoAfter(tt.Item3 == "node" ? I18n.T("project.nodeDone", name) : I18n.T("project.laravelDone"));
                     Terminal.Run(root, string.Format(tt.Item4, name) + after);
                     return I18n.T("project.composerStarted", tt.Item2) + dbMsg;
                 default:
@@ -144,6 +144,15 @@ namespace Portly.Tools
             Log.Info(I18n.T("log.projectCreated", name));
             return I18n.T("project.created", name) + dbMsg;
         }
+
+        /// <summary>" && echo. && echo TEXT" for cmd.exe; the same for sh with the text single-quoted.</summary>
+        public static string EchoAfter(string text)
+        {
+            return OS.IsWindows ? " && echo. && echo " + text : " && echo && echo " + Deploy.Sh(text);
+        }
+
+        /// <summary>The PHP command line program of a PHP version folder (php.exe on Windows, php on macOS / Linux).</summary>
+        public static string PhpCli(string phpDir) { return Path.Combine(phpDir, OS.Exe("php")); }
 
         static readonly Dictionary<string, string> WpLocales = new Dictionary<string, string>
         {
@@ -178,7 +187,7 @@ namespace Portly.Tools
                 await Installer.InstallAsync(entry, null, ct);
             }
             status(I18n.T("project.wpInstalling"));
-            var php = Path.Combine(PackageTypes.ActiveDir("php"), "php.exe");
+            var php = PhpCli(PackageTypes.ActiveDir("php"));
             var phar = Path.Combine(PackageTypes.ActiveDir("wpcli"), "wp-cli.phar");
             var url = new Config.Site { Host = host }.PreferredUrl.TrimEnd('/');
             var password = RandomSalt().Replace("\"", "").Replace("'", "").Replace("%", "").Replace("^", "").Replace("&", "").Replace("<", "").Replace(">", "").Replace("|", "").Substring(0, 16);
@@ -300,13 +309,105 @@ namespace Portly.Tools
             return sb.ToString();
         }
 
-        /// <summary>Move a project to the Recycle Bin (recoverable).</summary>
+        /// <summary>Move a project to the Recycle Bin (recoverable). Windows only; MoveToTrash works everywhere.</summary>
         public static void DeleteToRecycleBin(Site site)
         {
-            Microsoft.VisualBasic.FileIO.FileSystem.DeleteDirectory(site.Folder,
+            MoveToTrash(site);
+        }
+
+        /// <summary>
+        /// Move a project's folder to the trash so it can be restored: the Recycle Bin on Windows, the Finder's Trash on
+        /// macOS (keeps "Put Back"), gio trash / the FreeDesktop trash folder on Linux. Throws when it cannot.
+        /// </summary>
+        public static void MoveToTrash(Site site)
+        {
+            MoveFolderToTrash(site.Folder);
+            Log.Info(I18n.T("log.projectDeleted", site.Name));
+        }
+
+        /// <summary>The same for any folder (the tests use temporary folders).</summary>
+        public static void MoveFolderToTrash(string folder)
+        {
+            if (string.IsNullOrEmpty(folder) || !Directory.Exists(folder)) throw new DirectoryNotFoundException(folder);
+            if (OS.IsWindows) { WindowsRecycle(folder); return; }
+            folder = Path.GetFullPath(folder).TrimEnd('/');
+            if (OS.IsMac)
+            {
+                var r = ProcessUtil.Run("/usr/bin/osascript", "-e " + Deploy.Arg(MacTrashScript(folder)), null, null, 120000);
+                if (!r.Ok || Directory.Exists(folder)) throw new IOException("osascript: " + (r.Output ?? "").Trim());
+                return;
+            }
+            var gio = FindOnPath("gio");
+            if (gio != null)
+            {
+                var r = ProcessUtil.Run(gio, "trash " + Deploy.Arg(folder), null, null, 120000);
+                if (r.Ok && !Directory.Exists(folder)) return;
+                Log.Warn("gio trash: " + (r.Output ?? "").Trim());
+            }
+            FreeDesktopTrash(folder, DefaultTrashDir());
+        }
+
+        static void WindowsRecycle(string folder)
+        {
+            Microsoft.VisualBasic.FileIO.FileSystem.DeleteDirectory(folder,
                 Microsoft.VisualBasic.FileIO.UIOption.OnlyErrorDialogs,
                 Microsoft.VisualBasic.FileIO.RecycleOption.SendToRecycleBin);
-            Log.Info(I18n.T("log.projectDeleted", site.Name));
+        }
+
+        /// <summary>AppleScript that has the Finder delete a folder (to the Trash); quotes and backslashes in the path are escaped.</summary>
+        public static string MacTrashScript(string path)
+        {
+            var p = (path ?? "").Replace("\\", "\\\\").Replace("\"", "\\\"");
+            return "tell application \"Finder\" to delete POSIX file \"" + p + "\"";
+        }
+
+        static string FindOnPath(string name)
+        {
+            foreach (var dir in (Environment.GetEnvironmentVariable("PATH") ?? "").Split(Path.PathSeparator).Concat(new[] { "/usr/bin", "/usr/local/bin", "/bin" }))
+            {
+                if (dir == "") continue;
+                var f = Path.Combine(dir, name);
+                if (File.Exists(f)) return f;
+            }
+            return null;
+        }
+
+        /// <summary>The user's trash folder: $XDG_DATA_HOME/Trash or ~/.local/share/Trash.</summary>
+        public static string DefaultTrashDir()
+        {
+            var data = Environment.GetEnvironmentVariable("XDG_DATA_HOME");
+            if (string.IsNullOrEmpty(data)) data = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".local", "share");
+            return Path.Combine(data, "Trash");
+        }
+
+        /// <summary>
+        /// FreeDesktop.org trash: the folder moves into TRASH/files under a free name and TRASH/info gets the matching
+        /// .trashinfo (original path and time), which is what file managers read to restore it. Returns the new path.
+        /// </summary>
+        public static string FreeDesktopTrash(string folder, string trashDir)
+        {
+            var files = Path.Combine(trashDir, "files");
+            var info = Path.Combine(trashDir, "info");
+            Directory.CreateDirectory(files);
+            Directory.CreateDirectory(info);
+            var full = Path.GetFullPath(folder).TrimEnd('/', '\\');
+            var baseName = Path.GetFileName(full);
+            var name = baseName;
+            for (int i = 2; File.Exists(Path.Combine(info, name + ".trashinfo")) || Directory.Exists(Path.Combine(files, name)) || File.Exists(Path.Combine(files, name)); i++)
+                name = baseName + "." + i;
+            var infoFile = Path.Combine(info, name + ".trashinfo");
+            // the info file first: a crash in between leaves a harmless info file, never an unrecoverable folder
+            File.WriteAllText(infoFile, "[Trash Info]\nPath=" + TrashPathEncode(full) + "\nDeletionDate=" + DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss") + "\n", new UTF8Encoding(false));
+            var target = Path.Combine(files, name);
+            try { Directory.Move(full, target); }
+            catch { try { File.Delete(infoFile); } catch { } throw; }
+            return target;
+        }
+
+        /// <summary>Percent-encoded absolute path as written in a .trashinfo file ("/" stays).</summary>
+        public static string TrashPathEncode(string path)
+        {
+            return string.Join("/", (path ?? "").Split('/').Select(Uri.EscapeDataString));
         }
     }
 }

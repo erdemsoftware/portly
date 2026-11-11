@@ -22,7 +22,10 @@ namespace Portly.Tools
 
         public static string Dir { get { return Path.Combine(Paths.Usr, "hooks"); } }
 
-        public static string GlobalFile(string ev) { return Path.Combine(Dir, ev + ".cmd"); }
+        /// <summary>usr\hooks\EVENT.cmd on Windows, usr/hooks/EVENT.sh on macOS / Linux (run with sh).</summary>
+        public static string GlobalFile(string ev) { return Path.Combine(Dir, ev + HookExt); }
+
+        static string HookExt { get { return OS.IsWindows ? ".cmd" : ".sh"; } }
 
         public static bool IsEvent(string ev) { return Events.Contains(ev); }
 
@@ -50,7 +53,7 @@ namespace Portly.Tools
         static List<Tuple<Site, string>> Collect(string ev, IEnumerable<Site> sites)
         {
             var list = new List<Tuple<Site, string>>();
-            if (Features.IsOn("cli") && File.Exists(GlobalFile(ev))) list.Add(Tuple.Create((Site)null, "\"" + GlobalFile(ev) + "\""));
+            if (Features.IsOn("cli") && File.Exists(GlobalFile(ev))) list.Add(Tuple.Create((Site)null, (OS.IsWindows ? "" : "sh ") + "\"" + GlobalFile(ev) + "\""));
             if (Features.IsOn("projectFile"))
                 foreach (var s in sites.Where(x => x.Valid))
                 {
@@ -73,12 +76,13 @@ namespace Portly.Tools
         {
             var env = Jobs.EnvFor(site);
             env["PORTLY_EVENT"] = ev;
-            var who = site == null ? "usr\\hooks\\" + ev + ".cmd" : site.Name + " (portly.yml)";
+            var sep = Path.DirectorySeparatorChar;
+            var who = site == null ? "usr" + sep + "hooks" + sep + ev + HookExt : site.Name + " (portly.yml)";
             Log.Info(I18n.T("hooks.running", ev, who));
-            var cmd = Environment.GetEnvironmentVariable("ComSpec");
-            if (string.IsNullOrEmpty(cmd) || !File.Exists(cmd)) cmd = "cmd.exe";
+            string cmd, cmdArgs;
+            Jobs.ShellCommand(command, out cmd, out cmdArgs);
             var dir = site != null && Directory.Exists(site.Folder) ? site.Folder : Paths.Root;
-            var r = ProcessUtil.Run(cmd, "/d /s /c \"" + command + "\"", dir, env, Settings.Current.HookTimeoutSeconds * 1000);
+            var r = ProcessUtil.Run(cmd, cmdArgs, dir, env, Settings.Current.HookTimeoutSeconds * 1000);
             foreach (var line in r.Output.Split('\n').Select(l => l.TrimEnd()).Where(l => l != "").Take(200))
                 Log.Info("  [" + ev + "] " + line);
             if (r.TimedOut) Log.Warn(I18n.T("hooks.timeout", who, Settings.Current.HookTimeoutSeconds));

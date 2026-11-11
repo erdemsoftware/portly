@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using Portly.Config;
 using Portly.Core;
 
 namespace Portly.Tools
@@ -84,7 +85,7 @@ namespace Portly.Tools
         static bool Same(string app, string exe)
         {
             if (string.IsNullOrEmpty(app)) return false;
-            try { return string.Equals(Path.GetFullPath(Environment.ExpandEnvironmentVariables(app)), Path.GetFullPath(exe), StringComparison.OrdinalIgnoreCase); }
+            try { return string.Equals(Path.GetFullPath(Environment.ExpandEnvironmentVariables(app)), Path.GetFullPath(exe), PathRules.Comparison); }
             catch { return false; }
         }
 
@@ -131,6 +132,7 @@ namespace Portly.Tools
         /// </summary>
         public static void Open(int port, bool automatic)
         {
+            if (!OS.IsWindows) return;   // the Windows Firewall only; elsewhere the share just binds
             lock (Busy)
             {
                 Say(port, null);
@@ -163,6 +165,7 @@ namespace Portly.Tools
         /// <summary>After a share stopped: its rule goes, with anything else left behind, in one UAC prompt. Waits for that prompt.</summary>
         public static void Close(int port)
         {
+            if (!OS.IsWindows) return;   // the Windows Firewall only; elsewhere the share just binds
             lock (Busy)
             {
                 lock (Notes) Notes.Remove(port);
@@ -180,6 +183,7 @@ namespace Portly.Tools
         /// </summary>
         public static void Prepare(IEnumerable<int> automatic)
         {
+            if (!OS.IsWindows) return;   // the Windows Firewall only; elsewhere the share just binds
             lock (Busy)
             {
                 var view = Read();

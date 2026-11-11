@@ -43,8 +43,15 @@ namespace Portly.Core
 
         public static Feature Get(string id) { return All.FirstOrDefault(f => f.Id == id); }
 
+        /// <summary>Features that exist on Windows only (WSL, Windows services): never on, and not offered, elsewhere.</summary>
+        public static readonly string[] WindowsOnly = { "wsl", "serviceMode" };
+
+        /// <summary>Can this feature exist on this operating system? (Settings > Features lists only these.)</summary>
+        public static bool IsAvailable(string id) { return OS.IsWindows || !WindowsOnly.Contains(id); }
+
         public static bool IsOn(string id)
         {
+            if (!IsAvailable(id)) return false;
             var f = Get(id);
             return Settings.Current.Raw.GetBool("features", id, f != null && f.Default);
         }

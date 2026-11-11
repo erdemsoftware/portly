@@ -196,7 +196,7 @@ namespace Portly.Tools
             {
                 // 5.7 -> 8.0: the checks the old server can do itself (old temporal types, invalid table definitions)
                 status(I18n.T("dbv.checking"));
-                var r = await Task.Run(() => Database.Tool("mysqlcheck.exe", "--all-databases --check-upgrade", 3600000));
+                var r = await Task.Run(() => Database.Tool("mysqlcheck", "--all-databases --check-upgrade", 3600000));
                 var problems = Database.Clean(r).Split('\n').Where(l => l.Contains("error") || l.Contains("upgrade")).ToList();
                 if (!r.Ok || problems.Count > 0) notes += "\n" + I18n.T("dbv.checkNotes", string.Join("\n", problems.Take(10)));
             }
@@ -230,15 +230,15 @@ namespace Portly.Tools
                 if (p.Move == DbMove.Copy && p.ToEngine == "mariadb")
                 {
                     status(I18n.T("dbv.upgrading"));
-                    var exe = File.Exists(Path.Combine(MySqlService.BinDir, "mariadb-upgrade.exe")) ? "mariadb-upgrade.exe" : "mysql_upgrade.exe";
+                    var exe = File.Exists(Path.Combine(MySqlService.BinDir, OS.Exe("mariadb-upgrade"))) ? "mariadb-upgrade" : "mysql_upgrade";
                     var r = await Task.Run(() => Database.Tool(exe, "--force", 3600000));
                     if (!r.Ok) notes += "\n" + I18n.T("dbv.upgradeWarn", ApacheService.LastLines(r.Output, 6));
                 }
-                else if (p.Move == DbMove.Copy && toVer < new Version(8, 0, 16) && File.Exists(Path.Combine(MySqlService.BinDir, "mysql_upgrade.exe")))
+                else if (p.Move == DbMove.Copy && toVer < new Version(8, 0, 16) && File.Exists(Path.Combine(MySqlService.BinDir, OS.Exe("mysql_upgrade"))))
                 {
                     // before 8.0.16 MySQL did not upgrade the system tables at start
                     status(I18n.T("dbv.upgrading"));
-                    var r = await Task.Run(() => Database.Tool("mysql_upgrade.exe", "--force", 3600000));
+                    var r = await Task.Run(() => Database.Tool("mysql_upgrade", "--force", 3600000));
                     if (!r.Ok) notes += "\n" + I18n.T("dbv.upgradeWarn", ApacheService.LastLines(r.Output, 6));
                 }
 
@@ -292,18 +292,17 @@ namespace Portly.Tools
             Directory.CreateDirectory(dir);
             var file = Path.Combine(dir, "move-" + DateTime.Now.ToString("yyyyMMdd-HHmmss") + ".sql");
             if (names.Count == 0) { File.WriteAllText(file, ""); return file; }
-            var r = Database.Tool("mysqldump.exe", "--databases " + string.Join(" ", names.Select(n => "\"" + n + "\"")) +
+            var r = Database.Tool("mysqldump", "--databases " + string.Join(" ", names.Select(n => "\"" + n + "\"")) +
                 " --routines --events --triggers --single-transaction --default-character-set=utf8mb4 --result-file=\"" + file + "\"", 6 * 3600 * 1000);
             if (!r.Ok || !File.Exists(file)) throw new Exception(Database.Clean(r));
             return file;
         }
 
-        /// <summary>Copy (never move) a data folder; robocopy keeps large files fast and handles long paths.</summary>
+        /// <summary>Copy (never move) a data folder; robocopy keeps large files fast and handles long paths (cp -a elsewhere).</summary>
         static void CopyDir(string from, string to)
         {
             if (Directory.Exists(to)) Directory.Delete(to, true);   // only empty folders get here (see PlanFor)
-            var r = ProcessUtil.Run("robocopy.exe", "\"" + from + "\" \"" + to + "\" /E /R:1 /W:1 /NFL /NDL /NJH /NJS /NP", null, null, 24 * 3600 * 1000);
-            if (r.ExitCode >= 8 || r.TimedOut) throw new Exception("robocopy: " + r.Output);
+            Database.CopyDirectory(from, to);
             // the marker belongs to the old server; the new one writes its own after the first start
             try { File.Delete(Path.Combine(to, MarkerFile)); } catch { }
         }

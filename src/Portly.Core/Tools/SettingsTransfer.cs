@@ -4,6 +4,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Text;
+using Portly.Config;
 using Portly.Core;
 using Portly.Packages;
 
@@ -26,7 +27,8 @@ namespace Portly.Tools
         const string SitesEntry = "sites.ini";
         const string PackagesEntry = "packages.ini";
         const string TemplatesDir = "templates/";
-        const string Platform = "windows";
+        /// <summary>"windows", "macos" or "linux": written into the manifest (a file without one came from Windows).</summary>
+        static string Platform { get { return OS.Name; } }
 
         /// <summary>Keys that only make sense on this computer.</summary>
         static readonly string[][] Skip =
@@ -63,15 +65,14 @@ namespace Portly.Tools
         /// <summary>C:\Users\ali\Sites\www -> ~/Sites/www (null when the folder is not under the home folder).</summary>
         static string ToHome(string path)
         {
-            var home = Home.TrimEnd('\\');
-            if (!path.StartsWith(home + "\\", StringComparison.OrdinalIgnoreCase)) return null;
-            return "~/" + path.Substring(home.Length + 1).Replace('\\', '/');
+            if (PathRules.Same(path, Home) || !PathRules.IsUnder(path, Home)) return null;
+            return "~/" + PathRules.RelativeTo(path, Home);
         }
 
         static string FromHome(string value)
         {
             if (string.IsNullOrEmpty(value) || !value.StartsWith("~/")) return null;
-            return Path.Combine(Home, value.Substring(2).Replace('/', '\\'));
+            return Path.Combine(Home, value.Substring(2).Replace('/', Path.DirectorySeparatorChar));
         }
 
         public static void Export(string zipPath)
@@ -158,8 +159,8 @@ namespace Portly.Tools
                         bool known = e.FullName == ManifestEntry || e.FullName == SettingsEntry || e.FullName == SitesEntry || e.FullName == PackagesEntry ||
                                      (e.FullName.StartsWith(TemplatesDir) && !e.FullName.Contains("..") && !e.FullName.Contains(":"));
                         if (!known) continue;
-                        var dest = Path.GetFullPath(Path.Combine(tmp, e.FullName.Replace('/', '\\')));
-                        if (!dest.StartsWith(tmp + "\\", StringComparison.OrdinalIgnoreCase)) continue;
+                        var dest = Path.GetFullPath(Path.Combine(tmp, e.FullName.Replace('/', Path.DirectorySeparatorChar)));
+                        if (PathRules.Same(dest, tmp) || !PathRules.IsUnder(dest, tmp)) continue;
                         Directory.CreateDirectory(Path.GetDirectoryName(dest));
                         e.ExtractToFile(dest, true);
                     }
@@ -167,7 +168,7 @@ namespace Portly.Tools
 
                 // files from the first builds have no manifest: they were written on Windows
                 var manifest = new Ini(Path.Combine(tmp, ManifestEntry));
-                bool samePlatform = manifest.Get("portly", "platform", Platform) == Platform;
+                bool samePlatform = manifest.Get("portly", "platform", "windows") == Platform;
 
                 // settings: copy everything except machine-bound keys (and other-platform keys)
                 var ini = new Ini(Path.Combine(tmp, SettingsEntry));

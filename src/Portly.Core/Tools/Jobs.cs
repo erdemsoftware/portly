@@ -186,7 +186,7 @@ namespace Portly.Tools
             if (site != null && site.PhpFolder != "") dirs.Add(Path.Combine(Paths.BinOf("php"), site.PhpFolder));
             dirs.AddRange(Terminal.PathDirs());
             dirs.Add(Environment.GetEnvironmentVariable("PATH") ?? "");
-            env["PATH"] = string.Join(";", dirs.Where(d => d != "").Distinct(StringComparer.OrdinalIgnoreCase));
+            env["PATH"] = string.Join(Path.PathSeparator.ToString(), dirs.Where(d => d != "").Distinct(PathRules.Comparer));
             env["PORTLY_ROOT"] = Paths.Root;
             if (site != null)
             {
@@ -252,11 +252,27 @@ namespace Portly.Tools
             Fire();
         }
 
+        /// <summary>
+        /// The shell that runs a job / hook command line: cmd.exe /d /s /c "..." on Windows, /bin/sh -c "..." on macOS / Linux.
+        /// </summary>
+        public static void ShellCommand(string command, out string exe, out string args)
+        {
+            if (OS.IsWindows)
+            {
+                exe = Environment.GetEnvironmentVariable("ComSpec");
+                if (string.IsNullOrEmpty(exe) || !File.Exists(exe)) exe = "cmd.exe";
+                args = "/d /s /c \"" + command + "\"";
+                return;
+            }
+            exe = File.Exists("/bin/sh") ? "/bin/sh" : "sh";
+            args = "-c " + Deploy.Arg(command);
+        }
+
         static Process Spawn(Job job, Site site, string command, Action<Process> onExit)
         {
-            var cmd = Environment.GetEnvironmentVariable("ComSpec");
-            if (string.IsNullOrEmpty(cmd) || !File.Exists(cmd)) cmd = "cmd.exe";
-            var psi = new ProcessStartInfo(cmd, "/d /s /c \"" + command + "\"")
+            string cmd, cmdArgs;
+            ShellCommand(command, out cmd, out cmdArgs);
+            var psi = new ProcessStartInfo(cmd, cmdArgs)
             {
                 UseShellExecute = false,
                 CreateNoWindow = true,   // own hidden console, so Ctrl+C reaches the whole job and nothing else

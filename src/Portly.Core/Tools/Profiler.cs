@@ -94,11 +94,11 @@ namespace Portly.Tools
         {
             var list = new List<ProfileFile>();
             if (!Directory.Exists(Dir)) return list;
-            var prefix = site == null ? null : site.Folder.TrimEnd('\\') + "\\";
+            var prefix = site == null ? null : OS.IsWindows ? site.Folder.TrimEnd('\\') + "\\" : site.Folder.TrimEnd('/') + "/";
             foreach (var fi in new DirectoryInfo(Dir).GetFiles("cachegrind.out.*").OrderByDescending(f => f.LastWriteTimeUtc).Take(500))
             {
                 var script = HeaderCmd(fi.FullName);
-                if (prefix != null && !script.Replace('/', '\\').StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) continue;
+                if (prefix != null && !(OS.IsWindows ? script.Replace('/', '\\') : script).StartsWith(prefix, PathRules.Comparison)) continue;
                 list.Add(new ProfileFile { File = fi.FullName, Script = script, Request = RequestFromName(fi.Name), Time = fi.LastWriteTime, Bytes = fi.Length });
             }
             return list;

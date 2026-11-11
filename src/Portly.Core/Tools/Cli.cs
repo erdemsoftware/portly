@@ -56,9 +56,13 @@ namespace Portly.Tools
         static void PrepareConsole()
         {
             // output redirected to a file / pipe: use it as it is; otherwise print into the console we were started from
-            var h = GetStdHandle(-11);
-            bool redirected = h != IntPtr.Zero && h != new IntPtr(-1) && GetFileType(h) != 0 && GetFileType(h) != 2;
-            if (!redirected) AttachConsole(-1);
+            // (macOS / Linux: the program already runs in the terminal it was started from)
+            if (OS.IsWindows)
+            {
+                var h = GetStdHandle(-11);
+                bool redirected = h != IntPtr.Zero && h != new IntPtr(-1) && GetFileType(h) != 0 && GetFileType(h) != 2;
+                if (!redirected) AttachConsole(-1);
+            }
             try
             {
                 var stream = Console.OpenStandardOutput();
@@ -123,7 +127,13 @@ namespace Portly.Tools
             var until = DateTime.Now.AddMilliseconds(timeoutMs);
             while (true)
             {
+#if NETFRAMEWORK
                 var c = new NamedPipeClientStream(".", PipeName, PipeDirection.InOut);
+#else
+                // on macOS / Linux the pipe is a Unix socket: only talk to one owned by this user
+                var c = OS.IsWindows ? new NamedPipeClientStream(".", PipeName, PipeDirection.InOut)
+                                     : new NamedPipeClientStream(".", PipeName, PipeDirection.InOut, PipeOptions.CurrentUserOnly);
+#endif
                 try
                 {
                     c.Connect(Math.Max(100, Math.Min(1000, (int)(until - DateTime.Now).TotalMilliseconds)));
@@ -138,7 +148,9 @@ namespace Portly.Tools
         static bool GuiRunning()
         {
             Mutex m;
-            if (Mutex.TryOpenExisting(@"Local\" + InstanceKey, out m)) { m.Dispose(); return true; }
+            // the running program holds a mutex named like the pipe (Local\ is the default scope on Windows)
+            try { if (Mutex.TryOpenExisting(OS.IsWindows ? @"Local\" + InstanceKey : InstanceKey, out m)) { m.Dispose(); return true; } }
+            catch { }
             return false;
         }
 
@@ -163,6 +175,7 @@ namespace Portly.Tools
         {
             try
             {
+                if (!OS.IsWindows) { EnsureShellFile(dir); return; }
                 var exe = Paths.Exe;
                 string rel = exe.StartsWith(dir.TrimEnd('\\') + "\\", StringComparison.OrdinalIgnoreCase) ? "%~dp0" + exe.Substring(dir.TrimEnd('\\').Length + 1) : RelativeFrom(dir, exe);
                 // a batch file waits for the GUI exe to finish, so the prompt returns after the answer is printed
@@ -173,6 +186,26 @@ namespace Portly.Tools
                 File.WriteAllText(file, text, new UTF8Encoding(false));
             }
             catch (Exception ex) { Log.Warn("portly.cmd: " + ex.Message); }
+        }
+
+        /// <summary>Text of the "portly" command for macOS / Linux: a sh script that hands everything to the program.</summary>
+        public static string ShellFileText(string exe)
+        {
+            return "#!/bin/sh\n# Portly command line - see \"portly help\"\nexec " + Deploy.Sh(exe) + " \"$@\"\n";
+        }
+
+        /// <summary>The "portly" sh script in <paramref name="dir"/> (macOS / Linux counterpart of portly.cmd).</summary>
+        public static void EnsureShellFile(string dir)
+        {
+            var text = ShellFileText(Paths.Exe);
+            var file = Path.Combine(dir, "portly");
+            if (File.Exists(file) && File.ReadAllText(file) == text) return;
+            Directory.CreateDirectory(dir);
+            File.WriteAllText(file, text, new UTF8Encoding(false));
+#if !NETFRAMEWORK
+            File.SetUnixFileMode(file, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute
+                | UnixFileMode.GroupRead | UnixFileMode.GroupExecute | UnixFileMode.OtherRead | UnixFileMode.OtherExecute);
+#endif
         }
 
         static string RelativeFrom(string dir, string file)

@@ -46,7 +46,7 @@ namespace Portly.Tools
                 status(I18n.T("log.downloading", "cloudflared"));
                 await Installer.InstallAsync(entry, null, CancellationToken.None);
             }
-            return Path.Combine(PackageTypes.ActiveDir("cloudflared"), "cloudflared.exe");
+            return Path.Combine(PackageTypes.ActiveDir("cloudflared"), OS.Exe("cloudflared"));
         }
 
         /// <summary>Starts the tunnel and returns the public URL (fixed address when one is set and the account is connected).</summary>
