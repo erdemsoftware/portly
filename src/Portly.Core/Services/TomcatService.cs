@@ -209,7 +209,7 @@ namespace Portly.Services
             });
             if (error != null) { SetState(ServiceState.Error, error); return; }
             if (!EnsurePortFree(port)) return;
-            _p = Launch(Path.Combine(java, "bin", "java.exe"), JavaArgs(home, cbase), cbase, BuildEnvironment(java, home, cbase), @"tomcat\console", OnExit);
+            _p = Launch(Path.Combine(java, "bin", OS.Exe("java")), JavaArgs(home, cbase), cbase, BuildEnvironment(java, home, cbase), @"tomcat\console", OnExit);
             if (await WaitForPort(port, _p, 90000))
             {
                 SetState(ServiceState.Running);

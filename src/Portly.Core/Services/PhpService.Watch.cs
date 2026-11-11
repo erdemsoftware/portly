@@ -67,6 +67,9 @@ namespace Portly.Services
 
         void StartWatch()
         {
+            // the check reads Windows process / connection tables; php-fpm restarts its own workers, and a crash of the
+            // master is seen by OnExit. Off on macOS / Linux.
+            if (!OS.IsWindows) return;
             lock (Sync)
             {
                 if (_watchStop != null) return;

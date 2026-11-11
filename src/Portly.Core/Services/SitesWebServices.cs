@@ -34,7 +34,7 @@ namespace Portly.Services
             StopRequested = false;
             SetState(ServiceState.Starting);
             var s = Settings.Current;
-            var exe = Path.Combine(dir, "caddy.exe");
+            var exe = Path.Combine(dir, OS.Exe("caddy"));
             string error = await Task.Run(() =>
             {
                 try
@@ -51,13 +51,20 @@ namespace Portly.Services
 
             // Caddy keeps its data under %APPDATA% unless told otherwise: keep everything in the Portly folder
             var env = new Dictionary<string, string> { { "XDG_DATA_HOME", Path.Combine(Paths.Tmp, "caddy") }, { "XDG_CONFIG_HOME", Path.Combine(Paths.Tmp, "caddy") } };
+            long logFrom = LogSize("caddy-console");
             _p = Launch(exe, "run --config \"" + CaddyConfig.JsonFile + "\"", dir, env, "caddy-console", OnExit);
             if (await WaitForPort(s.HttpPort, _p, 15000))
             {
                 SetState(ServiceState.Running);
                 Log.Info(I18n.T("log.started", "Caddy " + VersionLabel));
             }
-            else SetState(ServiceState.Error, _p.HasExited ? ExitReason(_p) + " " + I18n.T("err.seeLog", "caddy-console.log") : I18n.T("err.timeout"));
+            else
+            {
+                // a port below 1024 without the right to use it, or one somebody else holds: say that, like the other web servers do
+                string port = null;
+                if (_p.HasExited && !OS.IsWindows) { try { _p.WaitForExit(); } catch { } port = PortProblemFrom(LogSince("caddy-console", logFrom)); }
+                SetState(ServiceState.Error, port ?? (_p.HasExited ? ExitReason(_p) + " " + I18n.T("err.seeLog", "caddy-console.log") : I18n.T("err.timeout")));
+            }
         }
 
         void OnExit(Process p)
@@ -162,11 +169,11 @@ namespace Portly.Services
             var env = new Dictionary<string, string>
             {
                 { "PHPRC", dir },
-                { "PATH", dir + ";" + Environment.GetEnvironmentVariable("PATH") },
+                { "PATH", dir + Path.PathSeparator + Environment.GetEnvironmentVariable("PATH") },
                 { "XDG_DATA_HOME", Path.Combine(Paths.Tmp, "frankenphp") },
                 { "XDG_CONFIG_HOME", Path.Combine(Paths.Tmp, "frankenphp") },
             };
-            var p = Launch(Path.Combine(dir, "frankenphp.exe"), "run --config \"" + conf + "\" --adapter caddyfile", site.Folder, env, "frankenphp-" + id, proc => OnExit(site.Name, proc));
+            var p = Launch(Path.Combine(dir, OS.Exe("frankenphp")), "run --config \"" + conf + "\" --adapter caddyfile", site.Folder, env, "frankenphp-" + id, proc => OnExit(site.Name, proc));
             lock (Sync) _procs[site.Name] = p;
             if (!await WaitForPort(port, p, 20000))
             {
@@ -232,7 +239,7 @@ namespace Portly.Services
             try
             {
                 if (File.Exists(cache)) return File.ReadAllText(cache).Trim();
-                var r = ProcessUtil.Run(Path.Combine(dir, "frankenphp.exe"), "version", dir, null, 15000);
+                var r = ProcessUtil.Run(Path.Combine(dir, OS.Exe("frankenphp")), "version", dir, null, 15000);
                 var line = r.Output.Split('\n').Select(x => x.Trim()).FirstOrDefault(x => x.StartsWith("FrankenPHP"));
                 if (line == null) return "";
                 var h = line.IndexOf(" h1:", StringComparison.Ordinal);

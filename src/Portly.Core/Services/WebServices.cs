@@ -37,7 +37,7 @@ namespace Portly.Services
             {
                 try { WebConfig.WriteApache(dir, Sites, PhpPort); }
                 catch (Exception ex) { Log.Error("Apache config", ex); return ex.Message; }
-                var exe = Path.Combine(dir, "bin", "httpd.exe");
+                var exe = Path.Combine(dir, "bin", OS.Exe("httpd"));
                 var test = ProcessUtil.Run(exe, "-t -f \"" + WebConfig.ApacheConf + "\"", Path.Combine(dir, "bin"), null, 30000);
                 if (!test.Ok) return I18n.T("err.config") + "\n" + LastLines(test.Output, 6);
                 return null;
@@ -46,7 +46,7 @@ namespace Portly.Services
             if (!EnsurePortFree(s.HttpPort)) return;
             if (s.Ssl && !EnsurePortFree(s.HttpsPort)) return;
 
-            var httpd = Path.Combine(dir, "bin", "httpd.exe");
+            var httpd = Path.Combine(dir, "bin", OS.Exe("httpd"));
             _p = Launch(httpd, "-f \"" + WebConfig.ApacheConf + "\"", Path.Combine(dir, "bin"), null, "apache-console", OnExit);
             if (await WaitForPort(s.HttpPort, _p, 15000))
             {
@@ -109,7 +109,7 @@ namespace Portly.Services
             StopRequested = false;
             SetState(ServiceState.Starting);
             var s = Settings.Current;
-            var exe = Path.Combine(_dir, "nginx.exe");
+            var exe = Path.Combine(_dir, OS.Exe("nginx"));
             string error = await Task.Run(() =>
             {
                 try
@@ -150,7 +150,7 @@ namespace Portly.Services
             SetState(ServiceState.Stopping);
             await Task.Run(() =>
             {
-                ProcessUtil.Run(Path.Combine(_dir, "nginx.exe"), Args(" -s quit"), _dir, null, 10000);
+                ProcessUtil.Run(Path.Combine(_dir, OS.Exe("nginx")), Args(" -s quit"), _dir, null, 10000);
                 if (!p.WaitForExit(5000)) StopProcess(p, false, 0);
             });
             _p = null;

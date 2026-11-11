@@ -41,14 +41,14 @@ namespace Portly.Services
                 if (Directory.Exists(_data) && File.Exists(Path.Combine(_data, "PG_VERSION"))) return null;
                 Log.Info(I18n.T("log.mysqlInit", _data));
                 try { if (Directory.Exists(_data) && !Directory.EnumerateFileSystemEntries(_data).Any()) Directory.Delete(_data); } catch { }
-                var r = ProcessUtil.Run(Path.Combine(_bin, "initdb.exe"), "-D \"" + _data + "\" -U postgres -A trust -E UTF8 --no-locale", _bin, null, 300000);
+                var r = ProcessUtil.Run(Path.Combine(_bin, OS.Exe("initdb")), "-D \"" + _data + "\" -U postgres -A trust -E UTF8 --no-locale", _bin, null, 300000);
                 return File.Exists(Path.Combine(_data, "PG_VERSION")) ? null : I18n.T("err.mysqlInit") + "\n" + ApacheService.LastLines(r.Output, 6);
             });
             if (error != null) { SetState(ServiceState.Error, error); return; }
             if (!EnsurePortFree(port)) return;
             // also ::1: "localhost" clients try it first and Windows needs ~2 s to refuse a connection
             var listen = Settings.Current.AllowLan ? "*" : Net.LoopbackV6 ? "127.0.0.1,::1" : "127.0.0.1";
-            _p = Launch(Path.Combine(_bin, "postgres.exe"), "-D \"" + _data + "\" -p " + port + " -h " + listen, _bin, null, "postgresql", OnExit);
+            _p = Launch(Path.Combine(_bin, OS.Exe("postgres")), "-D \"" + _data + "\" -p " + port + " -h " + listen, _bin, null, "postgresql", OnExit);
             if (await WaitForPort(port, _p, 30000)) { SetState(ServiceState.Running); Log.Info(I18n.T("log.started", Title + " " + VersionLabel)); }
             else SetState(ServiceState.Error, _p.HasExited ? ExitReason(_p) + " " + I18n.T("err.seeLog", "postgresql.log") : I18n.T("err.timeout"));
         }
@@ -68,7 +68,7 @@ namespace Portly.Services
             await Task.Run(() =>
             {
                 // fast shutdown: active transactions are rolled back, data stays consistent
-                ProcessUtil.Run(Path.Combine(_bin, "pg_ctl.exe"), "stop -D \"" + _data + "\" -m fast -w -t 20", _bin, null, 30000);
+                ProcessUtil.Run(Path.Combine(_bin, OS.Exe("pg_ctl")), "stop -D \"" + _data + "\" -m fast -w -t 20", _bin, null, 30000);
                 if (!p.WaitForExit(10000)) StopProcess(p, false, 0);
             });
             _p = null;
@@ -100,7 +100,7 @@ namespace Portly.Services
             // also ::1: "localhost" clients try it first and Windows needs ~2 s to refuse a connection
             var bind = Settings.Current.AllowLan ? "--bind_ip_all --ipv6" : Net.LoopbackV6 ? "--bind_ip 127.0.0.1,::1 --ipv6" : "--bind_ip 127.0.0.1";
             var args = "--dbpath \"" + data + "\" --port " + port + " " + bind + " --logpath \"" + Path.Combine(Paths.Logs, "mongodb.log") + "\" --logappend";
-            _p = Launch(Path.Combine(dir, "bin", "mongod.exe"), args, Path.Combine(dir, "bin"), null, "mongodb-console", OnExit);
+            _p = Launch(Path.Combine(dir, "bin", OS.Exe("mongod")), args, Path.Combine(dir, "bin"), null, "mongodb-console", OnExit);
             if (await WaitForPort(port, _p, 60000)) { SetState(ServiceState.Running); Log.Info(I18n.T("log.started", Title + " " + VersionLabel)); }
             else SetState(ServiceState.Error, _p.HasExited ? ExitReason(_p) + " " + I18n.T("err.seeLog", "mongodb.log") : I18n.T("err.timeout"));
         }
@@ -143,7 +143,7 @@ namespace Portly.Services
             var port = Settings.Current.MemcachedPort;
             if (!EnsurePortFree(port)) return;
             var bind = Settings.Current.AllowLan ? "0.0.0.0" : "127.0.0.1";
-            _p = Launch(Path.Combine(dir, "bin", "memcached.exe"), "-p " + port + " -U 0 -l " + bind + " -m 64", Path.Combine(dir, "bin"), null, "memcached", OnExit);
+            _p = Launch(Path.Combine(dir, "bin", OS.Exe("memcached")), "-p " + port + " -U 0 -l " + bind + " -m 64", Path.Combine(dir, "bin"), null, "memcached", OnExit);
             if (await WaitForPort(port, _p, 10000)) { SetState(ServiceState.Running); Log.Info(I18n.T("log.started", Title + " " + VersionLabel)); }
             else SetState(ServiceState.Error, _p.HasExited ? ExitReason(_p) : I18n.T("err.timeout"));
         }
