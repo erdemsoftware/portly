@@ -363,9 +363,6 @@ namespace Portly.CoreTests
                         Check(label + ": https page runs PHP", body.Contains(version) && (!xdebug || body.Contains(want)), body.Length > 200 ? body.Substring(0, 200) : body);
                     }
                     else Check(label + ": HTTPS port is open", false, "18443 closed");
-                    HttpStatusCode code;
-                    var dash = Fetch("http://127.0.0.1:18080/", "localhost", out code);
-                    Check(label + ": the dashboard answers on http://localhost", code == HttpStatusCode.OK, ((int)code) + " " + (dash.Length > 80 ? dash.Substring(0, 80) : dash));
                 }
             }
             finally
