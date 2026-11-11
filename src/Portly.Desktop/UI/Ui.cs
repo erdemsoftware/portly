@@ -100,7 +100,7 @@ namespace Portly.Desktop.UI
 
         public static Button IconButton(string glyph, string text, Action click)
         {
-            return IconButton(glyph, text, () => { click(); return Task.CompletedTask; });
+            return IconButton(glyph, text, click == null ? null : (Func<Task>)(() => { click(); return Task.CompletedTask; }));
         }
 
         static object ButtonContent(string text, string glyph)
