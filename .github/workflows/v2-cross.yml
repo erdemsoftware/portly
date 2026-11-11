@@ -93,14 +93,14 @@ jobs:
         run: |
           export PORTLY_HOME="$RUNNER_TEMP/portly-pkg"
           if [[ "${{ matrix.rid }}" == osx-* ]]; then
-            hdiutil attach dist/*.dmg -mountpoint /tmp/portly-dmg -nobrowse
+            hdiutil attach dist/Portly-[0-9]*.dmg -mountpoint /tmp/portly-dmg -nobrowse
             /tmp/portly-dmg/Portly.app/Contents/MacOS/Portly --screenshot shots/packaged.png 1100 760
             codesign --verify --deep --strict /tmp/portly-dmg/Portly.app
             for i in 1 2 3 4 5; do hdiutil detach /tmp/portly-dmg && break; sleep 3; done || hdiutil detach -force /tmp/portly-dmg
           else
-            mkdir -p "$RUNNER_TEMP/x" && tar -xzf dist/*.tar.gz -C "$RUNNER_TEMP/x"
+            mkdir -p "$RUNNER_TEMP/x" && tar -xzf dist/Portly-[0-9]*.tar.gz -C "$RUNNER_TEMP/x"
             "$RUNNER_TEMP"/x/Portly-*/Portly --screenshot shots/packaged.png 1100 760
-            dpkg-deb --info dist/*.deb | head -12
+            dpkg-deb --info dist/Portly-[0-9]*.deb | head -12
           fi
           ls -la dist shots
       - uses: actions/upload-artifact@v5
