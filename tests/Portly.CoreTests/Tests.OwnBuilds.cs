@@ -241,6 +241,22 @@ namespace Portly.CoreTests
             var memcached = OwnInstall(artifacts, "memcached", "memcached");
             var ownPhp = OwnInstall(artifacts, "php", "php");
             var staticPhp = PackageTypes.Installed("php").FirstOrDefault(f => f.EndsWith("-static"));
+            // PORTLY_E2E=1: the catalog's static PHP is installed here when it is not there yet (the web servers run it)
+            if (staticPhp == null && Environment.GetEnvironmentVariable("PORTLY_E2E") == "1")
+            {
+                try
+                {
+                    Catalog.LoadLocal();
+                    var e = Catalog.Recommended("php") ?? Catalog.ForType("php").FirstOrDefault();
+                    if (e != null)
+                    {
+                        Installer.InstallAsync(e, p => { }, CancellationToken.None).GetAwaiter().GetResult();
+                        staticPhp = PackageTypes.Installed("php").FirstOrDefault(f => f.EndsWith("-static"));
+                    }
+                    Check("static-php package from the catalog installed", staticPhp != null, e == null ? "catalog offers no php" : e.Folder);
+                }
+                catch (Exception ex) { Check("static-php package from the catalog installed", false, ex.GetType().Name + ": " + ex.Message); }
+            }
             if (staticPhp == null) Console.WriteLine("  (no static-php package installed: run E2EInstall first; the web servers use the own PHP build instead)");
             var phpForWeb = staticPhp ?? ownPhp;
 

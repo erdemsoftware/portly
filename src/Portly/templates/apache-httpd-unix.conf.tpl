@@ -5,7 +5,7 @@
 Define SRVROOT "{{APACHE_DIR}}"
 ServerRoot "${SRVROOT}"
 PidFile "{{TMP}}/httpd.pid"
-Mutex file:"{{TMP}}" default
+Mutex "file:{{TMP}}" default
 {{LISTEN}}
 
 LoadModule access_compat_module modules/mod_access_compat.so

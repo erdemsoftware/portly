@@ -32,11 +32,17 @@ D="$(unpack "$EXPAT_SRC")"
 ( cd "$D" && ./configure --prefix="$DEPS" --disable-shared --enable-static --with-pic --without-docbook --without-examples --without-tests && make -j"$JOBS" && make install )
 D="$(unpack "$NGHTTP2_SRC")"
 ( cd "$D" && ./configure --prefix="$DEPS" --disable-shared --enable-static --with-pic --enable-lib-only && make -j"$JOBS" && make install )
-# APR built here as static libraries (httpd's own srclib build would link them as shared libraries next to the install folder)
+# APR / APR-util linked into the httpd program (httpd's own srclib build would link shared libraries that stay in the install folder).
+# They are built with libtool shared + static support, which httpd needs to build its modules as DSOs; then the shared files are
+# removed and the .la files point to the static ones only, so httpd and the modules link them statically.
 D="$(unpack "$APR_SRC")"
-( cd "$D" && ./configure --prefix="$DEPS" --disable-shared --enable-static --with-pic && make -j"$JOBS" && make install )
+( cd "$D" && ./configure --prefix="$DEPS" --enable-shared --enable-static --with-pic && make -j"$JOBS" && make install )
 D="$(unpack "$APU_SRC")"
-( cd "$D" && ./configure --prefix="$DEPS" --disable-shared --enable-static --with-pic --with-apr="$DEPS" --with-expat="$DEPS" && make -j"$JOBS" && make install )
+( cd "$D" && ./configure --prefix="$DEPS" --enable-shared --enable-static --with-pic --with-apr="$DEPS" --with-expat="$DEPS" && make -j"$JOBS" && make install )
+for l in apr-1 aprutil-1; do
+  rm -f "$DEPS/lib/lib$l.so"* "$DEPS/lib/lib$l."*.dylib "$DEPS/lib/lib$l.dylib"
+  sed -i.bak "s/^dlname=.*/dlname=''/; s/^library_names=.*/library_names=''/" "$DEPS/lib/lib$l.la"
+done
 
 log "httpd"
 SRC="$(unpack "$HTTPD_SRC")"

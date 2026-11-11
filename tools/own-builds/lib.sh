@@ -56,10 +56,16 @@ unpack() {
 # Result: $OUT/<name>-<version>-<os>-<arch>.tar.gz with the top folder <name>-<version>-<os>-<arch>
 package() {
   local name="$1" version="$2" stage="$3"
-  local base="$name-$version-$OS-$ARCH"
+  local base="$name-$version-$OS-$ARCH" f
   local top="$WORK/pkg/$base"
   rm -rf "$top"; mkdir -p "$WORK/pkg"
   cp -R "$stage" "$top"
+  if [ "$OS" = macos ]; then
+    # Apple Silicon only runs signed code: a free ad-hoc signature on every Mach-O file (strip invalidates the linker's one)
+    while IFS= read -r f; do
+      if file "$f" | grep -q 'Mach-O'; then codesign --force --sign - "$f"; fi
+    done < <(find "$top" -type f \( -perm -u+x -o -name '*.so' -o -name '*.dylib' \))
+  fi
   (cd "$WORK/pkg" && tar -czf "$OUT/$base.tar.gz" "$base")
   echo "$OUT/$base.tar.gz"
 }

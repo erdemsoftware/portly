@@ -145,7 +145,6 @@ jobs:
         shell: bash
         run: |
           export PORTLY_HOME="$RUNNER_TEMP/portly-ob" PORTLY_E2E=1 PORTLY_OWN_BUILDS="$PWD/own-builds"
-          dotnet run --project tests/Portly.CoreTests -c Release --no-build -- E2EInstall
           dotnet run --project tests/Portly.CoreTests -c Release --no-build -- OwnBuilds
       - uses: actions/upload-artifact@v5
         if: failure()
