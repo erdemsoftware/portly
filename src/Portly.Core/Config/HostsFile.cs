@@ -98,10 +98,15 @@ namespace Portly.Config
 
             if (TryWrite(wanted)) return Verify(block);
 
-            var tmp = Path.Combine(Paths.Tmp, "hosts-block.txt");
-            File.WriteAllText(tmp, block, Encoding.ASCII);
-            var code = Elevate.RunSelf("--hosts-apply", tmp);
-            try { File.Delete(tmp); } catch { }
+            int code;
+            if (!OS.IsWindows) code = UnixElevatedWrite(wanted);
+            else
+            {
+                var tmp = Path.Combine(Paths.Tmp, "hosts-block.txt");
+                File.WriteAllText(tmp, block, Encoding.ASCII);
+                code = Elevate.RunSelf("--hosts-apply", tmp);
+                try { File.Delete(tmp); } catch { }
+            }
             if (code == 0) return Verify(block);
             Log.Warn(code == -2 ? I18n.T("log.hostsCancelled") : I18n.T("log.hostsFailed", code));
             return false;
@@ -133,6 +138,17 @@ namespace Portly.Config
             catch { return false; }
         }
 
+        /// <summary>
+        /// macOS / Linux: a fixed shell line writes the text as root. Portly itself is not run as root (an AppImage
+        /// lives on the user's FUSE mount, which root cannot open); the text goes in as an argument, never as code.
+        /// </summary>
+        public const string UnixWriteScript = "printf '%s' \"$2\" > \"$1\"";
+
+        static int UnixElevatedWrite(string content)
+        {
+            return Elevate.Run("/bin/sh", "-c", UnixWriteScript, "sh", FilePath, content);
+        }
+
         /// <summary>The whole file for the editor. Throws when it cannot be read: an empty text must never be saved over it.</summary>
         public static string ReadAll() { return File.ReadAllText(FilePath, Encoding.Default); }
 
@@ -141,10 +157,15 @@ namespace Portly.Config
         {
             if (!TryWrite(content))
             {
-                var tmp = Path.Combine(Paths.Tmp, "hosts-edit.txt");
-                File.WriteAllText(tmp, content, Encoding.Default);
-                var code = Elevate.RunSelf("--hosts-write", tmp);
-                try { File.Delete(tmp); } catch { }
+                int code;
+                if (!OS.IsWindows) code = UnixElevatedWrite(content);
+                else
+                {
+                    var tmp = Path.Combine(Paths.Tmp, "hosts-edit.txt");
+                    File.WriteAllText(tmp, content, Encoding.Default);
+                    code = Elevate.RunSelf("--hosts-write", tmp);
+                    try { File.Delete(tmp); } catch { }
+                }
                 if (code != 0) return code;
             }
             System.Threading.Thread.Sleep(300);

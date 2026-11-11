@@ -52,6 +52,13 @@ namespace Portly.CoreTests
             var q = Process.Start(new ProcessStartInfo("/bin/sh", tricky) { UseShellExecute = false });
             q.WaitForExit(30000);
             Check("root script never runs its arguments as commands", !File.Exists(Path.Combine(dir, "pwned")) && !File.Exists(Path.Combine(dir, "pwned2")));
+
+            var hosts = Path.Combine(dir, "hosts");
+            var text = "127.0.0.1 localhost\n# $(touch " + Path.Combine(dir, "pwned3") + ") `id` '\"\\ %s\n127.0.0.1 shop.portly # Portly\n";
+            var h = Process.Start(new ProcessStartInfo("/bin/sh", new[] { "-c", HostsFile.UnixWriteScript, "sh", hosts, text }) { UseShellExecute = false });
+            h.WaitForExit(30000);
+            Check("hosts script writes the text exactly", File.Exists(hosts) && File.ReadAllText(hosts) == text);
+            Check("hosts script never runs the text", !File.Exists(Path.Combine(dir, "pwned3")));
         }
     }
 }
