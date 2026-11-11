@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Portly.Config;
@@ -134,12 +135,28 @@ namespace Portly.Packages
 
         static bool IsTar(string kind) { return kind != null && kind.StartsWith("tar", StringComparison.OrdinalIgnoreCase); }
 
-        /// <summary>Extract an archive of the given kind (zip, tar.gz, tar.xz) into an empty folder.</summary>
+        /// <summary>Extract an archive of the given kind (zip, tar.gz, tar.xz, zip+tar.xz) into an empty folder.</summary>
         static void Extract(string kind, string archive, string dest, Action<int> progress, CancellationToken ct)
         {
+            if (kind == "zip+tar.xz") { ExtractZipWithTar(archive, dest, progress, ct); return; }
             if (!IsTar(kind)) { ExtractZip(archive, dest, progress, ct); return; }
             ExtractTar(archive, dest);
             progress(100);
+        }
+
+        /// <summary>A zip (a Maven .jar) that carries one tar.xz: the programs are inside that (Zonky's PostgreSQL builds for Linux).</summary>
+        static void ExtractZipWithTar(string archive, string dest, Action<int> progress, CancellationToken ct)
+        {
+            var outer = dest + "-outer";
+            try
+            {
+                ExtractZip(archive, outer, p => progress(p / 2), ct);
+                var inner = Directory.GetFiles(outer, "*", SearchOption.AllDirectories).FirstOrDefault(f => IsTarName(f));
+                if (inner == null) throw new Exception("no tar archive inside " + Path.GetFileName(archive));
+                ExtractTar(inner, dest);
+                progress(100);
+            }
+            finally { TryDeleteDir(outer); }
         }
 
         /// <summary>
@@ -354,13 +371,51 @@ namespace Portly.Packages
                     else
                     {
                         Directory.CreateDirectory(Path.GetDirectoryName(path));
-                        entry.ExtractToFile(path, true);
+                        if (!ExtractUnixLink(entry, path, destFull)) entry.ExtractToFile(path, true);
+                        ApplyUnixMode(entry, path);
                     }
                     done++;
                     int pct = total == 0 ? 100 : done * 100 / total;
                     if (pct != lastPct) { lastPct = pct; progress(pct); }
                 }
             }
+        }
+
+        const int UnixTypeMask = 0xF000, UnixSymlink = 0xA000;
+
+        /// <summary>macOS / Linux: a zip entry made on Unix can be a symbolic link (the EDB PostgreSQL libraries are: libicudata.77.dylib -> libicudata.77.1.dylib).</summary>
+        static bool ExtractUnixLink(ZipArchiveEntry entry, string path, string destFull)
+        {
+#if !NETFRAMEWORK
+            if (OS.IsWindows) return false;
+            if (((entry.ExternalAttributes >> 16) & UnixTypeMask) != UnixSymlink) return false;
+            string target;
+            using (var r = new StreamReader(entry.Open(), Encoding.UTF8)) target = r.ReadToEnd().Trim();
+            if (target == "" || Path.IsPathRooted(target)) return false;
+            // a link may not leave the extraction folder
+            if (!Path.GetFullPath(Path.Combine(Path.GetDirectoryName(path), target)).StartsWith(destFull, StringComparison.Ordinal)) return false;
+            if (File.Exists(path) || Directory.Exists(path)) File.Delete(path);
+            File.CreateSymbolicLink(path, target);
+            return true;
+#else
+            return false;
+#endif
+        }
+
+        /// <summary>macOS / Linux: keep the permission bits a Unix zip carries (the executable bit), never more than 755.</summary>
+        static void ApplyUnixMode(ZipArchiveEntry entry, string path)
+        {
+#if !NETFRAMEWORK
+            if (OS.IsWindows) return;
+            try
+            {
+                int mode = (entry.ExternalAttributes >> 16) & 0x1FF;
+                if ((((entry.ExternalAttributes >> 16) & UnixTypeMask) == UnixSymlink) || mode == 0 || (mode & 0x40) == 0) return;
+                if (new FileInfo(path).LinkTarget != null) return;
+                File.SetUnixFileMode(path, (UnixFileMode)(mode & 0x1ED | 0x1A4)); // rwxr-xr-x
+            }
+            catch { }
+#endif
         }
 
         /// <summary>Zips often wrap everything in one folder (node-v24.../, Apache24/): use the real root.</summary>

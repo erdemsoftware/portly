@@ -51,7 +51,8 @@ namespace Portly.CoreTests
                 .Where(x => x.Name.StartsWith("Suite_", StringComparison.Ordinal) && x.GetParameters().Length == 0).OrderBy(x => x.Name))
             {
                 var name = m.Name.Substring(6);
-                if (only != null && !name.Equals(only, StringComparison.OrdinalIgnoreCase)) continue;
+                // a filter matches the start of the name: "Services" runs Services and ServicesExtra
+                if (only != null && !name.StartsWith(only, StringComparison.OrdinalIgnoreCase)) continue;
                 Console.WriteLine("== " + name);
                 Run(name, () => m.Invoke(null, null));
             }

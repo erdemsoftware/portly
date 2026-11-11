@@ -103,6 +103,9 @@ namespace Portly.Packages
             Get("php").DetectFile = "php-fpm";
             Get("nodejs").DetectFile = "bin/node";
             Get("nodejs").PathDirs = new[] { "bin" };
+            // Redis Stack server builds: bin/redis-server and bin/redis-cli (Windows builds keep them in the folder root)
+            Get("redis").DetectFile = "bin/redis-server";
+            Get("redis").PathDirs = new[] { "bin" };
         }
 
         /// <summary>

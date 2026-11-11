@@ -64,6 +64,11 @@ namespace Portly.Core
             var names = libs.Select(l => l.StartsWith("libaio") ? "libaio1t64 (Debian/Ubuntu) / libaio (Fedora, Arch)"
                 : l.StartsWith("libnuma") ? "libnuma1 / numactl-libs"
                 : l.StartsWith("libncurses") || l.StartsWith("libtinfo") ? "libncurses6 / ncurses-libs"
+                : l.StartsWith("libcurl") ? "libcurl4 / libcurl"
+                : l.StartsWith("libssl") || l.StartsWith("libcrypto") ? "libssl3 / openssl-libs"
+                : l.StartsWith("libcrypt.so") ? "libcrypt1 / libxcrypt-compat"
+                : l.StartsWith("libsystemd") ? "libsystemd0 / systemd-libs"
+                : l.StartsWith("liblzma") ? "liblzma5 / xz-libs"
                 : l).Distinct();
             return string.Join(", ", names);
         }
