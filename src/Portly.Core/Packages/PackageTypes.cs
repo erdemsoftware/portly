@@ -14,7 +14,12 @@ namespace Portly.Packages
         /// <summary>Group in the packages window: web, php, db, dbtool, cache, mail, runtime, dev, share.</summary>
         public string Category = "";
         /// <summary>File that proves a version folder is a valid installation (relative to the folder).</summary>
-        public string DetectFile;
+        public string DetectFile
+        {
+            get { return _detect; }
+            set { _detect = OS.IsWindows ? value : PackageTypes.UnixPath(value); }
+        }
+        string _detect;
         /// <summary>Folders added to PATH for the terminal (relative to the version folder).</summary>
         public string[] PathDirs = new[] { "" };
         /// <summary>Optional feature id (Core/Features.cs): the type is listed only while that feature is on.</summary>
@@ -33,6 +38,8 @@ namespace Portly.Packages
             get
             {
                 var shown = All.Where(t => t.Feature == "" || Features.IsOn(t.Feature)).ToList();
+                // macOS / Linux: only what their catalog offers (no Windows-only tools)
+                if (!OS.IsWindows && Catalog.Entries.Count > 0) shown = shown.Where(t => Catalog.Entries.Any(e => e.Type == t.Id)).ToList();
                 return Categories.SelectMany(c => shown.Where(t => t.Category == c)).Concat(shown.Where(t => !Categories.Contains(t.Category)));
             }
         }
@@ -80,6 +87,51 @@ namespace Portly.Packages
             new PackageType { Id = "wpcli", Category = "php",      Name = "WP-CLI",     DetectFile = "wp-cli.phar" },
             new PackageType { Id = "composer", Category = "php",   Name = "Composer",   DetectFile = "composer.phar" },
         };
+
+        /// <summary>macOS / Linux layout: no ".exe", "/" instead of "\\" ("bin\mysqld.exe" -> "bin/mysqld"). Windows values stay as written.</summary>
+        internal static string UnixPath(string path)
+        {
+            if (string.IsNullOrEmpty(path)) return path;
+            path = path.Replace('\\', '/');
+            return path.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) ? path.Substring(0, path.Length - 4) : path;
+        }
+
+        static PackageTypes()
+        {
+            if (OS.IsWindows) return;
+            // per-type layout of the macOS / Linux builds (static-php: php-fpm and php at the folder root, Node.js: bin/node)
+            Get("php").DetectFile = "php-fpm";
+            Get("nodejs").DetectFile = "bin/node";
+            Get("nodejs").PathDirs = new[] { "bin" };
+        }
+
+        /// <summary>
+        /// Folder of a type's programs relative to the version folder: "" (php, caddy, mailpit ...) or "bin" (mysql, and nodejs
+        /// on macOS / Linux). It is the folder of the detect file.
+        /// </summary>
+        public static string ExeDir(string type)
+        {
+            var d = Get(type).DetectFile;
+            if (string.IsNullOrEmpty(d)) return "";
+            var i = Math.Max(d.LastIndexOf('/'), d.LastIndexOf('\\'));
+            return i < 0 ? "" : d.Substring(0, i);
+        }
+
+        /// <summary>
+        /// Full path of a program of a version folder on this OS: Exe("php", folder, "php-fpm") is php-fpm.exe next to
+        /// php-cgi.exe on Windows and &lt;folder&gt;/php-fpm on macOS / Linux; Exe("mysql", folder, "mysqld") is in bin.
+        /// </summary>
+        public static string Exe(string type, string folder, string name)
+        {
+            return Path.Combine(Paths.BinOf(type), folder, ExeDir(type), OS.Exe(name));
+        }
+
+        /// <summary>Exe() of the active version, or null when the type is not installed.</summary>
+        public static string ActiveExe(string type, string name)
+        {
+            var f = ActiveFolder(type);
+            return f == "" ? null : Exe(type, f, name);
+        }
 
         public static PackageType Get(string id)
         {

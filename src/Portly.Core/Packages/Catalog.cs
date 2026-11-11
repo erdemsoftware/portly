@@ -17,13 +17,16 @@ namespace Portly.Packages
         public string Url;
         public string Sha256 = "";
         public string Subdir = "";
-        public string Kind = "zip";        // zip | file
+        public string Kind = "zip";        // zip | file | sfx (Windows), tar.gz | tar.xz (macOS, Linux)
         public string FileName = "";       // for kind=file: name inside the version folder
         public string Tag = "";            // LTS, latest, ...
         public string Note = "";
         public bool Recommended;
         public double MinOs;               // 6.1 = Win7, 10.0 = Win10
         public int Vc;                     // required VC++ 14.x runtime minor version (0 = none)
+        public string Arch = "";           // macOS / Linux: "x64" | "arm64" ("" = any); ignored on Windows
+        /// <summary>More archives extracted into the same version folder (macOS / Linux: php-fpm + php-cli).</summary>
+        public List<PackagePart> Parts = new List<PackagePart>();
 
         public string TypeName { get { return PackageTypes.Get(Type).Name; } }
         public string InstallDir { get { return Path.Combine(Paths.BinOf(Type), Folder); } }
@@ -31,8 +34,18 @@ namespace Portly.Packages
         public string Branch { get { return PackageTypes.Branch(Version); } }
     }
 
+    /// <summary>An extra archive of a package, extracted into the same version folder as the main one.</summary>
+    public class PackagePart
+    {
+        public string Url;
+        public string Sha256 = "";
+        public string Kind = "tar.gz";
+        public string Subdir = "";
+    }
+
     /// <summary>
     /// Package catalog.
+    ///  macOS / Linux: manifest/packages-macos.json or packages-linux.json (same signing and refresh as below, no windows.php.net list).
     ///  Modern edition: manifest/packages.json from GitHub, signed (cached in usr\cache with its signature), plus live
     ///                  PHP versions from windows.php.net, so new PHP releases appear without a Portly update.
     ///  Legacy edition: the catalog embedded in the exe (frozen, Windows 7 compatible packages).
@@ -50,7 +63,10 @@ namespace Portly.Packages
         public static string Xdebug74 = "3.1.6";
         public static event Action Changed;
 
-        static string CacheFile { get { return Path.Combine(Paths.Cache, "packages.json"); } }
+        /// <summary>File name of this OS's catalog in manifest/ and in the cache: packages.json on Windows.</summary>
+        public static string ManifestName { get { return OS.IsWindows ? "packages.json" : OS.IsMac ? "packages-macos.json" : "packages-linux.json"; } }
+
+        static string CacheFile { get { return Path.Combine(Paths.Cache, ManifestName); } }
         static string PhpCacheFile { get { return Path.Combine(Paths.Cache, "php-releases.json"); } }
 
         public static void LoadLocal()
@@ -62,7 +78,7 @@ namespace Portly.Packages
                 catch (Exception ex) { Log.Warn("Cached catalog is invalid: " + ex.Message); json = null; }
             }
             if (json == null) Parse(Embedded());
-            if (!AppInfo.IsLegacy && File.Exists(PhpCacheFile))
+            if (!AppInfo.IsLegacy && OS.IsWindows && File.Exists(PhpCacheFile))
             {
                 try { MergePhpReleases(File.ReadAllText(PhpCacheFile, Encoding.UTF8)); } catch { }
             }
@@ -71,7 +87,7 @@ namespace Portly.Packages
 
         static string Embedded()
         {
-            var name = AppInfo.IsLegacy ? "catalog.legacy.json" : "catalog.modern.json";
+            var name = AppInfo.IsLegacy ? "catalog.legacy.json" : OS.IsWindows ? "catalog.modern.json" : OS.IsMac ? "catalog.macos.json" : "catalog.linux.json";
             using (var s = typeof(Catalog).Assembly.GetManifestResourceStream(name))
             using (var r = new StreamReader(s, Encoding.UTF8)) return r.ReadToEnd();
         }
@@ -84,7 +100,7 @@ namespace Portly.Packages
             TrustError = null;
             try
             {
-                var manifest = await SignedManifest.DownloadAsync("packages.json");
+                var manifest = await SignedManifest.DownloadAsync(ManifestName);
                 Parse(manifest.Text); // throws when invalid -> cache is not overwritten
                 manifest.SaveTo(CacheFile);
                 ok = true;
@@ -100,6 +116,7 @@ namespace Portly.Packages
                 Log.Warn("Catalog refresh failed: " + ex.Message);
                 LoadLocal();
             }
+            if (OS.IsWindows) // the static PHP builds of macOS / Linux are listed in their own signed catalog
             try
             {
                 var php = await Net.GetStringAsync("https://windows.php.net/downloads/releases/releases.json");
@@ -133,7 +150,18 @@ namespace Portly.Packages
                     Note = p.Str("note"),
                     Recommended = p.Bool("recommended"),
                     Vc = p.Int("vc"),
+                    Arch = p.Str("arch"),
                 };
+                if (!OS.IsWindows)
+                {
+                    // entries for another CPU are skipped; parts (extra archives) are read only here
+                    if (e.Arch != "" && !e.Arch.Equals(OS.Arch, StringComparison.OrdinalIgnoreCase)) continue;
+                    foreach (var q in p.Arr("parts"))
+                    {
+                        var part = new PackagePart { Url = q.Str("url"), Sha256 = q.Str("sha256"), Kind = q.Str("kind", "tar.gz"), Subdir = q.Str("subdir") };
+                        if (part.Url != "") e.Parts.Add(part);
+                    }
+                }
                 double minOs;
                 e.MinOs = double.TryParse(p.Str("minOs", "0"), NumberStyles.Float, CultureInfo.InvariantCulture, out minOs) ? minOs : 0;
                 if (e.Type == "" || e.Folder == "" || e.Url == "") continue;

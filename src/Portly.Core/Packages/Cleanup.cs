@@ -79,7 +79,7 @@ namespace Portly.Packages
         /// <summary>Is a program from this folder running (also a PHP pool of a site's own version)?</summary>
         public static bool IsInUse(string dir)
         {
-            var prefix = dir.TrimEnd('\\') + "\\";
+            var prefix = dir.TrimEnd('\\', '/') + Path.DirectorySeparatorChar;
             foreach (var p in Process.GetProcesses())
             {
                 try

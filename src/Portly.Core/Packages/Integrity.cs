@@ -32,7 +32,14 @@ namespace Portly.Packages
         static bool IsBinary(string rel)
         {
             var ext = Path.GetExtension(rel).ToLowerInvariant();
-            return ext == ".exe" || ext == ".dll";
+            if (ext == ".exe" || ext == ".dll") return true;
+            if (OS.IsWindows) return false;
+            // macOS / Linux: libraries and the programs without an extension at the folder root or in bin/
+            if (ext == ".so" || ext == ".dylib") return true;
+            var name = Path.GetFileName(rel).ToLowerInvariant();
+            var path = rel.Replace('\\', '/');
+            bool inBin = path.IndexOf('/') < 0 || (path.StartsWith("bin/") && path.LastIndexOf('/') == 3);
+            return ext == "" && inBin && !(name.StartsWith("license") || name.StartsWith("readme") || name.StartsWith("notice") || name.StartsWith("changelog"));
         }
 
         /// <summary>Write the file list of a freshly installed folder.</summary>
@@ -44,7 +51,7 @@ namespace Portly.Packages
                 sb.AppendLine("# Portly file list: path|size|sha256 (.exe/.dll). Used to detect files removed by antivirus software.");
                 foreach (var f in Directory.EnumerateFiles(dir, "*", SearchOption.AllDirectories))
                 {
-                    var rel = f.Substring(dir.Length).TrimStart('\\');
+                    var rel = f.Substring(dir.Length).TrimStart('\\', '/');
                     if (rel.Equals(ListFile, StringComparison.OrdinalIgnoreCase)) continue;
                     var info = new FileInfo(f);
                     var hash = IsBinary(rel) ? Net.Sha256(f) : "";
@@ -155,6 +162,7 @@ namespace Portly.Packages
             {
                 Type = entry.Type, Version = entry.Version, Folder = ".repair-" + entry.Folder, Url = entry.Url, Sha256 = entry.Sha256,
                 Subdir = entry.Subdir, Kind = entry.Kind, FileName = entry.FileName, MinOs = entry.MinOs, Vc = entry.Vc,
+                Arch = entry.Arch, Parts = entry.Parts,
             };
             var tmpDir = tmpEntry.InstallDir;
             var chosen = Settings.Current.GetVersion(p.Type);
