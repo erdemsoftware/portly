@@ -12,6 +12,7 @@ namespace Portly.Services
 {
     /// <summary>
     /// PHP FastCGI pool: one php-cgi.exe (with child workers) per PHP version that is in use.
+    /// macOS / Linux: one php-fpm (foreground, one static pool) per version, on the same ports.
     /// Ports: PhpBasePort + index of the version among the installed ones (stable while nothing is installed/removed).
     /// </summary>
     public partial class PhpService : Service
@@ -77,8 +78,9 @@ namespace Portly.Services
         async Task<string> StartOne(string folder)
         {
             var dir = Path.Combine(Paths.BinOf("php"), folder);
-            var exe = Path.Combine(dir, "php-cgi.exe");
-            if (!File.Exists(exe)) return I18n.T("err.notInstalled", "php-cgi.exe");
+            var exeName = OS.IsWindows ? "php-cgi.exe" : "php-fpm";
+            var exe = Path.Combine(dir, exeName);
+            if (!File.Exists(exe)) return I18n.T("err.notInstalled", exeName);
             try { PhpConfig.Ensure(dir); } catch (Exception ex) { Log.Warn("php.ini: " + ex.Message); }
             int port = PreferredPort(folder);
             if (ProcessUtil.IsPortInUse(port) || ProcessUtil.IsPortExcluded(port))
@@ -98,15 +100,30 @@ namespace Portly.Services
                 }
             }
             lock (Sync) { if (port == PreferredPort(folder)) _assigned.Remove(folder); else _assigned[folder] = port; }
-            var env = new Dictionary<string, string>
+            Dictionary<string, string> env;
+            string args;
+            if (OS.IsWindows)
             {
-                { "PHP_FCGI_MAX_REQUESTS", Settings.Current.PhpMaxRequests.ToString() }, // workers are recycled by the parent
-                { "PHP_FCGI_CHILDREN", Math.Max(1, Settings.Current.PhpChildren).ToString() },
-                { "PHPRC", dir },
-                { "PATH", dir + ";" + Environment.GetEnvironmentVariable("PATH") },
-            };
+                env = new Dictionary<string, string>
+                {
+                    { "PHP_FCGI_MAX_REQUESTS", Settings.Current.PhpMaxRequests.ToString() }, // workers are recycled by the parent
+                    { "PHP_FCGI_CHILDREN", Math.Max(1, Settings.Current.PhpChildren).ToString() },
+                    { "PHPRC", dir },
+                    { "PATH", dir + ";" + Environment.GetEnvironmentVariable("PATH") },
+                };
+                args = "-b 127.0.0.1:" + port + " -c \"" + PhpConfig.IniPath(dir) + "\"";
+            }
+            else
+            {
+                // php-fpm stays in the foreground (-F); -R lets it run as root (a pool without user / group lines)
+                string conf;
+                try { conf = PhpConfig.WriteFpmConf(folder, port); }
+                catch (Exception ex) { return ex.Message; }
+                env = new Dictionary<string, string> { { "PHPRC", dir }, { "PHP_INI_SCAN_DIR", "" } };
+                args = "-c \"" + PhpConfig.IniPath(dir) + "\" -y \"" + conf + "\" -F" + (IsRoot ? " -R" : "");
+            }
             Process p = null;
-            p = Launch(exe, "-b 127.0.0.1:" + port + " -c \"" + PhpConfig.IniPath(dir) + "\"", dir, env, "php-" + PackageTypes.Label(folder), proc => OnExit(folder, proc));
+            p = Launch(exe, args, dir, env, "php-" + PackageTypes.Label(folder), proc => OnExit(folder, proc));
             lock (Sync) _procs[folder] = p;
             // 30 s: the first start after an update can be slow while antivirus scans php-cgi and its extensions
             if (!await WaitForPort(port, p, 30000))
@@ -114,7 +131,7 @@ namespace Portly.Services
                 lock (Sync) _procs.Remove(folder);
                 var reason = p.HasExited ? ExitReason(p) : I18n.T("err.timeout");
                 // no longer tracked, so close it: a pool left running would outlive Stop and block the next start
-                if (!p.HasExited) StopProcess(p, false, 0);
+                if (!p.HasExited) StopPool(p);
                 return reason;
             }
             Log.Info(I18n.T("log.started", "PHP " + PackageTypes.Label(folder) + " (127.0.0.1:" + port + ")"));
@@ -165,8 +182,17 @@ namespace Portly.Services
             lock (Sync) { list = _procs.Values.ToList(); _procs.Clear(); }
             if (list.Count == 0) { SetState(ServiceState.Stopped); return; }
             SetState(ServiceState.Stopping);
-            await Task.Run(() => { foreach (var p in list) StopProcess(p, false, 0); });
+            await Task.Run(() => { foreach (var p in list) StopPool(p); });
             SetState(ServiceState.Stopped);
         }
+
+        /// <summary>php-cgi: end the tree. php-fpm: SIGQUIT finishes the running requests, the tree is killed when it does not end in time.</summary>
+        static void StopPool(Process p)
+        {
+            if (!OS.IsWindows && StopWithSignal(p, 3 /* SIGQUIT */, 10000)) return;
+            StopProcess(p, false, 0);
+        }
+
+        static bool IsRoot { get { return string.Equals(Environment.UserName, "root", StringComparison.Ordinal); } }
     }
 }

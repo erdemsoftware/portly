@@ -36,7 +36,20 @@ namespace Portly.Services
             WebConfig.ProxyPort = FrankenPhp.PortOf;
         }
 
-        public static Service Web { get { var w = Settings.Current.WebServer; return w == "nginx" ? (Service)Nginx : w == "caddy" ? (Service)Caddy : Apache; } }
+        /// <summary>
+        /// The web server of the settings. macOS / Linux: Caddy is the web server there; the chosen Apache / Nginx is used only when a
+        /// package of it is installed, otherwise this is Caddy (the settings value stays as it is, so a later install is picked up).
+        /// </summary>
+        public static Service Web
+        {
+            get
+            {
+                var w = Settings.Current.WebServer;
+                var chosen = w == "nginx" ? (Service)Nginx : w == "caddy" ? (Service)Caddy : Apache;
+                if (!OS.IsWindows && chosen != Caddy && !chosen.IsInstalled) return Caddy;
+                return chosen;
+            }
+        }
 
         /// <summary>Rows shown in the main window.</summary>
         public static List<Service> Rows
@@ -197,14 +210,16 @@ namespace Portly.Services
             await Tools.Hooks.RunAsync("before-start");
             var s = Settings.Current;
             var tasks = new List<Task>();
+            // macOS / Linux have packages for only some services: the others are left out instead of showing an error
+            Func<string, Service, bool> want = (id, svc) => s.IsEnabled(id) && (OS.IsWindows || svc.IsInstalled);
             if (s.IsEnabled("web")) tasks.Add(StartWebAsync());
-            if (s.IsEnabled("mysql")) tasks.Add(MySql.StartAsync());
-            if (s.IsEnabled("redis")) tasks.Add(Redis.StartAsync());
-            if (s.IsEnabled("mailpit")) tasks.Add(Mailpit.StartAsync());
-            if (s.IsEnabled("postgresql")) tasks.Add(Postgres.StartAsync());
-            if (s.IsEnabled("mongodb")) tasks.Add(Mongo.StartAsync());
-            if (s.IsEnabled("memcached")) tasks.Add(Memcached.StartAsync());
-            if (TomcatService.Enabled && s.IsEnabled("tomcat")) tasks.Add(Tomcat.StartAsync());
+            if (want("mysql", MySql)) tasks.Add(MySql.StartAsync());
+            if (want("redis", Redis)) tasks.Add(Redis.StartAsync());
+            if (want("mailpit", Mailpit)) tasks.Add(Mailpit.StartAsync());
+            if (want("postgresql", Postgres)) tasks.Add(Postgres.StartAsync());
+            if (want("mongodb", Mongo)) tasks.Add(Mongo.StartAsync());
+            if (want("memcached", Memcached)) tasks.Add(Memcached.StartAsync());
+            if (TomcatService.Enabled && want("tomcat", Tomcat)) tasks.Add(Tomcat.StartAsync());
             await Task.WhenAll(tasks);
             // the database is up now: phpMyAdmin can count the accounts (auto login only with root alone and no password)
             Config.ToolApps.RefreshPhpMyAdmin();

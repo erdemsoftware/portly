@@ -28,7 +28,25 @@ namespace Portly.Services
         public static bool IsMariaDb { get { return Settings.Current.DbEngine == "mariadb"; } }
         public override string PortText { get { return Settings.Current.MysqlPort.ToString(); } }
 
-        public static string ConfFile { get { return Path.Combine(Paths.Etc, "mysql", "my.ini"); } }
+        public static string ConfFile { get { return Path.Combine(Paths.Etc, "mysql", OS.IsWindows ? "my.ini" : "my.cnf"); } }
+
+        /// <summary>
+        /// macOS / Linux: the Unix socket "localhost" clients use. A socket path may hold only about 100 characters,
+        /// so a deep Portly folder falls back to a short name in the system temp folder.
+        /// </summary>
+        public static string SocketFile
+        {
+            get
+            {
+                var f = Path.Combine(Paths.Tmp, "mysql.sock");
+                if (f.Length <= 96) return f;
+                using (var sha = SHA1.Create())
+                {
+                    var h = BitConverter.ToString(sha.ComputeHash(Encoding.UTF8.GetBytes(Paths.Root))).Replace("-", "").Substring(0, 10).ToLowerInvariant();
+                    return "/tmp/portly-" + h + "-mysql.sock";
+                }
+            }
+        }
 
         public static string DataDirFor(string folder)
         {
@@ -37,7 +55,7 @@ namespace Portly.Services
 
         public static string BinDir { get { var d = PackageTypes.ActiveDir(Settings.Current.DbEngine); return d == null ? null : Path.Combine(d, "bin"); } }
 
-        void WriteConfig(string dir, string data)
+        internal static void WriteConfig(string dir, string data)
         {
             // secure-file-priv pointing at a missing folder stops mysqld from starting (tmp\ can be emptied by hand)
             Directory.CreateDirectory(Paths.MysqlFiles);
@@ -45,6 +63,15 @@ namespace Portly.Services
             v["MYSQL_DIR"] = Paths.Fwd(dir);
             v["MYSQL_DATA"] = Paths.Fwd(data);
             v["MYSQL_PORT"] = Settings.Current.MysqlPort.ToString();
+            if (!OS.IsWindows)
+            {
+                var tmp = Path.Combine(Paths.Tmp, "mysql");
+                Directory.CreateDirectory(tmp);
+                v["MYSQL_TMP"] = Paths.Fwd(tmp);
+                v["MYSQL_SOCKET"] = Paths.Fwd(SocketFile);
+                v["MYSQL_XSOCKET"] = Paths.Fwd(SocketFile).Replace("mysql.sock", "mysqlx.sock");
+                v["MYSQL_PID"] = Paths.Fwd(Path.Combine(Paths.Tmp, "mysql.pid"));
+            }
             // "localhost" resolves to ::1 first; MySQL 8.0.13+ and MariaDB 10.11+ accept several addresses
             var ver = PackageTypes.ParseVersion(dir);
             bool multi = IsMariaDb ? ver >= new Version(10, 11) : ver >= new Version(8, 0, 13);
@@ -53,7 +80,7 @@ namespace Portly.Services
             else if (multi && Net.LoopbackV6) v["BIND"] = "127.0.0.1,::1";
 #if !LEGACY
             // access from WSL: also listen on the WSL adapter (its address changes after a reboot)
-            var wsl = multi && !Settings.Current.AllowLan ? Tools.WslAccess.BindAddress() : null;
+            var wsl = OS.IsWindows && multi && !Settings.Current.AllowLan ? Tools.WslAccess.BindAddress() : null;
             if (wsl != null) v["BIND"] = v["BIND"] + "," + wsl;
 #endif
             var collation = Tools.DbOptions.EffectiveCollation(Settings.Current.DbEngine, ver);
@@ -63,7 +90,7 @@ namespace Portly.Services
             v["SQL_MODE"] = Settings.Current.LegacySqlMode ? "sql_mode=NO_ENGINE_SUBSTITUTION" : "";
             // MySQL 8+: the X protocol would open port 33060 on all interfaces; not needed locally
             v["MYSQL_EXTRA"] = !IsMariaDb && PackageTypes.ParseVersion(dir).Major >= 8 ? "mysqlx=OFF" : "";
-            Templates.WriteIfChanged(ConfFile, Templates.Render("mysql.ini.tpl", v));
+            Templates.WriteIfChanged(ConfFile, Templates.Render(OS.IsWindows ? "mysql.ini.tpl" : "mysql.cnf.tpl", v));
         }
 
         public override async Task StartAsync()
@@ -77,7 +104,7 @@ namespace Portly.Services
             if (_extraArgs == null) { try { File.Delete(ResetFile); } catch { } } // left by a root password reset
             var dir = Path.Combine(Paths.BinOf(engine), folder);
             var data = DataDirFor(folder);
-            var mysqld = Path.Combine(dir, "bin", "mysqld.exe");
+            var mysqld = Path.Combine(dir, "bin", OS.Exe("mysqld"));
             var port = Settings.Current.MysqlPort;
 
             string error = await Task.Run(() =>
@@ -89,8 +116,8 @@ namespace Portly.Services
                     try { if (Directory.Exists(data)) Directory.Delete(data); } catch { }
                     // MySQL: --initialize-insecure; MariaDB: its own mysql_install_db tool (root without password)
                     var r = engine == "mariadb"
-                        ? ProcessUtil.Run(Path.Combine(dir, "bin", "mysql_install_db.exe"), "--datadir=\"" + data + "\"", Path.Combine(dir, "bin"), null, 300000)
-                        : ProcessUtil.Run(mysqld, "--defaults-file=\"" + ConfFile + "\" --initialize-insecure --console", Path.Combine(dir, "bin"), null, 300000);
+                        ? ProcessUtil.Run(Path.Combine(dir, "bin", OS.Exe("mysql_install_db")), "--datadir=\"" + data + "\"", Path.Combine(dir, "bin"), null, 300000)
+                        : ProcessUtil.Run(mysqld, "--defaults-file=\"" + ConfFile + "\"" + AsRoot + " --initialize-insecure --console", Path.Combine(dir, "bin"), null, 300000);
                     if (!Directory.Exists(data) || !Directory.EnumerateFileSystemEntries(data).Any())
                         return I18n.T("err.mysqlInit") + "\n" + ApacheService.LastLines(r.Output, 6);
                 }
@@ -100,7 +127,7 @@ namespace Portly.Services
             if (error != null) { SetState(ServiceState.Error, error); return; }
             if (!EnsurePortFree(port)) return;
 
-            _p = Launch(mysqld, "--defaults-file=\"" + ConfFile + "\"" + (_extraArgs != null ? " " + _extraArgs : ""), Path.Combine(dir, "bin"), null, "mysql-console", OnExit);
+            _p = Launch(mysqld, "--defaults-file=\"" + ConfFile + "\"" + AsRoot + (_extraArgs != null ? " " + _extraArgs : ""), Path.Combine(dir, "bin"), null, "mysql-console", OnExit);
             if (await WaitForPort(port, _p, 60000))
             {
                 SetState(ServiceState.Running);
@@ -113,6 +140,9 @@ namespace Portly.Services
         }
 
         string _extraArgs;
+
+        /// <summary>macOS / Linux: mysqld refuses to run as root unless told to (a container, or sudo).</summary>
+        static string AsRoot { get { return !OS.IsWindows && string.Equals(Environment.UserName, "root", StringComparison.Ordinal) ? " --user=root" : ""; } }
 
         /// <summary>After a crash / power loss InnoDB or Aria may refuse to start: point the user to recovery mode.</summary>
         static string RecoveryHint()
@@ -193,10 +223,19 @@ namespace Portly.Services
             await Task.Run(() =>
             {
                 // clean shutdown keeps InnoDB fast to start next time
-                var r = Tools.Database.Admin("shutdown", 20000);
-                // a wrong root password makes "shutdown" fail at once: do not wait the full 30 s then
-                if (p.WaitForExit(r.Ok ? 30000 : 3000)) LastStopClean = r.Ok;
-                else StopProcess(p, false, 0);
+                if (!OS.IsWindows)
+                {
+                    // SIGTERM is mysqld's clean shutdown (no root password needed); kill only when it does not end
+                    if (StopWithSignal(p, 15, 60000)) LastStopClean = true;
+                    else StopProcess(p, false, 0);
+                }
+                else
+                {
+                    var r = Tools.Database.Admin("shutdown", 20000);
+                    // a wrong root password makes "shutdown" fail at once: do not wait the full 30 s then
+                    if (p.WaitForExit(r.Ok ? 30000 : 3000)) LastStopClean = r.Ok;
+                    else StopProcess(p, false, 0);
+                }
                 p.WaitForExit(10000);
                 // the next start (reset root, recovery, engine switch) needs the port really free
                 for (int i = 0; i < 50 && ProcessUtil.IsPortInUse(Settings.Current.MysqlPort); i++) System.Threading.Thread.Sleep(200);
@@ -238,7 +277,7 @@ namespace Portly.Services
             v["LOGS"] = pathFor(Paths.Logs);
             Templates.WriteIfChanged(conf, Templates.Render("redis.conf.tpl", v));
             if (!EnsurePortFree(port)) return;
-            _p = Launch(Path.Combine(dir, "redis-server.exe"), "\"" + pathFor(conf) + "\"", dir, null, "redis-console", OnExit);
+            _p = Launch(Path.Combine(dir, OS.Exe("redis-server")), "\"" + pathFor(conf) + "\"", dir, null, "redis-console", OnExit);
             if (await WaitForPort(port, _p, 10000)) { SetState(ServiceState.Running); Log.Info(I18n.T("log.started", "Redis " + VersionLabel)); }
             else SetState(ServiceState.Error, _p.HasExited ? ExitReason(_p) : I18n.T("err.timeout"));
         }
@@ -305,7 +344,7 @@ namespace Portly.Services
             {
                 case "mailhog":
                     // no Host check and a WebSocket open to every site: only reachable through HostGuard
-                    exe = Path.Combine(dir, "MailHog.exe");
+                    exe = Path.Combine(dir, OS.Exe("MailHog"));
                     web = PrivatePort();
                     secret = Guid.NewGuid().ToString("N");
                     var hash = ProcessUtil.Run(exe, "bcrypt " + secret, dir, null, 15000).Output.Trim();
@@ -313,7 +352,7 @@ namespace Portly.Services
                     args = "-api-bind-addr 127.0.0.1:" + web + " -ui-bind-addr 127.0.0.1:" + web + " -smtp-bind-addr 127.0.0.1:" + s.MailpitSmtpPort + " -auth-file \"" + authFile + "\"";
                     break;
                 case "smtp4dev":
-                    exe = Path.Combine(dir, "Rnwood.Smtp4dev.exe");
+                    exe = Path.Combine(dir, OS.Exe("Rnwood.Smtp4dev"));
                     // local only, no IMAP / POP3 ports, everything stored in data\smtp4dev
                     args = "--urls=http://127.0.0.1:" + s.MailpitWebPort + " --smtpport=" + s.MailpitSmtpPort +
                            " --allowremoteconnections- --imapport=\"\" --pop3port=\"\" --nousersettings" +
@@ -321,7 +360,7 @@ namespace Portly.Services
                     env = new Dictionary<string, string> { { "AllowedHosts", "localhost;127.0.0.1;[::1]" } }; // ASP.NET's Host filter
                     break;
                 default:
-                    exe = Path.Combine(dir, "mailpit.exe");
+                    exe = Path.Combine(dir, OS.Exe("mailpit"));
                     string hostCheck;
                     if (KnowsAllowedHosts(exe)) hostCheck = " --allowed-hosts localhost,127.0.0.1,[::1]";
                     else

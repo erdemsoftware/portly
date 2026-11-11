@@ -179,7 +179,8 @@ namespace Portly.Tools
             var m = Regex.Match(f, @"-(vs1[5-9]|vc1[45])-");
             if (m.Success) b.Compiler = m.Groups[1].Value;
             if (f.EndsWith("-x86")) b.Arch = "x86";
-            var exe = Path.Combine(phpDir, "php.exe");
+            if (!OS.IsWindows) b.Arch = OS.Arch;
+            var exe = Path.Combine(phpDir, OS.Exe("php"));
             if (File.Exists(exe))
             {
                 // -n: no php.ini, so a broken extension line cannot hide the build information
@@ -206,9 +207,23 @@ namespace Portly.Tools
             return b;
         }
 
+        /// <summary>Translated text, or the English fallback while the language files have no such key yet.</summary>
+        internal static string TOr(string key, string fallback)
+        {
+            var s = I18n.T(key);
+            return s == key ? fallback : s;
+        }
+
         /// <summary>Why no download fits this PHP, or null when one does.</summary>
         public static string Unavailable(ExtInfo x, PhpBuild b)
         {
+            if (!OS.IsWindows)
+            {
+                // macOS / Linux PHP is a static build: what it has is compiled in, nothing can be added
+                bool builtIn = IsInstalled(Path.Combine(Paths.BinOf("php"), b.Folder), x.Id);
+                return builtIn ? TOr("ext.builtIn", "Built into this PHP (nothing to install)")
+                               : TOr("ext.notInStatic", "Not available in this PHP build (a static PHP cannot load extensions)");
+            }
             if (b.ThreadSafe) return I18n.T("ext.onlyNts");
             if (!string.Equals(b.Arch, "x64", StringComparison.OrdinalIgnoreCase)) return I18n.T("ext.onlyX64");
             if (x.BuildFor(b) != null) return null;
@@ -220,6 +235,7 @@ namespace Portly.Tools
         // ---------------- state ----------------
         public static bool IsInstalled(string phpDir, string id)
         {
+            if (!OS.IsWindows) return PhpConfig.ListExtensions(phpDir).Any(kv => kv.Key.Equals(id, StringComparison.OrdinalIgnoreCase));   // compiled in
             return File.Exists(Path.Combine(phpDir, "ext", "php_" + id + ".dll"));
         }
 
@@ -320,6 +336,7 @@ namespace Portly.Tools
         /// <summary>Disable in php.ini and delete the files Portly installed for it (shared DLLs stay while still used).</summary>
         public static void Remove(string phpDir, string id)
         {
+            if (!OS.IsWindows) return;   // built in, nothing was installed
             var x = Get(id);
             if (x != null && x.Zend) DisableZend(PhpConfig.IniPath(phpDir), id);
             else if (File.Exists(PhpConfig.IniPath(phpDir))) PhpConfig.ToggleExtension(phpDir, id, false);
@@ -347,8 +364,8 @@ namespace Portly.Tools
         /// <summary>null when "php -m" runs cleanly and lists the module; otherwise the reason (startup warning).</summary>
         public static string CheckLoads(string phpDir, string id)
         {
-            var exe = Path.Combine(phpDir, "php.exe");
-            var env = new Dictionary<string, string> { { "PATH", phpDir + ";" + Environment.GetEnvironmentVariable("PATH") }, { "PHPRC", phpDir } };
+            var exe = Path.Combine(phpDir, OS.Exe("php"));
+            var env = new Dictionary<string, string> { { "PATH", phpDir + Path.PathSeparator + Environment.GetEnvironmentVariable("PATH") }, { "PHPRC", phpDir } };
             var r = ProcessUtil.Run(exe, "-c \"" + PhpConfig.IniPath(phpDir) + "\" -m", phpDir, env, 30000);
             if (r.TimedOut) return I18n.T("err.timeout");
             var lines = r.Output.Split('\n').Select(l => l.Trim()).ToList();

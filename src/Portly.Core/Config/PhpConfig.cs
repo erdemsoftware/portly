@@ -31,33 +31,56 @@ namespace Portly.Config
             if (fresh)
             {
                 var src = new[] { "php.ini-development", "php.ini-production" }.Select(f => Path.Combine(phpDir, f)).FirstOrDefault(File.Exists);
-                if (src == null) File.WriteAllText(ini, "[PHP]\r\n");
+                if (src == null) File.WriteAllText(ini, OS.IsWindows ? "[PHP]\r\n" : "[PHP]\n");
                 else File.Copy(src, ini);
             }
             var lines = File.ReadAllLines(ini, Encoding.UTF8).ToList();
             var before = string.Join("\n", lines);
 
             // ---- paths (always, keeps the folder portable) ----
-            Set(lines, "extension_dir", Q(Paths.Fwd(Path.Combine(phpDir, "ext"))));
+            // macOS / Linux PHP is a static build: every extension is compiled in, there is no ext\ folder
+            if (OS.IsWindows) Set(lines, "extension_dir", Q(Paths.Fwd(Path.Combine(phpDir, "ext"))));
             Set(lines, "error_log", Q(Paths.Fwd(Path.Combine(Paths.Logs, "php_errors.log"))));
             Set(lines, "session.save_path", Q(Paths.Fwd(Paths.Sessions)));
             Set(lines, "upload_tmp_dir", Q(Paths.Fwd(Paths.Tmp)));
-            Set(lines, "curl.cainfo", Q(Paths.Fwd(Certs.BundleFile)));
-            Set(lines, "openssl.cafile", Q(Paths.Fwd(Certs.BundleFile)));
-            // mail(): PHP's built-in SMTP client on Windows talks straight to Mailpit (no helper process).
-            Set(lines, "SMTP", "127.0.0.1");
-            Set(lines, "smtp_port", Settings.Current.MailpitSmtpPort.ToString());
+            if (OS.IsWindows)
+            {
+                Set(lines, "curl.cainfo", Q(Paths.Fwd(Certs.BundleFile)));
+                Set(lines, "openssl.cafile", Q(Paths.Fwd(Certs.BundleFile)));
+                // mail(): PHP's built-in SMTP client on Windows talks straight to Mailpit (no helper process).
+                Set(lines, "SMTP", "127.0.0.1");
+                Set(lines, "smtp_port", Settings.Current.MailpitSmtpPort.ToString());
+            }
+            else
+            {
+                Set(lines, "sys_temp_dir", Q(Paths.Fwd(Paths.Tmp)));
+                // a static PHP has no CA bundle of its own it can rely on: use Portly's (system roots + Portly's authority)
+                if (File.Exists(Certs.BundleFile))
+                {
+                    Set(lines, "curl.cainfo", Q(Paths.Fwd(Certs.BundleFile)));
+                    Set(lines, "openssl.cafile", Q(Paths.Fwd(Certs.BundleFile)));
+                }
+                // mail(): there is no built-in SMTP client outside Windows; Mailpit's sendmail command hands the message over
+                var mailpit = Settings.Current.MailTool == "mailpit" ? PackageTypes.ActiveDir("mailpit") : null;
+                if (mailpit != null)
+                    Set(lines, "sendmail_path", Q(Paths.Fwd(Path.Combine(mailpit, "mailpit")) + " sendmail --smtp-addr 127.0.0.1:" + Settings.Current.MailpitSmtpPort));
+            }
             if (Get(lines, "sendmail_from") == "") Set(lines, "sendmail_from", "\"portly@localhost\"");
             // a sendmail_path written by older Portly / Laragon (mailpit.exe sendmail) would override SMTP
-            for (int i = 0; i < lines.Count; i++)
-                if (Regex.IsMatch(lines[i], @"^\s*sendmail_path\s*=.*mailpit", RegexOptions.IgnoreCase)) lines[i] = ";" + lines[i];
+            if (OS.IsWindows)
+                for (int i = 0; i < lines.Count; i++)
+                    if (Regex.IsMatch(lines[i], @"^\s*sendmail_path\s*=.*mailpit", RegexOptions.IgnoreCase)) lines[i] = ";" + lines[i];
 
             // ---- OPcache on Windows: several php-cgi workers cannot share memory at the same address (ASLR).
-            //      A file cache lets every worker fall back safely (PHP 8.5 refuses to start otherwise). ----
-            var opcacheDir = Path.Combine(Paths.Tmp, "opcache");
-            Directory.CreateDirectory(opcacheDir);
-            Set(lines, "opcache.file_cache", Q(Paths.Fwd(opcacheDir)));
-            Set(lines, "opcache.file_cache_fallback", "1");
+            //      A file cache lets every worker fall back safely (PHP 8.5 refuses to start otherwise).
+            //      php-fpm workers on macOS / Linux fork from one parent and share the cache normally. ----
+            if (OS.IsWindows)
+            {
+                var opcacheDir = Path.Combine(Paths.Tmp, "opcache");
+                Directory.CreateDirectory(opcacheDir);
+                Set(lines, "opcache.file_cache", Q(Paths.Fwd(opcacheDir)));
+                Set(lines, "opcache.file_cache_fallback", "1");
+            }
 
             // ---- security (always) ----
             // session.upload_progress + a dynamic include can lead to remote code execution: keep it off.
@@ -80,9 +103,12 @@ namespace Portly.Config
                 Set(lines, "display_errors", "On");
                 Set(lines, "error_reporting", "E_ALL");
                 Set(lines, "log_errors", "On");
-                foreach (var ext in Extensions)
-                    if (File.Exists(Path.Combine(phpDir, "ext", "php_" + ext + ".dll"))) EnableExtension(lines, ext);
-                if (File.Exists(Path.Combine(phpDir, "ext", "php_opcache.dll"))) EnableZend(lines, "opcache");
+                if (OS.IsWindows)
+                {
+                    foreach (var ext in Extensions)
+                        if (File.Exists(Path.Combine(phpDir, "ext", "php_" + ext + ".dll"))) EnableExtension(lines, ext);
+                    if (File.Exists(Path.Combine(phpDir, "ext", "php_opcache.dll"))) EnableZend(lines, "opcache");
+                }
                 Set(lines, "opcache.enable", "1");
                 Set(lines, "opcache.enable_cli", "0");
                 Set(lines, "opcache.validate_timestamps", "1");
@@ -91,6 +117,32 @@ namespace Portly.Config
 
             if (string.Join("\n", lines) != before)
                 File.WriteAllLines(ini, lines, new UTF8Encoding(false));
+        }
+
+        /// <summary>macOS / Linux: etc/php-fpm/&lt;php folder&gt;.conf, the php-fpm configuration of one PHP version (Windows has no php-fpm).</summary>
+        public static string FpmConf(string folder) { return Path.Combine(Paths.Etc, "php-fpm", folder + ".conf"); }
+
+        public static string FpmPid(string folder) { return Path.Combine(Paths.Tmp, "php-fpm-" + folder + ".pid"); }
+
+        /// <summary>
+        /// php-fpm in the foreground (daemonize = no, so Portly owns the process) with one static pool on 127.0.0.1:port.
+        /// No user / group lines: the pool runs as the user who started Portly (php-fpm -R when that is root).
+        /// </summary>
+        public static string WriteFpmConf(string folder, int port)
+        {
+            var s = Settings.Current;
+            Directory.CreateDirectory(Path.Combine(Paths.Etc, "php-fpm"));
+            Directory.CreateDirectory(Paths.Logs);
+            Directory.CreateDirectory(Paths.Tmp);
+            var v = Templates.CommonVars();
+            v["PHP_FPM_PID"] = Paths.Fwd(FpmPid(folder));
+            v["PHP_FPM_LOG"] = Paths.Fwd(Path.Combine(Paths.Logs, "php-fpm-" + PackageTypes.Label(folder) + ".log"));
+            v["PHP_PORT"] = port.ToString();
+            v["PHP_CHILDREN"] = Math.Max(1, s.PhpChildren).ToString();
+            v["PHP_MAX_REQUESTS"] = s.PhpMaxRequests.ToString();
+            var file = FpmConf(folder);
+            Templates.WriteIfChanged(file, Templates.Render("php-fpm.conf.tpl", v));
+            return file;
         }
 
         static string Q(string v) { return "\"" + v + "\""; }
@@ -148,6 +200,7 @@ namespace Portly.Config
         public static List<KeyValuePair<string, bool>> ListExtensions(string phpDir)
         {
             var result = new List<KeyValuePair<string, bool>>();
+            if (!OS.IsWindows) return BuiltInExtensions(phpDir);
             var extDir = Path.Combine(phpDir, "ext");
             if (!Directory.Exists(extDir)) return result;
             var ini = File.Exists(IniPath(phpDir)) ? File.ReadAllLines(IniPath(phpDir)) : new string[0];
@@ -161,8 +214,37 @@ namespace Portly.Config
             return result;
         }
 
+        static readonly Dictionary<string, List<KeyValuePair<string, bool>>> BuiltIn = new Dictionary<string, List<KeyValuePair<string, bool>>>();
+
+        /// <summary>macOS / Linux: every extension of the static PHP build is compiled in and always on ("php -m").</summary>
+        static List<KeyValuePair<string, bool>> BuiltInExtensions(string phpDir)
+        {
+            lock (BuiltIn)
+            {
+                List<KeyValuePair<string, bool>> cached;
+                if (BuiltIn.TryGetValue(phpDir, out cached)) return new List<KeyValuePair<string, bool>>(cached);
+            }
+            var list = new List<KeyValuePair<string, bool>>();
+            var exe = Path.Combine(phpDir, OS.Exe("php"));
+            if (File.Exists(exe))
+            {
+                var r = ProcessUtil.Run(exe, "-n -m", phpDir, null, 15000);
+                foreach (var raw in r.Output.Split('\n'))
+                {
+                    var name = raw.Trim().ToLowerInvariant();
+                    if (name == "" || name.StartsWith("[") || name.Contains(" ")) continue;
+                    if (name == "core" || name == "date" || name == "opcache" || list.Any(kv => kv.Key == name)) continue;
+                    list.Add(new KeyValuePair<string, bool>(name, true));
+                }
+                list.Sort((a, b) => string.CompareOrdinal(a.Key, b.Key));
+                if (list.Count > 0) lock (BuiltIn) BuiltIn[phpDir] = list;
+            }
+            return new List<KeyValuePair<string, bool>>(list);
+        }
+
         public static void ToggleExtension(string phpDir, string name, bool enable)
         {
+            if (!OS.IsWindows) return;   // nothing to switch: built in
             var ini = IniPath(phpDir);
             var lines = File.ReadAllLines(ini, Encoding.UTF8).ToList();
             if (enable) EnableExtension(lines, name);
@@ -206,6 +288,8 @@ namespace Portly.Config
             try
             {
                 string v;
+                // macOS / Linux already name zones the IANA way ("Europe/Istanbul")
+                if (!OS.IsWindows && TimeZoneInfo.Local.Id.Contains("/")) return TimeZoneInfo.Local.Id;
                 return Map.TryGetValue(TimeZoneInfo.Local.Id, out v) ? v : "UTC";
             }
             catch { return "UTC"; }

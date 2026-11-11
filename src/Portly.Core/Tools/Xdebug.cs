@@ -21,8 +21,12 @@ namespace Portly.Tools
         static readonly Regex On = new Regex(@"^\s*zend_extension\s*=\s*""?(php_)?xdebug(\.dll)?""?\s*$", RegexOptions.IgnoreCase);
         static readonly Regex Off = new Regex(@"^\s*;\s*zend_extension\s*=\s*""?(php_)?xdebug(\.dll)?""?\s*$", RegexOptions.IgnoreCase);
 
+        /// <summary>Xdebug is a loadable extension: macOS / Linux PHP is a static build that cannot load it.</summary>
+        public static bool Available { get { return OS.IsWindows; } }
+
         public static bool IsEnabled(string phpDir)
         {
+            if (!OS.IsWindows) return false;
             var ini = PhpConfig.IniPath(phpDir);
             return File.Exists(ini) && File.ReadAllLines(ini).Any(l => On.IsMatch(l));
         }
@@ -30,6 +34,7 @@ namespace Portly.Tools
         /// <summary>https://xdebug.org/files/php_xdebug-3.5.3-8.4-nts-vs17-x86_64.dll for php-8.4.x-nts-Win32-vs17-x64</summary>
         public static string DownloadUrl(string phpFolder)
         {
+            if (!OS.IsWindows) return "";
             var branch = PackageTypes.Branch(phpFolder);
             var m = Regex.Match(phpFolder, @"-(vs1[5-9]|vc1[45])-", RegexOptions.IgnoreCase);
             var compiler = m.Success ? m.Groups[1].Value.ToLowerInvariant() : "vs17";
@@ -39,6 +44,7 @@ namespace Portly.Tools
 
         public static async Task EnableAsync(string phpDir)
         {
+            if (!OS.IsWindows) throw new Exception(PhpExtensions.TOr("ext.xdebugStatic", "Xdebug is not available in the static PHP builds used on macOS and Linux."));
             var dll = Path.Combine(phpDir, "ext", "php_xdebug.dll");
             if (!File.Exists(dll))
             {
@@ -64,6 +70,7 @@ namespace Portly.Tools
 
         public static void Disable(string phpDir)
         {
+            if (!OS.IsWindows) return;
             var ini = PhpConfig.IniPath(phpDir);
             var lines = File.ReadAllLines(ini, Encoding.UTF8).ToList();
             for (int i = 0; i < lines.Count; i++) if (On.IsMatch(lines[i])) lines[i] = ";" + lines[i].TrimStart();
