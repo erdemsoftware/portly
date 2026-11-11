@@ -67,7 +67,8 @@ cp "$INSTALL/conf/mime.types" "$STAGE/conf/"
 cp "$SRC/LICENSE" "$SRC/NOTICE" "$STAGE/"
 # helper scripts that point to the build folder
 rm -f "$STAGE/bin/apxs" "$STAGE/bin/apr-1-config" "$STAGE/bin/apu-1-config" "$STAGE/bin/envvars" "$STAGE/bin/envvars-std" "$STAGE/bin/dbmmanage" "$STAGE/bin/apachectl"
-strip "$STAGE/bin/httpd" 2>/dev/null || true
+# -x: keep the global symbols, the modules look them up in the httpd program (plain strip removes them on macOS)
+strip -x "$STAGE/bin/httpd" 2>/dev/null || true
 strip -x "$STAGE/modules/"*.so 2>/dev/null || true
 chmod 755 "$STAGE/bin/"*
 "$STAGE/bin/httpd" -V
