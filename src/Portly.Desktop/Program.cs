@@ -32,10 +32,18 @@ namespace Portly.Desktop
         static int Main(string[] args)
         {
             // elevated helper mode: only rewrites the Portly block of the hosts file / trusts the CA
-            if (args.Length >= 2 && args[0] == "--hosts-apply") return HostsFile.ApplyElevated(args[1]);
-            if (args.Length >= 2 && args[0] == "--hosts-write") return HostsFile.WriteElevated(args[1]);
-            if (args.Length >= 2 && args[0] == "--trust-ca") return Certs.TrustCaElevated(args[1]);
-            if (args.Length >= 2 && args[0] == "--untrust-ca") return Certs.UntrustCaElevated(args[1]);
+            // service mode and the Firefox policy helper (no window, Windows only)
+            switch (StartupRoute.Helper(args, OS.IsWindows))
+            {
+                case "hosts-apply": return HostsFile.ApplyElevated(args[1]);
+                case "hosts-write": return HostsFile.WriteElevated(args[1]);
+                case "trust-ca": return Certs.TrustCaElevated(args[1]);
+                case "untrust-ca": return Certs.UntrustCaElevated(args[1]);
+                case "service": return Services.ServiceMode.RunService();
+                case "install-service": return Services.ServiceMode.InstallElevated(args[1]);
+                case "uninstall-service": return Services.ServiceMode.UninstallElevated();
+                case "firefox-policy": return Tools.FirefoxTrust.ApplyPolicyElevated(args[1]);
+            }
 
             // --screenshot <file.png> [width] [height]: render the main window without showing it
             int i = Array.IndexOf(args, "--screenshot");

@@ -12,5 +12,7 @@
   <ItemGroup>
     <None Include="..\..\src\Portly\lang\*.json" Link="lang\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <ProjectReference Include="..\..\src\Portly.Core\Portly.Core.csproj" />
+    <!-- Avalonia-free sources of the desktop app: notifications, start-up routing, shutdown handling -->
+    <Compile Include="..\..\src\Portly.Desktop\Notify.cs;..\..\src\Portly.Desktop\StartupRoute.cs;..\..\src\Portly.Desktop\ShutdownGuard.cs" Link="Desktop\%(Filename)%(Extension)" />
   </ItemGroup>
 </Project>

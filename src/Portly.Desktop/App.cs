@@ -28,6 +28,8 @@ namespace Portly.Desktop
                 desktop.ShutdownMode = ShutdownMode.OnExplicitShutdown;
                 var main = new MainWindow(Program.StartHidden, Program.StartServices);
                 if (!Program.StartHidden) desktop.MainWindow = main;
+                // quit from the dock menu / logout (macOS), Shutdown(): the services stop before the windows close
+                desktop.ShutdownRequested += (s, e) => main.StopOnShutdown();
                 desktop.Exit += (s, e) => main.StopOnShutdown();
                 Dispatcher.UIThread.UnhandledException += (s, e) =>
                 {

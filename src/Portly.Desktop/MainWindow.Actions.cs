@@ -181,7 +181,7 @@ namespace Portly.Desktop
             if (problems.Count == 0) return;
             foreach (var p in problems) Log.Warn(I18n.T("verify.problem", p.Count, p.Title));
             if (IsVisible) await ShowVerify(problems);
-            else SetStatus(I18n.T("verify.problem", problems[0].Count, problems[0].Title));
+            else Alert(I18n.T("verify.problem", problems[0].Count, problems[0].Title), true);
         }
 
         /// <summary>shared: integrity check window; problems = null checks every active version.</summary>

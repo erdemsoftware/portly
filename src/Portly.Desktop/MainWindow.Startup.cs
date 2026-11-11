@@ -217,7 +217,7 @@ namespace Portly.Desktop
                 UpdateBanner();
                 if (interactive && u == null && UpdateNotices.Current.Count == 0) await Dialogs.Info(this, I18n.T("update.none", AppInfo.VersionText));
                 if (interactive && UpdateNotices.Current.Count > 0) { ShowFromTray(); ShowPage("services"); }
-                if (u != null && !IsVisible) SetStatus(I18n.T("update.banner", u.Version));
+                if (u != null && !IsVisible) Alert(I18n.T("update.banner", u.Version));
             }
             catch (Exception ex)
             {

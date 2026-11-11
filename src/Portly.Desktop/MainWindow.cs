@@ -36,6 +36,7 @@ namespace Portly.Desktop
 
         readonly bool _startHidden, _startServices;
         bool _exiting, _stopped;
+        readonly object _stopLock = new object();
         string _page = "services";
         ContentControl _host;
         TextBlock _status;
@@ -68,6 +69,7 @@ namespace Portly.Desktop
                 UpdateRow(svc);
                 UpdateGlobal();
                 UpdateTray();
+                if (OS.IsWindows) ShutdownGuard.SetBlock(ServiceManager.AnyActive && !ServiceMode.IsController);
                 // the web server has just made the site certificates (the HTTPS badges were checked before that), and the
                 // "On the network" badge turns orange / green with it
                 if (svc == ServiceManager.Web && (svc.State == ServiceState.Running || ShareStore.All().Any(x => LanShare.IsRunning(x.Host)))) FillSites();
@@ -77,7 +79,7 @@ namespace Portly.Desktop
             int jobsShown = 0;
             Jobs.Changed += () => Ui.Post(() => { var n = Jobs.ActiveCountAll(); if (n != jobsShown) { jobsShown = n; FillSites(); } });
             Log.Written += line => Ui.Post(() => AppendLog(line));
-            ServiceManager.Php.Problem += text => Ui.Post(() => SetStatus(text));
+            ServiceManager.Php.Problem += text => Ui.Post(() => Alert(text, true));
             Catalog.Changed += () => Ui.Post(UpdateBanner);
 
             BuildUi();
@@ -86,6 +88,7 @@ namespace Portly.Desktop
             _debounce = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
             _debounce.Tick += async (s, e) => { _debounce.Stop(); try { await OnDocRootChanged(); } catch (Exception ex) { Log.Warn(ex.Message); } };
             CreateTray();
+            ShutdownGuard.Start(StopOnShutdown, () => Ui.Post(async () => await ExitAsync()));
             if (Application.Current != null) Application.Current.ActualThemeVariantChanged += OnSystemThemeChanged;
             // startup work runs once the loop is up, whether the window is shown or not (tray start)
             DispatcherTimer.RunOnce(() => { var _ = RunStartup(); }, TimeSpan.FromMilliseconds(200));
@@ -239,6 +242,13 @@ namespace Portly.Desktop
         /// <summary>shared: one line under the page ("Apache started", "Backing up ...").</summary>
         public void SetStatus(string text) { if (_status != null) _status.Text = text; }
 
+        /// <summary>shared: the text in the status line and, while the window is not on screen, as a system notification (tray balloon).</summary>
+        public void Alert(string text, bool warning = false)
+        {
+            SetStatus(text);
+            if (!IsVisible) Notify.Show("Portly", text, warning);
+        }
+
         /// <summary>shared: bring the window up (from the tray, a notification or another Portly start).</summary>
         public void ShowFromTray()
         {
@@ -349,6 +359,7 @@ namespace Portly.Desktop
                     Settings.Current.TrayHintShown = true;
                     Settings.Current.Save();
                     Log.Info(I18n.T("tray.hint"));
+                    Notify.Show("Portly", I18n.T("tray.hint"));
                 }
                 return;
             }
@@ -358,17 +369,21 @@ namespace Portly.Desktop
         /// <summary>The process is going away (shutdown, Quit from the dock menu): stop the services before it does.</summary>
         public void StopOnShutdown()
         {
-            if (_stopped) return;
-            _stopped = true;
-            try
+            // the window thread (Windows session end), the UI thread and the lifetime may all call this: the later ones wait for the first
+            lock (_stopLock)
             {
-                Share.StopAll();
-                LanShare.StopAll();
+                if (_stopped) return;
+                _stopped = true;
+                try
+                {
+                    Share.StopAll();
+                    LanShare.StopAll();
+                }
+                catch { }
+                // service mode: the Windows service keeps running without the window
+                if (!(OS.IsWindows && ServiceMode.IsController))
+                    try { Task.Run(() => ServiceManager.StopAllAsync()).Wait(15000); } catch { }
             }
-            catch { }
-            // service mode: the Windows service keeps running without the window
-            if (!(OS.IsWindows && ServiceMode.IsController))
-                try { Task.Run(() => ServiceManager.StopAllAsync()).Wait(15000); } catch { }
         }
 
         public async Task ExitAsync()
