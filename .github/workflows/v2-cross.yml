@@ -138,7 +138,7 @@ jobs:
           set -euo pipefail
           rm -rf "$RUNNER_TEMP/bad" && mkdir -p "$RUNNER_TEMP/bad"
           cp dist/Portly-*-*.* "$RUNNER_TEMP/bad/"
-          sed 's/^[0-9a-f]{8}/00000000/' dist/SHA256SUMS > "$RUNNER_TEMP/bad/SHA256SUMS"
+          sed -E 's/^[0-9a-f]{8}/00000000/' dist/SHA256SUMS > "$RUNNER_TEMP/bad/SHA256SUMS"
           if PORTLY_INSTALL_FROM="$RUNNER_TEMP/bad" PORTLY_APPS_DIR="$RUNNER_TEMP/apps-bad" PORTLY_PREFIX="$RUNNER_TEMP/inst-bad" sh tools/install.sh; then
             echo "the installer accepted a wrong checksum"; exit 1
           fi
