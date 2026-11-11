@@ -53,7 +53,7 @@ cd "$SRC"
   --with-pcre="$DEPS/bin/pcre2-config" \
   --with-ssl="$DEPS" --with-nghttp2="$DEPS" \
   --with-mpm=event \
-  --enable-so --enable-mods-shared=most \
+  --enable-so --enable-mods-shared=most --enable-mods-static=unixd \
   --enable-ssl=shared --enable-http2=shared --enable-proxy=shared --enable-proxy-fcgi=shared --enable-proxy-http=shared \
   --enable-proxy-wstunnel=shared --enable-rewrite=shared --enable-headers=shared --enable-deflate=shared --enable-expires=shared \
   --enable-socache-shmcb=shared --enable-vhost-alias=shared --enable-slotmem-shm=shared \

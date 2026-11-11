@@ -66,12 +66,14 @@ httpd)
   ls "$P/modules"
   for m in ssl proxy proxy_fcgi rewrite headers http2; do [ -f "$P/modules/mod_$m.so" ] || fail "mod_$m.so is missing"; done
   make_cert
+  # mod_unixd is built into httpd (a loadable mod_unixd.so does not work on macOS); load it only when the package has the file
+  UNIXD=""; [ -f "$P/modules/mod_unixd.so" ] && UNIXD="LoadModule unixd_module modules/mod_unixd.so"
   mkdir -p "$P/logs" "$T/www"; echo "portly-httpd-ok" > "$T/www/index.html"
   cat > "$T/httpd.conf" <<CONF
 ServerRoot "$P"
 Listen 127.0.0.1:$PORT
 Listen 127.0.0.1:$SPORT
-LoadModule unixd_module modules/mod_unixd.so
+$UNIXD
 LoadModule authz_core_module modules/mod_authz_core.so
 LoadModule mime_module modules/mod_mime.so
 LoadModule dir_module modules/mod_dir.so
