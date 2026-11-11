@@ -1,0 +1,44 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Portly 2 desktop app (Avalonia): Windows, macOS and Linux from one code base.
+    dotnet build src\Portly.Desktop -c Release
+    dotnet publish src\Portly.Desktop -c Release -r linux-x64 | osx-arm64 | osx-x64 | win-x64
+  -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AssemblyName>Portly</AssemblyName>
+    <RootNamespace>Portly.Desktop</RootNamespace>
+    <ApplicationIcon>..\..\assets\portly.ico</ApplicationIcon>
+    <Version>2.0.0</Version>
+    <Company>Erdem Software</Company>
+    <Product>Portly</Product>
+    <Authors>Erdem Software</Authors>
+    <Copyright>Copyright (c) 2026 Erdem Software. MIT License.</Copyright>
+    <OutputPath>..\..\build\desktop\</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <NoWarn>$(NoWarn);CA1416</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="12.1.6" />
+    <PackageReference Include="Avalonia.Desktop" Version="12.1.6" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.6" />
+    <PackageReference Include="Avalonia.Fonts.Inter" Version="12.1.6" />
+    <!-- screenshot mode (no window): renders pages to PNG for docs and visual checks -->
+    <PackageReference Include="Avalonia.Headless" Version="12.1.6" />
+    <ProjectReference Include="..\Portly.Core\Portly.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\Portly\lang\*.json" Link="lang\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\Portly\templates\**\*" Link="templates\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <EmbeddedResource Include="..\..\assets\portly-256.png" LogicalName="portly.png" />
+  </ItemGroup>
+
+</Project>

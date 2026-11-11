@@ -39,8 +39,12 @@
     <DefineConstants>$(DefineConstants);LEGACY</DefineConstants>
   </PropertyGroup>
 
+  <!-- the engine is compiled into Portly.exe (not a dll): the in-app updater replaces only Portly.exe, lang\ and templates\ -->
   <ItemGroup>
-    <Reference Include="System.Web.Extensions" />
+    <Compile Include="..\Portly.Core\**\*.cs" Exclude="..\Portly.Core\obj\**;..\Portly.Core\bin\**" LinkBase="Engine" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Reference Include="System.Security" />
     <Reference Include="System.IO.Compression" />
     <Reference Include="System.IO.Compression.FileSystem" />

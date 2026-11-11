@@ -48,6 +48,7 @@ namespace Portly.Core
         /// <summary>Best effort: on Windows 7 this fails when Portly itself already runs inside a job.</summary>
         public static void Add(Process p)
         {
+            if (!OS.IsWindows) { Children.Add(p); return; }
             Ensure();
             if (_failed || _job == IntPtr.Zero) return;
             try { AssignProcessToJobObject(_job, p.Handle); } catch { }

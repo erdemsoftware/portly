@@ -30,13 +30,13 @@ namespace Portly.Core
             {
                 var v = _ini.Get("service", "RootPassword", "");
                 if (v == "") return "";
-                try { return Encoding.UTF8.GetString(ProtectedData.Unprotect(Convert.FromBase64String(v), Entropy, DataProtectionScope.LocalMachine)); }
+                try { return Encoding.UTF8.GetString(Secret.Unprotect(Convert.FromBase64String(v), Entropy, true)); }
                 catch { return ""; }
             }
             set
             {
                 if (string.IsNullOrEmpty(value)) { _ini.Set("service", "RootPassword", ""); return; }
-                _ini.Set("service", "RootPassword", Convert.ToBase64String(ProtectedData.Protect(Encoding.UTF8.GetBytes(value), Entropy, DataProtectionScope.LocalMachine)));
+                _ini.Set("service", "RootPassword", Convert.ToBase64String(Secret.Protect(Encoding.UTF8.GetBytes(value), Entropy, true)));
             }
         }
 

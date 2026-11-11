@@ -1,6 +1,6 @@
 <#
   Signs manifest\*.json: writes <name>.json.sig next to each file (base64, RSA PKCS#1 v1.5 + SHA-256, over the exact bytes).
-  Portly refuses a remote manifest without a valid signature (src\Portly\Packages\SignedManifest.cs).
+  Portly refuses a remote manifest without a valid signature (src\Portly.Core\Packages\SignedManifest.cs).
 
   The private key comes from the environment and is never printed:
     PORTLY_MANIFEST_KEY     required, PEM (PowerShell 7) or .NET XML, at least 3072 bits
@@ -20,7 +20,7 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot
-$keysFile = Join-Path $root 'src\Portly\Packages\ManifestKeys.cs'
+$keysFile = Join-Path $root 'src\Portly.Core\Packages\ManifestKeys.cs'
 $hash = [System.Security.Cryptography.HashAlgorithmName]::SHA256
 $padding = [System.Security.Cryptography.RSASignaturePadding]::Pkcs1
 $minBits = 3072

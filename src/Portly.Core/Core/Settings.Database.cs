@@ -44,13 +44,13 @@ namespace Portly.Core
             {
                 var v = _ini.Get("wsl", "Password", "");
                 if (v == "") return "";
-                try { return Encoding.UTF8.GetString(ProtectedData.Unprotect(Convert.FromBase64String(v), null, DataProtectionScope.CurrentUser)); }
+                try { return Encoding.UTF8.GetString(Secret.Unprotect(Convert.FromBase64String(v), null)); }
                 catch { return ""; }
             }
             set
             {
                 if (string.IsNullOrEmpty(value)) { _ini.Set("wsl", "Password", ""); return; }
-                _ini.Set("wsl", "Password", Convert.ToBase64String(ProtectedData.Protect(Encoding.UTF8.GetBytes(value), null, DataProtectionScope.CurrentUser)));
+                _ini.Set("wsl", "Password", Convert.ToBase64String(Secret.Protect(Encoding.UTF8.GetBytes(value), null)));
             }
         }
     }

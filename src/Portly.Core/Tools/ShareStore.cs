@@ -95,13 +95,13 @@ namespace Portly.Tools
         // the share password is kept with Windows DPAPI (readable only by this Windows user)
         static string Protect(string s)
         {
-            return Convert.ToBase64String(ProtectedData.Protect(Encoding.UTF8.GetBytes(s), null, DataProtectionScope.CurrentUser));
+            return Convert.ToBase64String(Secret.Protect(Encoding.UTF8.GetBytes(s), null));
         }
 
         static string Unprotect(string s)
         {
             if (s == "") return "";
-            try { return Encoding.UTF8.GetString(ProtectedData.Unprotect(Convert.FromBase64String(s), null, DataProtectionScope.CurrentUser)); }
+            try { return Encoding.UTF8.GetString(Secret.Unprotect(Convert.FromBase64String(s), null)); }
             catch { return ""; }
         }
 

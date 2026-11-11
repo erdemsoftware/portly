@@ -13,7 +13,24 @@ namespace Portly.Core
     /// </summary>
     public static class Paths
     {
-        public static readonly string Root = AppDomain.CurrentDomain.BaseDirectory.TrimEnd('\\', '/');
+        /// <summary>Program files: Portly.exe, lang, templates. Read-only on macOS (.app) and Linux (AppImage).</summary>
+        public static readonly string AppDir = AppDomain.CurrentDomain.BaseDirectory.TrimEnd('\\', '/');
+
+        /// <summary>
+        /// Everything Portly writes. Windows: next to Portly.exe (portable).
+        /// macOS / Linux: ~/Portly. The .NET 10 build honours PORTLY_HOME on every system.
+        /// </summary>
+        public static readonly string Root = DataRoot();
+
+        static string DataRoot()
+        {
+#if !NETFRAMEWORK
+            var env = Environment.GetEnvironmentVariable("PORTLY_HOME");
+            if (!string.IsNullOrWhiteSpace(env)) return Path.GetFullPath(env).TrimEnd('\\', '/');
+#endif
+            if (OS.IsWindows) return AppDir;
+            return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Portly");
+        }
 
         public static string Bin { get { return Path.Combine(Root, "bin"); } }
         public static string Etc { get { return Path.Combine(Root, "etc"); } }
@@ -23,8 +40,8 @@ namespace Portly.Core
         public static string Logs { get { return Path.Combine(Root, "logs"); } }
         public static string Www { get { return Path.Combine(Root, "www"); } }
         public static string Backup { get { return Path.Combine(Root, "backup"); } }
-        public static string Lang { get { return Path.Combine(Root, "lang"); } }
-        public static string Templates { get { return Path.Combine(Root, "templates"); } }
+        public static string Lang { get { return Path.Combine(AppDir, "lang"); } }
+        public static string Templates { get { return Path.Combine(AppDir, "templates"); } }
         public static string UserTemplates { get { return Path.Combine(Usr, "templates"); } }
         public static string Cache { get { return Path.Combine(Usr, "cache"); } }
         public static string Downloads { get { return Path.Combine(Tmp, "downloads"); } }
@@ -36,7 +53,7 @@ namespace Portly.Core
         public static string Apps { get { return Path.Combine(Etc, "apps"); } }
         public static string SettingsFile { get { return Path.Combine(Usr, "portly.ini"); } }
         public static string SitesFile { get { return Path.Combine(Usr, "sites.ini"); } }
-        public static string Exe { get { return Path.Combine(Root, "Portly.exe"); } }
+        public static string Exe { get { return Path.Combine(AppDir, OS.Exe("Portly")); } }
 
         public static string BinOf(string type) { return Path.Combine(Bin, type); }
 

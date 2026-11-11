@@ -211,8 +211,7 @@ namespace Portly.Tools
                 NamedPipeServerStream server = null;
                 try
                 {
-                    server = new NamedPipeServerStream(PipeName, PipeDirection.InOut, NamedPipeServerStream.MaxAllowedServerInstances,
-                        PipeTransmissionMode.Byte, PipeOptions.Asynchronous, 4096, 4096, Security());
+                    server = Pipes.Server(PipeName, NamedPipeServerStream.MaxAllowedServerInstances, 4096, 4096, Security);
                     server.WaitForConnection();
                     var s = server;
                     server = null;

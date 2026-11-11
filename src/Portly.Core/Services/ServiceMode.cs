@@ -361,7 +361,7 @@ namespace Portly.Services
             {
                 try
                 {
-                    using (var pipe = new NamedPipeServerStream(PipeName, PipeDirection.InOut, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous, 4096, 65536, sec))
+                    using (var pipe = Pipes.Server(PipeName, 1, 4096, 65536, () => sec))
                     {
                         var wait = pipe.WaitForConnectionAsync(ct);
                         wait.Wait(ct);

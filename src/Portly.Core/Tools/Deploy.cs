@@ -137,13 +137,13 @@ namespace Portly.Tools
         static string Protect(string plain)
         {
             if (string.IsNullOrEmpty(plain)) return "";
-            return Convert.ToBase64String(ProtectedData.Protect(Encoding.UTF8.GetBytes(plain), null, DataProtectionScope.CurrentUser));
+            return Convert.ToBase64String(Secret.Protect(Encoding.UTF8.GetBytes(plain), null));
         }
 
         static string Unprotect(string stored)
         {
             if (string.IsNullOrEmpty(stored)) return "";
-            try { return Encoding.UTF8.GetString(ProtectedData.Unprotect(Convert.FromBase64String(stored), null, DataProtectionScope.CurrentUser)); }
+            try { return Encoding.UTF8.GetString(Secret.Unprotect(Convert.FromBase64String(stored), null)); }
             catch { return ""; }
         }
 
@@ -379,11 +379,14 @@ namespace Portly.Tools
         {
             try
             {
+#if !NETFRAMEWORK
+                if (!OS.IsWindows) { File.SetUnixFileMode(file, UnixFileMode.UserRead | UnixFileMode.UserWrite); return; }
+#endif
                 var sec = new FileSecurity();
                 sec.SetAccessRuleProtection(true, false);
                 sec.AddAccessRule(new FileSystemAccessRule(WindowsIdentity.GetCurrent().User, FileSystemRights.FullControl, AccessControlType.Allow));
                 sec.AddAccessRule(new FileSystemAccessRule(new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null), FileSystemRights.FullControl, AccessControlType.Allow));
-                File.SetAccessControl(file, sec);
+                new FileInfo(file).SetAccessControl(sec);
             }
             catch (Exception ex) { Log.Warn("SSH key permissions: " + ex.Message); }
         }
@@ -616,7 +619,7 @@ namespace Portly.Tools
             log(I18n.T("deploy.logPushDone"));
         }
 
-        static string SizeText(long bytes) { return Portly.UI.Ui.FormatBytes(bytes); }
+        static string SizeText(long bytes) { return Units.Bytes(bytes); }
 
         static string Last(string text)
         {

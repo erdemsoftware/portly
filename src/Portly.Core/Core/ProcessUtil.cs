@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Sockets;
 using System.Net.NetworkInformation;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -91,6 +93,13 @@ namespace Portly.Core
 
         public static void KillTree(int pid)
         {
+#if !NETFRAMEWORK
+            if (!OS.IsWindows)
+            {
+                try { using (var p = Process.GetProcessById(pid)) p.Kill(true); } catch { }
+                return;
+            }
+#endif
             try
             {
                 var psi = new ProcessStartInfo("taskkill.exe", "/T /F /PID " + pid) { CreateNoWindow = true, UseShellExecute = false };
@@ -106,10 +115,28 @@ namespace Portly.Core
         [DllImport("kernel32.dll")] static extern bool SetConsoleCtrlHandler(IntPtr handler, bool add);
         [DllImport("kernel32.dll")] static extern bool GenerateConsoleCtrlEvent(uint ev, uint group);
         static readonly object CtrlLock = new object();
+#if !NETFRAMEWORK
+        [DllImport("libc", EntryPoint = "kill", SetLastError = true)] static extern int sys_kill(int pid, int sig);
+
+        /// <summary>Send a signal (SIGTERM 15, SIGINT 2, SIGHUP 1 ...) on macOS / Linux.</summary>
+        public static bool Signal(int pid, int sig) { try { return sys_kill(pid, sig) == 0; } catch { return false; } }
+#endif
 
         /// <summary>Send Ctrl+C to a console process (Apache, MySQL, Redis shut down cleanly on it).</summary>
         public static bool SendCtrlC(Process p, int waitMs)
         {
+#if !NETFRAMEWORK
+            if (!OS.IsWindows)
+            {
+                try
+                {
+                    if (p.HasExited) return true;
+                    if (sys_kill(p.Id, 2 /* SIGINT */) != 0) return false;
+                    return p.WaitForExit(waitMs);
+                }
+                catch { return false; }
+            }
+#endif
             lock (CtrlLock)
             {
                 try
@@ -141,7 +168,7 @@ namespace Portly.Core
         {
             if (_excluded != null && _excludedAt > DateTime.Now.AddMinutes(-1)) return _excluded;
             var list = new List<Tuple<int, int>>();
-            try
+            if (OS.IsWindows) try
             {
                 var r = Run("netsh.exe", "int ipv4 show excludedportrange protocol=tcp", null, null, 10000);
                 foreach (var line in r.Output.Split('\n'))
@@ -165,7 +192,23 @@ namespace Portly.Core
             {
                 return IPGlobalProperties.GetIPGlobalProperties().GetActiveTcpListeners().Any(ep => ep.Port == port);
             }
+            catch (PlatformNotSupportedException) { return CanConnect(port); }
             catch { return false; }
+        }
+
+        /// <summary>macOS has no listener table in .NET: something listens when a local connect succeeds.</summary>
+        static bool CanConnect(int port)
+        {
+            foreach (var ip in new[] { IPAddress.Loopback, IPAddress.IPv6Loopback })
+            {
+                try
+                {
+                    using (var c = new TcpClient(ip.AddressFamily))
+                        if (c.ConnectAsync(ip, port).Wait(300) && c.Connected) return true;
+                }
+                catch { }
+            }
+            return false;
         }
 
 /// <summary>Which process listens on the port? Returns "name (PID n)" or "".</summary>
@@ -178,6 +221,7 @@ namespace Portly.Core
         /// <summary>Process listening on a TCP port (IPv4 or IPv6), or null.</summary>
         public static PortOwnerInfo PortOwnerInfo(int port)
         {
+            if (!OS.IsWindows) return UnixPortOwner(port);
             try
             {
                 var r = Run("netstat.exe", "-ano -p TCP", null, null, 15000);
@@ -204,8 +248,33 @@ namespace Portly.Core
         [DllImport("kernel32.dll")] static extern bool CloseHandle(IntPtr h);
 
         /// <summary>Full exe path of a process (works for most processes without admin rights).</summary>
+        /// <summary>lsof ships with macOS and nearly every Linux desktop: "-F pc" prints p&lt;pid&gt; and c&lt;command&gt; lines.</summary>
+        static PortOwnerInfo UnixPortOwner(int port)
+        {
+            try
+            {
+                var r = Run("lsof", "-nP -iTCP:" + port + " -sTCP:LISTEN -F pc", null, null, 10000);
+                int pid = 0;
+                string name = "?";
+                foreach (var raw in r.Output.Split('\n'))
+                {
+                    var line = raw.Trim();
+                    if (line.StartsWith("p") && pid == 0) int.TryParse(line.Substring(1), out pid);
+                    else if (line.StartsWith("c") && pid != 0) { name = line.Substring(1); break; }
+                }
+                if (pid == 0) return null;
+                return new PortOwnerInfo { Pid = pid, Name = name, Path = ProcessPath(pid) };
+            }
+            catch { return null; }
+        }
+
         public static string ProcessPath(int pid)
         {
+            if (!OS.IsWindows)
+            {
+                try { using (var p = Process.GetProcessById(pid)) return p.MainModule != null ? p.MainModule.FileName : ""; }
+                catch { return ""; }
+            }
             if (pid <= 4) return "";
             IntPtr h = OpenProcess(0x1000 /* QUERY_LIMITED_INFORMATION */, false, pid);
             if (h == IntPtr.Zero) return "";

@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Portly engine for the cross-platform app (Windows, macOS, Linux).
+    The Windows WinForms app (src\Portly) compiles these same sources into Portly.exe for .NET Framework 4.8.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AssemblyName>Portly.Core</AssemblyName>
+    <RootNamespace>Portly</RootNamespace>
+    <Version>2.0.0</Version>
+    <Company>Erdem Software</Company>
+    <Product>Portly</Product>
+    <Authors>Erdem Software</Authors>
+    <Copyright>Copyright (c) 2026 Erdem Software. MIT License.</Copyright>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <!-- CA1416: Windows-only calls are guarded at runtime by OS.IsWindows -->
+    <NoWarn>$(NoWarn);CA1416;SYSLIB0014;SYSLIB0023;SYSLIB0057</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Portly" />
+    <InternalsVisibleTo Include="Portly.SmokeTest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.ServiceProcess.ServiceController" Version="10.0.0" />
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\manifest\packages.json" LogicalName="catalog.modern.json" />
+    <EmbeddedResource Include="..\..\manifest\packages-legacy.json" LogicalName="catalog.legacy.json" />
+    <EmbeddedResource Include="..\..\manifest\donate.json" LogicalName="donate.json" />
+    <EmbeddedResource Include="..\..\manifest\extensions.json" LogicalName="extensions.json" />
+    <EmbeddedResource Include="..\..\manifest\security.json" LogicalName="security.json" />
+  </ItemGroup>
+
+</Project>

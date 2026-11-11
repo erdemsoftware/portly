@@ -40,7 +40,7 @@ namespace Portly.Config
 
         static void SaveCaKey(byte[] pkcs8, string file)
         {
-            var blob = ProtectedData.Protect(pkcs8, Encoding.ASCII.GetBytes("Portly CA"), DataProtectionScope.CurrentUser);
+            var blob = Secret.Protect(pkcs8, Encoding.ASCII.GetBytes("Portly CA"));
             File.WriteAllText(file, Convert.ToBase64String(blob));
         }
 
@@ -51,7 +51,7 @@ namespace Portly.Config
                 SaveCaKey(FromPem(File.ReadAllText(CaKeyPlain)));
                 File.Delete(CaKeyPlain);
             }
-            return ProtectedData.Unprotect(Convert.FromBase64String(File.ReadAllText(CaKey)), Encoding.ASCII.GetBytes("Portly CA"), DataProtectionScope.CurrentUser);
+            return Secret.Unprotect(Convert.FromBase64String(File.ReadAllText(CaKey)), Encoding.ASCII.GetBytes("Portly CA"));
         }
 
         static bool HasCaKey { get { return File.Exists(CaKey) || File.Exists(CaKeyPlain); } }

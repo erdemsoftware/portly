@@ -35,7 +35,7 @@ $rsa.PersistKeyInCsp = $false
 $rsa.ToXmlString($false)                                                                # açık anahtar
 ```
 
-1. Çıkan açık anahtarı (tek satır, `<RSAKeyValue>` ile başlar) `src/Portly/Packages/ManifestKeys.cs` içindeki satıra koyun: `public const string PublicKey1 = "<RSAKeyValue>...</RSAKeyValue>";`. Başka değişiklik gerekmez.
+1. Çıkan açık anahtarı (tek satır, `<RSAKeyValue>` ile başlar) `src/Portly.Core/Packages/ManifestKeys.cs` içindeki satıra koyun: `public const string PublicKey1 = "<RSAKeyValue>...</RSAKeyValue>";`. Başka değişiklik gerekmez.
 2. Özel anahtar dosyasının içeriğini GitHub'da **Settings > Secrets and variables > Actions** altına `PORTLY_MANIFEST_KEY` adıyla ekleyin. PEM de kabul edilir (PowerShell 7 gerekir). Dosyayı güvenli bir yerde saklayıp diskten silin.
 3. Önerilen: **Settings > Environments > `manifest-signing`** ortamına zorunlu onaylayıcı ekleyin ve gizli değeri bu ortama koyun. Üç iş akışı da bu ortamı kullanır. Onaylayıcı yoksa `main` dalına yazabilen herkes (ya da çalınmış bir erişim) değiştirdiği manifesti `sign-manifests` ile imzalatmış olur; imza o zaman yalnızca barındırma yolunu korur, depoyu değil.
 

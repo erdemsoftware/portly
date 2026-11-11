@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Text;
 
 namespace Portly.Tools
@@ -69,21 +68,6 @@ namespace Portly.Tools
             qr.ApplyMask(best);
             qr.DrawFormatBits(best);
             return qr;
-        }
-
-        /// <summary>Black on white with a 4-module quiet zone, <paramref name="scale"/> pixels per module.</summary>
-        public Bitmap ToBitmap(int scale)
-        {
-            int border = 4, px = (Size + border * 2) * scale;
-            var bmp = new Bitmap(px, px);
-            using (var g = Graphics.FromImage(bmp))
-            {
-                g.Clear(Color.White);
-                for (int y = 0; y < Size; y++)
-                    for (int x = 0; x < Size; x++)
-                        if (_dark[y, x]) g.FillRectangle(Brushes.Black, (x + border) * scale, (y + border) * scale, scale, scale);
-            }
-            return bmp;
         }
 
         static int RawDataModules(int ver)
