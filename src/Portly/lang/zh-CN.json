@@ -365,6 +365,7 @@
   "welcome.subtitle": "三步即可准备好本地服务器。免费、开源、无广告。",
   "welcome.packagesTitle": "安装软件包",
   "welcome.packagesNone": "尚未安装任何内容。已为你选中推荐组合（Apache, PHP, MySQL, Adminer, Composer、邮件捕获）。",
+  "welcome.packagesNone@unix": "尚未安装任何内容。已为你选中推荐组合（Caddy, PHP, MySQL, Adminer, Composer、邮件捕获）。",
   "welcome.packagesSome": "已安装：{0}",
   "welcome.installRecommended": "安装",
   "welcome.importTitle": "从其他程序迁移",
@@ -1231,5 +1232,13 @@
   "ext.xdebugStatic": "macOS 和 Linux 使用的静态 PHP 构建版本不提供 Xdebug。",
   "lowports.ask": "Linux 仅允许管理员使用 1024 以下的端口，而 Web 服务器需要 {0} 和 {1}。\n\nPortly 可以一次性更改此设置：系统会要求输入密码，之后此计算机上的所有程序都可以监听 80 及以上的端口（/etc/sysctl.d 中的设置 \"net.ipv4.ip_unprivileged_port_start = 80\"）。不会更改其他任何内容。\n\n是否继续？",
   "lowports.failed": "无法为 Portly 开放端口。请在设置中使用 1024 以上的端口（例如 8080 和 8443），或重新允许并输入密码。",
-  "err.linuxLibs": "无法启动 {0}：此系统缺少 {1}。请使用包管理器安装（{2}），然后重新启动 {0}。"
+  "err.linuxLibs": "无法启动 {0}：此系统缺少 {1}。请使用包管理器安装（{2}），然后重新启动 {0}。",
+  "update.noAsset": "此版本没有 {0} 的下载文件。请前往发布页面获取。",
+  "update.needsPkexec": "此 Portly 是从 .deb 软件包安装的。更新需要管理员权限，但 pkexec 不可用。请从发布页面下载新的 .deb，并使用以下命令安装：sudo apt install ./<file>.deb",
+  "update.rootInside": "Portly 的数据文件夹位于程序文件夹内，更新会将其替换。请将数据文件夹（PORTLY_HOME）移到其他位置。",
+  "update.notInstalled": "此 Portly 不是软件包安装版（它从构建文件夹运行），因此无法自行更新。",
+  "update.notWritable": "Portly 无法在 {0} 中替换自身：没有写入权限（或为只读磁盘映像）。请将 Portly 移到您有权限的文件夹，或从发布页面安装新版本。",
+  "update.bundleInvalid": "下载的更新未通过签名或内容检查（{0}），未予安装。",
+  "update.elevationRefused": "更新已取消：未授予管理员权限。",
+  "update.installFailed": "软件包管理器无法安装更新（退出代码 {0}）。"
 }

@@ -365,6 +365,7 @@
   "welcome.subtitle": "Three steps and your local server is ready. Free, open source, no ads.",
   "welcome.packagesTitle": "Install packages",
   "welcome.packagesNone": "Nothing is installed yet. The recommended set (Apache, PHP, MySQL, Adminer, Composer, mail catcher) is selected for you.",
+  "welcome.packagesNone@unix": "Nothing is installed yet. The recommended set (Caddy, PHP, MySQL, Adminer, Composer, mail catcher) is selected for you.",
   "welcome.packagesSome": "Installed: {0}",
   "welcome.installRecommended": "Install",
   "welcome.importTitle": "Move from another program",
@@ -1231,5 +1232,13 @@
   "ext.builtIn": "Built into this PHP (nothing to install)",
   "ext.notInStatic": "Not available in this PHP build (a static PHP cannot load extensions)",
   "ext.xdebugStatic": "Xdebug is not available in the static PHP builds used on macOS and Linux.",
-  "err.linuxLibs": "{0} cannot start: this system is missing {1}. Install it with your package manager ({2}), then start {0} again."
+  "err.linuxLibs": "{0} cannot start: this system is missing {1}. Install it with your package manager ({2}), then start {0} again.",
+  "update.noAsset": "This release has no download for {0}. Get it from the releases page.",
+  "update.needsPkexec": "This Portly was installed from a .deb package. Updating it needs administrator rights, but pkexec is not available. Download the new .deb from the releases page and install it with: sudo apt install ./<file>.deb",
+  "update.rootInside": "Portly's data folder is inside its program folder, so an update would replace it. Move the data folder (PORTLY_HOME) elsewhere.",
+  "update.notInstalled": "This Portly is not a packaged install (it runs from a build folder), so it cannot update itself.",
+  "update.notWritable": "Portly cannot replace itself in {0}: no write permission (or a read-only disk image). Move Portly to a folder you own, or install the new version from the releases page.",
+  "update.bundleInvalid": "The downloaded update failed the signature or contents check ({0}) and was not installed.",
+  "update.elevationRefused": "The update was cancelled: administrator rights were not granted.",
+  "update.installFailed": "The package manager could not install the update (exit code {0})."
 }

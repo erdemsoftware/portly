@@ -365,6 +365,7 @@
   "welcome.subtitle": "Drie stappen en je lokale server is klaar. Gratis, open source, zonder advertenties.",
   "welcome.packagesTitle": "Pakketten installeren",
   "welcome.packagesNone": "Er is nog niets geïnstalleerd. De aanbevolen selectie (Apache, PHP, MySQL, Adminer, Composer, mailvanger) is al voor je aangevinkt.",
+  "welcome.packagesNone@unix": "Er is nog niets geïnstalleerd. De aanbevolen selectie (Caddy, PHP, MySQL, Adminer, Composer, mailvanger) is al voor je aangevinkt.",
   "welcome.packagesSome": "Geïnstalleerd: {0}",
   "welcome.installRecommended": "Installeren",
   "welcome.importTitle": "Overstappen vanuit een ander programma",
@@ -1231,5 +1232,13 @@
   "ext.xdebugStatic": "Xdebug is niet beschikbaar in de statische PHP-builds die op macOS en Linux worden gebruikt.",
   "lowports.ask": "Linux staat alleen beheerders toe poorten onder 1024 te gebruiken, en de webserver heeft {0} en {1} nodig.\n\nPortly kan dit eenmalig aanpassen: uw systeem vraagt om uw wachtwoord, waarna elk programma op deze computer op poorten vanaf 80 mag luisteren (de instelling \"net.ipv4.ip_unprivileged_port_start = 80\" in /etc/sysctl.d). Verder wordt niets gewijzigd.\n\nDoorgaan?",
   "lowports.failed": "De poorten konden niet voor Portly worden geopend. Gebruik in Instellingen poorten boven 1024 (bijvoorbeeld 8080 en 8443), of sta het opnieuw toe en voer het wachtwoord in.",
-  "err.linuxLibs": "{0} kan niet starten: op dit systeem ontbreekt {1}. Installeer het met je pakketbeheerder ({2}) en start {0} daarna opnieuw."
+  "err.linuxLibs": "{0} kan niet starten: op dit systeem ontbreekt {1}. Installeer het met je pakketbeheerder ({2}) en start {0} daarna opnieuw.",
+  "update.noAsset": "Deze release heeft geen download voor {0}. Haal hem op via de releasepagina.",
+  "update.needsPkexec": "Deze Portly is geïnstalleerd vanuit een .deb-pakket. Bijwerken vereist beheerdersrechten, maar pkexec is niet beschikbaar. Download de nieuwe .deb via de releasepagina en installeer hem met: sudo apt install ./<file>.deb",
+  "update.rootInside": "De datamap van Portly staat in de programmamap, dus een update zou hem vervangen. Verplaats de datamap (PORTLY_HOME) naar een andere locatie.",
+  "update.notInstalled": "Deze Portly is geen pakketinstallatie (hij draait vanuit een buildmap), dus hij kan zichzelf niet bijwerken.",
+  "update.notWritable": "Portly kan zichzelf niet vervangen in {0}: geen schrijfrechten (of een alleen-lezen schijfimage). Verplaats Portly naar een map die je bezit, of installeer de nieuwe versie via de releasepagina.",
+  "update.bundleInvalid": "De gedownloade update is niet geslaagd voor de controle van de handtekening of inhoud ({0}) en is niet geïnstalleerd.",
+  "update.elevationRefused": "De update is geannuleerd: er zijn geen beheerdersrechten verleend.",
+  "update.installFailed": "De pakketbeheerder kon de update niet installeren (afsluitcode {0})."
 }

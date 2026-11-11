@@ -365,6 +365,7 @@
   "welcome.subtitle": "Uch qadamda mahalliy serveringiz tayyor. Bepul, ochiq kodli, reklamasiz.",
   "welcome.packagesTitle": "Paketlarni oʻrnating",
   "welcome.packagesNone": "Hali hech narsa oʻrnatilmagan. Tavsiya etilgan toʻplam (Apache, PHP, MySQL, Adminer, Composer, pochta tutqich) siz uchun tanlangan.",
+  "welcome.packagesNone@unix": "Hali hech narsa oʻrnatilmagan. Tavsiya etilgan toʻplam (Caddy, PHP, MySQL, Adminer, Composer, pochta tutqich) siz uchun tanlangan.",
   "welcome.packagesSome": "Oʻrnatilgan: {0}",
   "welcome.installRecommended": "Oʻrnatish",
   "welcome.importTitle": "Boshqa dasturdan oʻtish",
@@ -1231,5 +1232,13 @@
   "ext.xdebugStatic": "Xdebug macOS va Linux'da ishlatiladigan statik PHP versiyalarida mavjud emas.",
   "lowports.ask": "Linux'da faqat administratorlar 1024 dan past portlardan foydalanishi mumkin, veb-server esa {0} va {1} portlarini talab qiladi.\n\nPortly buni bir marta o'zgartirishi mumkin: tizim parolingizni so'raydi, shundan so'ng bu kompyuterdagi barcha dasturlar 80 dan boshlab portlarni tinglay oladi (/etc/sysctl.d dagi \"net.ipv4.ip_unprivileged_port_start = 80\" sozlamasi). Boshqa hech narsa o'zgarmaydi.\n\nDavom etilsinmi?",
   "lowports.failed": "Portly uchun portlarni ochib bo'lmadi. Sozlamalarda 1024 dan yuqori portlardan foydalaning (masalan, 8080 va 8443) yoki qayta ruxsat berib, parolni kiriting.",
-  "err.linuxLibs": "{0} ishga tushmaydi: tizimda {1} yo‘q. Uni paket menejeringiz orqali o‘rnating ({2}), so‘ng {0} ni qayta ishga tushiring."
+  "err.linuxLibs": "{0} ishga tushmaydi: tizimda {1} yo‘q. Uni paket menejeringiz orqali o‘rnating ({2}), so‘ng {0} ni qayta ishga tushiring.",
+  "update.noAsset": "Bu relizda {0} uchun yuklab olish fayli yoʻq. Uni relizlar sahifasidan oling.",
+  "update.needsPkexec": "Bu Portly .deb paketidan oʻrnatilgan. Uni yangilash uchun administrator huquqlari kerak, ammo pkexec mavjud emas. Yangi .deb faylini relizlar sahifasidan yuklab oling va shu buyruq bilan oʻrnating: sudo apt install ./<file>.deb",
+  "update.rootInside": "Portly ma'lumotlar papkasi dastur papkasi ichida joylashgan, shuning uchun yangilash uni almashtirib yuboradi. Ma'lumotlar papkasini (PORTLY_HOME) boshqa joyga koʻchiring.",
+  "update.notInstalled": "Bu Portly paketli oʻrnatma emas (u build papkasidan ishlaydi), shuning uchun oʻzini yangilay olmaydi.",
+  "update.notWritable": "Portly {0} da oʻzini almashtira olmaydi: yozish ruxsati yoʻq (yoki disk faqat oʻqish uchun). Portly ni oʻzingizga tegishli papkaga koʻchiring yoki yangi versiyani relizlar sahifasidan oʻrnating.",
+  "update.bundleInvalid": "Yuklab olingan yangilanish imzo yoki mazmun tekshiruvidan oʻtmadi ({0}) va oʻrnatilmadi.",
+  "update.elevationRefused": "Yangilash bekor qilindi: administrator huquqlari berilmadi.",
+  "update.installFailed": "Paket menejeri yangilanishni oʻrnata olmadi (chiqish kodi {0})."
 }

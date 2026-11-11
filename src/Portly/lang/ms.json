@@ -365,6 +365,7 @@
   "welcome.subtitle": "Tiga langkah dan pelayan tempatan anda sedia. Percuma, sumber terbuka, tanpa iklan.",
   "welcome.packagesTitle": "Pasang pakej",
   "welcome.packagesNone": "Belum ada apa-apa yang dipasang. Set yang disyorkan (Apache, PHP, MySQL, Adminer, Composer, penangkap e-mel) telah dipilih untuk anda.",
+  "welcome.packagesNone@unix": "Belum ada apa-apa yang dipasang. Set yang disyorkan (Caddy, PHP, MySQL, Adminer, Composer, penangkap e-mel) telah dipilih untuk anda.",
   "welcome.packagesSome": "Dipasang: {0}",
   "welcome.installRecommended": "Pasang",
   "welcome.importTitle": "Berpindah dari program lain",
@@ -1231,5 +1232,13 @@
   "ext.xdebugStatic": "Xdebug tidak tersedia dalam binaan PHP statik yang digunakan pada macOS dan Linux.",
   "lowports.ask": "Linux hanya membenarkan pentadbir menggunakan port di bawah 1024, dan pelayan web memerlukan {0} dan {1}.\n\nPortly boleh menukar ini sekali sahaja: sistem anda akan meminta kata laluan, kemudian setiap program pada komputer ini boleh mendengar pada port bermula dari 80 ke atas (tetapan \"net.ipv4.ip_unprivileged_port_start = 80\" dalam /etc/sysctl.d). Tiada apa-apa lagi yang diubah.\n\nTeruskan?",
   "lowports.failed": "Port tidak dapat dibuka untuk Portly. Gunakan port melebihi 1024 dalam Tetapan (contohnya 8080 dan 8443), atau benarkan semula dan masukkan kata laluan.",
-  "err.linuxLibs": "{0} tidak dapat dimulakan: sistem ini tiada {1}. Pasangkan menggunakan pengurus pakej anda ({2}), kemudian mulakan semula {0}."
+  "err.linuxLibs": "{0} tidak dapat dimulakan: sistem ini tiada {1}. Pasangkan menggunakan pengurus pakej anda ({2}), kemudian mulakan semula {0}.",
+  "update.noAsset": "Keluaran ini tiada muat turun untuk {0}. Dapatkannya daripada halaman keluaran.",
+  "update.needsPkexec": "Portly ini dipasang daripada pakej .deb. Mengemas kininya memerlukan hak pentadbir, tetapi pkexec tidak tersedia. Muat turun .deb baharu daripada halaman keluaran dan pasangkan dengan arahan: sudo apt install ./<file>.deb",
+  "update.rootInside": "Folder data Portly berada di dalam folder program, jadi kemas kini akan menggantikannya. Alihkan folder data (PORTLY_HOME) ke tempat lain.",
+  "update.notInstalled": "Portly ini bukan pemasangan berpakej (ia berjalan dari folder binaan), jadi ia tidak boleh mengemas kini dirinya sendiri.",
+  "update.notWritable": "Portly tidak dapat menggantikan dirinya dalam {0}: tiada kebenaran tulis (atau imej cakera baca-sahaja). Alihkan Portly ke folder milik anda, atau pasang versi baharu daripada halaman keluaran.",
+  "update.bundleInvalid": "Kemas kini yang dimuat turun gagal semakan tandatangan atau kandungan ({0}) dan tidak dipasang.",
+  "update.elevationRefused": "Kemas kini dibatalkan: hak pentadbir tidak diberikan.",
+  "update.installFailed": "Pengurus pakej tidak dapat memasang kemas kini (kod keluar {0})."
 }

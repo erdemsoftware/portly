@@ -365,6 +365,7 @@
   "welcome.subtitle": "Üç addımda yerli serveriniz hazırdır. Pulsuz, açıq mənbəli, reklamsız.",
   "welcome.packagesTitle": "Paketləri quraşdır",
   "welcome.packagesNone": "Hələ heç nə quraşdırılmayıb. Tövsiyə olunan dəst (Apache, PHP, MySQL, Adminer, Composer, poçt tutucu) sizin üçün seçilib.",
+  "welcome.packagesNone@unix": "Hələ heç nə quraşdırılmayıb. Tövsiyə olunan dəst (Caddy, PHP, MySQL, Adminer, Composer, poçt tutucu) sizin üçün seçilib.",
   "welcome.packagesSome": "Quraşdırılıb: {0}",
   "welcome.installRecommended": "Quraşdır",
   "welcome.importTitle": "Başqa proqramdan keçin",
@@ -1231,5 +1232,13 @@
   "ext.xdebugStatic": "Xdebug macOS və Linux-da istifadə olunan statik PHP versiyalarında mövcud deyil.",
   "lowports.ask": "Linux yalnız administratorlara 1024-dən aşağı portlardan istifadəyə icazə verir, veb server isə {0} və {1} portlarına ehtiyac duyur.\n\nPortly bunu bir dəfəlik dəyişə bilər: sistem parolunuzu soruşacaq, sonra bu kompüterdəki bütün proqramlar 80-dən başlayaraq portları dinləyə biləcək (/etc/sysctl.d-də \"net.ipv4.ip_unprivileged_port_start = 80\" parametri). Başqa heç nə dəyişdirilmir.\n\nDavam edilsin?",
   "lowports.failed": "Portly üçün portları açmaq mümkün olmadı. Parametrlərdə 1024-dən yuxarı portlardan istifadə edin (məsələn, 8080 və 8443), və ya yenidən icazə verib parolu daxil edin.",
-  "err.linuxLibs": "{0} başlaya bilmir: bu sistemdə {1} çatışmır. Onu paket menecerinizlə quraşdırın ({2}), sonra {0} proqramını yenidən başladın."
+  "err.linuxLibs": "{0} başlaya bilmir: bu sistemdə {1} çatışmır. Onu paket menecerinizlə quraşdırın ({2}), sonra {0} proqramını yenidən başladın.",
+  "update.noAsset": "Bu buraxılışda {0} üçün yükləmə yoxdur. Buraxılışlar səhifəsindən əldə edin.",
+  "update.needsPkexec": "Bu Portly .deb paketindən quraşdırılıb. Onu yeniləmək administrator hüququ tələb edir, lakin pkexec mövcud deyil. Yeni .deb faylını buraxılışlar səhifəsindən yükləyin və belə quraşdırın: sudo apt install ./<file>.deb",
+  "update.rootInside": "Portly-nin məlumat qovluğu proqram qovluğunun içindədir, ona görə yeniləmə onu əvəz edərdi. Məlumat qovluğunu (PORTLY_HOME) başqa yerə köçürün.",
+  "update.notInstalled": "Bu Portly paketli quraşdırma deyil (quraşdırma qovluğundan işləyir), ona görə özünü yeniləyə bilmir.",
+  "update.notWritable": "Portly {0} qovluğunda özünü əvəz edə bilmir: yazma icazəsi yoxdur (və ya disk yalnız oxunandır). Portly-ni sizə məxsus qovluğa köçürün, ya da yeni versiyanı buraxılışlar səhifəsindən quraşdırın.",
+  "update.bundleInvalid": "Yüklənmiş yeniləmə imza və ya məzmun yoxlamasından ({0}) keçmədi və quraşdırılmadı.",
+  "update.elevationRefused": "Yeniləmə ləğv edildi: administrator hüququ verilmədi.",
+  "update.installFailed": "Paket meneceri yeniləməni quraşdıra bilmədi (çıxış kodu {0})."
 }

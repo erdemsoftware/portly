@@ -365,6 +365,7 @@
   "welcome.subtitle": "Üç adımda yerel sunucunuz hazır. Ücretsiz, açık kaynak, reklamsız.",
   "welcome.packagesTitle": "Paketleri kur",
   "welcome.packagesNone": "Henüz hiçbir şey kurulu değil. Önerilen set (Apache, PHP, MySQL, Adminer, Composer, posta yakalayıcı) sizin için seçili.",
+  "welcome.packagesNone@unix": "Henüz hiçbir şey kurulu değil. Önerilen set (Caddy, PHP, MySQL, Adminer, Composer, posta yakalayıcı) sizin için seçili.",
   "welcome.packagesSome": "Kurulu: {0}",
   "welcome.installRecommended": "Kur",
   "welcome.importTitle": "Başka programdan geç",
@@ -1231,5 +1232,13 @@
   "ext.builtIn": "Bu PHP'nin içinde hazır (kurulacak bir şey yok)",
   "ext.notInStatic": "Bu PHP derlemesinde yok (statik PHP eklenti yükleyemez)",
   "ext.xdebugStatic": "macOS ve Linux'ta kullanılan statik PHP derlemelerinde Xdebug yok.",
-  "err.linuxLibs": "{0} başlatılamıyor: bu sistemde {1} eksik. Paket yöneticinizle kurun ({2}), sonra {0}'i yeniden başlatın."
+  "err.linuxLibs": "{0} başlatılamıyor: bu sistemde {1} eksik. Paket yöneticinizle kurun ({2}), sonra {0}'i yeniden başlatın.",
+  "update.noAsset": "Bu sürümde {0} için indirme dosyası yok. Sürümler sayfasından indirin.",
+  "update.notWritable": "Portly {0} konumunda kendini güncelleyemiyor: yazma izni yok (ya da salt okunur disk görüntüsü). Portly'yi size ait bir klasöre taşıyın ya da yeni sürümü sürümler sayfasından kurun.",
+  "update.needsPkexec": "Bu Portly bir .deb paketinden kuruldu. Güncellemek yönetici hakkı ister, ama pkexec yok. Yeni .deb'i sürümler sayfasından indirip \"sudo apt install ./<dosya>.deb\" ile kurun.",
+  "update.notInstalled": "Bu Portly paketlenmiş bir kurulum değil (derleme klasöründen çalışıyor), kendini güncelleyemez.",
+  "update.rootInside": "Portly'nin veri klasörü program klasörünün içinde; güncelleme onu da değiştirirdi. Veri klasörünü (PORTLY_HOME) başka yere taşıyın.",
+  "update.bundleInvalid": "İndirilen güncelleme imza/içerik denetiminden geçemedi ({0}), kurulmadı.",
+  "update.elevationRefused": "Güncelleme iptal edildi: yönetici hakkı verilmedi.",
+  "update.installFailed": "Paket yöneticisi güncellemeyi kuramadı (çıkış kodu {0})."
 }

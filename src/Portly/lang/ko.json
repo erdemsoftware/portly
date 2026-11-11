@@ -365,6 +365,7 @@
   "welcome.subtitle": "세 단계면 로컬 서버가 준비됩니다. 무료, 오픈 소스, 광고 없음.",
   "welcome.packagesTitle": "패키지 설치",
   "welcome.packagesNone": "아직 아무것도 설치되지 않았습니다. 권장 세트(Apache, PHP, MySQL, Adminer, Composer, 메일 캐처)가 미리 선택되어 있습니다.",
+  "welcome.packagesNone@unix": "아직 아무것도 설치되지 않았습니다. 권장 세트(Caddy, PHP, MySQL, Adminer, Composer, 메일 캐처)가 미리 선택되어 있습니다.",
   "welcome.packagesSome": "설치됨: {0}",
   "welcome.installRecommended": "설치",
   "welcome.importTitle": "다른 프로그램에서 옮기기",
@@ -1231,5 +1232,13 @@
   "ext.xdebugStatic": "macOS와 Linux에서 사용하는 정적 PHP 빌드에는 Xdebug가 없습니다.",
   "lowports.ask": "Linux에서는 관리자만 1024 미만 포트를 사용할 수 있으며, 웹 서버에는 {0} 및 {1} 포트가 필요합니다.\n\nPortly는 이 설정을 한 번만 변경할 수 있습니다. 시스템이 비밀번호를 물은 뒤, 이 컴퓨터의 모든 프로그램이 80번 이상의 포트를 사용할 수 있게 됩니다(/etc/sysctl.d의 \"net.ipv4.ip_unprivileged_port_start = 80\" 설정). 다른 것은 바뀌지 않습니다.\n\n계속하시겠습니까?",
   "lowports.failed": "Portly를 위해 포트를 열 수 없습니다. 설정에서 1024보다 큰 포트(예: 8080과 8443)를 사용하거나, 다시 허용하고 비밀번호를 입력하세요.",
-  "err.linuxLibs": "{0}을(를) 시작할 수 없습니다. 이 시스템에 {1}이(가) 없습니다. 패키지 관리자로 설치({2})한 후 {0}을(를) 다시 시작하세요."
+  "err.linuxLibs": "{0}을(를) 시작할 수 없습니다. 이 시스템에 {1}이(가) 없습니다. 패키지 관리자로 설치({2})한 후 {0}을(를) 다시 시작하세요.",
+  "update.noAsset": "이 릴리스에는 {0}용 다운로드가 없습니다. 릴리스 페이지에서 받으세요.",
+  "update.needsPkexec": "이 Portly는 .deb 패키지로 설치되었습니다. 업데이트하려면 관리자 권한이 필요하지만 pkexec를 사용할 수 없습니다. 릴리스 페이지에서 새 .deb를 내려받아 다음 명령으로 설치하세요: sudo apt install ./<file>.deb",
+  "update.rootInside": "Portly 데이터 폴더가 프로그램 폴더 안에 있어 업데이트하면 데이터가 덮어써집니다. 데이터 폴더(PORTLY_HOME)를 다른 곳으로 옮기세요.",
+  "update.notInstalled": "이 Portly는 패키지 설치본이 아니어서(빌드 폴더에서 실행 중) 스스로 업데이트할 수 없습니다.",
+  "update.notWritable": "{0}에서 Portly를 교체할 수 없습니다: 쓰기 권한이 없거나 읽기 전용 디스크 이미지입니다. Portly를 소유한 폴더로 옮기거나 릴리스 페이지에서 새 버전을 설치하세요.",
+  "update.bundleInvalid": "다운로드한 업데이트가 서명 또는 내용 검사({0})를 통과하지 못해 설치하지 않았습니다.",
+  "update.elevationRefused": "업데이트가 취소되었습니다: 관리자 권한이 허용되지 않았습니다.",
+  "update.installFailed": "패키지 관리자가 업데이트를 설치하지 못했습니다(종료 코드 {0})."
 }

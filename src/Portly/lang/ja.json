@@ -365,6 +365,7 @@
   "welcome.subtitle": "3 ステップでローカルサーバーの準備が完了します。無料、オープンソース、広告なし。",
   "welcome.packagesTitle": "パッケージをインストール",
   "welcome.packagesNone": "まだ何もインストールされていません。推奨セット（Apache, PHP, MySQL, Adminer, Composer、メールキャッチャー）があらかじめ選択されています。",
+  "welcome.packagesNone@unix": "まだ何もインストールされていません。推奨セット（Caddy, PHP, MySQL, Adminer, Composer、メールキャッチャー）があらかじめ選択されています。",
   "welcome.packagesSome": "インストール済み：{0}",
   "welcome.installRecommended": "インストール",
   "welcome.importTitle": "他のプログラムから移行",
@@ -1231,5 +1232,13 @@
   "ext.xdebugStatic": "macOS と Linux で使われる静的 PHP ビルドでは Xdebug を利用できません。",
   "lowports.ask": "Linux では管理者だけが 1024 未満のポートを使用できます。Web サーバーには {0} と {1} が必要です。\n\nPortly は一度だけこの設定を変更できます。システムがパスワードを求めた後、このコンピュータ上のすべてのプログラムが 80 以上のポートで待ち受けられるようになります（/etc/sysctl.d の設定 \"net.ipv4.ip_unprivileged_port_start = 80\"）。それ以外は変更されません。\n\n続行しますか？",
   "lowports.failed": "Portly 用のポートを開けませんでした。設定で 1024 より大きいポート（例：8080 と 8443）を使うか、再度許可してパスワードを入力してください。",
-  "err.linuxLibs": "{0} を起動できません。このシステムには {1} がありません。パッケージマネージャーでインストール（{2}）してから、{0} を再度起動してください。"
+  "err.linuxLibs": "{0} を起動できません。このシステムには {1} がありません。パッケージマネージャーでインストール（{2}）してから、{0} を再度起動してください。",
+  "update.noAsset": "このリリースには {0} 向けのダウンロードがありません。リリースページから入手してください。",
+  "update.needsPkexec": "この Portly は .deb パッケージからインストールされています。更新には管理者権限が必要ですが、pkexec が利用できません。リリースページから新しい .deb をダウンロードし、次のコマンドでインストールしてください: sudo apt install ./<file>.deb",
+  "update.rootInside": "Portly のデータフォルダはプログラムフォルダの中にあるため、更新するとデータが置き換えられてしまいます。データフォルダ（PORTLY_HOME）を別の場所に移動してください。",
+  "update.notInstalled": "この Portly はパッケージ版ではなく（ビルドフォルダから実行されています）、自分自身を更新することはできません。",
+  "update.notWritable": "{0} にある Portly を置き換えられません: 書き込み権限がありません（または読み取り専用のディスクイメージです）。Portly を自分が所有するフォルダに移動するか、リリースページから新しいバージョンをインストールしてください。",
+  "update.bundleInvalid": "ダウンロードした更新の署名または内容の検証に失敗したため（{0}）、インストールしませんでした。",
+  "update.elevationRefused": "更新はキャンセルされました: 管理者権限が許可されませんでした。",
+  "update.installFailed": "パッケージマネージャーで更新をインストールできませんでした（終了コード {0}）。"
 }

@@ -365,6 +365,7 @@
   "welcome.subtitle": "Ba bước là máy chủ cục bộ của bạn sẵn sàng. Miễn phí, mã nguồn mở, không quảng cáo.",
   "welcome.packagesTitle": "Cài gói",
   "welcome.packagesNone": "Chưa có gì được cài. Bộ đề xuất (Apache, PHP, MySQL, Adminer, Composer, bắt thư) đã được chọn sẵn cho bạn.",
+  "welcome.packagesNone@unix": "Chưa có gì được cài. Bộ đề xuất (Caddy, PHP, MySQL, Adminer, Composer, bắt thư) đã được chọn sẵn cho bạn.",
   "welcome.packagesSome": "Đã cài: {0}",
   "welcome.installRecommended": "Cài",
   "welcome.importTitle": "Chuyển từ chương trình khác",
@@ -1231,5 +1232,13 @@
   "ext.xdebugStatic": "Xdebug không có trong các bản build PHP tĩnh dùng trên macOS và Linux.",
   "lowports.ask": "Linux chỉ cho phép quản trị viên dùng cổng dưới 1024, còn máy chủ web cần cổng {0} và {1}.\n\nPortly có thể thay đổi việc này một lần: hệ thống sẽ yêu cầu mật khẩu, sau đó mọi chương trình trên máy tính này có thể lắng nghe các cổng từ 80 trở lên (cài đặt \"net.ipv4.ip_unprivileged_port_start = 80\" trong /etc/sysctl.d). Không có gì khác bị thay đổi.\n\nTiếp tục?",
   "lowports.failed": "Không thể mở cổng cho Portly. Hãy dùng cổng trên 1024 trong Cài đặt (ví dụ 8080 và 8443), hoặc cho phép lại và nhập mật khẩu.",
-  "err.linuxLibs": "Không thể khởi động {0}: hệ thống này thiếu {1}. Hãy cài đặt bằng trình quản lý gói của bạn ({2}), rồi khởi động lại {0}."
+  "err.linuxLibs": "Không thể khởi động {0}: hệ thống này thiếu {1}. Hãy cài đặt bằng trình quản lý gói của bạn ({2}), rồi khởi động lại {0}.",
+  "update.noAsset": "Bản phát hành này không có tệp tải xuống cho {0}. Hãy lấy từ trang phát hành.",
+  "update.needsPkexec": "Portly này được cài từ gói .deb. Cập nhật cần quyền quản trị, nhưng pkexec không khả dụng. Tải .deb mới từ trang phát hành và cài bằng lệnh: sudo apt install ./<file>.deb",
+  "update.rootInside": "Thư mục dữ liệu của Portly nằm trong thư mục chương trình nên cập nhật sẽ ghi đè lên. Hãy chuyển thư mục dữ liệu (PORTLY_HOME) sang nơi khác.",
+  "update.notInstalled": "Portly này không phải bản cài đặt từ gói (chạy từ thư mục build) nên không thể tự cập nhật.",
+  "update.notWritable": "Portly không thể tự thay thế trong {0}: không có quyền ghi (hoặc đĩa chỉ đọc). Hãy chuyển Portly sang thư mục bạn sở hữu, hoặc cài phiên bản mới từ trang phát hành.",
+  "update.bundleInvalid": "Bản cập nhật đã tải không qua được kiểm tra chữ ký hoặc nội dung ({0}) nên không được cài đặt.",
+  "update.elevationRefused": "Đã hủy cập nhật: chưa được cấp quyền quản trị.",
+  "update.installFailed": "Trình quản lý gói không thể cài đặt bản cập nhật (mã thoát {0})."
 }

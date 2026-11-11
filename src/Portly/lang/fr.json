@@ -365,6 +365,7 @@
   "welcome.subtitle": "Trois étapes et votre serveur local est prêt. Gratuit, open source, sans publicité.",
   "welcome.packagesTitle": "Installer les paquets",
   "welcome.packagesNone": "Rien n'est encore installé. La sélection recommandée (Apache, PHP, MySQL, Adminer, Composer, capteur d'e-mails) est cochée pour vous.",
+  "welcome.packagesNone@unix": "Rien n'est encore installé. La sélection recommandée (Caddy, PHP, MySQL, Adminer, Composer, capteur d'e-mails) est cochée pour vous.",
   "welcome.packagesSome": "Installé : {0}",
   "welcome.installRecommended": "Installer",
   "welcome.importTitle": "Migrer depuis un autre programme",
@@ -1231,5 +1232,13 @@
   "ext.xdebugStatic": "Xdebug n'est pas disponible dans les versions statiques de PHP utilisées sur macOS et Linux.",
   "lowports.ask": "Linux n'autorise que les administrateurs à utiliser les ports inférieurs à 1024, et le serveur web a besoin des ports {0} et {1}.\n\nPortly peut modifier ceci une seule fois : votre système demande votre mot de passe, puis chaque programme de cet ordinateur pourra écouter sur les ports à partir de 80 (le paramètre « net.ipv4.ip_unprivileged_port_start = 80 » dans /etc/sysctl.d). Rien d'autre n'est modifié.\n\nContinuer ?",
   "lowports.failed": "Les ports n'ont pas pu être ouverts pour Portly. Utilisez des ports supérieurs à 1024 dans Paramètres (par exemple 8080 et 8443), ou autorisez-le à nouveau et saisissez le mot de passe.",
-  "err.linuxLibs": "{0} ne peut pas démarrer : il manque {1} sur ce système. Installez-le avec votre gestionnaire de paquets ({2}), puis relancez {0}."
+  "err.linuxLibs": "{0} ne peut pas démarrer : il manque {1} sur ce système. Installez-le avec votre gestionnaire de paquets ({2}), puis relancez {0}.",
+  "update.noAsset": "Cette version n'a pas de téléchargement pour {0}. Récupérez-le sur la page des versions.",
+  "update.needsPkexec": "Ce Portly a été installé à partir d'un paquet .deb. Sa mise à jour nécessite les droits administrateur, mais pkexec n'est pas disponible. Téléchargez le nouveau .deb depuis la page des versions et installez-le avec : sudo apt install ./<file>.deb",
+  "update.rootInside": "Le dossier de données de Portly se trouve dans son dossier programme, donc une mise à jour le remplacerait. Déplacez le dossier de données (PORTLY_HOME) ailleurs.",
+  "update.notInstalled": "Ce Portly n'est pas une installation par paquet (il s'exécute depuis un dossier de build), il ne peut donc pas se mettre à jour lui-même.",
+  "update.notWritable": "Portly ne peut pas se remplacer dans {0} : droit d'écriture absent (ou image disque en lecture seule). Déplacez Portly dans un dossier qui vous appartient, ou installez la nouvelle version depuis la page des versions.",
+  "update.bundleInvalid": "La mise à jour téléchargée n'a pas réussi la vérification de signature ou de contenu ({0}) et n'a pas été installée.",
+  "update.elevationRefused": "La mise à jour a été annulée : les droits administrateur n'ont pas été accordés.",
+  "update.installFailed": "Le gestionnaire de paquets n'a pas pu installer la mise à jour (code de sortie {0})."
 }

@@ -365,6 +365,7 @@
   "welcome.subtitle": "Três passos e seu servidor local está pronto. Gratuito, código aberto, sem anúncios.",
   "welcome.packagesTitle": "Instalar pacotes",
   "welcome.packagesNone": "Nada está instalado ainda. O conjunto recomendado (Apache, PHP, MySQL, Adminer, Composer, captura de e-mails) já está selecionado para você.",
+  "welcome.packagesNone@unix": "Nada está instalado ainda. O conjunto recomendado (Caddy, PHP, MySQL, Adminer, Composer, captura de e-mails) já está selecionado para você.",
   "welcome.packagesSome": "Instalados: {0}",
   "welcome.installRecommended": "Instalar",
   "welcome.importTitle": "Migrar de outro programa",
@@ -1231,5 +1232,13 @@
   "ext.xdebugStatic": "O Xdebug não está disponível nas builds estáticas do PHP usadas no macOS e no Linux.",
   "lowports.ask": "O Linux só permite que administradores usem portas abaixo de 1024, e o servidor web precisa das portas {0} e {1}.\n\nO Portly pode fazer essa alteração uma vez: o sistema pedirá sua senha e, depois, qualquer programa deste computador poderá escutar portas a partir da 80 (a configuração \"net.ipv4.ip_unprivileged_port_start = 80\" em /etc/sysctl.d). Nada mais será alterado.\n\nContinuar?",
   "lowports.failed": "Não foi possível abrir as portas para o Portly. Use portas acima de 1024 em Configurações (por exemplo, 8080 e 8443), ou permita novamente e digite a senha.",
-  "err.linuxLibs": "{0} não pode iniciar: este sistema não tem {1}. Instale com seu gerenciador de pacotes ({2}) e depois inicie o {0} novamente."
+  "err.linuxLibs": "{0} não pode iniciar: este sistema não tem {1}. Instale com seu gerenciador de pacotes ({2}) e depois inicie o {0} novamente.",
+  "update.noAsset": "Esta versão não tem download para {0}. Baixe-o na página de releases.",
+  "update.needsPkexec": "Este Portly foi instalado a partir de um pacote .deb. Atualizá-lo exige direitos de administrador, mas o pkexec não está disponível. Baixe o novo .deb na página de releases e instale-o com: sudo apt install ./<file>.deb",
+  "update.rootInside": "A pasta de dados do Portly está dentro da pasta do programa, então uma atualização a substituiria. Mova a pasta de dados (PORTLY_HOME) para outro lugar.",
+  "update.notInstalled": "Este Portly não é uma instalação empacotada (ele roda a partir de uma pasta de build), então não consegue se atualizar sozinho.",
+  "update.notWritable": "O Portly não consegue se substituir em {0}: sem permissão de gravação (ou imagem de disco somente leitura). Mova o Portly para uma pasta sua ou instale a nova versão na página de releases.",
+  "update.bundleInvalid": "A atualização baixada não passou na verificação de assinatura ou conteúdo ({0}) e não foi instalada.",
+  "update.elevationRefused": "A atualização foi cancelada: os direitos de administrador não foram concedidos.",
+  "update.installFailed": "O gerenciador de pacotes não conseguiu instalar a atualização (código de saída {0})."
 }

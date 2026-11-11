@@ -365,6 +365,7 @@
   "welcome.subtitle": "Trzy kroki i Twój lokalny serwer jest gotowy. Darmowy, open source, bez reklam.",
   "welcome.packagesTitle": "Zainstaluj pakiety",
   "welcome.packagesNone": "Nic nie jest jeszcze zainstalowane. Zalecany zestaw (Apache, PHP, MySQL, Adminer, Composer, przechwytywanie poczty) jest już zaznaczony.",
+  "welcome.packagesNone@unix": "Nic nie jest jeszcze zainstalowane. Zalecany zestaw (Caddy, PHP, MySQL, Adminer, Composer, przechwytywanie poczty) jest już zaznaczony.",
   "welcome.packagesSome": "Zainstalowane: {0}",
   "welcome.installRecommended": "Zainstaluj",
   "welcome.importTitle": "Przenieś z innego programu",
@@ -1231,5 +1232,13 @@
   "ext.xdebugStatic": "Xdebug nie jest dostępny w statycznych wersjach PHP używanych w macOS i Linuxie.",
   "lowports.ask": "Linux pozwala tylko administratorom używać portów poniżej 1024, a serwer WWW potrzebuje portów {0} i {1}.\n\nPortly może to zmienić jednorazowo: system zapyta o hasło, a potem każdy program na tym komputerze będzie mógł nasłuchiwać na portach od 80 wzwyż (ustawienie \"net.ipv4.ip_unprivileged_port_start = 80\" w /etc/sysctl.d). Nic więcej nie zostanie zmienione.\n\nKontynuować?",
   "lowports.failed": "Nie udało się otworzyć portów dla Portly. Użyj w Ustawieniach portów powyżej 1024 (np. 8080 i 8443) albo ponownie zezwól i wpisz hasło.",
-  "err.linuxLibs": "{0} nie może się uruchomić: w systemie brakuje {1}. Zainstaluj to menedżerem pakietów ({2}), a potem uruchom {0} ponownie."
+  "err.linuxLibs": "{0} nie może się uruchomić: w systemie brakuje {1}. Zainstaluj to menedżerem pakietów ({2}), a potem uruchom {0} ponownie.",
+  "update.noAsset": "Ta wersja nie ma pliku do pobrania dla {0}. Pobierz go ze strony wydań.",
+  "update.needsPkexec": "Ten Portly został zainstalowany z pakietu .deb. Jego aktualizacja wymaga uprawnień administratora, ale pkexec jest niedostępny. Pobierz nowy plik .deb ze strony wydań i zainstaluj go poleceniem: sudo apt install ./<file>.deb",
+  "update.rootInside": "Folder danych Portly znajduje się w folderze programu, więc aktualizacja by go nadpisała. Przenieś folder danych (PORTLY_HOME) w inne miejsce.",
+  "update.notInstalled": "Ten Portly nie jest instalacją z pakietu (działa z folderu kompilacji), więc nie może się sam zaktualizować.",
+  "update.notWritable": "Portly nie może zastąpić siebie w {0}: brak uprawnień do zapisu (lub obraz dysku tylko do odczytu). Przenieś Portly do folderu, którego jesteś właścicielem, albo zainstaluj nową wersję ze strony wydań.",
+  "update.bundleInvalid": "Pobrana aktualizacja nie przeszła weryfikacji podpisu lub zawartości ({0}) i nie została zainstalowana.",
+  "update.elevationRefused": "Aktualizacja została anulowana: nie przyznano uprawnień administratora.",
+  "update.installFailed": "Menedżer pakietów nie mógł zainstalować aktualizacji (kod wyjścia {0})."
 }

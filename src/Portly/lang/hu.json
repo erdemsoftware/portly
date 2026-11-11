@@ -365,6 +365,7 @@
   "welcome.subtitle": "Három lépés, és kész a helyi szervered. Ingyenes, nyílt forráskódú, reklámmentes.",
   "welcome.packagesTitle": "Csomagok telepítése",
   "welcome.packagesNone": "Még semmi sincs telepítve. Az ajánlott csomagok (Apache, PHP, MySQL, Adminer, Composer, levélelfogó) már ki vannak jelölve.",
+  "welcome.packagesNone@unix": "Még semmi sincs telepítve. Az ajánlott csomagok (Caddy, PHP, MySQL, Adminer, Composer, levélelfogó) már ki vannak jelölve.",
   "welcome.packagesSome": "Telepítve: {0}",
   "welcome.installRecommended": "Telepítés",
   "welcome.importTitle": "Átköltözés másik programból",
@@ -1231,5 +1232,13 @@
   "ext.xdebugStatic": "Az Xdebug nem érhető el a macOS-en és Linuxon használt statikus PHP-verziókban.",
   "lowports.ask": "A Linux csak rendszergazdáknak engedi az 1024 alatti portok használatát, a webszervernek pedig {0} és {1} portra van szüksége.\n\nA Portly ezt egyszer módosíthatja: a rendszer kéri a jelszavát, utána a számítógépen futó bármely program hallgathat 80-as porttól felfelé (a \"net.ipv4.ip_unprivileged_port_start = 80\" beállítás a /etc/sysctl.d alatt). Más nem változik.\n\nFolytatja?",
   "lowports.failed": "A portokat nem sikerült megnyitni a Portly számára. Használjon 1024 feletti portokat a Beállításokban (például 8080 és 8443), vagy engedélyezze újra, és adja meg a jelszót.",
-  "err.linuxLibs": "A(z) {0} nem indítható: a rendszerből hiányzik a(z) {1}. Telepítsd csomagkezelőddel ({2}), majd indítsd újra a(z) {0} programot."
+  "err.linuxLibs": "A(z) {0} nem indítható: a rendszerből hiányzik a(z) {1}. Telepítsd csomagkezelőddel ({2}), majd indítsd újra a(z) {0} programot.",
+  "update.noAsset": "Ez a kiadás nem tartalmaz letöltést a(z) {0} rendszerhez. Szerezd be a kiadások oldaláról.",
+  "update.needsPkexec": "Ezt a Portlyt egy .deb csomagból telepítették. Frissítéséhez rendszergazdai jogok kellenek, de a pkexec nem érhető el. Töltsd le az új .deb csomagot a kiadások oldaláról, és telepítsd ezzel a paranccsal: sudo apt install ./<file>.deb",
+  "update.rootInside": "A Portly adatmappája a programmappáján belül van, ezért a frissítés felülírná. Helyezd át az adatmappát (PORTLY_HOME) máshová.",
+  "update.notInstalled": "Ez a Portly nem csomagolt telepítés (build mappából fut), ezért nem tud magától frissülni.",
+  "update.notWritable": "A Portly nem tudja lecserélni magát ebben: {0}: nincs írási jogosultság (vagy csak olvasható lemezkép). Helyezd a Portlyt olyan mappába, amely a tiéd, vagy telepítsd az új verziót a kiadások oldaláról.",
+  "update.bundleInvalid": "A letöltött frissítés nem felelt meg az aláírás- vagy tartalomellenőrzésnek ({0}), ezért nem lett telepítve.",
+  "update.elevationRefused": "A frissítés megszakadt: nem kaptunk rendszergazdai jogosultságot.",
+  "update.installFailed": "A csomagkezelő nem tudta telepíteni a frissítést (kilépési kód: {0})."
 }

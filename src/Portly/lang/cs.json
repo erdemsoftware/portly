@@ -365,6 +365,7 @@
   "welcome.subtitle": "Tři kroky a váš lokální server je připraven. Zdarma, open source, bez reklam.",
   "welcome.packagesTitle": "Nainstalovat balíčky",
   "welcome.packagesNone": "Zatím není nic nainstalováno. Doporučená sada (Apache, PHP, MySQL, Adminer, Composer, zachytávání pošty) je už vybrána.",
+  "welcome.packagesNone@unix": "Zatím není nic nainstalováno. Doporučená sada (Caddy, PHP, MySQL, Adminer, Composer, zachytávání pošty) je už vybrána.",
   "welcome.packagesSome": "Nainstalováno: {0}",
   "welcome.installRecommended": "Nainstalovat",
   "welcome.importTitle": "Přejít z jiného programu",
@@ -1231,5 +1232,13 @@
   "ext.xdebugStatic": "Xdebug není k dispozici ve statických sestaveních PHP používaných na macOS a Linuxu.",
   "lowports.ask": "Linux umožňuje portům pod 1024 používat jen správci a webový server potřebuje {0} a {1}.\n\nPortly to může změnit jednou: systém požádá o heslo a poté smí každý program na tomto počítači naslouchat na portech od 80 výš (nastavení \"net.ipv4.ip_unprivileged_port_start = 80\" v /etc/sysctl.d). Nic jiného se nemění.\n\nPokračovat?",
   "lowports.failed": "Porty pro Portly nelze otevřít. V Nastavení použijte porty nad 1024 (například 8080 a 8443), nebo povolení udělte znovu a zadejte heslo.",
-  "err.linuxLibs": "{0} nelze spustit: v systému chybí {1}. Nainstalujte je pomocí správce balíčků ({2}) a potom {0} spusťte znovu."
+  "err.linuxLibs": "{0} nelze spustit: v systému chybí {1}. Nainstalujte je pomocí správce balíčků ({2}) a potom {0} spusťte znovu.",
+  "update.noAsset": "Tato verze nemá ke stažení soubor pro {0}. Stáhněte ho na stránce vydání.",
+  "update.needsPkexec": "Tento Portly byl nainstalován z balíčku .deb. Aktualizace vyžaduje oprávnění správce, ale pkexec není k dispozici. Stáhněte nový .deb ze stránky vydání a nainstalujte jej příkazem: sudo apt install ./<file>.deb",
+  "update.rootInside": "Datová složka Portly je uvnitř programové složky, takže by ji aktualizace nahradila. Přesuňte datovou složku (PORTLY_HOME) jinam.",
+  "update.notInstalled": "Tento Portly není instalace z balíčku (běží ze složky sestavení), proto se nemůže sám aktualizovat.",
+  "update.notWritable": "Portly se nemůže nahradit v {0}: chybí oprávnění k zápisu (nebo je disk jen pro čtení). Přesuňte Portly do složky, kterou vlastníte, nebo nainstalujte novou verzi ze stránky vydání.",
+  "update.bundleInvalid": "Stažená aktualizace neprošla kontrolou podpisu nebo obsahu ({0}) a nebyla nainstalována.",
+  "update.elevationRefused": "Aktualizace byla zrušena: nebyla udělena oprávnění správce.",
+  "update.installFailed": "Správce balíčků nemohl aktualizaci nainstalovat (návratový kód {0})."
 }

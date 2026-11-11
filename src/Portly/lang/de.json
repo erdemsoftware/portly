@@ -365,6 +365,7 @@
   "welcome.subtitle": "Drei Schritte, und dein lokaler Server ist bereit. Kostenlos, Open Source, ohne Werbung.",
   "welcome.packagesTitle": "Pakete installieren",
   "welcome.packagesNone": "Noch ist nichts installiert. Die empfohlene Auswahl (Apache, PHP, MySQL, Adminer, Composer, Mail-Fänger) ist bereits markiert.",
+  "welcome.packagesNone@unix": "Noch ist nichts installiert. Die empfohlene Auswahl (Caddy, PHP, MySQL, Adminer, Composer, Mail-Fänger) ist bereits markiert.",
   "welcome.packagesSome": "Installiert: {0}",
   "welcome.installRecommended": "Installieren",
   "welcome.importTitle": "Von einem anderen Programm umziehen",
@@ -1231,5 +1232,13 @@
   "ext.xdebugStatic": "Xdebug ist in den statischen PHP-Builds für macOS und Linux nicht verfügbar.",
   "lowports.ask": "Unter Linux dürfen nur Administratoren Ports unter 1024 verwenden, der Webserver benötigt jedoch {0} und {1}.\n\nPortly kann dies einmalig ändern: Ihr System fragt nach Ihrem Passwort, danach darf jedes Programm auf diesem Computer Ports ab 80 abhören (die Einstellung \"net.ipv4.ip_unprivileged_port_start = 80\" in /etc/sysctl.d). Sonst wird nichts geändert.\n\nFortfahren?",
   "lowports.failed": "Die Ports konnten für Portly nicht geöffnet werden. Verwenden Sie in den Einstellungen Ports über 1024 (zum Beispiel 8080 und 8443) oder erlauben Sie es erneut und geben Sie das Passwort ein.",
-  "err.linuxLibs": "{0} kann nicht gestartet werden: Diesem System fehlt {1}. Installieren Sie es mit Ihrem Paketmanager ({2}) und starten Sie danach {0} erneut."
+  "err.linuxLibs": "{0} kann nicht gestartet werden: Diesem System fehlt {1}. Installieren Sie es mit Ihrem Paketmanager ({2}) und starten Sie danach {0} erneut.",
+  "update.noAsset": "Für {0} gibt es in dieser Version keinen Download. Holen Sie ihn von der Release-Seite.",
+  "update.needsPkexec": "Dieses Portly wurde aus einem .deb-Paket installiert. Für die Aktualisierung sind Administratorrechte nötig, pkexec ist aber nicht verfügbar. Laden Sie die neue .deb-Datei von der Release-Seite herunter und installieren Sie sie mit: sudo apt install ./<file>.deb",
+  "update.rootInside": "Der Datenordner von Portly liegt im Programmordner, daher würde ein Update ihn ersetzen. Verschieben Sie den Datenordner (PORTLY_HOME) an einen anderen Ort.",
+  "update.notInstalled": "Dieses Portly ist keine Paketinstallation (es läuft aus einem Build-Ordner), daher kann es sich nicht selbst aktualisieren.",
+  "update.notWritable": "Portly kann sich in {0} nicht ersetzen: keine Schreibberechtigung (oder ein schreibgeschütztes Laufwerk). Verschieben Sie Portly in einen Ordner, für den Sie Schreibrechte haben, oder installieren Sie die neue Version von der Release-Seite.",
+  "update.bundleInvalid": "Das heruntergeladene Update hat die Signatur- oder Inhaltsprüfung nicht bestanden ({0}) und wurde nicht installiert.",
+  "update.elevationRefused": "Das Update wurde abgebrochen: Administratorrechte wurden nicht gewährt.",
+  "update.installFailed": "Der Paketmanager konnte das Update nicht installieren (Exit-Code {0})."
 }

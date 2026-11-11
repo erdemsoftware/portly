@@ -365,6 +365,7 @@
   "welcome.subtitle": "Tiga langkah dan server lokal Anda siap. Gratis, sumber terbuka, tanpa iklan.",
   "welcome.packagesTitle": "Pasang paket",
   "welcome.packagesNone": "Belum ada yang terpasang. Set yang disarankan (Apache, PHP, MySQL, Adminer, Composer, penangkap email) sudah dipilih untuk Anda.",
+  "welcome.packagesNone@unix": "Belum ada yang terpasang. Set yang disarankan (Caddy, PHP, MySQL, Adminer, Composer, penangkap email) sudah dipilih untuk Anda.",
   "welcome.packagesSome": "Terpasang: {0}",
   "welcome.installRecommended": "Pasang",
   "welcome.importTitle": "Pindah dari program lain",
@@ -1231,5 +1232,13 @@
   "ext.xdebugStatic": "Xdebug tidak tersedia di build PHP statis yang digunakan di macOS dan Linux.",
   "lowports.ask": "Linux hanya mengizinkan administrator menggunakan port di bawah 1024, sedangkan web server membutuhkan {0} dan {1}.\n\nPortly dapat mengubah ini sekali saja: sistem akan meminta kata sandi, lalu setiap program di komputer ini boleh mendengarkan port mulai dari 80 ke atas (pengaturan \"net.ipv4.ip_unprivileged_port_start = 80\" di /etc/sysctl.d). Tidak ada yang lain yang diubah.\n\nLanjutkan?",
   "lowports.failed": "Port tidak dapat dibuka untuk Portly. Gunakan port di atas 1024 di Pengaturan (misalnya 8080 dan 8443), atau izinkan lagi lalu masukkan kata sandi.",
-  "err.linuxLibs": "{0} tidak dapat dimulai: sistem ini tidak memiliki {1}. Pasang dengan manajer paket Anda ({2}), lalu mulai {0} lagi."
+  "err.linuxLibs": "{0} tidak dapat dimulai: sistem ini tidak memiliki {1}. Pasang dengan manajer paket Anda ({2}), lalu mulai {0} lagi.",
+  "update.noAsset": "Rilis ini tidak memiliki unduhan untuk {0}. Dapatkan dari halaman rilis.",
+  "update.needsPkexec": "Portly ini dipasang dari paket .deb. Memperbaruinya memerlukan hak administrator, tetapi pkexec tidak tersedia. Unduh .deb baru dari halaman rilis dan pasang dengan perintah: sudo apt install ./<file>.deb",
+  "update.rootInside": "Folder data Portly berada di dalam folder program, jadi pembaruan akan menggantinya. Pindahkan folder data (PORTLY_HOME) ke lokasi lain.",
+  "update.notInstalled": "Portly ini bukan instalasi paket (berjalan dari folder build), jadi tidak bisa memperbarui dirinya sendiri.",
+  "update.notWritable": "Portly tidak dapat mengganti dirinya di {0}: tidak ada izin tulis (atau disk hanya-baca). Pindahkan Portly ke folder milik Anda, atau pasang versi baru dari halaman rilis.",
+  "update.bundleInvalid": "Pembaruan yang diunduh gagal pemeriksaan tanda tangan atau isi ({0}) dan tidak dipasang.",
+  "update.elevationRefused": "Pembaruan dibatalkan: hak administrator tidak diberikan.",
+  "update.installFailed": "Pengelola paket tidak dapat memasang pembaruan (kode keluar {0})."
 }
