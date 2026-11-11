@@ -1,0 +1,135 @@
+name: v2 own builds
+
+# Portly's own portable builds for macOS and Linux: nginx, Apache httpd, memcached and PHP (php-fpm + php-cli + Xdebug).
+# Artifacts only: nothing is released or uploaded anywhere from here. Scripts: tools/own-builds/.
+on:
+  push:
+    branches: [v2-own-builds]
+  workflow_dispatch:
+    inputs:
+      components:
+        description: 'Only these (comma separated: nginx,httpd,memcached,php). Empty = all'
+        default: ''
+      php_set:
+        description: 'PHP extension set: full (like the static-php bulk builds) or quick (to try the build chain)'
+        default: 'full'
+      linux_target:
+        description: 'Optional SPC_TARGET for PHP on Linux (for example native-native-gnu.2.17). Empty = glibc of the runner'
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: ${{ matrix.component }} ${{ matrix.platform.id }}
+    if: github.event_name == 'push' || inputs.components == '' || contains(inputs.components, matrix.component)
+    strategy:
+      fail-fast: false
+      matrix:
+        component: [nginx, httpd, memcached]
+        platform: ${{ fromJSON('[{"id":"linux-x64","runner":"ubuntu-22.04"},{"id":"linux-arm64","runner":"ubuntu-22.04-arm"},{"id":"macos-arm64","runner":"macos-15"},{"id":"macos-x64","runner":"macos-15-intel"}]') }}
+    runs-on: ${{ matrix.platform.runner }}
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v5
+      - name: Build
+        run: bash tools/own-builds/build-${{ matrix.component }}.sh
+      - name: Smoke test
+        run: bash tools/own-builds/smoke.sh ${{ matrix.component }} ob-out/*.tar.gz
+      - uses: actions/upload-artifact@v5
+        with:
+          name: own-${{ matrix.component }}-${{ matrix.platform.id }}
+          path: ob-out/*.tar.gz
+          retention-days: 30
+
+  php:
+    name: php ${{ matrix.line }} ${{ matrix.platform.id }}
+    if: github.event_name == 'push' || inputs.components == '' || contains(inputs.components, 'php')
+    strategy:
+      fail-fast: false
+      matrix:
+        line: ['8.5', '8.4']
+        platform: ${{ fromJSON('[{"id":"linux-x64","runner":"ubuntu-22.04"},{"id":"linux-arm64","runner":"ubuntu-22.04-arm"},{"id":"macos-arm64","runner":"macos-15"},{"id":"macos-x64","runner":"macos-15-intel"}]') }}
+    runs-on: ${{ matrix.platform.runner }}
+    timeout-minutes: 340
+    env:
+      SPC_TARGET: ${{ inputs.linux_target }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Build
+        run: |
+          if [ -z "$SPC_TARGET" ]; then unset SPC_TARGET; fi
+          bash tools/own-builds/build-php.sh ${{ matrix.line }} ${{ inputs.php_set || 'quick' }}
+      - name: Smoke test
+        run: bash tools/own-builds/smoke.sh php ob-out/*.tar.gz
+      - uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: own-php-${{ matrix.line }}-${{ matrix.platform.id }}
+          path: ob-out/*.tar.gz
+          retention-days: 30
+          if-no-files-found: ignore
+      - uses: actions/upload-artifact@v5
+        if: failure()
+        with:
+          name: spc-logs-php-${{ matrix.line }}-${{ matrix.platform.id }}
+          path: ob-work/spc-${{ matrix.line }}/log/
+          if-no-files-found: ignore
+
+  collect:
+    name: SHA256SUMS
+    needs: [build, php]
+    if: ${{ !cancelled() && (needs.build.result == 'success' || needs.php.result == 'success') }}
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@v5
+        with:
+          pattern: own-*
+          path: all
+          merge-multiple: true
+      - name: Checksums
+        run: |
+          cd all
+          sha256sum *.tar.gz | tee SHA256SUMS
+          ls -la
+      - uses: actions/upload-artifact@v5
+        with:
+          name: own-builds-all
+          path: all/
+          retention-days: 30
+
+  engine:
+    name: Portly engine with the packages (${{ matrix.os }})
+    needs: collect
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, ubuntu-24.04-arm, macos-15, macos-15-intel]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.0.x'
+      - uses: actions/download-artifact@v5
+        with:
+          name: own-builds-all
+          path: own-builds
+      - name: Build
+        run: dotnet build tests/Portly.CoreTests/Portly.CoreTests.csproj -c Release --nologo -v:q
+      - name: Engine tests with the own builds
+        shell: bash
+        run: |
+          export PORTLY_HOME="$RUNNER_TEMP/portly-ob" PORTLY_E2E=1 PORTLY_OWN_BUILDS="$PWD/own-builds"
+          dotnet run --project tests/Portly.CoreTests -c Release --no-build -- E2EInstall
+          dotnet run --project tests/Portly.CoreTests -c Release --no-build -- OwnBuilds
+      - uses: actions/upload-artifact@v5
+        if: failure()
+        with:
+          name: engine-logs-${{ matrix.os }}
+          path: |
+            ${{ runner.temp }}/portly-ob/logs/
+            ${{ runner.temp }}/portly-ob/etc/
+          if-no-files-found: ignore
