@@ -37,10 +37,10 @@ D="$(unpack "$NGHTTP2_SRC")"
 # libtool shared-library support is switched on again in the installed copy, the libraries themselves stay static.
 D="$(unpack "$APR_SRC")"
 ( cd "$D" && ./configure --prefix="$DEPS" --disable-shared --enable-static --with-pic && make -j"$JOBS" && make install )
+D="$(unpack "$APU_SRC")"
+( cd "$D" && ./configure --prefix="$DEPS" --disable-shared --enable-static --with-pic --with-apr="$DEPS" --with-expat="$DEPS" --without-pgsql --without-sqlite3 --without-sqlite2 --without-odbc --without-mysql --without-oracle --without-freetds --without-berkeley-db --without-gdbm --without-ndbm --without-ldap --without-crypto && make -j"$JOBS" && make install )
 sed -i.bak 's/^build_libtool_libs=no/build_libtool_libs=yes/' "$DEPS/build-1/libtool"
 grep -n '^build_libtool_libs\|^build_old_libs' "$DEPS/build-1/libtool"
-D="$(unpack "$APU_SRC")"
-( cd "$D" && ./configure --prefix="$DEPS" --disable-shared --enable-static --with-pic --with-apr="$DEPS" --with-expat="$DEPS" && make -j"$JOBS" && make install )
 
 log "httpd"
 SRC="$(unpack "$HTTPD_SRC")"
