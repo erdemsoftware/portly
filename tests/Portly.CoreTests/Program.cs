@@ -24,7 +24,11 @@ namespace Portly.CoreTests
         static void Run(string name, Action test)
         {
             try { test(); }
-            catch (Exception ex) { Check(name, false, ex.GetType().Name + ": " + ex.Message); }
+            catch (Exception ex)
+            {
+                var e = ex is System.Reflection.TargetInvocationException && ex.InnerException != null ? ex.InnerException : ex;
+                Check(name, false, e.GetType().Name + ": " + e.Message);
+            }
         }
 
         static int Main(string[] args)
@@ -41,6 +45,16 @@ namespace Portly.CoreTests
             Run("ports", PortChecks);
             Run("processes", ProcessChecks);
             Run("settings", SettingsChecks);
+            // more suites: any "static void Suite_<Name>()" in another Tests.*.cs file of this partial class
+            var only = args.Length > 0 ? args[0] : null;
+            foreach (var m in typeof(Program).GetMethods(System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public)
+                .Where(x => x.Name.StartsWith("Suite_", StringComparison.Ordinal) && x.GetParameters().Length == 0).OrderBy(x => x.Name))
+            {
+                var name = m.Name.Substring(6);
+                if (only != null && !name.Equals(only, StringComparison.OrdinalIgnoreCase)) continue;
+                Console.WriteLine("== " + name);
+                Run(name, () => m.Invoke(null, null));
+            }
 
             Console.WriteLine();
             Console.WriteLine("PASSED " + _ok + "  FAILED " + _fail);
