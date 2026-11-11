@@ -63,7 +63,7 @@ namespace Portly.CoreTests
                 {
                     var hex = new Regex("^[0-9a-f]{64}$");
                     if (!hex.IsMatch(p.Str("sha256"))) allHashed = false;
-                    if (!new[] { "tar.gz", "tar.xz", "zip", "file" }.Contains(p.Str("kind", "zip"))) kindsOk = false;
+                    if (!new[] { "tar.gz", "tar.xz", "zip", "zip+tar.xz", "file" }.Contains(p.Str("kind", "zip"))) kindsOk = false;
                     if (!new[] { "", "x64", "arm64" }.Contains(p.Str("arch"))) archOk = false;
                     if (!p.Str("url").StartsWith("https://")) https = false;
                     if (!seen.Add(p.Str("type") + "|" + p.Str("folder") + "|" + p.Str("arch"))) folders = false;
