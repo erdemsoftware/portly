@@ -39,10 +39,8 @@ namespace Portly.Desktop
         string _page = "services";
         ContentControl _host;
         TextBlock _status;
-#pragma warning disable CS0649 // set by the services page
         Button _updateBtn, _updateTop;
         UpdateNoticeBar _notices;
-#pragma warning restore CS0649
         TrayIcon _tray;
         string _trayKey;
         readonly Dictionary<string, WindowIcon> _trayIcons = new Dictionary<string, WindowIcon>();

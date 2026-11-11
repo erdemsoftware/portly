@@ -50,7 +50,7 @@ namespace Portly.Desktop
 
         readonly List<Row> _rows = new List<Row>();
         TextBlock _servicesSub;
-        Button _startAll, _updateTop;
+        Button _startAll;
         bool _busyAll, _syncingBulk, _updating;
 
         // =====================================================================
@@ -79,6 +79,9 @@ namespace Portly.Desktop
             header.Margin = new Thickness(0, 0, 0, 4);
             page.Children.Add(header);
 
+            // "PHP 8.6.0 is out" cards between the header and the services
+            _notices = new UpdateNoticeBar { ApplyVersionChange = ApplyVersionChange, OpenPackages = t => { var _ = OpenPackages(t); }, Changed = () => { RefreshVersions(); UpdateBanner(); } };
+            page.Children.Add(_notices);
             page.Children.Add(new RootPasswordNotice());
 
             foreach (var svc in ServiceManager.Rows)

@@ -90,10 +90,6 @@ namespace Portly.Desktop
                 _sslBtn));
             _siteList = new StackPanel { Spacing = 0 };
             page.Children.Add(_siteList);
-            // a share started, stopped or ended by itself; background jobs started or stopped
-            ShareStore.Changed += () => Ui.Post(FillSites);
-            int jobsShown = 0;
-            Jobs.Changed += () => Ui.Post(() => { var n = Jobs.ActiveCountAll(); if (n != jobsShown) { jobsShown = n; FillSites(); } });
             return page;
         }
 
@@ -336,16 +332,16 @@ namespace Portly.Desktop
             return b;
         }
 
-        static MenuItem Mi(string text, Func<Task> click)
+        static MenuItem SiteItem(string text, Func<Task> click)
         {
             var item = new MenuItem { Header = text };
             item.Click += async (s, e) => await Ui.Run(click, item);
             return item;
         }
 
-        static MenuItem Mi(string text, Action click)
+        static MenuItem SiteItem(string text, Action click)
         {
-            return Mi(text, () => { click(); return Task.CompletedTask; });
+            return SiteItem(text, () => { click(); return Task.CompletedTask; });
         }
 
         void BuildSiteMenu(IList items, Site site)
@@ -353,26 +349,26 @@ namespace Portly.Desktop
             items.Clear();
             if (site.Valid)
             {
-                items.Add(Mi(I18n.T("sites.openHttp"), () => OpenSite(site, false)));
-                if (Settings.Current.Ssl) items.Add(Mi(I18n.T("sites.openHttps"), () => OpenSite(site, true)));
+                items.Add(SiteItem(I18n.T("sites.openHttp"), () => OpenSite(site, false)));
+                if (Settings.Current.Ssl) items.Add(SiteItem(I18n.T("sites.openHttps"), () => OpenSite(site, true)));
             }
-            items.Add(Mi(I18n.T("sites.folder"), () => Ui.Open(site.Folder)));
-            items.Add(Mi(I18n.T("main.terminal"), () => Terminal.Open(site.Folder)));
+            items.Add(SiteItem(I18n.T("sites.folder"), () => Ui.Open(site.Folder)));
+            items.Add(SiteItem(I18n.T("main.terminal"), () => Terminal.Open(site.Folder)));
             foreach (var ed in DesktopApps.Editors)
             {
                 var editor = ed;
                 if (DesktopApps.IsInstalled(editor))
-                    items.Add(Mi(I18n.T("tools.openIn", PackageTypes.Get(editor).Name), () => DesktopApps.OpenInEditor(editor, site.Folder)));
+                    items.Add(SiteItem(I18n.T("tools.openIn", PackageTypes.Get(editor).Name), () => DesktopApps.OpenInEditor(editor, site.Folder)));
             }
             var php = new MenuItem { Header = I18n.T("sites.phpVersion") };
-            var def = Mi(I18n.T("sites.phpDefault", PackageTypes.Label(PackageTypes.ActiveFolder("php"))), async () => { Sites.SetPhp(site.Name, ""); await ServiceManager.ReloadWebAsync(); });
+            var def = SiteItem(I18n.T("sites.phpDefault", PackageTypes.Label(PackageTypes.ActiveFolder("php"))), async () => { Sites.SetPhp(site.Name, ""); await ServiceManager.ReloadWebAsync(); });
             def.ToggleType = MenuItemToggleType.CheckBox;
             def.IsChecked = site.PhpOverride == "";
             php.Items.Add(def);
             foreach (var f in PackageTypes.Installed("php"))
             {
                 var folder = f;
-                var mi = Mi("PHP " + PackageTypes.Label(f), async () =>
+                var mi = SiteItem("PHP " + PackageTypes.Label(f), async () =>
                 {
                     Sites.SetPhp(site.Name, folder);
                     Log.Info(I18n.T("log.sitePhp", site.Name, PackageTypes.Label(folder)));
@@ -383,10 +379,10 @@ namespace Portly.Desktop
                 php.Items.Add(mi);
             }
             items.Add(php);
-            items.Add(Mi(I18n.T("sites.createDb"), async () => await CreateDatabase(ProjectCreator.DbNameFor(site.Name))));
+            items.Add(SiteItem(I18n.T("sites.createDb"), async () => await CreateDatabase(ProjectCreator.DbNameFor(site.Name))));
             // a sub-project in its own folder inside this project (name.project.tld)
             if (site.Valid && site.Name.IndexOf('/') < 0)
-                items.Add(Mi(I18n.T("sites.addSub"), async () => await NewProject(null, site.Name)));
+                items.Add(SiteItem(I18n.T("sites.addSub"), async () => await NewProject(null, site.Name)));
             if (site.Valid)
             {
                 var share = new MenuItem { Header = I18n.T("share.button") };
@@ -396,9 +392,9 @@ namespace Portly.Desktop
             DevWorkflowUi.AddSiteMenuItems(items, site, this, FillSites);
             SitesWebUi.AddSiteItems(this, items, site);
             if (OS.IsWindows && Deploy.IsAvailable)
-                items.Add(Mi(I18n.T("deploy.menu"), async () => { ShowFromTray(); await new DeployForm(site).ShowDialog(this); }));
+                items.Add(SiteItem(I18n.T("deploy.menu"), async () => { ShowFromTray(); await new DeployForm(site).ShowDialog(this); }));
             items.Add(new Separator());
-            items.Add(Mi(I18n.T("sites.delete"), async () =>
+            items.Add(SiteItem(I18n.T("sites.delete"), async () =>
             {
                 if (!await Dialogs.Confirm(this, I18n.T("sites.deleteConfirm", site.Name, site.Folder))) return;
                 try { MoveToTrash(site); }
@@ -434,25 +430,25 @@ namespace Portly.Desktop
         {
             items.Clear();
             // 1. offline: devices on the same router / Wi-Fi (testing on a phone)
-            if (LanShare.UrlOf(site) == null) items.Add(Mi(I18n.T("lan.start"), async () => await LanShareSite(site)));
+            if (LanShare.UrlOf(site) == null) items.Add(SiteItem(I18n.T("lan.start"), async () => await LanShareSite(site)));
             else
             {
-                items.Add(Mi(I18n.T("lan.copy", LanShare.UrlOf(site)), async () => { try { await Ui.Copy(this, LanShare.UrlOf(site)); } catch { } }));
-                items.Add(Mi(I18n.T("lan.stop"), () => { LanShare.Stop(site); FillSites(); }));
+                items.Add(SiteItem(I18n.T("lan.copy", LanShare.UrlOf(site)), async () => { try { await Ui.Copy(this, LanShare.UrlOf(site)); } catch { } }));
+                items.Add(SiteItem(I18n.T("lan.stop"), () => { LanShare.Stop(site); FillSites(); }));
             }
             items.Add(new Separator());
             // 2. online: a random public Cloudflare address
             if (!Share.IsAvailable) items.Add(new MenuItem { Header = I18n.T("share.start"), IsEnabled = false });
-            else if (Share.UrlOf(site) == null) items.Add(Mi(I18n.T("share.start"), async () => await ShareSite(site)));
+            else if (Share.UrlOf(site) == null) items.Add(SiteItem(I18n.T("share.start"), async () => await ShareSite(site)));
             else
             {
-                items.Add(Mi(I18n.T("share.copy"), async () => { try { await Ui.Copy(this, Share.UrlOf(site)); } catch { } }));
-                items.Add(Mi(I18n.T("share.stop"), () => { Share.Stop(site); FillSites(); }));
+                items.Add(SiteItem(I18n.T("share.copy"), async () => { try { await Ui.Copy(this, Share.UrlOf(site)); } catch { } }));
+                items.Add(SiteItem(I18n.T("share.stop"), () => { Share.Stop(site); FillSites(); }));
             }
             items.Add(new Separator());
             if (LanShare.UrlOf(site) != null || Share.UrlOf(site) != null)
-                items.Add(Mi(I18n.T("share.showQr"), async () => await ShareUi.ShowQr(this, site.Host)));
-            items.Add(Mi(I18n.T("shares.menu"), async () => await OpenShares()));
+                items.Add(SiteItem(I18n.T("share.showQr"), async () => await ShareUi.ShowQr(this, site.Host)));
+            items.Add(SiteItem(I18n.T("shares.menu"), async () => await OpenShares()));
         }
 
         Task LanShareSite(Site site) { return ShareUi.StartLan(this, site); }
@@ -481,9 +477,9 @@ namespace Portly.Desktop
                 Avalonia.Automation.AutomationProperties.SetName(b, I18n.T("hosts.button"));
             }
             var fly = new MenuFlyout { Placement = PlacementMode.BottomEdgeAlignedRight };
-            fly.Items.Add(Mi(I18n.T("hosts.edit"), async () => await new HostsForm().ShowDialog(this)));
-            fly.Items.Add(Mi(I18n.T("hosts.sync"), () => { SetStatus(I18n.T("hosts.syncing")); Task.Run(() => ServiceManager.SyncHostsNow()); }));
-            fly.Items.Add(Mi(I18n.T("hosts.folder"), () => Ui.Open(Path.GetDirectoryName(HostsFile.FilePath))));
+            fly.Items.Add(SiteItem(I18n.T("hosts.edit"), async () => await new HostsForm().ShowDialog(this)));
+            fly.Items.Add(SiteItem(I18n.T("hosts.sync"), () => { SetStatus(I18n.T("hosts.syncing")); Task.Run(() => ServiceManager.SyncHostsNow()); }));
+            fly.Items.Add(SiteItem(I18n.T("hosts.folder"), () => Ui.Open(Path.GetDirectoryName(HostsFile.FilePath))));
             b.Flyout = fly;
             return b;
         }
