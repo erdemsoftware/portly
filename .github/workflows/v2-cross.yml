@@ -1,0 +1,53 @@
+name: v2 cross-platform
+
+# Portly 2 (Windows, macOS, Linux) checks on the v2 branch: build, engine tests and screenshots.
+# Nothing is released or signed here.
+on:
+  push:
+    branches: [v2]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, ubuntu-24.04-arm, macos-15, macos-15-intel, windows-2025]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Build
+        run: dotnet build src/Portly.Desktop/Portly.Desktop.csproj -c Release --nologo
+
+      - name: Engine tests
+        shell: bash
+        run: |
+          export PORTLY_HOME="$RUNNER_TEMP/portly-tests"
+          dotnet run --project tests/Portly.CoreTests -c Release
+
+      - name: Screenshots
+        shell: bash
+        run: |
+          export PORTLY_HOME="$RUNNER_TEMP/portly-shots"
+          mkdir -p shots
+          for page in services sites log; do
+            dotnet build/desktop/Portly.dll --screenshot "shots/$page.png" 1100 760 --page "$page"
+          done
+          for dlg in GlyphGallery MessageDialog PackagesForm SettingsForm NewProjectForm; do
+            dotnet build/desktop/Portly.dll --screenshot "shots/$dlg.png" 1100 760 --dialog "$dlg" || echo "no preview: $dlg"
+          done
+
+      - uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: shots-${{ matrix.os }}
+          path: shots/
+          if-no-files-found: ignore

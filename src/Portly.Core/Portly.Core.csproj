@@ -24,6 +24,7 @@
   <ItemGroup>
     <InternalsVisibleTo Include="Portly" />
     <InternalsVisibleTo Include="Portly.SmokeTest" />
+    <InternalsVisibleTo Include="Portly.CoreTests" />
   </ItemGroup>
 
   <ItemGroup>

@@ -4,6 +4,7 @@ dist/
 obj/
 **/obj/
 src/**/bin/
+tests/**/bin/
 *.user
 .vs/
 .vscode/
