@@ -1224,5 +1224,7 @@
   "hosts.find": "Search:",
   "hosts.noMatch": "No match",
   "hosts.findPrev": "Previous match",
-  "hosts.findNext": "Next match"
+  "hosts.findNext": "Next match",
+  "lowports.ask": "Linux lets only administrators use ports below 1024, and the web server needs {0} and {1}.\n\nPortly can change this once: your system asks for your password, then every program on this computer may listen on ports from 80 up (the setting \"net.ipv4.ip_unprivileged_port_start = 80\" in /etc/sysctl.d). Nothing else is changed.\n\nContinue?",
+  "lowports.failed": "The ports could not be opened for Portly. Use ports above 1024 in Settings (for example 8080 and 8443), or allow it again and enter the password."
 }

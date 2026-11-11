@@ -48,7 +48,7 @@ namespace Portly.Desktop
 
             // "portly status", "portly start" ...: print into the calling console, talk to the running Portly (Windows only)
             Tools.Cli.InstanceKey = "Portly-" + Fnv(Paths.Root);
-            if (OS.IsWindows && Tools.Cli.IsCommand(args)) return Tools.Cli.RunClient(args);
+            if (Tools.Cli.IsCommand(args)) return Tools.Cli.RunClient(args);
 
             // the updater starts the new Portly while the old one is still closing
             i = Array.IndexOf(args, "--after-update");
@@ -81,10 +81,11 @@ namespace Portly.Desktop
             StartHidden = args.Contains("--tray") || (autostart && Settings.Current.StartMinimized);
             StartServices = args.Contains("--start-services");
 
-            if (OS.IsWindows)
+            Tools.Cli.StartServer();
+            if (Features.IsOn("cli"))
             {
-                Tools.Cli.StartServer();
-                if (Features.IsOn("cli")) Tools.Cli.EnsureCmdFile(Paths.Root);
+                if (OS.IsWindows) Tools.Cli.EnsureCmdFile(Paths.Root);
+                else Tools.Cli.EnsureShellFile(Paths.Root);
             }
 
             var code = BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);

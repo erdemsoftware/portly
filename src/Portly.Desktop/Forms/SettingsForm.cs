@@ -208,8 +208,7 @@ namespace Portly.Desktop.Forms
             FormKit.AddRow(g4, "", Hint(I18n.T("features.intro")));
             foreach (var f in Features.All)
             {
-                // Windows service mode and WSL access exist only on Windows
-                if (!OS.IsWindows && (f.Id == "serviceMode" || f.Id == "wsl")) continue;
+                if (!Features.IsAvailable(f.Id)) continue;
                 _features[f.Id] = Check(I18n.T(f.TitleKey), Features.IsOn(f.Id), g4);
                 FormKit.AddRow(g4, "", Hint(I18n.T(f.HintKey), true));
             }

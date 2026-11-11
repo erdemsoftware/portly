@@ -397,33 +397,10 @@ namespace Portly.Desktop
             items.Add(SiteItem(I18n.T("sites.delete"), async () =>
             {
                 if (!await Dialogs.Confirm(this, I18n.T("sites.deleteConfirm", site.Name, site.Folder))) return;
-                try { MoveToTrash(site); }
+                try { ProjectCreator.MoveToTrash(site); }
                 catch (Exception ex) { await Dialogs.Warning(this, ex.Message); return; }
                 await ServiceManager.ReloadWebAsync();
             }));
-        }
-
-        /// <summary>Project folder to the trash (recoverable): the Recycle Bin on Windows, ~/.Trash on macOS, "gio trash" on Linux.</summary>
-        static void MoveToTrash(Site site)
-        {
-            if (OS.IsWindows) { ProjectCreator.DeleteToRecycleBin(site); return; }
-            if (OS.IsMac)
-            {
-                var trash = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".Trash");
-                var target = Path.Combine(trash, Path.GetFileName(site.Folder.TrimEnd('/', '\\')));
-                if (Directory.Exists(target)) target += " " + DateTime.Now.ToString("HHmmss");
-                Directory.Move(site.Folder, target);
-            }
-            else
-            {
-                using (var p = Process.Start(new ProcessStartInfo("gio", new[] { "trash", site.Folder }) { UseShellExecute = false, RedirectStandardError = true }))
-                {
-                    var err = p.StandardError.ReadToEnd();
-                    p.WaitForExit();
-                    if (p.ExitCode != 0) throw new InvalidOperationException(err.Trim());
-                }
-            }
-            Log.Info(I18n.T("log.projectDeleted", site.Name));
         }
 
         void BuildShareMenu(IList items, Site site)

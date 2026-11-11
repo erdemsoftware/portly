@@ -104,7 +104,7 @@ namespace Portly.Desktop
             ToolTip.SetTip(dbTile, I18n.T("main.databaseHint"));
             tiles.Children.Add(dbTile);
             tiles.Children.Add(Tile(I18n.T("main.mail"), "mail", OpenMailpit));
-            if (OS.IsWindows) tiles.Children.Add(Tile(I18n.T("main.terminal"), "terminal", () => Terminal.Open()));
+            tiles.Children.Add(Tile(I18n.T("main.terminal"), "terminal", () => Terminal.Open()));
             tiles.Children.Add(Tile(I18n.T("main.root"), "folder", () => Ui.Open(Settings.Current.DocumentRoot)));
             tiles.Children.Add(Tile(I18n.T("main.quickInstall"), "import", async () => await NewProject("wordpress")));
             tiles.Children.Add(Tile(I18n.T("main.newProject"), "plus", async () => await NewProject()));
@@ -551,6 +551,7 @@ namespace Portly.Desktop
         public async Task<bool> ResolvePorts(IEnumerable<Service> services)
         {
             var list = services.ToList();
+            if (list.Contains(ServiceManager.Web) && !await EnsureLowPorts()) return false;
             SetStatus(I18n.T("port.checking"));
             var conflicts = await Task.Run(() => PortGuard.Check(list));
             if (conflicts.Count == 0) return true;
@@ -569,6 +570,17 @@ namespace Portly.Desktop
                 if (failed.Count == 0) return true;
                 await Dialogs.Warning(this, I18n.T("port.stillUsed", string.Join("\n", failed)));
             }
+            return false;
+        }
+
+        /// <summary>Linux: ports below 1024 need a one-time system setting before a normal user may listen on them.</summary>
+        async Task<bool> EnsureLowPorts()
+        {
+            var s = Settings.Current;
+            if (!LowPorts.NeedsSetup(s.HttpPort) && !LowPorts.NeedsSetup(s.HttpsPort)) return true;
+            if (!await Dialogs.Confirm(this, I18n.T("lowports.ask", s.HttpPort, s.HttpsPort))) return false;
+            if (await Task.Run(() => LowPorts.Setup())) return true;
+            await Dialogs.Warning(this, I18n.T("lowports.failed", s.HttpPort, s.HttpsPort));
             return false;
         }
 

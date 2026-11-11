@@ -1224,5 +1224,7 @@
   "hosts.find": "Ara:",
   "hosts.noMatch": "Sonuç yok",
   "hosts.findPrev": "Önceki sonuç",
-  "hosts.findNext": "Sonraki sonuç"
+  "hosts.findNext": "Sonraki sonuç",
+  "lowports.ask": "Linux 1024'ün altındaki portları yalnızca yöneticilere açar; web sunucusu {0} ve {1} portlarını kullanıyor.\n\nPortly bunu bir kez değiştirebilir: sisteminiz şifrenizi sorar, sonra bu bilgisayardaki her program 80 ve üzerindeki portları dinleyebilir (/etc/sysctl.d içinde \"net.ipv4.ip_unprivileged_port_start = 80\" ayarı). Başka hiçbir şey değişmez.\n\nDevam edilsin mi?",
+  "lowports.failed": "Portlar Portly için açılamadı. Ayarlar'dan 1024'ün üzerinde portlar seçin (ör. 8080 ve 8443) ya da yeniden izin verip şifrenizi girin."
 }
