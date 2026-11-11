@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
@@ -15,6 +16,8 @@ namespace Portly.Packages
         public string Url;
         public string Sha256;
         public string Notes;
+        /// <summary>Portly 2 release files from the optional "assets" object (see UpdateAssets); empty for a manifest without it.</summary>
+        public Dictionary<string, UpdateAsset> Assets = new Dictionary<string, UpdateAsset>();
     }
 
     /// <summary>
@@ -24,7 +27,7 @@ namespace Portly.Packages
     /// Only program files are replaced (Portly.exe, lang\, templates\); bin, data, www, usr, etc are never touched.
     /// The running exe is renamed to Portly.exe.old (Windows allows renaming a running exe) and removed on next start.
     /// </summary>
-    public static class Updater
+    public static partial class Updater
     {
         public static AppUpdate Available;
         static readonly string[] Protected = { "bin", "data", "www", "usr", "etc", "tmp", "logs", "backup" };
@@ -60,6 +63,7 @@ namespace Portly.Packages
                 Url = o.Str("url"),
                 Sha256 = o.Str("sha256"),
                 Notes = notes == null ? "" : notes.Str(I18n.Code, notes.Str("en")),
+                Assets = UpdateAssets.Parse(o),
             };
         }
 
@@ -69,18 +73,31 @@ namespace Portly.Packages
             if (u == null || u.Version == null || u.Version <= current) throw new Exception(I18n.T("err.updateRollback"));
         }
 
+        /// <summary>Windows: download the release zip, verify it and replace the program files. Portly 2 on macOS / Linux: InstallUpdateAsync.</summary>
         public static async Task ApplyAsync(AppUpdate u, Action<InstallProgress> progress, CancellationToken ct)
         {
+#if NETFRAMEWORK
+            await ApplyWindowsAsync(u, progress, ct);
+#else
+            await InstallUpdateAsync(u, progress, ct);
+#endif
+        }
+
+#if NETFRAMEWORK
+        static async Task ApplyWindowsAsync(AppUpdate u, Action<InstallProgress> progress, CancellationToken ct)
+        {
             EnsureNewer(u, RunningVersion);
-            if (string.IsNullOrEmpty(u.Sha256) || !u.Url.StartsWith("https://")) throw new Exception(I18n.T("err.updateManifest"));
+            var asset = new UpdateAsset { Url = u.Url, Sha256 = u.Sha256 };
+            if (string.IsNullOrEmpty(asset.Sha256) || string.IsNullOrEmpty(asset.Url) || !asset.Url.StartsWith("https://", StringComparison.OrdinalIgnoreCase)) throw new Exception(I18n.T("err.updateManifest"));
             var work = Path.Combine(Paths.Tmp, "update");
             if (Directory.Exists(work)) Directory.Delete(work, true);
             var zip = Path.Combine(work, "portly.zip");
-            await Net.DownloadFileAsync(u.Url, zip, (p, b) => { if (progress != null) progress(new InstallProgress { Stage = "download", Percent = p, Bytes = b }); }, ct);
-            if (!Net.Sha256(zip).Equals(u.Sha256, StringComparison.OrdinalIgnoreCase)) throw new Exception(I18n.T("err.checksum"));
+            await Net.DownloadFileAsync(asset.Url, zip, (p, b) => { if (progress != null) progress(new InstallProgress { Stage = "download", Percent = p, Bytes = b }); }, ct);
+            if (!Net.Sha256(zip).Equals(asset.Sha256, StringComparison.OrdinalIgnoreCase)) throw new Exception(I18n.T("err.checksum"));
             await Task.Run(() => InstallZip(zip, work), ct);
             Log.Info(I18n.T("log.updated", u.Version));
         }
+#endif
 
         /// <summary>Replace the program files with the ones in a verified release zip.</summary>
         public static void InstallZip(string zip, string work)
@@ -101,7 +118,7 @@ namespace Portly.Packages
                 var rel = file.Substring(root.Length + 1);
                 var first = rel.Split('\\')[0];
                 if (Protected.Contains(first, StringComparer.OrdinalIgnoreCase)) continue;
-                var target = Path.Combine(Paths.Root, rel);
+                var target = Path.Combine(Paths.AppDir, rel);
                 Directory.CreateDirectory(Path.GetDirectoryName(target));
                 if (File.Exists(target))
                 {
@@ -116,15 +133,21 @@ namespace Portly.Packages
         /// <summary>Start the new Portly and let it wait until this process has exited.</summary>
         public static void Restart(bool startServices)
         {
+#if !NETFRAMEWORK
+            if (RestartUnix(startServices)) return;
+#endif
             var args = "--after-update " + Process.GetCurrentProcess().Id + (startServices ? " --start-services" : "");
             Process.Start(new ProcessStartInfo(Paths.Exe, args) { UseShellExecute = false });
         }
 
         public static void CleanupOldFiles()
         {
+#if !NETFRAMEWORK
+            CleanupBackups();
+#endif
             try
             {
-                foreach (var f in Directory.GetFiles(Paths.Root, "*.old"))
+                foreach (var f in Directory.GetFiles(Paths.AppDir, "*.old"))
                     try { File.Delete(f); } catch { }
                 foreach (var d in new[] { Paths.Lang, Paths.Templates })
                     if (Directory.Exists(d))
