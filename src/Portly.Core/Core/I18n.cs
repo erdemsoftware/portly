@@ -160,6 +160,15 @@ namespace Portly.Core
         }
 
         /// <summary>Translate. Missing keys fall back to English, then to the key itself.</summary>
+        /// <summary>T(key), or the English fallback while the key is not in the language files yet.</summary>
+        public static string TOr(string key, string fallback, params object[] args)
+        {
+            var s = T(key, args);
+            if (s != key) return s;
+            if (args != null && args.Length > 0) { try { return string.Format(fallback, args); } catch { } }
+            return fallback;
+        }
+
         public static string T(string key, params object[] args)
         {
             string s;
