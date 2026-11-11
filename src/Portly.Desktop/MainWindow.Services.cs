@@ -102,7 +102,17 @@ namespace Portly.Desktop
             UpdateRow(row.Svc);
         }
 
-        async Task ToggleAll()
+        /// <summary>shared: version lists on the cards after packages were installed / removed.</summary>
+        public void RefreshVersions() { }
+
+        /// <summary>shared: check the services' ports before starting; false = the user cancelled.</summary>
+        public Task<bool> ResolvePorts(IEnumerable<Service> services) { return Task.FromResult(true); }
+
+        /// <summary>shared: "Fix" link on a port error.</summary>
+        public Task FixPorts(IEnumerable<Service> services) { return Task.CompletedTask; }
+
+        /// <summary>shared: Start all / Stop all (button, tray menu).</summary>
+        public async Task ToggleAll()
         {
             if (_busyAll) return;
             _busyAll = true;

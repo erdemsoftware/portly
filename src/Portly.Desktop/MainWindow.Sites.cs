@@ -1,3 +1,5 @@
+using System;
+using System.Threading.Tasks;
 using Avalonia.Controls;
 using Portly.Core;
 using Portly.Desktop.UI;
@@ -17,5 +19,14 @@ namespace Portly.Desktop
 
         /// <summary>shared: rebuild the project cards (sites changed, share started, web server restarted ...).</summary>
         public void FillSites() { }
+
+        /// <summary>shared: HTTPS repair for sites whose certificate is not trusted.</summary>
+        public Task OpenSslRepair() { return Task.CompletedTask; }
+
+        /// <summary>shared: list of active shares.</summary>
+        public Task OpenShares() { return Task.CompletedTask; }
+
+        /// <summary>shared: hosts button with its menu (services and projects page headers).</summary>
+        public Button HostsButton(bool withText = false) { return Ui.Button(withText ? I18n.T("hosts.title") : null, (Action)null, null, "hosts"); }
     }
 }

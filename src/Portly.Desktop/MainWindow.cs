@@ -179,6 +179,20 @@ namespace Portly.Desktop
         /// <summary>shared: "update available" / notices in the sidebar.</summary>
         public void UpdateBanner() { }
 
+        /// <summary>shared: Windows only - offer the Visual C++ runtime when a package needs a newer one.</summary>
+        public Task CheckVcRuntime(bool quiet) { return Task.CompletedTask; }
+
+        /// <summary>shared: quick-access "Database" tile (menu of database tools next to anchor).</summary>
+        public Task OpenDatabaseQuick(Control anchor) { return NotYet("database"); }
+        public Task OpenDatabaseTool(Control anchor = null) { return NotYet("database tool"); }
+        public void OpenLocalhost() { Ui.Open("http://localhost/"); }
+        public void OpenMailpit() { }
+        public Task CreateDatabase(string suggested) { return NotYet("new database"); }
+        public Task BackupDatabases() { return NotYet("backup"); }
+        public Task ChangeRootPassword() { return NotYet("root password"); }
+        public Task TrustCa() { return NotYet("trust CA"); }
+        public Task ShowVerify(List<IntegrityProblem> problems) { return NotYet("verify"); }
+
         Control BuildLogPage() { return Ui.Label(I18n.T("nav.log"), "title"); }
 
         Task NotYet(string what) { return Dialogs.Info(this, what + ": not ported yet"); }
