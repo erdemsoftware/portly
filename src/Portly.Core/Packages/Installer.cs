@@ -38,30 +38,22 @@ namespace Portly.Packages
             Report(progress, "download", 0, 0);
             Log.Info(I18n.T("log.downloading", e.TypeName + " " + e.Version));
 
-            bool cached = File.Exists(download) && (!HasHash(e) || HashMatches(e, download));
-            if (!cached)
+            await DownloadVerifiedAsync(e, e.Url, e.Sha256, download, progress, ct);
+            // more archives of the same version (macOS / Linux: php-cli next to php-fpm)
+            var partFiles = new System.Collections.Generic.List<string>();
+            for (int i = 0; i < e.Parts.Count; i++)
             {
-                string lastError = null;
-                foreach (var url in CandidateUrls(e))
-                {
-                    try
-                    {
-                        await Net.DownloadFileAsync(url, download, (p, b) => Report(progress, "download", p, b), ct);
-                        lastError = null;
-                        break;
-                    }
-                    catch (OperationCanceledException) { throw; }
-                    catch (Exception ex) { lastError = ex.Message; Log.Warn(url + " -> " + ex.Message); }
-                }
-                if (lastError != null) throw new Exception(I18n.T("err.download", lastError));
+                var pf = Path.Combine(Paths.Downloads, e.Type + "-" + e.Folder + "-part" + (i + 1) + "-" + UrlFileName(e.Parts[i].Url));
+                await DownloadVerifiedAsync(e, e.Parts[i].Url, e.Parts[i].Sha256, pf, progress, ct);
+                partFiles.Add(pf);
             }
-            VerifyDownload(e, download);
             ct.ThrowIfCancellationRequested();
 
             if (e.Kind == "file")
             {
                 Directory.CreateDirectory(target);
                 File.Copy(download, Path.Combine(target, fileName), true);
+                if (!OS.IsWindows && !IsScriptFile(fileName)) MakeExecutable(Path.Combine(target, fileName));
             }
             else if (e.Kind == "sfx")
             {
@@ -79,12 +71,23 @@ namespace Portly.Packages
             {
                 Report(progress, "extract", 0, 0);
                 var extract = Path.Combine(Paths.Tmp, "extract", Guid.NewGuid().ToString("N").Substring(0, 8));
-                await Task.Run(() => ExtractZip(download, extract, p => Report(progress, "extract", p, 0), ct), ct);
+                await Task.Run(() => Extract(e.Kind, download, extract, p => Report(progress, "extract", p, 0), ct), ct);
                 var root = FindRoot(extract, e.Subdir);
                 MoveDir(root, target);
                 TryDeleteDir(extract);
+                for (int i = 0; i < partFiles.Count; i++)
+                {
+                    var part = e.Parts[i];
+                    var pextract = Path.Combine(Paths.Tmp, "extract", Guid.NewGuid().ToString("N").Substring(0, 8));
+                    var pfile = partFiles[i];
+                    await Task.Run(() => Extract(part.Kind, pfile, pextract, p => { }, ct), ct);
+                    MergeDir(FindRoot(pextract, part.Subdir), target);
+                    TryDeleteDir(pextract);
+                }
             }
             TryDelete(download);
+            foreach (var pf in partFiles) TryDelete(pf);
+            if (!OS.IsWindows) MakeExecutables(target, e.Type);
 
             Report(progress, "configure", -1, 0);
             await Task.Run(() => PostInstall(e, copySettingsFrom));
@@ -97,6 +100,123 @@ namespace Portly.Packages
             }
             Log.Info(I18n.T("log.installed", e.TypeName + " " + e.Version));
             Report(progress, "done", 100, 0);
+        }
+
+        /// <summary>Download one file (or take it from the download cache) and check its SHA-256 before anything uses it.</summary>
+        static async Task DownloadVerifiedAsync(PackageEntry e, string url, string sha256, string file, Action<InstallProgress> progress, CancellationToken ct)
+        {
+            var one = new PackageEntry { Type = e.Type, Version = e.Version, Folder = e.Folder, Url = url, Sha256 = sha256 };
+            bool cached = File.Exists(file) && (!HasHash(one) || HashMatches(one, file));
+            if (!cached)
+            {
+                string lastError = null;
+                foreach (var u in CandidateUrls(one))
+                {
+                    try
+                    {
+                        await Net.DownloadFileAsync(u, file, (p, b) => Report(progress, "download", p, b), ct);
+                        lastError = null;
+                        break;
+                    }
+                    catch (OperationCanceledException) { throw; }
+                    catch (Exception ex) { lastError = ex.Message; Log.Warn(u + " -> " + ex.Message); }
+                }
+                if (lastError != null) throw new Exception(I18n.T("err.download", lastError));
+            }
+            VerifyDownload(one, file);
+        }
+
+        static bool IsTarName(string file)
+        {
+            var n = file.ToLowerInvariant();
+            return n.EndsWith(".tar.gz") || n.EndsWith(".tgz") || n.EndsWith(".tar.xz") || n.EndsWith(".txz") || n.EndsWith(".tar");
+        }
+
+        static bool IsTar(string kind) { return kind != null && kind.StartsWith("tar", StringComparison.OrdinalIgnoreCase); }
+
+        /// <summary>Extract an archive of the given kind (zip, tar.gz, tar.xz) into an empty folder.</summary>
+        static void Extract(string kind, string archive, string dest, Action<int> progress, CancellationToken ct)
+        {
+            if (!IsTar(kind)) { ExtractZip(archive, dest, progress, ct); return; }
+            ExtractTar(archive, dest);
+            progress(100);
+        }
+
+        /// <summary>
+        /// tar.gz / tar.xz with the system tar (macOS bsdtar, GNU tar, and tar.exe of Windows 10+): it reads both
+        /// compressions, keeps the executable bit and refuses paths that leave the folder.
+        /// </summary>
+        public static void ExtractTar(string archive, string dest)
+        {
+            Directory.CreateDirectory(dest);
+            var r = ProcessUtil.Run(TarExe(), "-xf " + ProcessUtil.Quote(archive) + " -C " + ProcessUtil.Quote(dest), dest, null, 15 * 60 * 1000);
+            if (!r.Ok) throw new Exception(r.Output != "" ? r.Output : "tar failed");
+        }
+
+        /// <summary>The system tar: /usr/bin/tar, or tar.exe of Windows (a Git for Windows tar would read "C:" as a remote host).</summary>
+        public static string TarExe()
+        {
+            if (!OS.IsWindows) return File.Exists("/usr/bin/tar") ? "/usr/bin/tar" : "tar";
+            var win = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "tar.exe");
+            return File.Exists(win) ? win : "tar";
+        }
+
+        static bool IsScriptFile(string name)
+        {
+            var ext = Path.GetExtension(name).ToLowerInvariant();
+            return ext == ".php" || ext == ".phar" || ext == ".json" || ext == ".txt" || ext == ".md";
+        }
+
+        /// <summary>chmod 755 (macOS / Linux). A no-op on Windows and on .NET Framework.</summary>
+        public static void MakeExecutable(string file)
+        {
+#if !NETFRAMEWORK
+            if (OS.IsWindows) return;
+            try
+            {
+                File.SetUnixFileMode(file, File.GetUnixFileMode(file) | UnixFileMode.UserExecute | UnixFileMode.GroupExecute | UnixFileMode.OtherExecute
+                    | UnixFileMode.UserRead | UnixFileMode.GroupRead | UnixFileMode.OtherRead);
+            }
+            catch (Exception ex) { Log.Warn("chmod " + file + ": " + ex.Message); }
+#endif
+        }
+
+        /// <summary>zip files carry no reliable mode: everything in bin/ and the type's own programs at the folder root become executable.</summary>
+        static void MakeExecutables(string dir, string type)
+        {
+#if !NETFRAMEWORK
+            if (OS.IsWindows) return;
+            var bin = Path.Combine(dir, "bin");
+            if (Directory.Exists(bin))
+                foreach (var f in Directory.GetFiles(bin)) MakeExecutable(f);
+            var detect = PackageTypes.Get(type).DetectFile ?? "";
+            if (detect == "" || IsScriptFile(detect)) return;
+            var exeDir = Path.Combine(dir, PackageTypes.ExeDir(type));
+            foreach (var name in ExecutableNames(type))
+            {
+                var f = Path.Combine(exeDir, name);
+                if (File.Exists(f)) MakeExecutable(f);
+            }
+#endif
+        }
+
+        /// <summary>Programs a type ships besides its detect file (macOS / Linux names).</summary>
+        static string[] ExecutableNames(string type)
+        {
+            switch (type)
+            {
+                case "php": return new[] { "php-fpm", "php", "php-cgi", "phpdbg" };
+                case "mysql": return new[] { "mysqld", "mysql", "mysqldump", "mysqladmin" };
+                default: return new[] { Path.GetFileName(PackageTypes.Get(type).DetectFile ?? "") };
+            }
+        }
+
+        /// <summary>Copy the files of a folder into another one, replacing files with the same name.</summary>
+        static void MergeDir(string from, string to)
+        {
+            Directory.CreateDirectory(to);
+            foreach (var f in Directory.GetFiles(from)) File.Copy(f, Path.Combine(to, Path.GetFileName(f)), true);
+            foreach (var d in Directory.GetDirectories(from)) MergeDir(d, Path.Combine(to, Path.GetFileName(d)));
         }
 
         static bool HasHash(PackageEntry e) { return !string.IsNullOrWhiteSpace(e.Sha256); }
@@ -133,12 +253,13 @@ namespace Portly.Packages
                 root = FindRoot(source, type == "apache" ? "Apache24" : "");
                 name = Path.GetFileName(source.TrimEnd('\\', '/'));
             }
-            else if (source.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+            else if (source.EndsWith(".zip", StringComparison.OrdinalIgnoreCase) || IsTarName(source))
             {
                 tmp = Path.Combine(Paths.Tmp, "extract", Guid.NewGuid().ToString("N").Substring(0, 8));
-                ExtractZip(source, tmp, p => { }, CancellationToken.None);
+                if (IsTarName(source)) ExtractTar(source, tmp); else ExtractZip(source, tmp, p => { }, CancellationToken.None);
                 root = FindRoot(tmp, type == "apache" ? "Apache24" : "");
                 name = Path.GetFileNameWithoutExtension(source);
+                if (name.EndsWith(".tar", StringComparison.OrdinalIgnoreCase)) name = name.Substring(0, name.Length - 4);
             }
             else
             {
@@ -166,6 +287,7 @@ namespace Portly.Packages
             Directory.CreateDirectory(Paths.BinOf(type));
             if (tmp != null) { MoveDir(root, target); TryDeleteDir(tmp); }
             else CopyDir(root, target);
+            if (!OS.IsWindows) MakeExecutables(target, type);
 
             PostInstall(new PackageEntry { Type = type, Folder = name, Version = PackageTypes.Label(name) }, null);
             Integrity.Record(target);

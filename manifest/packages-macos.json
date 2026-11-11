@@ -1,0 +1,347 @@
+{
+  "schema": 1,
+  "edition": "macos",
+  "updated": "2026-11-11",
+  "comment": "Portly package catalog for macOS (x64 and arm64; entries carry an arch). Served from GitHub (main branch) and embedded in Portly as a fallback. PHP comes as static builds (php-fpm + php-cli archives extracted into one folder) from dl.static-php.dev.",
+  "packages": [
+    {
+      "type": "php",
+      "version": "8.5.8",
+      "folder": "php-8.5.8-static",
+      "url": "https://dl.static-php.dev/static-php-cli/bulk/php-8.5.8-fpm-macos-x86_64.tar.gz",
+      "sha256": "57cdce953a8392e655a800908eb5e8fa61e2b7d795b8e7d3f354b3d81939563d",
+      "kind": "tar.gz",
+      "arch": "x64",
+      "parts": [
+        {
+          "url": "https://dl.static-php.dev/static-php-cli/bulk/php-8.5.8-cli-macos-x86_64.tar.gz",
+          "sha256": "d5a9a505ebce66c7f6b4f4e16629c36f385f2d360df915875722d67fe8bb2161",
+          "kind": "tar.gz"
+        }
+      ],
+      "note": "static build: php-fpm + php-cli, common extensions built in",
+      "recommended": true
+    },
+    {
+      "type": "php",
+      "version": "8.4.23",
+      "folder": "php-8.4.23-static",
+      "url": "https://dl.static-php.dev/static-php-cli/bulk/php-8.4.23-fpm-macos-x86_64.tar.gz",
+      "sha256": "67bbb7f2b2543d45c8a4ab0e4759fbd956530e87fba47a00505c06f09c9b9950",
+      "kind": "tar.gz",
+      "arch": "x64",
+      "parts": [
+        {
+          "url": "https://dl.static-php.dev/static-php-cli/bulk/php-8.4.23-cli-macos-x86_64.tar.gz",
+          "sha256": "be88a71134d43e8800946f8372da931ee1796c400a1fb4cf2afd718644251ffc",
+          "kind": "tar.gz"
+        }
+      ],
+      "note": "static build: php-fpm + php-cli, common extensions built in"
+    },
+    {
+      "type": "php",
+      "version": "8.3.32",
+      "folder": "php-8.3.32-static",
+      "url": "https://dl.static-php.dev/static-php-cli/bulk/php-8.3.32-fpm-macos-x86_64.tar.gz",
+      "sha256": "aac3ec085e1d72cfecfeea75981a5301b92f8555655d0997a1875c14669b5dd5",
+      "kind": "tar.gz",
+      "arch": "x64",
+      "parts": [
+        {
+          "url": "https://dl.static-php.dev/static-php-cli/bulk/php-8.3.32-cli-macos-x86_64.tar.gz",
+          "sha256": "6e059d66d149f2faa1d216e494a660752ef7e5769f2d4fded9a0e089574949a2",
+          "kind": "tar.gz"
+        }
+      ],
+      "note": "static build: php-fpm + php-cli, common extensions built in"
+    },
+    {
+      "type": "php",
+      "version": "8.5.8",
+      "folder": "php-8.5.8-static",
+      "url": "https://dl.static-php.dev/static-php-cli/bulk/php-8.5.8-fpm-macos-aarch64.tar.gz",
+      "sha256": "1d994fbc4e49015a7cd4ad4fcb7c03e7e219f65fdb14e5e33ef1c44d928368e9",
+      "kind": "tar.gz",
+      "arch": "arm64",
+      "parts": [
+        {
+          "url": "https://dl.static-php.dev/static-php-cli/bulk/php-8.5.8-cli-macos-aarch64.tar.gz",
+          "sha256": "5e5032e8244a2367b1e8a9c70ff6f793dee7433966c9291da85fadf2167cd55f",
+          "kind": "tar.gz"
+        }
+      ],
+      "note": "static build: php-fpm + php-cli, common extensions built in",
+      "recommended": true
+    },
+    {
+      "type": "php",
+      "version": "8.4.23",
+      "folder": "php-8.4.23-static",
+      "url": "https://dl.static-php.dev/static-php-cli/bulk/php-8.4.23-fpm-macos-aarch64.tar.gz",
+      "sha256": "1a417db44f0eb0b40a9f8cd862f24ecfabdea87f85863f30d218c4876bb688ef",
+      "kind": "tar.gz",
+      "arch": "arm64",
+      "parts": [
+        {
+          "url": "https://dl.static-php.dev/static-php-cli/bulk/php-8.4.23-cli-macos-aarch64.tar.gz",
+          "sha256": "4a5dca6df0211f7fb21425cf1c867968b2dfb7c079f98cf37770c5728e0bf709",
+          "kind": "tar.gz"
+        }
+      ],
+      "note": "static build: php-fpm + php-cli, common extensions built in"
+    },
+    {
+      "type": "php",
+      "version": "8.3.32",
+      "folder": "php-8.3.32-static",
+      "url": "https://dl.static-php.dev/static-php-cli/bulk/php-8.3.32-fpm-macos-aarch64.tar.gz",
+      "sha256": "0ceed30f5bd9e54f8a8046c3d28fad549f10220736e15dc16e15855d829fbd81",
+      "kind": "tar.gz",
+      "arch": "arm64",
+      "parts": [
+        {
+          "url": "https://dl.static-php.dev/static-php-cli/bulk/php-8.3.32-cli-macos-aarch64.tar.gz",
+          "sha256": "ac297da5c45c525c660b8d0c73f5aa478ad9005d7c85096dc841220aa9c192e4",
+          "kind": "tar.gz"
+        }
+      ],
+      "note": "static build: php-fpm + php-cli, common extensions built in"
+    },
+    {
+      "type": "caddy",
+      "version": "2.11.9",
+      "folder": "caddy-2.11.9",
+      "url": "https://github.com/caddyserver/caddy/releases/download/v2.11.9/caddy_2.11.9_mac_amd64.tar.gz",
+      "sha256": "22af256a2cc45606f6bfa8786cd89130529331319665926f4e972234a658fb30",
+      "kind": "tar.gz",
+      "arch": "x64",
+      "note": "web server (optional feature)",
+      "recommended": true
+    },
+    {
+      "type": "caddy",
+      "version": "2.11.9",
+      "folder": "caddy-2.11.9",
+      "url": "https://github.com/caddyserver/caddy/releases/download/v2.11.9/caddy_2.11.9_mac_arm64.tar.gz",
+      "sha256": "d075afc620376679a77b453399bf7ada264cab3280b2833e4ed1372abc0c1c13",
+      "kind": "tar.gz",
+      "arch": "arm64",
+      "note": "web server (optional feature)",
+      "recommended": true
+    },
+    {
+      "type": "frankenphp",
+      "version": "1.13.5",
+      "folder": "frankenphp-1.13.5",
+      "url": "https://github.com/php/frankenphp/releases/download/v1.13.5/frankenphp-mac-arm64",
+      "sha256": "42cbc1dc011495935a1ea8a90194269cda24a7f5ef2ef92117026efefd852f2e",
+      "kind": "file",
+      "fileName": "frankenphp",
+      "arch": "arm64",
+      "note": "PHP built in (static)",
+      "recommended": true
+    },
+    {
+      "type": "mysql",
+      "version": "8.4.11",
+      "folder": "mysql-8.4.11",
+      "url": "https://cdn.mysql.com/Downloads/MySQL-8.4/mysql-8.4.11-macos15-x86_64.tar.gz",
+      "sha256": "90e8aea10698d01b978f0179e72e8d5e2cbe9f9bd5771e88b0b75d7c82244d3f",
+      "kind": "tar.gz",
+      "subdir": "mysql-8.4.11-macos15-x86_64",
+      "arch": "x64",
+      "tag": "LTS",
+      "note": "needs macOS 15 or newer",
+      "recommended": true
+    },
+    {
+      "type": "mysql",
+      "version": "8.4.11",
+      "folder": "mysql-8.4.11",
+      "url": "https://cdn.mysql.com/Downloads/MySQL-8.4/mysql-8.4.11-macos15-arm64.tar.gz",
+      "sha256": "b96e00493bc3499b9ffd7f08d65c5d64933af0383a8287d9873b64f94c2d6009",
+      "kind": "tar.gz",
+      "subdir": "mysql-8.4.11-macos15-arm64",
+      "arch": "arm64",
+      "tag": "LTS",
+      "note": "needs macOS 15 or newer",
+      "recommended": true
+    },
+    {
+      "type": "mailpit",
+      "version": "1.33.1",
+      "folder": "mailpit-1.33.1",
+      "url": "https://github.com/axllent/mailpit/releases/download/v1.33.1/mailpit-darwin-amd64.tar.gz",
+      "sha256": "d8ca2a9da16c977189f2514a7fc28f8a47fe050bd2b0296a13c815288b5fe39f",
+      "kind": "tar.gz",
+      "arch": "x64",
+      "note": "catches every mail sent by PHP",
+      "recommended": true
+    },
+    {
+      "type": "mailpit",
+      "version": "1.33.1",
+      "folder": "mailpit-1.33.1",
+      "url": "https://github.com/axllent/mailpit/releases/download/v1.33.1/mailpit-darwin-arm64.tar.gz",
+      "sha256": "15703838762355d42befeb1c942f3a5cc53bcf1fa3ba6abc216a05dd254a8ac2",
+      "kind": "tar.gz",
+      "arch": "arm64",
+      "note": "catches every mail sent by PHP",
+      "recommended": true
+    },
+    {
+      "type": "cloudflared",
+      "version": "2026.10.7",
+      "folder": "cloudflared-2026.10.7",
+      "url": "https://github.com/cloudflare/cloudflared/releases/download/2026.10.7/cloudflared-darwin-amd64.tgz",
+      "sha256": "02f3edfd87684dd5b705607688e4eb4b323f6e777b81e7b3a85af556aa356848",
+      "kind": "tar.gz",
+      "arch": "x64",
+      "note": "share a site on the internet",
+      "recommended": true
+    },
+    {
+      "type": "cloudflared",
+      "version": "2026.10.7",
+      "folder": "cloudflared-2026.10.7",
+      "url": "https://github.com/cloudflare/cloudflared/releases/download/2026.10.7/cloudflared-darwin-arm64.tgz",
+      "sha256": "3586ccf397e98e5f437e60e7c307ca6ac463e110580503af8bb8e6f9ebf831bd",
+      "kind": "tar.gz",
+      "arch": "arm64",
+      "note": "share a site on the internet",
+      "recommended": true
+    },
+    {
+      "type": "nodejs",
+      "version": "24.22.3",
+      "folder": "node-v24.22.3-darwin-x64",
+      "url": "https://nodejs.org/dist/v24.22.3/node-v24.22.3-darwin-x64.tar.gz",
+      "sha256": "977614af0504c81045e7fd85596dbca0e5f951b96681516dadafedcca8c447f7",
+      "kind": "tar.gz",
+      "subdir": "node-v24.22.3-darwin-x64",
+      "arch": "x64",
+      "tag": "LTS",
+      "recommended": true
+    },
+    {
+      "type": "nodejs",
+      "version": "24.22.3",
+      "folder": "node-v24.22.3-darwin-arm64",
+      "url": "https://nodejs.org/dist/v24.22.3/node-v24.22.3-darwin-arm64.tar.gz",
+      "sha256": "ff6e17d4874b76d272212b908cc020d6e815fba5a6c7eaaa06add725840307fd",
+      "kind": "tar.gz",
+      "subdir": "node-v24.22.3-darwin-arm64",
+      "arch": "arm64",
+      "tag": "LTS",
+      "recommended": true
+    },
+    {
+      "type": "nodejs",
+      "version": "26.13.1",
+      "folder": "node-v26.13.1-darwin-x64",
+      "url": "https://nodejs.org/dist/v26.13.1/node-v26.13.1-darwin-x64.tar.gz",
+      "sha256": "82bb96078a24ca50b9c9a38f2379e6be6d87171fcd400fc14c8934b3bce96e2f",
+      "kind": "tar.gz",
+      "subdir": "node-v26.13.1-darwin-x64",
+      "arch": "x64",
+      "tag": "current"
+    },
+    {
+      "type": "nodejs",
+      "version": "26.13.1",
+      "folder": "node-v26.13.1-darwin-arm64",
+      "url": "https://nodejs.org/dist/v26.13.1/node-v26.13.1-darwin-arm64.tar.gz",
+      "sha256": "aec2514ea1ceb2ba52455e9ec65986f6749a06dd759e5db2a72e6889668c9735",
+      "kind": "tar.gz",
+      "subdir": "node-v26.13.1-darwin-arm64",
+      "arch": "arm64",
+      "tag": "current"
+    },
+    {
+      "type": "nodejs",
+      "version": "22.23.5",
+      "folder": "node-v22.23.5-darwin-x64",
+      "url": "https://nodejs.org/dist/v22.23.5/node-v22.23.5-darwin-x64.tar.gz",
+      "sha256": "c53383238206b9ae4db23c5d8a63645e2e753bec8ab51a49cc81939aa64e9422",
+      "kind": "tar.gz",
+      "subdir": "node-v22.23.5-darwin-x64",
+      "arch": "x64",
+      "tag": "LTS"
+    },
+    {
+      "type": "nodejs",
+      "version": "22.23.5",
+      "folder": "node-v22.23.5-darwin-arm64",
+      "url": "https://nodejs.org/dist/v22.23.5/node-v22.23.5-darwin-arm64.tar.gz",
+      "sha256": "e7131995759b61a0170b646010d2ad35a5d37b4cb0d471f3e8317eac6f742f3d",
+      "kind": "tar.gz",
+      "subdir": "node-v22.23.5-darwin-arm64",
+      "arch": "arm64",
+      "tag": "LTS"
+    },
+    {
+      "type": "adminer",
+      "version": "6.1.2",
+      "folder": "adminer-6.1.2",
+      "url": "https://github.com/vrana/adminer/releases/download/v6.1.2/adminer-6.1.2.php",
+      "kind": "file",
+      "fileName": "index.php",
+      "note": "http://localhost/adminer",
+      "recommended": true,
+      "sha256": "b32316156bd18ffa99c1a27617142c2e5ad72260e37f15da4e9937a3dbb15f57"
+    },
+    {
+      "type": "adminer",
+      "version": "6.0.2",
+      "folder": "adminer-6.0.2",
+      "url": "https://github.com/vrana/adminer/releases/download/v6.0.2/adminer-6.0.2.php",
+      "kind": "file",
+      "fileName": "index.php",
+      "sha256": "2d8d813523b84df7bcdfcba341845c740060c0c7974d1a1fdd676b98539847fc"
+    },
+    {
+      "type": "adminer",
+      "version": "5.4.1",
+      "folder": "adminer-5.4.1",
+      "url": "https://github.com/vrana/adminer/releases/download/v5.4.1/adminer-5.4.1.php",
+      "kind": "file",
+      "fileName": "index.php",
+      "sha256": "3f65364b4cc96b5e4cae1b3e448b7b6fa42b0da1eeba78bed9b3774ade830fce"
+    },
+    {
+      "type": "adminer",
+      "version": "4.8.1",
+      "folder": "adminer-4.8.1",
+      "url": "https://github.com/vrana/adminer/releases/download/v4.8.1/adminer-4.8.1.php",
+      "kind": "file",
+      "fileName": "index.php",
+      "note": "PHP 5 - 8.2",
+      "sha256": "2fd7e6d8f987b243ab1839249551f62adce19704c47d3d0c8dd9e57ea5b9c6b3"
+    },
+    {
+      "type": "phpmyadmin",
+      "version": "5.2.3",
+      "folder": "phpMyAdmin-5.2.3",
+      "url": "https://files.phpmyadmin.net/phpMyAdmin/5.2.3/phpMyAdmin-5.2.3-all-languages.zip",
+      "note": "http://localhost/phpmyadmin",
+      "recommended": true,
+      "sha256": "2d2e13c735366d318425c78e4ee2cc8fc648d77faba3ddea2cd516e43885733f"
+    },
+    {
+      "type": "phpmyadmin",
+      "version": "5.2.2",
+      "folder": "phpMyAdmin-5.2.2",
+      "url": "https://files.phpmyadmin.net/phpMyAdmin/5.2.2/phpMyAdmin-5.2.2-all-languages.zip",
+      "sha256": "6b99534f72ffb1d7275f50d23ca4141e1495c97d7cadb73a41d6dc580ed5ce29"
+    },
+    {
+      "type": "phpmyadmin",
+      "version": "4.9.11",
+      "folder": "phpMyAdmin-4.9.11",
+      "url": "https://files.phpmyadmin.net/phpMyAdmin/4.9.11/phpMyAdmin-4.9.11-all-languages.zip",
+      "note": "PHP 5.5 - 7.4",
+      "sha256": "d17c762d312b85ae3a8a2c452633372f686502c7c2682f9ef0e8a844fa0ff1b0"
+    }
+  ]
+}

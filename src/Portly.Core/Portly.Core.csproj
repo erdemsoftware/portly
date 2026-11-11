@@ -35,6 +35,8 @@
   <ItemGroup>
     <EmbeddedResource Include="..\..\manifest\packages.json" LogicalName="catalog.modern.json" />
     <EmbeddedResource Include="..\..\manifest\packages-legacy.json" LogicalName="catalog.legacy.json" />
+    <EmbeddedResource Include="..\..\manifest\packages-linux.json" LogicalName="catalog.linux.json" />
+    <EmbeddedResource Include="..\..\manifest\packages-macos.json" LogicalName="catalog.macos.json" />
     <EmbeddedResource Include="..\..\manifest\donate.json" LogicalName="donate.json" />
     <EmbeddedResource Include="..\..\manifest\extensions.json" LogicalName="extensions.json" />
     <EmbeddedResource Include="..\..\manifest\security.json" LogicalName="security.json" />
