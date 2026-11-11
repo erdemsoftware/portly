@@ -21,13 +21,33 @@ permissions:
   contents: read
 
 jobs:
+  plan:
+    name: Plan
+    runs-on: ubuntu-24.04
+    outputs:
+      components: ${{ steps.p.outputs.components }}
+      php: ${{ steps.p.outputs.php }}
+    steps:
+      - id: p
+        env:
+          WANT: ${{ inputs.components }}
+        run: |
+          [ -n "$WANT" ] || WANT="nginx,httpd,memcached,php"
+          list=""
+          for c in nginx httpd memcached; do
+            case ",$WANT," in *",$c,"*) list="$list${list:+,}\"$c\"" ;; esac
+          done
+          echo "components=[$list]" >> "$GITHUB_OUTPUT"
+          case ",$WANT," in *",php,"*) echo "php=true" >> "$GITHUB_OUTPUT" ;; *) echo "php=false" >> "$GITHUB_OUTPUT" ;; esac
+
   build:
     name: ${{ matrix.component }} ${{ matrix.platform.id }}
-    if: github.event_name == 'push' || inputs.components == '' || contains(inputs.components, matrix.component)
+    needs: plan
+    if: needs.plan.outputs.components != '[]'
     strategy:
       fail-fast: false
       matrix:
-        component: [nginx, httpd, memcached]
+        component: ${{ fromJSON(needs.plan.outputs.components) }}
         platform: ${{ fromJSON('[{"id":"linux-x64","runner":"ubuntu-22.04"},{"id":"linux-arm64","runner":"ubuntu-22.04-arm"},{"id":"macos-arm64","runner":"macos-15"},{"id":"macos-x64","runner":"macos-15-intel"}]') }}
     runs-on: ${{ matrix.platform.runner }}
     timeout-minutes: 90
@@ -45,7 +65,8 @@ jobs:
 
   php:
     name: php ${{ matrix.line }} ${{ matrix.platform.id }}
-    if: github.event_name == 'push' || inputs.components == '' || contains(inputs.components, 'php')
+    needs: plan
+    if: needs.plan.outputs.php == 'true'
     strategy:
       fail-fast: false
       matrix:

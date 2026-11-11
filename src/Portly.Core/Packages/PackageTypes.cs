@@ -103,6 +103,8 @@ namespace Portly.Packages
             Get("php").DetectFile = "php-fpm";
             Get("nodejs").DetectFile = "bin/node";
             Get("nodejs").PathDirs = new[] { "bin" };
+            // Portly's own builds: nginx/nginx + conf/, bin/httpd + modules/ + conf/ (Apache), memcached/memcached (program at the folder root)
+            Get("memcached").DetectFile = "memcached";
         }
 
         /// <summary>

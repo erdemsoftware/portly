@@ -66,6 +66,8 @@ namespace Portly.Config
                     Set(lines, "sendmail_path", Q(Paths.Fwd(Path.Combine(mailpit, "mailpit")) + " sendmail --smtp-addr 127.0.0.1:" + Settings.Current.MailpitSmtpPort));
             }
             if (Get(lines, "sendmail_from") == "") Set(lines, "sendmail_from", "\"portly@localhost\"");
+            // macOS / Linux PHP with Xdebug (Portly's own build): the zend_extension path follows the folder when Portly is moved
+            if (!OS.IsWindows) Tools.Xdebug.RefreshPath(lines, phpDir);
             // a sendmail_path written by older Portly / Laragon (mailpit.exe sendmail) would override SMTP
             if (OS.IsWindows)
                 for (int i = 0; i < lines.Count; i++)
