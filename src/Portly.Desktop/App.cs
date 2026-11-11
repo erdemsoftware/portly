@@ -1,8 +1,10 @@
+using System;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
-using Avalonia.Styling;
+using Avalonia.Markup.Xaml.Styling;
 using Avalonia.Themes.Fluent;
 using Portly.Core;
+using Portly.Desktop.UI;
 
 namespace Portly.Desktop
 {
@@ -11,8 +13,8 @@ namespace Portly.Desktop
         public override void Initialize()
         {
             Styles.Add(new FluentTheme());
-            var pref = Settings.Current.Theme;
-            RequestedThemeVariant = pref == "dark" ? ThemeVariant.Dark : pref == "light" ? ThemeVariant.Light : ThemeVariant.Default;
+            Styles.Add(new StyleInclude(new Uri("avares://Portly/")) { Source = new Uri("avares://Portly/UI/Styles.axaml") });
+            Theme.Apply(this, Settings.Current.Theme);
         }
 
         public override void OnFrameworkInitializationCompleted()
