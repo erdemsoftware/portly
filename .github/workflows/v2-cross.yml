@@ -4,7 +4,7 @@ name: v2 cross-platform
 # Nothing is released or signed here.
 on:
   push:
-    branches: [v2]
+    branches: [v2, 'v2-*']
   workflow_dispatch:
 
 permissions:
