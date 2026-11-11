@@ -1230,5 +1230,6 @@
   "ext.notInStatic": "Bu PHP versiyasında mövcud deyil (statik PHP genişlənmələri yükləyə bilmir)",
   "ext.xdebugStatic": "Xdebug macOS və Linux-da istifadə olunan statik PHP versiyalarında mövcud deyil.",
   "lowports.ask": "Linux yalnız administratorlara 1024-dən aşağı portlardan istifadəyə icazə verir, veb server isə {0} və {1} portlarına ehtiyac duyur.\n\nPortly bunu bir dəfəlik dəyişə bilər: sistem parolunuzu soruşacaq, sonra bu kompüterdəki bütün proqramlar 80-dən başlayaraq portları dinləyə biləcək (/etc/sysctl.d-də \"net.ipv4.ip_unprivileged_port_start = 80\" parametri). Başqa heç nə dəyişdirilmir.\n\nDavam edilsin?",
-  "lowports.failed": "Portly üçün portları açmaq mümkün olmadı. Parametrlərdə 1024-dən yuxarı portlardan istifadə edin (məsələn, 8080 və 8443), və ya yenidən icazə verib parolu daxil edin."
+  "lowports.failed": "Portly üçün portları açmaq mümkün olmadı. Parametrlərdə 1024-dən yuxarı portlardan istifadə edin (məsələn, 8080 və 8443), və ya yenidən icazə verib parolu daxil edin.",
+  "err.linuxLibs": "{0} başlaya bilmir: bu sistemdə {1} çatışmır. Onu paket menecerinizlə quraşdırın ({2}), sonra {0} proqramını yenidən başladın."
 }

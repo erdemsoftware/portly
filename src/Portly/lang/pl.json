@@ -1230,5 +1230,6 @@
   "ext.notInStatic": "Niedostępne w tej wersji PHP (statyczny PHP nie może ładować rozszerzeń)",
   "ext.xdebugStatic": "Xdebug nie jest dostępny w statycznych wersjach PHP używanych w macOS i Linuxie.",
   "lowports.ask": "Linux pozwala tylko administratorom używać portów poniżej 1024, a serwer WWW potrzebuje portów {0} i {1}.\n\nPortly może to zmienić jednorazowo: system zapyta o hasło, a potem każdy program na tym komputerze będzie mógł nasłuchiwać na portach od 80 wzwyż (ustawienie \"net.ipv4.ip_unprivileged_port_start = 80\" w /etc/sysctl.d). Nic więcej nie zostanie zmienione.\n\nKontynuować?",
-  "lowports.failed": "Nie udało się otworzyć portów dla Portly. Użyj w Ustawieniach portów powyżej 1024 (np. 8080 i 8443) albo ponownie zezwól i wpisz hasło."
+  "lowports.failed": "Nie udało się otworzyć portów dla Portly. Użyj w Ustawieniach portów powyżej 1024 (np. 8080 i 8443) albo ponownie zezwól i wpisz hasło.",
+  "err.linuxLibs": "{0} nie może się uruchomić: w systemie brakuje {1}. Zainstaluj to menedżerem pakietów ({2}), a potem uruchom {0} ponownie."
 }

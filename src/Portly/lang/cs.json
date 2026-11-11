@@ -1230,5 +1230,6 @@
   "ext.notInStatic": "V tomto sestavení PHP není k dispozici (statické PHP nemůže načítat rozšíření)",
   "ext.xdebugStatic": "Xdebug není k dispozici ve statických sestaveních PHP používaných na macOS a Linuxu.",
   "lowports.ask": "Linux umožňuje portům pod 1024 používat jen správci a webový server potřebuje {0} a {1}.\n\nPortly to může změnit jednou: systém požádá o heslo a poté smí každý program na tomto počítači naslouchat na portech od 80 výš (nastavení \"net.ipv4.ip_unprivileged_port_start = 80\" v /etc/sysctl.d). Nic jiného se nemění.\n\nPokračovat?",
-  "lowports.failed": "Porty pro Portly nelze otevřít. V Nastavení použijte porty nad 1024 (například 8080 a 8443), nebo povolení udělte znovu a zadejte heslo."
+  "lowports.failed": "Porty pro Portly nelze otevřít. V Nastavení použijte porty nad 1024 (například 8080 a 8443), nebo povolení udělte znovu a zadejte heslo.",
+  "err.linuxLibs": "{0} nelze spustit: v systému chybí {1}. Nainstalujte je pomocí správce balíčků ({2}) a potom {0} spusťte znovu."
 }

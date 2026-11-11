@@ -1230,5 +1230,6 @@
   "ext.notInStatic": "Không có trong bản build PHP này (PHP tĩnh không thể tải tiện ích mở rộng)",
   "ext.xdebugStatic": "Xdebug không có trong các bản build PHP tĩnh dùng trên macOS và Linux.",
   "lowports.ask": "Linux chỉ cho phép quản trị viên dùng cổng dưới 1024, còn máy chủ web cần cổng {0} và {1}.\n\nPortly có thể thay đổi việc này một lần: hệ thống sẽ yêu cầu mật khẩu, sau đó mọi chương trình trên máy tính này có thể lắng nghe các cổng từ 80 trở lên (cài đặt \"net.ipv4.ip_unprivileged_port_start = 80\" trong /etc/sysctl.d). Không có gì khác bị thay đổi.\n\nTiếp tục?",
-  "lowports.failed": "Không thể mở cổng cho Portly. Hãy dùng cổng trên 1024 trong Cài đặt (ví dụ 8080 và 8443), hoặc cho phép lại và nhập mật khẩu."
+  "lowports.failed": "Không thể mở cổng cho Portly. Hãy dùng cổng trên 1024 trong Cài đặt (ví dụ 8080 và 8443), hoặc cho phép lại và nhập mật khẩu.",
+  "err.linuxLibs": "Không thể khởi động {0}: hệ thống này thiếu {1}. Hãy cài đặt bằng trình quản lý gói của bạn ({2}), rồi khởi động lại {0}."
 }

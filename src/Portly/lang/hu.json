@@ -1230,5 +1230,6 @@
   "ext.notInStatic": "Ebben a PHP-verzióban nem érhető el (a statikus PHP nem tud bővítményeket betölteni)",
   "ext.xdebugStatic": "Az Xdebug nem érhető el a macOS-en és Linuxon használt statikus PHP-verziókban.",
   "lowports.ask": "A Linux csak rendszergazdáknak engedi az 1024 alatti portok használatát, a webszervernek pedig {0} és {1} portra van szüksége.\n\nA Portly ezt egyszer módosíthatja: a rendszer kéri a jelszavát, utána a számítógépen futó bármely program hallgathat 80-as porttól felfelé (a \"net.ipv4.ip_unprivileged_port_start = 80\" beállítás a /etc/sysctl.d alatt). Más nem változik.\n\nFolytatja?",
-  "lowports.failed": "A portokat nem sikerült megnyitni a Portly számára. Használjon 1024 feletti portokat a Beállításokban (például 8080 és 8443), vagy engedélyezze újra, és adja meg a jelszót."
+  "lowports.failed": "A portokat nem sikerült megnyitni a Portly számára. Használjon 1024 feletti portokat a Beállításokban (például 8080 és 8443), vagy engedélyezze újra, és adja meg a jelszót.",
+  "err.linuxLibs": "A(z) {0} nem indítható: a rendszerből hiányzik a(z) {1}. Telepítsd csomagkezelőddel ({2}), majd indítsd újra a(z) {0} programot."
 }

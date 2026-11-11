@@ -1230,5 +1230,6 @@
   "ext.notInStatic": "Tidak tersedia dalam binaan PHP ini (PHP statik tidak boleh memuatkan sambungan)",
   "ext.xdebugStatic": "Xdebug tidak tersedia dalam binaan PHP statik yang digunakan pada macOS dan Linux.",
   "lowports.ask": "Linux hanya membenarkan pentadbir menggunakan port di bawah 1024, dan pelayan web memerlukan {0} dan {1}.\n\nPortly boleh menukar ini sekali sahaja: sistem anda akan meminta kata laluan, kemudian setiap program pada komputer ini boleh mendengar pada port bermula dari 80 ke atas (tetapan \"net.ipv4.ip_unprivileged_port_start = 80\" dalam /etc/sysctl.d). Tiada apa-apa lagi yang diubah.\n\nTeruskan?",
-  "lowports.failed": "Port tidak dapat dibuka untuk Portly. Gunakan port melebihi 1024 dalam Tetapan (contohnya 8080 dan 8443), atau benarkan semula dan masukkan kata laluan."
+  "lowports.failed": "Port tidak dapat dibuka untuk Portly. Gunakan port melebihi 1024 dalam Tetapan (contohnya 8080 dan 8443), atau benarkan semula dan masukkan kata laluan.",
+  "err.linuxLibs": "{0} tidak dapat dimulakan: sistem ini tiada {1}. Pasangkan menggunakan pengurus pakej anda ({2}), kemudian mulakan semula {0}."
 }

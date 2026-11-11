@@ -1230,5 +1230,6 @@
   "ext.notInStatic": "此 PHP 构建版本不支持（静态 PHP 无法加载扩展）",
   "ext.xdebugStatic": "macOS 和 Linux 使用的静态 PHP 构建版本不提供 Xdebug。",
   "lowports.ask": "Linux 仅允许管理员使用 1024 以下的端口，而 Web 服务器需要 {0} 和 {1}。\n\nPortly 可以一次性更改此设置：系统会要求输入密码，之后此计算机上的所有程序都可以监听 80 及以上的端口（/etc/sysctl.d 中的设置 \"net.ipv4.ip_unprivileged_port_start = 80\"）。不会更改其他任何内容。\n\n是否继续？",
-  "lowports.failed": "无法为 Portly 开放端口。请在设置中使用 1024 以上的端口（例如 8080 和 8443），或重新允许并输入密码。"
+  "lowports.failed": "无法为 Portly 开放端口。请在设置中使用 1024 以上的端口（例如 8080 和 8443），或重新允许并输入密码。",
+  "err.linuxLibs": "无法启动 {0}：此系统缺少 {1}。请使用包管理器安装（{2}），然后重新启动 {0}。"
 }
