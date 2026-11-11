@@ -82,7 +82,7 @@ jobs:
       - name: Build
         run: |
           if [ -z "$SPC_TARGET" ]; then unset SPC_TARGET; fi
-          bash tools/own-builds/build-php.sh ${{ matrix.line }} ${{ inputs.php_set || 'quick' }}
+          bash tools/own-builds/build-php.sh ${{ matrix.line }} ${{ inputs.php_set || 'full' }}
       - name: Smoke test
         run: bash tools/own-builds/smoke.sh php ob-out/*.tar.gz
       - uses: actions/upload-artifact@v5
