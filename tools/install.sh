@@ -78,6 +78,7 @@ say "Checksum OK."
 
 if [ "$OS" = macos ]; then
   DEST_DIR="${PORTLY_APPS_DIR:-/Applications}"
+  [ -z "${PORTLY_APPS_DIR:-}" ] || mkdir -p "$DEST_DIR"
   if [ ! -d "$DEST_DIR" ] || [ ! -w "$DEST_DIR" ]; then
     [ -z "${PORTLY_APPS_DIR:-}" ] || die "$DEST_DIR is not writable"
     DEST_DIR="$HOME/Applications"
