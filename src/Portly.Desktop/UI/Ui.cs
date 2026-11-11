@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.Globalization;
+using System.Linq;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
@@ -76,7 +77,8 @@ namespace Portly.Desktop.UI
         /// </summary>
         public static Button Button(string text, Func<Task> click, string kind = null, string glyph = null)
         {
-            var b = new Button { Content = ButtonContent(text, glyph) };
+            bool tile = kind != null && kind.Split(' ').Contains("tile");
+            var b = new Button { Content = tile ? TileContent(text, glyph) : ButtonContent(text, glyph) };
             if (!string.IsNullOrEmpty(kind)) b.Classes.AddRange(kind.Split(' '));
             if (!string.IsNullOrEmpty(text)) Avalonia.Automation.AutomationProperties.SetName(b, text);
             if (click != null) b.Click += async (s, e) => await Run(click, b);
@@ -103,13 +105,41 @@ namespace Portly.Desktop.UI
             return IconButton(glyph, text, click == null ? null : (Func<Task>)(() => { click(); return Task.CompletedTask; }));
         }
 
+        /// <summary>Square outlined button (40 x 40) with only a glyph, like the icon buttons in the Projects header of the Windows app.</summary>
+        public static Button HeaderIconButton(string glyph, string text, Func<Task> click)
+        {
+            var b = IconButton(glyph, text, click);
+            b.Classes.Remove("ghost");
+            b.Padding = new Thickness(0);
+            b.Width = b.Height = 40;
+            return b;
+        }
+
+        public static Button HeaderIconButton(string glyph, string text, Action click)
+        {
+            return HeaderIconButton(glyph, text, click == null ? null : (Func<Task>)(() => { click(); return Task.CompletedTask; }));
+        }
+
         static object ButtonContent(string text, string glyph)
         {
             if (string.IsNullOrEmpty(glyph)) return text;
-            var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 7 };
+            var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = string.IsNullOrEmpty(text) ? 0 : 8 };
             row.Children.Add(new Glyph { Name_ = glyph, Width = 16, Height = 16, VerticalAlignment = VerticalAlignment.Center });
             if (!string.IsNullOrEmpty(text)) row.Children.Add(new TextBlock { Text = text, VerticalAlignment = VerticalAlignment.Center });
             return row;
+        }
+
+        /// <summary>Quick access tile: 24 px glyph in the accent color, the text under it, centered (ModernButton Tile).</summary>
+        static object TileContent(string text, string glyph)
+        {
+            var col = new StackPanel { Margin = new Thickness(0, 14, 0, 0), HorizontalAlignment = HorizontalAlignment.Center };
+            if (!string.IsNullOrEmpty(glyph)) col.Children.Add(new Glyph { Name_ = glyph, Width = 24, Height = 24, Color = Accent, HorizontalAlignment = HorizontalAlignment.Center });
+            col.Children.Add(new TextBlock
+            {
+                Text = text, Margin = new Thickness(0, 3, 0, 0), TextAlignment = TextAlignment.Center,
+                TextWrapping = TextWrapping.NoWrap, TextTrimming = TextTrimming.CharacterEllipsis,
+            });
+            return col;
         }
 
         /// <summary>Text link (WinForms LinkLabel).</summary>
@@ -158,16 +188,28 @@ namespace Portly.Desktop.UI
             return p;
         }
 
-        /// <summary>Page title, muted subtitle under it, action buttons on the far side.</summary>
+        /// <summary>
+        /// Page title, muted subtitle under it, action buttons on the far side: 74 px high like the Windows app, the first
+        /// action at the far edge and the others to its left.
+        /// </summary>
         public static Control PageHeader(string title, out TextBlock subtitle, params Control[] actions)
         {
-            var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto"), Margin = new Thickness(0, 0, 0, 8) };
+            var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto"), Height = 74 };
+            var heading = Label(title, "title");
+            heading.TextWrapping = TextWrapping.NoWrap;
+            heading.Margin = new Thickness(0, 1, 0, 0);
+            heading.VerticalAlignment = VerticalAlignment.Top;
             subtitle = Label("", "muted");
             subtitle.TextWrapping = TextWrapping.NoWrap;
             subtitle.TextTrimming = TextTrimming.CharacterEllipsis;
-            grid.Children.Add(Column(2, Label(title, "title"), subtitle));
-            var row = Row(actions);
-            row.VerticalAlignment = VerticalAlignment.Center;
+            subtitle.Margin = new Thickness(2, 38, 12, 0);
+            subtitle.VerticalAlignment = VerticalAlignment.Top;
+            grid.Children.Add(heading);
+            grid.Children.Add(subtitle);
+            foreach (var a in actions) if (a != null) a.VerticalAlignment = VerticalAlignment.Top;
+            var row = Row(actions.Where(a => a != null).Reverse().ToArray());
+            row.VerticalAlignment = VerticalAlignment.Top;
+            row.Margin = new Thickness(0, 6, 0, 0);
             Grid.SetColumn(row, 1);
             grid.Children.Add(row);
             return grid;

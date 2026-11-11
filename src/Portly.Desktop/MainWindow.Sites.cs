@@ -30,7 +30,7 @@ namespace Portly.Desktop
         bool _caTrusted;
         Dictionary<string, string> _sslProblems = new Dictionary<string, string>();
 
-        /// <summary>Project cards side by side: as many columns as fit, every card the same width.</summary>
+        /// <summary>Project cards side by side like the Windows app: fixed 300 px wide, as many columns as fit.</summary>
         sealed class CardGrid : Panel
         {
             const double MinCard = 300, Gap = 12;
@@ -41,7 +41,7 @@ namespace Portly.Desktop
             {
                 double total = double.IsInfinity(available.Width) ? MinCard : available.Width;
                 int cols = Columns(total);
-                double w = (total - Gap * (cols - 1)) / cols;
+                double w = MinCard;
                 foreach (var c in Children) c.Measure(new Size(w, double.PositiveInfinity));
                 var rows = Rows(cols);
                 return new Size(total, rows.Count == 0 ? 0 : rows.Sum() + Gap * (rows.Count - 1));
@@ -61,7 +61,7 @@ namespace Portly.Desktop
             protected override Size ArrangeOverride(Size finalSize)
             {
                 int cols = Columns(finalSize.Width);
-                double w = (finalSize.Width - Gap * (cols - 1)) / cols;
+                double w = MinCard;
                 var rows = Rows(cols);
                 double y = 0;
                 for (int i = 0; i < Children.Count; i++)
@@ -82,12 +82,13 @@ namespace Portly.Desktop
             _sslBtn = Ui.Button(I18n.T("sslfix.button"), async () => await OpenSslRepair(), null, "warning");
             page.Children.Add(Ui.PageHeader(I18n.T("nav.sites"), out _sitesSub,
                 Ui.Button(I18n.T("main.newProject"), async () => await NewProject(), "primary", "plus"),
-                Ui.IconButton("refresh", I18n.T("sites.refresh"), async () => await ServiceManager.ReloadWebAsync()),
-                Ui.IconButton("folder", I18n.T("sites.folder"), () => Ui.Open(Settings.Current.DocumentRoot)),
+                Ui.HeaderIconButton("refresh", I18n.T("sites.refresh"), async () => await ServiceManager.ReloadWebAsync()),
+                Ui.HeaderIconButton("folder", I18n.T("sites.folder"), () => Ui.Open(Settings.Current.DocumentRoot)),
                 HostsButton(),
                 Ui.Button(I18n.T("shares.title"), async () => await OpenShares(), null, "share"),
                 _archivedBtn,
                 _sslBtn));
+            ((Control)page.Children[0]).Margin = new Thickness(0, 0, 0, -10);
             _siteList = new StackPanel { Spacing = 0 };
             page.Children.Add(_siteList);
             return page;
@@ -269,11 +270,11 @@ namespace Portly.Desktop
             }
             badges.AddRange(DevWorkflowUi.SiteBadges(site, this, FillSites));
             badges.AddRange(SitesWebUi.CardBadges(site));
-            var badgeRow = new WrapPanel { Orientation = Orientation.Horizontal, ItemSpacing = 6, LineSpacing = 4, Margin = new Thickness(0, 5, 0, 0) };
+            var badgeRow = new WrapPanel { Orientation = Orientation.Horizontal, ItemSpacing = 6, LineSpacing = 4, Margin = new Thickness(0, 3, 0, 0) };
             foreach (var b in badges) badgeRow.Children.Add(b);
 
-            var text = new StackPanel { Spacing = 2, Children = { name, address, infoLabel, badgeRow } };
-            var buttons = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, -4, -6, 0) };
+            var text = new StackPanel { Spacing = 7, Margin = new Thickness(0, -2, 0, 0), Children = { name, address, infoLabel, badgeRow } };
+            var buttons = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, -6, -3, 0) };
             if (site.Valid)
             {
                 // Share: on the local network (phone / another PC on the same router) or on the internet (Cloudflare)
@@ -282,22 +283,21 @@ namespace Portly.Desktop
                 // green while the project is shared (local network or internet)
                 if (sharing)
                 {
-                    var green = ((ISolidColorBrush)Ui.Green).Color;
-                    shareBtn.Background = new SolidColorBrush(Color.FromArgb(48, green.R, green.G, green.B));
-                    ((Glyph)((StackPanel)shareBtn.Content).Children[0]).Color = Ui.Green;
+                    shareBtn.Classes.Remove("ghost");
+                    shareBtn.Classes.Add("green");
                 }
                 buttons.Children.Add(shareBtn);
             }
             buttons.Children.Add(MenuButton("more", I18n.T("sites.more"), I18n.T("sites.more"), items => BuildSiteMenu(items, site)));
 
-            var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto"), ColumnSpacing = 12 };
+            var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto"), ColumnSpacing = 10 };
             grid.Children.Add(avatar);
             Grid.SetColumn(text, 1);
             grid.Children.Add(text);
             Grid.SetColumn(buttons, 2);
             grid.Children.Add(buttons);
 
-            var card = Ui.Card(grid, new Thickness(16, 14, 14, 14));
+            var card = Ui.Card(grid, new Thickness(15, 15, 14, 14));
             card.MinHeight = 122;
             if (!site.Valid)
             {
@@ -323,7 +323,9 @@ namespace Portly.Desktop
         static Button MenuButton(string glyph, string tip, string name, Action<IList> build)
         {
             var b = Ui.Button(null, (Action)null, "ghost", glyph);
-            b.Padding = new Thickness(7);
+            b.Padding = new Thickness(0);
+            b.Width = b.Height = 32;
+            b.MinHeight = 0;
             ToolTip.SetTip(b, tip);
             Avalonia.Automation.AutomationProperties.SetName(b, name);
             var fly = new MenuFlyout { Placement = PlacementMode.BottomEdgeAlignedRight };
@@ -446,10 +448,11 @@ namespace Portly.Desktop
         /// <summary>shared: hosts button with its menu (services and projects page headers): "Hosts" edits the hosts file or writes Portly's entries again.</summary>
         public Button HostsButton(bool withText = false)
         {
-            var b = Ui.Button(withText ? I18n.T("hosts.button") : null, (Action)null, withText ? null : "ghost", "hosts");
+            var b = Ui.Button(withText ? I18n.T("hosts.button") : null, (Action)null, null, "hosts");
             if (!withText)
             {
-                b.Padding = new Thickness(7);
+                b.Padding = new Thickness(0);
+                b.Width = b.Height = 40;
                 ToolTip.SetTip(b, I18n.T("hosts.button"));
                 Avalonia.Automation.AutomationProperties.SetName(b, I18n.T("hosts.button"));
             }

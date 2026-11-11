@@ -116,13 +116,13 @@ namespace Portly.Desktop
         {
             _nav.Clear();
             _pages.Clear();
-            var root = new Grid { ColumnDefinitions = new ColumnDefinitions("224,*") };
+            var root = new Grid { ColumnDefinitions = new ColumnDefinitions("225,*") };
             root.Children.Add(Sidebar());
 
             _status = Ui.Label(I18n.T("main.ready"), "muted small");
             _status.TextWrapping = TextWrapping.NoWrap;
             _status.TextTrimming = TextTrimming.CharacterEllipsis;
-            _status.Margin = new Thickness(28, 4, 28, 8);
+            _status.Margin = new Thickness(28, 4, 28, 15);
             _host = new ContentControl();
             var content = new DockPanel();
             DockPanel.SetDock(_status, Dock.Bottom);
@@ -149,18 +149,20 @@ namespace Portly.Desktop
 
         Control Sidebar()
         {
-            var top = new StackPanel { Spacing = 4, Margin = new Thickness(12, 18, 12, 12) };
-            var brand = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*"), ColumnSpacing = 10, Margin = new Thickness(6, 0, 0, 20) };
-            brand.Children.Add(new Image { Source = Ui.AppImage, Width = 36, Height = 36 });
-            var names = Ui.Column(0, Ui.Label("Portly", "subtitle"), Ui.Label(AppInfo.IsLegacy ? "Legacy · Win 7/8" : "Erdem Software", "muted small"));
-            names.VerticalAlignment = VerticalAlignment.Center;
+            var top = new StackPanel { Spacing = 4, Margin = new Thickness(12, 0, 12, 12) };
+            var brand = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*"), ColumnSpacing = 8, Margin = new Thickness(18, 22, 0, 0), Height = 58 };
+            brand.Children.Add(new Image { Source = Ui.AppImage, Width = 36, Height = 36, VerticalAlignment = VerticalAlignment.Top });
+            var names = Ui.Column(1, Ui.Label("Portly", "brand"), Ui.Label(AppInfo.IsLegacy ? "Legacy · Win 7/8" : "Erdem Software", "muted small"));
+            names.Children[1].Margin = new Thickness(2, 0, 0, 0);
+            names.VerticalAlignment = VerticalAlignment.Top;
+            names.Margin = new Thickness(0, -4, 0, 0);
             Grid.SetColumn(names, 1);
             brand.Children.Add(names);
             top.Children.Add(brand);
             top.Children.Add(Nav("services", I18n.T("nav.services"), "services", () => ShowPage("services")));
             top.Children.Add(Nav("sites", I18n.T("nav.sites"), "globe", () => ShowPage("sites")));
             top.Children.Add(Nav("log", I18n.T("nav.log"), "list", () => ShowPage("log")));
-            top.Children.Add(new Border { Height = 12 });
+            top.Children.Add(new Border { Height = 16 });
             top.Children.Add(Nav(null, I18n.T("main.packages"), "box", async () => await OpenPackages(null)));
             top.Children.Add(Nav(null, I18n.T("nav.import"), "import", async () => await OpenImport(true)));
             top.Children.Add(Nav(null, I18n.T("main.settings"), "gear", async () => await OpenSettings()));
@@ -169,9 +171,11 @@ namespace Portly.Desktop
             more = Nav(null, I18n.T("main.more"), "more", () => ShowMoreMenu(more));
             top.Children.Add(more);
 
-            var bottom = new StackPanel { Spacing = 4, Margin = new Thickness(12, 0, 12, 14), VerticalAlignment = VerticalAlignment.Bottom };
+            var bottom = new StackPanel { Spacing = 4, Margin = new Thickness(12, 0, 12, 12), VerticalAlignment = VerticalAlignment.Bottom };
             _updateBtn = Ui.Button("", OnBannerClick, "primary", "update");
-            _updateBtn.HorizontalAlignment = HorizontalAlignment.Stretch;
+            _updateBtn.HorizontalAlignment = HorizontalAlignment.Left;
+            _updateBtn.Width = 198;
+            _updateBtn.Height = 38;
             _updateBtn.HorizontalContentAlignment = HorizontalAlignment.Center;
             _updateBtn.Margin = new Thickness(0, 0, 0, 4);
             _updateBtn.IsVisible = false;
@@ -180,7 +184,7 @@ namespace Portly.Desktop
             donate.Foreground = Ui.Heart;
             bottom.Children.Add(donate);
             var ver = Ui.Label("v" + AppInfo.VersionText + " · " + OsLabel(), "muted small");
-            ver.Margin = new Thickness(12, 6, 0, 0);
+            ver.Margin = new Thickness(12, 10, 0, 4);
             bottom.Children.Add(ver);
 
             var grid = new Grid();
@@ -200,7 +204,7 @@ namespace Portly.Desktop
 
         Button Nav(string page, string text, string glyph, Func<Task> click)
         {
-            var b = Ui.Button(text, click, "nav", glyph);
+            var b = Ui.Button(text, click, "nav side", glyph);
             if (page != null) _nav[page] = b;
             return b;
         }

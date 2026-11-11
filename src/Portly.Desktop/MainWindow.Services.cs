@@ -63,6 +63,7 @@ namespace Portly.Desktop
             _startAll = Ui.Button(I18n.T("main.startAll"), ToggleAll, "primary", "play");
             _startAll.MinWidth = 170;
             _startAll.MinHeight = 40;
+            _startAll.Classes.Add("bold");
             var choose = Ui.Button(I18n.T("main.chooseServices"), (Action)null, null, "list");
             choose.MinHeight = 40;
             var menu = new MenuFlyout { Placement = PlacementMode.BottomEdgeAlignedLeft };
@@ -71,12 +72,12 @@ namespace Portly.Desktop
             // "Portly x.y is ready": also at the top of this page; UpdateBanner (shell) sets its text, visibility and click
             _updateTop = Ui.Button("", (Action)null, "primary", "update");
             _updateTop.MinHeight = 40;
-            _updateTop.Background = Ui.Green;
+            _updateTop.Classes.Add("green");
             _updateTop.IsVisible = false;
             var hosts = HostsButton(true);
             hosts.MinHeight = 40;
             var header = Ui.PageHeader(I18n.T("nav.services"), out _servicesSub, _startAll, choose, hosts, _updateTop);
-            header.Margin = new Thickness(0, 0, 0, 4);
+            header.Margin = new Thickness(0, 0, 0, -10);
             page.Children.Add(header);
 
             // "PHP 8.6.0 is out" cards between the header and the services
@@ -93,9 +94,9 @@ namespace Portly.Desktop
             }
 
             var quick = Ui.Section(I18n.T("main.quickAccess"));
-            quick.Margin = new Thickness(2, 10, 0, 0);
+            quick.Margin = new Thickness(2, 8, 0, 0);
             page.Children.Add(quick);
-            var tiles = new WrapPanel { Orientation = Orientation.Horizontal, ItemSpacing = 10, LineSpacing = 10 };
+            var tiles = new WrapPanel { Orientation = Orientation.Horizontal, ItemSpacing = 10, LineSpacing = 10, Margin = new Thickness(0, -2, 0, 0) };
             tiles.Children.Add(Tile(I18n.T("main.web"), "globe", OpenLocalhost));
             Button dbTile = null;
             dbTile = Tile(I18n.T("main.database"), "database", async () => await OpenDatabaseQuick(dbTile));
@@ -178,7 +179,7 @@ namespace Portly.Desktop
             row.Fix.VerticalAlignment = VerticalAlignment.Top;
             row.Fix.Click += async (s, e) => await Ui.Run(() => FixPorts(new[] { svc }), row.Fix);
 
-            row.Toggle = new ToggleSwitch { OnContent = null, OffContent = null, VerticalAlignment = VerticalAlignment.Center, MinWidth = 0, Margin = new Thickness(0, 0, -6, 0) };
+            row.Toggle = new ToggleSwitch { OnContent = null, OffContent = null, VerticalAlignment = VerticalAlignment.Center };
             Avalonia.Automation.AutomationProperties.SetName(row.Toggle, svc.Title);
             row.Toggle.IsCheckedChanged += async (s, e) => { if (!_updating) await Ui.Run(() => OnToggle(row), null); };
 
@@ -202,33 +203,39 @@ namespace Portly.Desktop
             row.Status = new Pill();
             row.Sec = new Pill { IsVisible = false, Cursor = new Cursor(StandardCursorType.Hand) };
             row.Sec.PointerPressed += async (s, e) => await Ui.Run(() => OnSecurityPill(row), row.Sec);
-            row.Version = new ComboBox { Width = 138, VerticalAlignment = VerticalAlignment.Center };
+            row.Version = new ComboBox { Width = 130, VerticalAlignment = VerticalAlignment.Center };
             Avalonia.Automation.AutomationProperties.SetName(row.Version, svc.Title + " " + I18n.T("col.version"));
             FillVersions(row);
             row.Version.SelectionChanged += async (s, e) => { if (!row.Filling) await Ui.Run(() => OnVersionChanged(row), null); };
             row.Get = Ui.Button(I18n.T("svc.install"), async () => await OpenPackages(svc.PackageType), "primary", "update");
             row.Get.VerticalAlignment = VerticalAlignment.Center;
             row.Get.HorizontalAlignment = HorizontalAlignment.Right;
+            row.Get.MinHeight = 30;
 
-            var names = Ui.Row(row.Name, row.Sec);
-            names.Spacing = 8;
-            var text = Ui.Column(2, names, row.Detail);
-            text.VerticalAlignment = VerticalAlignment.Center;
+            // positions as in the Windows app: logo at 18, text at 72, switch 18 from the right edge, the padlock 12 and
+            // restart 6 left of it, then the status, the version list (130) and the security badge, each right-aligned to the next
+            var text = Ui.Column(7, row.Name, row.Detail);
+            text.VerticalAlignment = VerticalAlignment.Top;
+            text.Margin = new Thickness(14, -3, 8, 0);
 
-            row.Status.HorizontalAlignment = HorizontalAlignment.Left;
-            var statusCell = new Border { Width = 94, Child = row.Status, VerticalAlignment = VerticalAlignment.Center };
-            var actions = Ui.Row(row.Restart, row.Bulk, row.Toggle);
-            actions.Spacing = 8;
-            actions.VerticalAlignment = VerticalAlignment.Center;
-            actions.HorizontalAlignment = HorizontalAlignment.Right;
-            var right = new Panel { Width = 132, VerticalAlignment = VerticalAlignment.Center, Children = { actions, row.Get } };
+            row.Sec.Margin = new Thickness(0, 0, 8, 0);
+            row.Version.Margin = new Thickness(0, 0, 12, 0);
+            var cluster = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 14, 0) };
+            cluster.Children.Add(row.Sec);
+            cluster.Children.Add(row.Version);
+            cluster.Children.Add(row.Status);
+            row.Bulk.Margin = new Thickness(6, 0, 12, 0);
+            var actions = new StackPanel { Orientation = Orientation.Horizontal, Width = 118, VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Right };
+            actions.Children.Add(row.Restart);
+            actions.Children.Add(row.Bulk);
+            actions.Children.Add(row.Toggle);
+            var right = new Panel { VerticalAlignment = VerticalAlignment.Center, Children = { actions, row.Get } };
 
-            var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto,Auto,Auto"), ColumnSpacing = 10 };
+            var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto,Auto") };
             Place(grid, row.Tile, 0);
             Place(grid, text, 1);
-            Place(grid, row.Version, 2);
-            Place(grid, statusCell, 3);
-            Place(grid, right, 4);
+            Place(grid, cluster, 2);
+            Place(grid, right, 3);
 
             var errLine = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto"), ColumnSpacing = 12, Margin = new Thickness(0, 8, 0, 0), IsVisible = false };
             errLine.Children.Add(row.Error);
@@ -236,7 +243,7 @@ namespace Portly.Desktop
             row.ErrorLine = errLine;
             var body = Ui.Column(0, grid, errLine);
 
-            row.Card = Ui.Card(body);
+            row.Card = Ui.Card(body, new Thickness(17, 15));
             row.Card.MinHeight = 72;
             var cm = new ContextMenu();
             cm.Opening += (s, e) => BuildCardMenu(cm, row);
@@ -668,6 +675,7 @@ namespace Portly.Desktop
             row.Bulk.IsVisible = showSwitch;
             row.Restart.IsVisible = showSwitch;
             row.Toggle.IsEnabled = !busy && !row.Working;
+            row.Toggle.Classes.Set("busy", busy);
             row.Restart.IsEnabled = svc.State == ServiceState.Running && !row.Working;   // nothing to restart while it is stopped
             _syncingBulk = true;
             row.Bulk.IsChecked = Settings.Current.IsEnabled(svc.Id);   // also changed from the card menu

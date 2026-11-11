@@ -52,7 +52,7 @@ namespace Portly.Desktop.UI
             if (string.IsNullOrEmpty(name)) return;
             double s = Math.Min(r.Width, r.Height);
             double x = r.X + (r.Width - s) / 2, y = r.Y + (r.Height - s) / 2;
-            var pen = new Pen(brush, Math.Max(1.4, s / 11), lineCap: PenLineCap.Round, lineJoin: PenLineJoin.Round);
+            var pen = new Pen(brush, Math.Max(1.2, s / 12.5), lineCap: PenLineCap.Round, lineJoin: PenLineJoin.Round);
             Func<double, double> X = f => x + f * s;
             Func<double, double> Y = f => y + f * s;
             Func<double, double, Point> P = (fx, fy) => new Point(X(fx), Y(fy));
@@ -244,14 +244,15 @@ namespace Portly.Desktop.UI
     public class Pill : Border
     {
         readonly Ellipse _dot = new Ellipse { Width = 7, Height = 7, VerticalAlignment = VerticalAlignment.Center };
-        readonly TextBlock _text = new TextBlock { FontSize = 11.5, VerticalAlignment = VerticalAlignment.Center };
+        readonly TextBlock _text = new TextBlock { VerticalAlignment = VerticalAlignment.Center };
 
         public Pill(string text = "", IBrush color = null, bool dot = true)
         {
             CornerRadius = new CornerRadius(11);
             Height = 22;
-            Padding = new Thickness(8, 0);
+            Padding = new Thickness(8, 0, dot ? 7 : 8, 0);
             VerticalAlignment = VerticalAlignment.Center;
+            _text.Classes.Add("small");
             var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, VerticalAlignment = VerticalAlignment.Center };
             if (dot) row.Children.Add(_dot);
             row.Children.Add(_text);
@@ -274,36 +275,36 @@ namespace Portly.Desktop.UI
     }
 
     /// <summary>
-    /// Rounded square with the brand color (light diagonal gradient) and the first letters of a service / package
-    /// (Apache "Ap", PHP "PH"), or a round avatar letter.
+    /// Rounded square with the brand color (light diagonal gradient) and the short text of a service / package
+    /// (Apache "A", MySQL "My", PHP "php", as in the Windows app), or a round avatar letter.
     /// </summary>
     public class BrandTile : Border
     {
-        public BrandTile(string type, string title, double size = 40) : this(Th.Brand(type), title, size, false) { }
+        public BrandTile(string type, string title, double size = 40) : this(Th.Brand(type), Th.BrandText(type) ?? Initials(title), title, size, false, type == "php") { }
 
-        BrandTile(IBrush brand, string title, double size, bool circle)
+        static string Initials(string title) { return string.IsNullOrEmpty(title) ? "?" : title.Length >= 2 ? title.Substring(0, 2) : title; }
+
+        BrandTile(IBrush brand, string text, string title, double size, bool circle, bool small = false)
         {
             Width = Height = size;
             CornerRadius = new CornerRadius(circle ? size / 2 : size / 4);
             var c = ((ISolidColorBrush)brand).Color;
             Background = new LinearGradientBrush
             {
-                StartPoint = new RelativePoint(0, 1, RelativeUnit.Relative),
-                EndPoint = new RelativePoint(1, 0, RelativeUnit.Relative),
-                GradientStops = { new GradientStop(c, 0), new GradientStop(GlyphPainter.Mix(c, Colors.White, .15), 1) },
+                StartPoint = new RelativePoint(0, 0, RelativeUnit.Relative),
+                EndPoint = new RelativePoint(1, 1, RelativeUnit.Relative),
+                GradientStops = { new GradientStop(GlyphPainter.Mix(c, Colors.White, .15), 0), new GradientStop(c, 1) },
             };
-            var initials = string.IsNullOrEmpty(title) ? "?" : title.Length >= 2 ? title.Substring(0, 2) : title;
-            if (circle) initials = initials.Substring(0, 1).ToUpperInvariant();
             Child = new TextBlock
             {
-                Text = initials, Foreground = Brushes.White, FontWeight = FontWeight.Bold, FontSize = size * .35,
+                Text = text, Foreground = Brushes.White, FontWeight = FontWeight.Bold, FontSize = size * (small ? .283 : circle ? .35 : .333) * Th.FontScale,
                 HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center,
             };
             Avalonia.Automation.AutomationProperties.SetName(this, title ?? "");
         }
 
         /// <summary>Round tile with a short text ("1", "2") in the given color (numbered steps).</summary>
-        public static BrandTile Badge(string text, IBrush color, double size = 32) { return new BrandTile(color, text, size, true); }
+        public static BrandTile Badge(string text, IBrush color, double size = 32) { return new BrandTile(color, Initials(text).Substring(0, 1).ToUpperInvariant(), text, size, true); }
 
         static readonly string[] AvatarColors = { "#2563EB", "#7C3AED", "#DB2777", "#EA580C", "#059669", "#0891B2", "#4F46E5", "#CA8A04" };
 
@@ -313,7 +314,7 @@ namespace Portly.Desktop.UI
             int h = 0;
             foreach (var c in name ?? "") h = h * 31 + c;
             var color = new SolidColorBrush(Color.Parse(AvatarColors[Math.Abs(h % AvatarColors.Length)]));
-            return new BrandTile(color, string.IsNullOrEmpty(name) ? "?" : name, size, true);
+            return new BrandTile(color, string.IsNullOrEmpty(name) ? "?" : name.Substring(0, 1).ToUpperInvariant(), name, size, true);
         }
     }
 
@@ -409,7 +410,25 @@ namespace Portly.Desktop.UI
                 new BrandTile("apache", "Ap"), new BrandTile("php", "PH"), new BrandTile("mysql", "My"), BrandTile.Avatar("Erdem"));
             extras.Spacing = 10;
             Body.Children.Add(extras);
+            var switches = Ui.Row(new ToggleSwitch { OnContent = null, OffContent = null, IsChecked = true }, new ToggleSwitch { OnContent = null, OffContent = null },
+                new ToggleSwitch { OnContent = null, OffContent = null, IsChecked = true, IsEnabled = false }, new ToggleSwitch { OnContent = null, OffContent = null, IsEnabled = false },
+                BusySwitch(), Ui.Button("Button", () => { }), Ui.Button("Primary", () => { }, "primary", "play"), Ui.Button("Danger", () => { }, "danger"),
+                new Button { Content = "Disabled", IsEnabled = false }, new Button { Content = "Disabled", IsEnabled = false, Classes = { "primary" } });
+            switches.Spacing = 10;
+            Body.Children.Add(switches);
+            var inputs = Ui.Row(new TextBox { Text = "Text box", Width = 160 }, new ComboBox { Width = 160, ItemsSource = new[] { "2.4.69", "2.4.70" }, SelectedIndex = 0 },
+                new NumericUpDown { Value = 80, Width = 110 }, new TextBox { Text = "Disabled", Width = 120, IsEnabled = false });
+            inputs.Spacing = 10;
+            Body.Children.Add(inputs);
+            Body.Children.Add(Ui.Row(Ui.Label("Title", "title"), Ui.Label("Subtitle", "subtitle"), Ui.Label("Bold", "bold"), Ui.Label("Body text 9 pt"), Ui.Label("Small 8.25 pt", "small"), Ui.Label("Mono 9.5 pt", "mono")));
             Buttons.Children.Add(Ui.Button("OK", () => Close()));
+        }
+
+        static ToggleSwitch BusySwitch()
+        {
+            var t = new ToggleSwitch { OnContent = null, OffContent = null, IsChecked = true, IsEnabled = false };
+            t.Classes.Add("busy");
+            return t;
         }
 
         public static Window Preview() { return new GlyphGallery(); }
