@@ -79,7 +79,7 @@ jobs:
             hdiutil attach dist/*.dmg -mountpoint /tmp/portly-dmg -nobrowse
             /tmp/portly-dmg/Portly.app/Contents/MacOS/Portly --screenshot shots/packaged.png 1100 760
             codesign --verify --deep --strict /tmp/portly-dmg/Portly.app
-            hdiutil detach /tmp/portly-dmg
+            for i in 1 2 3 4 5; do hdiutil detach /tmp/portly-dmg && break; sleep 3; done || hdiutil detach -force /tmp/portly-dmg
           else
             mkdir -p "$RUNNER_TEMP/x" && tar -xzf dist/*.tar.gz -C "$RUNNER_TEMP/x"
             "$RUNNER_TEMP"/x/Portly-*/Portly --screenshot shots/packaged.png 1100 760
