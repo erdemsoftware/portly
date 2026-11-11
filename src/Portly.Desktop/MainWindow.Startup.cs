@@ -174,12 +174,18 @@ namespace Portly.Desktop
             if (u == null) { await OpenPackages(null); return; }
             var msg = I18n.T("update.confirm", u.Version, AppInfo.VersionText) + (string.IsNullOrEmpty(u.Notes) ? "" : "\n\n" + u.Notes);
             if (!await Dialogs.Confirm(this, msg)) return;
-            // the self-update replaces Portly.exe from a Windows zip; elsewhere the new version comes from the release page
-            if (!OS.IsWindows) { Ui.Open(AppInfo.GitHubUrl + "/releases/latest"); return; }
+            // .app, AppImage, tar.gz, .deb or the Windows zip; when this install cannot update itself, say why and open the release page
+            var plan = Updater.Plan(u);
+            if (!plan.CanInstall)
+            {
+                await Dialogs.Warning(this, plan.Reason ?? I18n.TOr("update.noAsset", "This release has no download for {0}. Get it from the releases page.", OS.Name + "-" + OS.Arch));
+                Ui.Open(AppInfo.GitHubUrl + "/releases/latest");
+                return;
+            }
             _updateBtn.IsEnabled = false;
             try
             {
-                await Updater.ApplyAsync(u, p => Ui.Post(() => SetStatus(I18n.T("update.downloading", p.Percent < 0 ? Ui.FormatBytes(p.Bytes) : p.Percent + "%"))), CancellationToken.None);
+                await Updater.InstallUpdateAsync(u, p => Ui.Post(() => SetStatus(I18n.T("update.downloading", p.Percent < 0 ? Ui.FormatBytes(p.Bytes) : p.Percent + "%"))), CancellationToken.None);
                 bool wasRunning = ServiceManager.AnyActive;
                 await ServiceManager.StopAllAsync();
                 Updater.Restart(wasRunning);
