@@ -25,8 +25,10 @@ namespace Portly.Tools
     ///
     /// Batch files are read in the console's OEM code page, so the .cmd map is written in that code page
     /// (a project path with letters the code page lacks falls back to the default version); the bash map is UTF-8.
+    ///
+    /// macOS / Linux: the same folder holds plain "sh" scripts (mode 0755, no .cmd) with the same rules; see Shims.Unix.cs.
     /// </summary>
-    public static class Shims
+    public static partial class Shims
     {
         public static string Dir { get { return Path.Combine(Paths.Bin, "shims"); } }
         static string MapDir { get { return Path.Combine(Dir, "map"); } }
@@ -45,6 +47,7 @@ namespace Portly.Tools
         {
             get
             {
+                if (!OS.IsWindows) return new UTF8Encoding(false);
                 try { return Encoding.GetEncoding((int)GetOEMCP()); } catch { return Encoding.Default; }
             }
         }
@@ -78,7 +81,7 @@ namespace Portly.Tools
             {
                 var prefix = NpmPrefix(node);
                 try { Directory.CreateDirectory(prefix); } catch { }
-                list.Add(prefix);
+                list.Add(OS.IsWindows ? prefix : Path.Combine(prefix, "bin"));   // npm puts global commands into <prefix>/bin on Unix
             }
             return list;
         }
@@ -100,7 +103,7 @@ namespace Portly.Tools
                     if (sites == null) sites = Sites.Scan();
                     WriteScripts();
                     // the shim folder is the one on PATH: "portly" should work from any terminal too
-                    if (Features.IsOn("cli")) Cli.EnsureCmdFile(Dir);
+                    if (Features.IsOn("cli") && OS.IsWindows) Cli.EnsureCmdFile(Dir);
                     WritePhpMaps(sites);
                     WriteNodeMaps(sites);
                 }
@@ -226,13 +229,19 @@ namespace Portly.Tools
             var sh = new StringBuilder();
             foreach (var kv in map.OrderByDescending(x => x.Key.Length))
             {
+                if (!OS.IsWindows)
+                {
+                    var up = kv.Key.TrimEnd('/') + "/";
+                    if (up.IndexOf('|') < 0) sh.Append(up).Append('|').Append(kv.Value).Append('\n');
+                    continue;
+                }
                 var prefix = kv.Key.TrimEnd('\\') + "\\";
                 if (prefix.IndexOf('|') >= 0 || prefix.IndexOf('!') >= 0) continue;
                 // a letter the OEM code page cannot show would never match: leave it out of the cmd map
                 if (oem.GetString(oem.GetBytes(prefix)) == prefix) cmd.Append(prefix.Length).Append('|').Append(prefix).Append('|').Append(kv.Value).Append('\n');
                 sh.Append(prefix.Replace('\\', '/')).Append('|').Append(kv.Value).Append('\n');
             }
-            Write(Path.Combine(MapDir, kind + "-sites.txt"), cmd.ToString(), oem);
+            if (OS.IsWindows) Write(Path.Combine(MapDir, kind + "-sites.txt"), cmd.ToString(), oem);
             Write(Path.Combine(MapDir, kind + "-sites.sh.txt"), sh.ToString(), new UTF8Encoding(false));
         }
 
@@ -257,6 +266,7 @@ namespace Portly.Tools
         // ---------------- scripts ----------------
         static void WriteScripts()
         {
+            if (!OS.IsWindows) { WriteScriptsUnix(); return; }
             var oem = Oem;
             Write(Path.Combine(LibDir, "resolve-php.cmd"), Crlf(Resolver("php", "PHP", new[] { ".php-version" }, "php", "php.exe")), oem);
             Write(Path.Combine(LibDir, "resolve-node.cmd"), Crlf(Resolver("node", "Node.js", new[] { ".nvmrc", ".node-version" }, "nodejs", "node.exe")), oem);

@@ -44,18 +44,71 @@ namespace Portly.Core
             catch { }
         }
 
-        /// <summary>Pick the Windows display language when a matching file exists.</summary>
+        /// <summary>
+        /// Pick the system display language when a matching file exists. Windows: the UI culture. macOS / Linux: the
+        /// locale variables (LC_ALL, LC_MESSAGES, LANG, LANGUAGE), then the UI culture (which macOS fills from the
+        /// user's language list even when a program started from Finder has no LANG).
+        /// </summary>
         public static string Detect()
         {
-            var ui = CultureInfo.CurrentUICulture;
-            foreach (var candidate in new[] { ui.Name, ui.TwoLetterISOLanguageName })
+            if (!OS.IsWindows)
             {
-                if (File.Exists(Path.Combine(Paths.Lang, candidate + ".json"))) return candidate;
+                var fromEnv = DetectUnix(Environment.GetEnvironmentVariable("LC_ALL"), Environment.GetEnvironmentVariable("LC_MESSAGES"),
+                    Environment.GetEnvironmentVariable("LANG"), Environment.GetEnvironmentVariable("LANGUAGE"));
+                if (fromEnv != null) return fromEnv;
+            }
+            var ui = CultureInfo.CurrentUICulture;
+            return Pick(ui.Name, ui.TwoLetterISOLanguageName);
+        }
+
+        /// <summary>
+        /// The language file for the POSIX locale variables, or null when they name no language ("C", "POSIX", unset).
+        /// Precedence as in gettext: LC_ALL, then LANGUAGE (a colon list), LC_MESSAGES, LANG.
+        /// </summary>
+        public static string DetectUnix(string lcAll, string lcMessages, string lang, string language)
+        {
+            var list = new List<string>();
+            var main = !string.IsNullOrWhiteSpace(lcAll) ? lcAll : !string.IsNullOrWhiteSpace(lcMessages) ? lcMessages : lang;
+            bool plain = string.IsNullOrWhiteSpace(main) || main == "C" || main == "POSIX" || main.StartsWith("C.", StringComparison.Ordinal);
+            if (string.IsNullOrWhiteSpace(lcAll) && !plain && !string.IsNullOrWhiteSpace(language)) list.AddRange(language.Split(':'));
+            if (!plain) list.Add(main);
+            foreach (var raw in list)
+            {
+                var loc = raw.Trim();
+                int cut = loc.IndexOfAny(new[] { '.', '@' });
+                if (cut >= 0) loc = loc.Substring(0, cut);
+                loc = loc.Replace('_', '-');
+                if (loc == "" || loc == "C" || loc == "POSIX") continue;
+                var two = loc.Split('-')[0].ToLowerInvariant();
+                var code = Pick(loc, two, false);
+                if (code != null) return code;
+            }
+            return null;
+        }
+
+        /// <summary>The language file for a culture name ("pt-BR") and its two letter code ("pt"); "en" when none fits.</summary>
+        static string Pick(string name, string two) { return Pick(name, two, true); }
+
+        static string Pick(string name, string two, bool fallbackEn)
+        {
+            foreach (var candidate in new[] { name, two })
+            {
+                if (string.IsNullOrEmpty(candidate)) continue;
+                var hit = FindFile(candidate);
+                if (hit != null) return hit;
             }
             // e.g. "pt-PT" -> "pt-BR", "zh-TW" -> "zh-CN" when only one variant exists
             foreach (var li in Available())
-                if (li.Code.StartsWith(ui.TwoLetterISOLanguageName + "-", StringComparison.OrdinalIgnoreCase)) return li.Code;
-            return "en";
+                if (two != "" && li.Code.StartsWith(two + "-", StringComparison.OrdinalIgnoreCase)) return li.Code;
+            return fallbackEn ? "en" : null;
+        }
+
+        /// <summary>The code with the file's own spelling (case differs between locale names and file names).</summary>
+        static string FindFile(string code)
+        {
+            if (File.Exists(Path.Combine(Paths.Lang, code + ".json"))) return code;
+            foreach (var li in Available()) if (li.Code.Equals(code, StringComparison.OrdinalIgnoreCase)) return li.Code;
+            return null;
         }
 
         static Dictionary<string, string> Read(string code)

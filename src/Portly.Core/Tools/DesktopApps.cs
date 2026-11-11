@@ -41,8 +41,9 @@ namespace Portly.Tools
                 string found;
                 if (SystemCache.TryGetValue(type, out found)) return found;
                 string[] list;
+                if (!OS.IsWindows) found = UnixSystemExe(type);
                 // Java / Tomcat live in versioned folders: found by their own search
-                if (type == "java") { var h = SystemJava.Newest(); found = h == null ? null : Path.Combine(h, "bin", "java.exe"); }
+                else if (type == "java") { var h = SystemJava.Newest(); found = h == null ? null : Path.Combine(h, "bin", "java.exe"); }
                 else if (type == "tomcat") { var t = SystemJava.Tomcat(); found = t == null ? null : Path.Combine(t, "bin", "bootstrap.jar"); }
                 else if (SystemCandidates.TryGetValue(type, out list))
                 {
@@ -52,6 +53,47 @@ namespace Portly.Tools
                 SystemCache[type] = found;
                 return found;
             }
+        }
+
+        /// <summary>
+        /// macOS: the usual /Applications bundles and Homebrew; Linux: the program names on PATH and the usual /opt folders.
+        /// Only programs that really exist are returned (the macOS "git" stub that opens the Xcode installer is not).
+        /// </summary>
+        static string UnixSystemExe(string type)
+        {
+            var list = new List<string>();
+            var home = UnixIntegration.Home;
+            if (type == "java") { var h = SystemJava.Newest(); return h == null ? null : Path.Combine(h, "bin", "java"); }
+            if (type == "tomcat") { var t = SystemJava.Tomcat(); return t == null ? null : Path.Combine(t, "bin", "bootstrap.jar"); }
+            string app;
+            switch (type)
+            {
+                case "vscode":
+                    list.Add("/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code");
+                    list.Add(Path.Combine(home, "Applications", "Visual Studio Code.app", "Contents", "Resources", "app", "bin", "code"));
+                    list.Add("/usr/share/code/bin/code"); list.Add("/snap/bin/code");
+                    app = "code"; break;
+                case "git":
+                    list.Add("/Library/Developer/CommandLineTools/usr/bin/git"); list.Add("/opt/homebrew/bin/git"); list.Add("/usr/local/bin/git");
+                    if (!OS.IsMac) list.Add("/usr/bin/git");
+                    app = OS.IsMac ? null : "git"; break;
+                case "dbeaver":
+                    list.Add("/Applications/DBeaver.app/Contents/MacOS/dbeaver"); list.Add("/opt/dbeaver/dbeaver"); list.Add("/usr/share/dbeaver-ce/dbeaver");
+                    app = "dbeaver"; break;
+                case "beekeeper":
+                    list.Add("/Applications/Beekeeper Studio.app/Contents/MacOS/Beekeeper Studio"); list.Add("/opt/Beekeeper Studio/beekeeper-studio");
+                    app = "beekeeper-studio"; break;
+                case "dbgate":
+                    list.Add("/Applications/DbGate.app/Contents/MacOS/DbGate"); list.Add("/opt/dbgate/dbgate"); list.Add("/opt/DbGate/dbgate");
+                    app = "dbgate"; break;
+                case "sqlitebrowser":
+                    list.Add("/Applications/DB Browser for SQLite.app/Contents/MacOS/DB Browser for SQLite");
+                    app = "sqlitebrowser"; break;
+                default:
+                    return null;   // HeidiSQL and Notepad++ are Windows programs
+            }
+            var hit = list.FirstOrDefault(File.Exists);
+            return hit ?? (app == null ? null : Elevate.Which(app));
         }
 
         static string AppPath(string exe)
@@ -96,6 +138,7 @@ namespace Portly.Tools
         {
             get
             {
+                if (!OS.IsWindows) return null;
                 var git = ExeOf("git");   // ...\Git\cmd\git.exe
                 if (git == null) return null;
                 var exe = Path.Combine(Path.GetDirectoryName(Path.GetDirectoryName(git)), "git-bash.exe");

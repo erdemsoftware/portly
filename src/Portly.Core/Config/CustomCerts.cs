@@ -56,14 +56,14 @@ namespace Portly.Config
             if (ext == ".pfx" || ext == ".p12")
             {
                 X509Certificate2 cert;
-                try { cert = new X509Certificate2(File.ReadAllBytes(certFile), password ?? "", X509KeyStorageFlags.Exportable | X509KeyStorageFlags.EphemeralKeySet); }
+                try { cert = new X509Certificate2(File.ReadAllBytes(certFile), password ?? "", X509KeyStorageFlags.Exportable | Ephemeral); }
                 catch (CryptographicException ex) { throw new Exception(I18n.T("cert.pfxBad", ex.Message)); }
                 if (!cert.HasPrivateKey) throw new Exception(I18n.T("cert.noKey"));
                 c.KeyPem = Pem("RSA PRIVATE KEY", ExportRsaPkcs1(cert));
                 c.CrtPem = Pem("CERTIFICATE", cert.RawData);
                 // keep the intermediate certificates of the .pfx so browsers can build the chain
                 var all = new X509Certificate2Collection();
-                try { all.Import(File.ReadAllBytes(certFile), password ?? "", X509KeyStorageFlags.EphemeralKeySet); } catch { }
+                try { all.Import(File.ReadAllBytes(certFile), password ?? "", Ephemeral); } catch { }
                 foreach (var other in all)
                     if (other.Thumbprint != cert.Thumbprint && other.Subject != other.Issuer) c.CrtPem += Pem("CERTIFICATE", other.RawData);
                 c.Cert = cert;
@@ -158,6 +158,9 @@ namespace Portly.Config
             for (int k = 0; k < n; k++) len = (len << 8) | d[i++];
             return len;
         }
+
+        /// <summary>Keys stay in memory only (macOS cannot do that: its keys go through the keychain).</summary>
+        static X509KeyStorageFlags Ephemeral { get { return OS.IsMac ? X509KeyStorageFlags.DefaultKeySet : X509KeyStorageFlags.EphemeralKeySet; } }
 
         // ---------------- .pfx key -> PEM ----------------
         static byte[] ExportRsaPkcs1(X509Certificate2 cert)

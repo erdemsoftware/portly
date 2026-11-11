@@ -11,8 +11,15 @@ namespace Portly.Core
 {
     public static class WinUtil
     {
+        /// <summary>Open an address, file or folder with the system's default program (Windows shell, macOS "open", Linux "xdg-open").</summary>
         public static void Open(string target)
         {
+            if (!OS.IsWindows)
+            {
+                var c = UnixIntegration.OpenCommand(target);
+                if (!UnixIntegration.Start(c.Item1, c.Item2)) Log.Warn("Open " + target + ": " + c.Item1 + " is not available");
+                return;
+            }
             try { Process.Start(new ProcessStartInfo(target) { UseShellExecute = true }); }
             catch (Exception ex) { Log.Error("Open " + target, ex); }
         }
@@ -22,20 +29,31 @@ namespace Portly.Core
             try
             {
                 Directory.CreateDirectory(dir);
+                if (!OS.IsWindows) { Open(dir); return; }
                 Process.Start("explorer.exe", "\"" + dir + "\"");
             }
             catch (Exception ex) { Log.Error("Open folder", ex); }
         }
 
-        /// <summary>Opens a file with Notepad (always available on every Windows).</summary>
+        /// <summary>Opens a file with Notepad (always available on every Windows); macOS: the default text editor ("open -t"), Linux: xdg-open.</summary>
         public static void Edit(string file)
         {
+            if (!OS.IsWindows)
+            {
+                var c = UnixIntegration.EditCommand(file);
+                if (!UnixIntegration.Start(c.Item1, c.Item2)) Log.Warn("Edit " + file + ": " + c.Item1 + " is not available");
+                return;
+            }
             try { Process.Start("notepad.exe", "\"" + file + "\""); } catch (Exception ex) { Log.Error("Edit", ex); }
         }
 
-        /// <summary>Run a program elevated (UAC). Returns exit code, or -2 when the user cancelled.</summary>
+        /// <summary>
+        /// Run a program elevated (UAC). Returns exit code, or -2 when the user cancelled.
+        /// Windows only: the argument text is a Windows command line. Use Elevate.Run / Elevate.RunSelf on every system.
+        /// </summary>
         public static int RunElevated(string exe, string args, bool wait = true)
         {
+            if (!OS.IsWindows) { Log.Warn("WinUtil.RunElevated is Windows only (use Elevate.Run)"); return -1; }
             try
             {
                 var psi = new ProcessStartInfo(exe, args) { UseShellExecute = true, Verb = "runas", WindowStyle = ProcessWindowStyle.Hidden };
@@ -53,8 +71,10 @@ namespace Portly.Core
         // ---------------- start with Windows ----------------
         const string RunKey = @"Software\Microsoft\Windows\CurrentVersion\Run";
 
+        /// <summary>Windows: Run registry key. macOS: LaunchAgent net.portly.app. Linux: ~/.config/autostart/portly.desktop.</summary>
         public static void SetRunAtStartup(bool on)
         {
+            if (!OS.IsWindows) { UnixIntegration.SetAutostart(on); return; }
             try
             {
                 using (var k = Registry.CurrentUser.CreateSubKey(RunKey))
@@ -76,6 +96,8 @@ namespace Portly.Core
         /// </summary>
         public static void SetUserPath(IEnumerable<string> portlyDirs)
         {
+            // macOS / Linux: a marked block in the shell profile (zsh / bash), removed again with an empty list
+            if (!OS.IsWindows) { UnixIntegration.SetShellPath(portlyDirs); return; }
             try
             {
                 using (var k = Registry.CurrentUser.CreateSubKey("Environment"))
@@ -99,6 +121,7 @@ namespace Portly.Core
         /// <summary>Installed VC++ 2015-2022+ x64 runtime minor version (e.g. 50 for 14.50), -1 when missing.</summary>
         public static int VcRuntimeMinor()
         {
+            if (!OS.IsWindows) return int.MaxValue;   // no Visual C++ runtime outside Windows: nothing is missing
             try
             {
                 using (var k = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64).OpenSubKey(@"SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64"))

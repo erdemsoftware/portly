@@ -9,10 +9,12 @@ using Portly.Core;
 namespace Portly.Config
 {
     /// <summary>
-    /// Keeps a Portly block in the Windows hosts file:
+    /// Keeps a Portly block in the hosts file (Windows: System32\drivers\etc\hosts, macOS / Linux: /etc/hosts):
     ///   # >>> Portly >>>  ...  # <<< Portly <<<
-    /// Writing needs administrator rights, so Portly starts itself elevated (one UAC prompt)
+    /// Writing needs administrator rights, so Portly starts itself elevated (one UAC / password prompt)
     /// only when the block really changes. Lines outside the block are never touched.
+    /// On macOS and Linux the default domain ending is "localhost": browsers resolve *.localhost themselves, so the
+    /// file is only written for names with another ending.
     /// </summary>
     public static class HostsFile
     {
@@ -30,17 +32,34 @@ namespace Portly.Config
 
         public static string FilePath
         {
-            get { return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), @"drivers\etc\hosts"); }
+            get
+            {
+                if (!OS.IsWindows) return "/etc/hosts";
+                return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), @"drivers\etc\hosts");
+            }
         }
+
+        /// <summary>Line break of the file: CRLF on Windows, LF elsewhere.</summary>
+        static string Nl { get { return OS.IsWindows ? "\r\n" : "\n"; } }
 
         static string BuildBlock(IEnumerable<string> hosts)
         {
             var sb = new StringBuilder();
-            sb.Append(Begin).Append("\r\n");
+            sb.Append(Begin).Append(Nl);
             foreach (var h in hosts.Where(x => HostRx.IsMatch(x)).Distinct(StringComparer.OrdinalIgnoreCase))
-                sb.Append("127.0.0.1\t").Append(h).Append("\r\n");
-            sb.Append(End).Append("\r\n");
+                sb.Append("127.0.0.1\t").Append(h).Append(Nl);
+            sb.Append(End).Append(Nl);
             return sb.ToString();
+        }
+
+        /// <summary>The text of a hosts file after Portly's block was set to these names (pure: no file is read or written).</summary>
+        public static string ApplyBlock(string current, IEnumerable<string> hosts) { return Compose(current ?? "", BuildBlock(hosts)); }
+
+        /// <summary>The text of a hosts file without Portly's block.</summary>
+        public static string RemoveBlock(string current)
+        {
+            var rest = Strip(current ?? "").TrimEnd('\r', '\n', ' ', '\t');
+            return rest == "" ? "" : rest + Nl;
         }
 
         static string Strip(string content)
@@ -65,8 +84,8 @@ namespace Portly.Config
         static string Compose(string current, string block)
         {
             var rest = Strip(current).TrimEnd('\r', '\n', ' ', '\t');
-            if (block.IndexOf("127.0.0.1", StringComparison.Ordinal) < 0) return rest + "\r\n";
-            return rest + "\r\n\r\n" + block;
+            if (block.IndexOf("127.0.0.1", StringComparison.Ordinal) < 0) return rest + Nl;
+            return rest + Nl + Nl + block;
         }
 
         /// <summary>Update the hosts file if needed. Returns false when the user refused elevation.</summary>
@@ -81,7 +100,7 @@ namespace Portly.Config
 
             var tmp = Path.Combine(Paths.Tmp, "hosts-block.txt");
             File.WriteAllText(tmp, block, Encoding.ASCII);
-            var code = WinUtil.RunElevated(Paths.Exe, "--hosts-apply \"" + tmp + "\"");
+            var code = Elevate.RunSelf("--hosts-apply", tmp);
             try { File.Delete(tmp); } catch { }
             if (code == 0) return Verify(block);
             Log.Warn(code == -2 ? I18n.T("log.hostsCancelled") : I18n.T("log.hostsFailed", code));
@@ -96,7 +115,7 @@ namespace Portly.Config
         {
             System.Threading.Thread.Sleep(300);
             bool ok = Current().Contains(block.Trim());
-            try { ProcessUtil.Run("ipconfig.exe", "/flushdns", null, null, 15000); } catch { }
+            FlushDns();
             if (ok) { Log.Info(I18n.T("log.hostsUpdated")); return true; }
             Log.Warn(I18n.T("hosts.blocked", FilePath));
             return true; // do not ask for UAC again in this session; the warning explains what to do
@@ -124,14 +143,25 @@ namespace Portly.Config
             {
                 var tmp = Path.Combine(Paths.Tmp, "hosts-edit.txt");
                 File.WriteAllText(tmp, content, Encoding.Default);
-                var code = WinUtil.RunElevated(Paths.Exe, "--hosts-write \"" + tmp + "\"");
+                var code = Elevate.RunSelf("--hosts-write", tmp);
                 try { File.Delete(tmp); } catch { }
                 if (code != 0) return code;
             }
             System.Threading.Thread.Sleep(300);
             if (ReadAll() != content) return 4; // antivirus or another tool undid it
-            try { ProcessUtil.Run("ipconfig.exe", "/flushdns", null, null, 15000); } catch { }
+            FlushDns();
             return 0;
+        }
+
+        /// <summary>Windows: ipconfig /flushdns. macOS: dscacheutil. Linux resolvers do not cache /etc/hosts.</summary>
+        static void FlushDns()
+        {
+            try
+            {
+                if (OS.IsWindows) ProcessUtil.Run("ipconfig.exe", "/flushdns", null, null, 15000);
+                else if (OS.IsMac) ProcessUtil.Run("dscacheutil", "-flushcache", "/", null, 15000);
+            }
+            catch { }
         }
 
         /// <summary>Runs in the elevated helper process ("Portly.exe --hosts-write file"): the user's own edit, whole file.</summary>

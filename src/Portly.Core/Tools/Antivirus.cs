@@ -23,7 +23,7 @@ namespace Portly.Tools
         /// <summary>Smart App Control: 0 off, 1 on, 2 evaluation, -1 unknown / not available (Windows 11 22H2+ only).</summary>
         public static int SmartAppControlState()
         {
-            if (!OsInfo.IsWin10OrLater) return -1;
+            if (!OS.IsWindows || !OsInfo.IsWin10OrLater) return -1;
             try
             {
                 using (var k = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64).OpenSubKey(@"SYSTEM\CurrentControlSet\Control\CI\Policy"))
@@ -54,7 +54,8 @@ namespace Portly.Tools
                     {
                         var l = line.ToLowerInvariant();
                         bool blocked = l.Contains("blocked") || l.Contains("code integrity") || l.Contains("application control") || l.Contains("0x800711c7");
-                        bool missing = l.Contains("could not be found") || l.Contains("unable to load dynamic library") || l.Contains("cannot load");
+                        bool missing = l.Contains("could not be found") || l.Contains("unable to load dynamic library") || l.Contains("cannot load")
+                            || l.Contains("cannot open shared object file") || l.Contains("error while loading shared libraries") || l.Contains("image not found") || l.Contains("library not loaded");
                         if (!blocked && !missing) continue;
                         var m = DllRx.Match(line);
                         var dll = m.Success ? m.Value : "?";
@@ -85,7 +86,7 @@ namespace Portly.Tools
         public static List<string> CodeIntegrityBlocks(TimeSpan within)
         {
             var list = new List<string>();
-            if (!OsInfo.IsWin10OrLater) return list;
+            if (!OS.IsWindows || !OsInfo.IsWin10OrLater) return list;
             try
             {
                 var ms = (long)within.TotalMilliseconds;
@@ -117,7 +118,7 @@ namespace Portly.Tools
         public static List<DefenderDetection> DefenderHistory(string folder)
         {
             var list = new List<DefenderDetection>();
-            if (!OsInfo.IsWin10OrLater) return list;
+            if (!OS.IsWindows || !OsInfo.IsWin10OrLater) return list;
             var script = "$ErrorActionPreference='SilentlyContinue'; $t=@{}; Get-MpThreat | % { $t[[string]$_.ThreatID]=$_.ThreatName }; " +
                          "Get-MpThreatDetection | % { $d=$_; foreach($r in $d.Resources){ '{0}|{1}|{2}' -f $d.InitialDetectionTime.ToString('yyyy-MM-dd HH:mm'), $t[[string]$d.ThreatID], $r } }";
             var r = ProcessUtil.Run("powershell.exe", "-NoProfile -NonInteractive -ExecutionPolicy Bypass -Command \"" + script.Replace("\"", "\\\"") + "\"", Paths.Root, null, 45000);
@@ -139,6 +140,7 @@ namespace Portly.Tools
         {
             get
             {
+                if (!OS.IsWindows) return null;
                 var f = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "Windows Defender", "MpCmdRun.exe");
                 return File.Exists(f) ? f : null;
             }

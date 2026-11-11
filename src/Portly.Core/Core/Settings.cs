@@ -52,8 +52,11 @@ namespace Portly.Core
         /// <summary>Projects live in the www folder next to Portly.exe (C:\Portly\www with the installer).</summary>
         public static string DefaultDocumentRoot { get { return Paths.Www; } }
 
-        /// <summary>Domain ending: shop -> shop.portly</summary>
-        public const string DefaultTld = "portly";
+        /// <summary>
+        /// Domain ending: shop -> shop.portly. On macOS and Linux "localhost": browsers resolve *.localhost themselves,
+        /// so no hosts file entry (and no administrator prompt) is needed.
+        /// </summary>
+        public static readonly string DefaultTld = OS.IsWindows ? "portly" : "localhost";
         /// <summary>
         /// Address of a project folder: "{name}" = the folder name, "{tld}" = the ending above. "{name}.{tld}" (default)
         /// gives shop.portly; "{name}" serves each folder under its own name, like Laragon (folders named example.com

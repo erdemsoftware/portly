@@ -24,9 +24,25 @@ namespace Portly.Tools
         public static List<string> ProfileDirs(string appData = null)
         {
             var roots = new List<string>();
-            appData = appData ?? Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-            roots.Add(Path.Combine(appData, "Mozilla", "Firefox"));
-            if (appData == Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData))
+            if (!OS.IsWindows)
+            {
+                // macOS: Library/Application Support/Firefox. Linux: ~/.mozilla/firefox, plus the snap and Flatpak copies.
+                // (On Linux the Portly CA reaches these profiles through their NSS database, see Certs.TrustFile.)
+                var home = UnixIntegration.Home;
+                if (OS.IsMac) roots.Add(Path.Combine(home, "Library", "Application Support", "Firefox"));
+                else
+                {
+                    roots.Add(Path.Combine(home, ".mozilla", "firefox"));
+                    roots.Add(Path.Combine(home, "snap", "firefox", "common", ".mozilla", "firefox"));
+                    roots.Add(Path.Combine(home, ".var", "app", "org.mozilla.firefox", ".mozilla", "firefox"));
+                }
+            }
+            else
+            {
+                appData = appData ?? Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+                roots.Add(Path.Combine(appData, "Mozilla", "Firefox"));
+            }
+            if (OS.IsWindows && appData == Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData))
             {
                 try
                 {
@@ -53,7 +69,7 @@ namespace Portly.Tools
                             var l = raw.Trim();
                             if (l.StartsWith("["))
                             {
-                                if (path != null) dirs.Add(relative ? Path.Combine(root, path.Replace('/', '\\')) : path);
+                                if (path != null) dirs.Add(relative ? Path.Combine(root, OS.IsWindows ? path.Replace('/', '\\') : path) : path);
                                 path = null; relative = true;
                             }
                             else if (l.StartsWith("Path=", StringComparison.OrdinalIgnoreCase)) path = l.Substring(5);
@@ -65,7 +81,7 @@ namespace Portly.Tools
                 var profiles = Path.Combine(root, "Profiles");
                 try { if (Directory.Exists(profiles)) dirs.AddRange(Directory.GetDirectories(profiles)); } catch { }
             }
-            return dirs.Select(d => { try { return Path.GetFullPath(d).TrimEnd('\\'); } catch { return null; } })
+            return dirs.Select(d => { try { return Path.GetFullPath(d).TrimEnd('\\', '/'); } catch { return null; } })
                 .Where(d => d != null && Directory.Exists(d)).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
         }
 
@@ -98,6 +114,7 @@ namespace Portly.Tools
         public static int EnableAll(string appData = null)
         {
             int changed = 0;
+            if (OS.IsLinux) return 0;   // Linux: Certs.TrustFile puts the CA into each profile's NSS database instead
             foreach (var dir in ProfileDirs(appData))
             {
                 try { if (EnableIn(dir)) changed++; }
@@ -111,6 +128,7 @@ namespace Portly.Tools
         /// <summary>Install folder of a per-machine Firefox (Program Files), or null.</summary>
         public static string InstallDir()
         {
+            if (!OS.IsWindows) return null;
             try
             {
                 foreach (var view in new[] { RegistryView.Registry64, RegistryView.Registry32 })
