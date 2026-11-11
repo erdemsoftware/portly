@@ -1224,5 +1224,11 @@
   "hosts.find": "Buscar:",
   "hosts.noMatch": "Nenhum resultado",
   "hosts.findPrev": "Resultado anterior",
-  "hosts.findNext": "Próximo resultado"
+  "hosts.findNext": "Próximo resultado",
+  "err.portPrivileged": "A porta {0} precisa de direitos de administrador neste sistema (portas abaixo de 1024). Escolha uma porta, como 8080, em Configurações, ou deixe o Portly usar as portas baixas.",
+  "ext.builtIn": "Incluído neste PHP (nada para instalar)",
+  "ext.notInStatic": "Não disponível nesta build do PHP (um PHP estático não consegue carregar extensões)",
+  "ext.xdebugStatic": "O Xdebug não está disponível nas builds estáticas do PHP usadas no macOS e no Linux.",
+  "lowports.ask": "O Linux só permite que administradores usem portas abaixo de 1024, e o servidor web precisa das portas {0} e {1}.\n\nO Portly pode fazer essa alteração uma vez: o sistema pedirá sua senha e, depois, qualquer programa deste computador poderá escutar portas a partir da 80 (a configuração \"net.ipv4.ip_unprivileged_port_start = 80\" em /etc/sysctl.d). Nada mais será alterado.\n\nContinuar?",
+  "lowports.failed": "Não foi possível abrir as portas para o Portly. Use portas acima de 1024 em Configurações (por exemplo, 8080 e 8443), ou permita novamente e digite a senha."
 }

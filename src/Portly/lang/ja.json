@@ -1224,5 +1224,11 @@
   "hosts.find": "検索:",
   "hosts.noMatch": "一致なし",
   "hosts.findPrev": "前の一致",
-  "hosts.findNext": "次の一致"
+  "hosts.findNext": "次の一致",
+  "err.portPrivileged": "ポート {0} を使用するには、このシステムで管理者権限が必要です（1024 未満のポート）。設定で 8080 などのポートを選ぶか、Portly に低いポートの使用を許可してください。",
+  "ext.builtIn": "この PHP に組み込み済み（インストール不要）",
+  "ext.notInStatic": "この PHP ビルドでは利用できません（静的 PHP は拡張機能を読み込めません）",
+  "ext.xdebugStatic": "macOS と Linux で使われる静的 PHP ビルドでは Xdebug を利用できません。",
+  "lowports.ask": "Linux では管理者だけが 1024 未満のポートを使用できます。Web サーバーには {0} と {1} が必要です。\n\nPortly は一度だけこの設定を変更できます。システムがパスワードを求めた後、このコンピュータ上のすべてのプログラムが 80 以上のポートで待ち受けられるようになります（/etc/sysctl.d の設定 \"net.ipv4.ip_unprivileged_port_start = 80\"）。それ以外は変更されません。\n\n続行しますか？",
+  "lowports.failed": "Portly 用のポートを開けませんでした。設定で 1024 より大きいポート（例：8080 と 8443）を使うか、再度許可してパスワードを入力してください。"
 }

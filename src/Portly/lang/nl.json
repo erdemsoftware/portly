@@ -1224,5 +1224,11 @@
   "hosts.find": "Zoeken:",
   "hosts.noMatch": "Geen resultaat",
   "hosts.findPrev": "Vorig resultaat",
-  "hosts.findNext": "Volgend resultaat"
+  "hosts.findNext": "Volgend resultaat",
+  "err.portPrivileged": "Poort {0} vereist beheerdersrechten op dit systeem (poorten onder 1024). Kies in Instellingen een poort zoals 8080, of laat Portly de lage poorten gebruiken.",
+  "ext.builtIn": "Ingebouwd in deze PHP (niets te installeren)",
+  "ext.notInStatic": "Niet beschikbaar in deze PHP-build (een statische PHP kan geen extensies laden)",
+  "ext.xdebugStatic": "Xdebug is niet beschikbaar in de statische PHP-builds die op macOS en Linux worden gebruikt.",
+  "lowports.ask": "Linux staat alleen beheerders toe poorten onder 1024 te gebruiken, en de webserver heeft {0} en {1} nodig.\n\nPortly kan dit eenmalig aanpassen: uw systeem vraagt om uw wachtwoord, waarna elk programma op deze computer op poorten vanaf 80 mag luisteren (de instelling \"net.ipv4.ip_unprivileged_port_start = 80\" in /etc/sysctl.d). Verder wordt niets gewijzigd.\n\nDoorgaan?",
+  "lowports.failed": "De poorten konden niet voor Portly worden geopend. Gebruik in Instellingen poorten boven 1024 (bijvoorbeeld 8080 en 8443), of sta het opnieuw toe en voer het wachtwoord in."
 }

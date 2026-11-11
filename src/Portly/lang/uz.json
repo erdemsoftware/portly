@@ -1224,5 +1224,11 @@
   "hosts.find": "Qidirish:",
   "hosts.noMatch": "Natija topilmadi",
   "hosts.findPrev": "Oldingi natija",
-  "hosts.findNext": "Keyingi natija"
+  "hosts.findNext": "Keyingi natija",
+  "err.portPrivileged": "Bu tizimda {0} portidan foydalanish uchun administrator huquqlari kerak (1024 dan past portlar). Sozlamalarda 8080 kabi portni tanlang yoki Portly ga past portlardan foydalanishga ruxsat bering.",
+  "ext.builtIn": "Bu PHP tarkibiga kiritilgan (o'rnatish shart emas)",
+  "ext.notInStatic": "Bu PHP versiyasida mavjud emas (statik PHP kengaytmalarni yuklay olmaydi)",
+  "ext.xdebugStatic": "Xdebug macOS va Linux'da ishlatiladigan statik PHP versiyalarida mavjud emas.",
+  "lowports.ask": "Linux'da faqat administratorlar 1024 dan past portlardan foydalanishi mumkin, veb-server esa {0} va {1} portlarini talab qiladi.\n\nPortly buni bir marta o'zgartirishi mumkin: tizim parolingizni so'raydi, shundan so'ng bu kompyuterdagi barcha dasturlar 80 dan boshlab portlarni tinglay oladi (/etc/sysctl.d dagi \"net.ipv4.ip_unprivileged_port_start = 80\" sozlamasi). Boshqa hech narsa o'zgarmaydi.\n\nDavom etilsinmi?",
+  "lowports.failed": "Portly uchun portlarni ochib bo'lmadi. Sozlamalarda 1024 dan yuqori portlardan foydalaning (masalan, 8080 va 8443) yoki qayta ruxsat berib, parolni kiriting."
 }

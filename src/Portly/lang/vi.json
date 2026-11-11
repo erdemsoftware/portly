@@ -1224,5 +1224,11 @@
   "hosts.find": "Tìm:",
   "hosts.noMatch": "Không có kết quả",
   "hosts.findPrev": "Kết quả trước",
-  "hosts.findNext": "Kết quả tiếp theo"
+  "hosts.findNext": "Kết quả tiếp theo",
+  "err.portPrivileged": "Cổng {0} cần quyền quản trị viên trên hệ thống này (cổng dưới 1024). Hãy chọn cổng như 8080 trong Cài đặt, hoặc cho phép Portly dùng các cổng thấp.",
+  "ext.builtIn": "Có sẵn trong PHP này (không cần cài đặt)",
+  "ext.notInStatic": "Không có trong bản build PHP này (PHP tĩnh không thể tải tiện ích mở rộng)",
+  "ext.xdebugStatic": "Xdebug không có trong các bản build PHP tĩnh dùng trên macOS và Linux.",
+  "lowports.ask": "Linux chỉ cho phép quản trị viên dùng cổng dưới 1024, còn máy chủ web cần cổng {0} và {1}.\n\nPortly có thể thay đổi việc này một lần: hệ thống sẽ yêu cầu mật khẩu, sau đó mọi chương trình trên máy tính này có thể lắng nghe các cổng từ 80 trở lên (cài đặt \"net.ipv4.ip_unprivileged_port_start = 80\" trong /etc/sysctl.d). Không có gì khác bị thay đổi.\n\nTiếp tục?",
+  "lowports.failed": "Không thể mở cổng cho Portly. Hãy dùng cổng trên 1024 trong Cài đặt (ví dụ 8080 và 8443), hoặc cho phép lại và nhập mật khẩu."
 }

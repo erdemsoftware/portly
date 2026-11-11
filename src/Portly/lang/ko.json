@@ -1224,5 +1224,11 @@
   "hosts.find": "검색:",
   "hosts.noMatch": "일치 항목 없음",
   "hosts.findPrev": "이전 항목",
-  "hosts.findNext": "다음 항목"
+  "hosts.findNext": "다음 항목",
+  "err.portPrivileged": "이 시스템에서 포트 {0}은(는) 관리자 권한이 필요합니다(1024 미만 포트). 설정에서 8080 같은 포트를 고르거나, Portly가 낮은 포트를 사용하도록 허용하세요.",
+  "ext.builtIn": "이 PHP에 포함됨(설치할 것 없음)",
+  "ext.notInStatic": "이 PHP 빌드에서는 사용할 수 없음(정적 PHP는 확장을 불러올 수 없음)",
+  "ext.xdebugStatic": "macOS와 Linux에서 사용하는 정적 PHP 빌드에는 Xdebug가 없습니다.",
+  "lowports.ask": "Linux에서는 관리자만 1024 미만 포트를 사용할 수 있으며, 웹 서버에는 {0} 및 {1} 포트가 필요합니다.\n\nPortly는 이 설정을 한 번만 변경할 수 있습니다. 시스템이 비밀번호를 물은 뒤, 이 컴퓨터의 모든 프로그램이 80번 이상의 포트를 사용할 수 있게 됩니다(/etc/sysctl.d의 \"net.ipv4.ip_unprivileged_port_start = 80\" 설정). 다른 것은 바뀌지 않습니다.\n\n계속하시겠습니까?",
+  "lowports.failed": "Portly를 위해 포트를 열 수 없습니다. 설정에서 1024보다 큰 포트(예: 8080과 8443)를 사용하거나, 다시 허용하고 비밀번호를 입력하세요."
 }

@@ -1224,5 +1224,11 @@
   "hosts.find": "Szukaj:",
   "hosts.noMatch": "Brak wyników",
   "hosts.findPrev": "Poprzedni wynik",
-  "hosts.findNext": "Następny wynik"
+  "hosts.findNext": "Następny wynik",
+  "err.portPrivileged": "Port {0} wymaga uprawnień administratora w tym systemie (porty poniżej 1024). Wybierz port, np. 8080, w Ustawieniach albo pozwól Portly używać niskich portów.",
+  "ext.builtIn": "Wbudowane w tym PHP (nic nie trzeba instalować)",
+  "ext.notInStatic": "Niedostępne w tej wersji PHP (statyczny PHP nie może ładować rozszerzeń)",
+  "ext.xdebugStatic": "Xdebug nie jest dostępny w statycznych wersjach PHP używanych w macOS i Linuxie.",
+  "lowports.ask": "Linux pozwala tylko administratorom używać portów poniżej 1024, a serwer WWW potrzebuje portów {0} i {1}.\n\nPortly może to zmienić jednorazowo: system zapyta o hasło, a potem każdy program na tym komputerze będzie mógł nasłuchiwać na portach od 80 wzwyż (ustawienie \"net.ipv4.ip_unprivileged_port_start = 80\" w /etc/sysctl.d). Nic więcej nie zostanie zmienione.\n\nKontynuować?",
+  "lowports.failed": "Nie udało się otworzyć portów dla Portly. Użyj w Ustawieniach portów powyżej 1024 (np. 8080 i 8443) albo ponownie zezwól i wpisz hasło."
 }

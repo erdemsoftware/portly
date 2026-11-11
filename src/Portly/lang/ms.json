@@ -1224,5 +1224,11 @@
   "hosts.find": "Cari:",
   "hosts.noMatch": "Tiada hasil",
   "hosts.findPrev": "Hasil sebelumnya",
-  "hosts.findNext": "Hasil seterusnya"
+  "hosts.findNext": "Hasil seterusnya",
+  "err.portPrivileged": "Port {0} memerlukan hak pentadbir pada sistem ini (port di bawah 1024). Pilih port seperti 8080 dalam Tetapan, atau benarkan Portly menggunakan port rendah.",
+  "ext.builtIn": "Termasuk dalam PHP ini (tiada apa-apa untuk dipasang)",
+  "ext.notInStatic": "Tidak tersedia dalam binaan PHP ini (PHP statik tidak boleh memuatkan sambungan)",
+  "ext.xdebugStatic": "Xdebug tidak tersedia dalam binaan PHP statik yang digunakan pada macOS dan Linux.",
+  "lowports.ask": "Linux hanya membenarkan pentadbir menggunakan port di bawah 1024, dan pelayan web memerlukan {0} dan {1}.\n\nPortly boleh menukar ini sekali sahaja: sistem anda akan meminta kata laluan, kemudian setiap program pada komputer ini boleh mendengar pada port bermula dari 80 ke atas (tetapan \"net.ipv4.ip_unprivileged_port_start = 80\" dalam /etc/sysctl.d). Tiada apa-apa lagi yang diubah.\n\nTeruskan?",
+  "lowports.failed": "Port tidak dapat dibuka untuk Portly. Gunakan port melebihi 1024 dalam Tetapan (contohnya 8080 dan 8443), atau benarkan semula dan masukkan kata laluan."
 }

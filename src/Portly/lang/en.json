@@ -1226,5 +1226,9 @@
   "hosts.findPrev": "Previous match",
   "hosts.findNext": "Next match",
   "lowports.ask": "Linux lets only administrators use ports below 1024, and the web server needs {0} and {1}.\n\nPortly can change this once: your system asks for your password, then every program on this computer may listen on ports from 80 up (the setting \"net.ipv4.ip_unprivileged_port_start = 80\" in /etc/sysctl.d). Nothing else is changed.\n\nContinue?",
-  "lowports.failed": "The ports could not be opened for Portly. Use ports above 1024 in Settings (for example 8080 and 8443), or allow it again and enter the password."
+  "lowports.failed": "The ports could not be opened for Portly. Use ports above 1024 in Settings (for example 8080 and 8443), or allow it again and enter the password.",
+  "err.portPrivileged": "Port {0} needs administrator rights on this system (ports below 1024). Choose a port such as 8080 in Settings, or let Portly use the low ports.",
+  "ext.builtIn": "Built into this PHP (nothing to install)",
+  "ext.notInStatic": "Not available in this PHP build (a static PHP cannot load extensions)",
+  "ext.xdebugStatic": "Xdebug is not available in the static PHP builds used on macOS and Linux."
 }
