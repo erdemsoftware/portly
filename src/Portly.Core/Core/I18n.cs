@@ -163,7 +163,9 @@ namespace Portly.Core
         public static string T(string key, params object[] args)
         {
             string s;
-            if (!_current.TryGetValue(key, out s) && !_fallback.TryGetValue(key, out s)) s = key;
+            // macOS / Linux wording ("Same as the system" instead of "Same as Windows") lives in "<key>@unix"
+            if (!OS.IsWindows && (_current.TryGetValue(key + "@unix", out s) || _fallback.TryGetValue(key + "@unix", out s))) { }
+            else if (!_current.TryGetValue(key, out s) && !_fallback.TryGetValue(key, out s)) s = key;
             s = s.Replace("\\n", "\n");
             if (args != null && args.Length > 0)
             {
