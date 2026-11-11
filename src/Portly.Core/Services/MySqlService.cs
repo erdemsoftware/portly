@@ -110,6 +110,12 @@ namespace Portly.Services
             string error = await Task.Run(() =>
             {
                 try { WriteConfig(dir, data); } catch (Exception ex) { return ex.Message; }
+                if (OS.IsLinux)
+                {
+                    // MySQL builds look in lib/private first ($ORIGIN/../lib/private in their rpath)
+                    var missing = LinuxLibs.Fix(mysqld, Path.Combine(dir, "lib", "private"));
+                    if (missing.Count > 0) return I18n.T("err.linuxLibs", Title, string.Join(", ", missing), LinuxLibs.InstallHint(missing));
+                }
                 if (!Directory.Exists(data) || !Directory.EnumerateFileSystemEntries(data).Any())
                 {
                     Log.Info(I18n.T("log.mysqlInit", data));

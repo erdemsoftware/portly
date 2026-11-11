@@ -1230,5 +1230,6 @@
   "err.portPrivileged": "{0} portu bu sistemde yönetici yetkisi ister (1024'ün altındaki portlar). Ayarlar'dan 8080 gibi bir port seçin ya da Portly'nin düşük portları kullanmasına izin verin.",
   "ext.builtIn": "Bu PHP'nin içinde hazır (kurulacak bir şey yok)",
   "ext.notInStatic": "Bu PHP derlemesinde yok (statik PHP eklenti yükleyemez)",
-  "ext.xdebugStatic": "macOS ve Linux'ta kullanılan statik PHP derlemelerinde Xdebug yok."
+  "ext.xdebugStatic": "macOS ve Linux'ta kullanılan statik PHP derlemelerinde Xdebug yok.",
+  "err.linuxLibs": "{0} başlatılamıyor: bu sistemde {1} eksik. Paket yöneticinizle kurun ({2}), sonra {0}'i yeniden başlatın."
 }

@@ -1230,5 +1230,6 @@
   "err.portPrivileged": "Port {0} needs administrator rights on this system (ports below 1024). Choose a port such as 8080 in Settings, or let Portly use the low ports.",
   "ext.builtIn": "Built into this PHP (nothing to install)",
   "ext.notInStatic": "Not available in this PHP build (a static PHP cannot load extensions)",
-  "ext.xdebugStatic": "Xdebug is not available in the static PHP builds used on macOS and Linux."
+  "ext.xdebugStatic": "Xdebug is not available in the static PHP builds used on macOS and Linux.",
+  "err.linuxLibs": "{0} cannot start: this system is missing {1}. Install it with your package manager ({2}), then start {0} again."
 }
