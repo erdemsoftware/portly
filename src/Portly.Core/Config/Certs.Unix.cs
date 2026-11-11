@@ -139,7 +139,7 @@ namespace Portly.Config
                     else if (!Elevate.Available) report.Add("system store: pkexec is not installed, no administrator prompt possible");
                     else
                     {
-                        var code = Elevate.RunSelf("--trust-ca", file);
+                        var code = LinuxTrustElevated(ca, plan);
                         system = code == 0 && File.Exists(plan.AnchorFile(thumb));
                         report.Add(system ? "system store: trusted" : code == Elevate.Cancelled ? "system store: administrator prompt refused" : "system store: failed (" + code + ")");
                     }
@@ -206,6 +206,36 @@ namespace Portly.Config
             catch { return 2; }
         }
 
+        // Linux runs a fixed /bin/sh script as root instead of Portly itself: an AppImage lives on the user's FUSE mount,
+        // which root cannot open. The certificate is checked and re-encoded here; root only gets its PEM text (argv cannot
+        // change after the prompt) and fixed system paths built from the hex thumbprint.
+        public const string LinuxTrustScript = "mkdir -p \"$1\" && printf '%s\n' \"$3\" > \"$2\" && chmod 644 \"$2\" && shift 3 && exec \"$@\"";
+        public const string LinuxUntrustScript = "n=\"$1\"; shift; for d in /usr/local/share/ca-certificates /etc/pki/ca-trust/source/anchors /etc/ca-certificates/trust-source/anchors /etc/pki/trust/anchors; do rm -f \"$d/$n\"; done; exec \"$@\"";
+
+        public static List<string> LinuxTrustArgs(X509Certificate2 ca, LinuxTrustPlan plan)
+        {
+            if (!ca.Subject.Contains("Portly Local CA") || ca.Subject != ca.Issuer) throw new InvalidOperationException("not a Portly CA");
+            var a = new List<string> { "-c", LinuxTrustScript, "sh", plan.AnchorDir, plan.AnchorFile(ca.Thumbprint), Pem("CERTIFICATE", ca.RawData).Trim(), plan.UpdateTool };
+            a.AddRange(plan.UpdateArgs);
+            return a;
+        }
+
+        public static List<string> LinuxUntrustArgs(string thumbprint, LinuxTrustPlan plan)
+        {
+            if (!Regex.IsMatch(thumbprint ?? "", "^[0-9A-Fa-f]{40}$")) throw new ArgumentException("thumbprint");
+            var a = new List<string> { "-c", LinuxUntrustScript, "sh", "portly-" + thumbprint.ToLowerInvariant() + ".crt", plan.UpdateTool };
+            a.AddRange(plan.UpdateTool.EndsWith("update-ca-certificates", StringComparison.Ordinal) ? new[] { "--fresh" } : plan.UpdateArgs);
+            return a;
+        }
+
+        static int LinuxTrustElevated(X509Certificate2 ca, LinuxTrustPlan plan) { return Elevate.Run("/bin/sh", LinuxTrustArgs(ca, plan).ToArray()); }
+
+        static int LinuxUntrustElevated(string thumbprint)
+        {
+            var plan = LinuxPlan();
+            return plan == null ? 4 : Elevate.Run("/bin/sh", LinuxUntrustArgs(thumbprint, plan).ToArray());
+        }
+
         // ---------------- untrust ----------------
         static bool UntrustUnix(string thumbprint)
         {
@@ -219,7 +249,7 @@ namespace Portly.Config
                 }
                 var name = "portly-" + thumbprint.ToLowerInvariant() + ".crt";
                 bool inSystem = AllAnchorDirs.Any(d => File.Exists(Path.Combine(d, name)));
-                if (inSystem && Elevate.RunSelf("--untrust-ca", thumbprint) != 0) { /* still removed from the browsers below */ }
+                if (inSystem && LinuxUntrustElevated(thumbprint) != 0) { /* still removed from the browsers below */ }
                 var certutil = Elevate.Which("certutil");
                 if (certutil != null)
                     foreach (var dir in NssDirs().Where(d => File.Exists(Path.Combine(d, "cert9.db"))))
