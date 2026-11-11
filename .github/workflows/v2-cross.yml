@@ -51,3 +51,44 @@ jobs:
           name: shots-${{ matrix.os }}
           path: shots/
           if-no-files-found: ignore
+
+  package:
+    name: package ${{ matrix.rid }}
+    needs: test
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { rid: linux-x64, os: ubuntu-24.04 }
+          - { rid: linux-arm64, os: ubuntu-24.04-arm }
+          - { rid: osx-arm64, os: macos-15 }
+          - { rid: osx-x64, os: macos-15-intel }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.0.x'
+      - name: Package
+        run: bash tools/package-unix.sh ${{ matrix.rid }}
+      - name: The packaged app starts (headless screenshot)
+        shell: bash
+        run: |
+          export PORTLY_HOME="$RUNNER_TEMP/portly-pkg"
+          if [[ "${{ matrix.rid }}" == osx-* ]]; then
+            hdiutil attach dist/*.dmg -mountpoint /tmp/portly-dmg -nobrowse
+            /tmp/portly-dmg/Portly.app/Contents/MacOS/Portly --screenshot shots/packaged.png 1100 760
+            codesign --verify --deep --strict /tmp/portly-dmg/Portly.app
+            hdiutil detach /tmp/portly-dmg
+          else
+            mkdir -p "$RUNNER_TEMP/x" && tar -xzf dist/*.tar.gz -C "$RUNNER_TEMP/x"
+            "$RUNNER_TEMP"/x/Portly-*/Portly --screenshot shots/packaged.png 1100 760
+            dpkg-deb --info dist/*.deb | head -12
+          fi
+          ls -la dist shots
+      - uses: actions/upload-artifact@v5
+        with:
+          name: portly-${{ matrix.rid }}
+          path: |
+            dist/
+            shots/
