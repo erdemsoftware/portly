@@ -13,32 +13,39 @@ APU_SRC="$(fetch "https://downloads.apache.org/apr/apr-util-$APR_UTIL_VERSION.ta
 OPENSSL_SRC="$(fetch "https://github.com/openssl/openssl/releases/download/openssl-$OPENSSL_VERSION/openssl-$OPENSSL_VERSION.tar.gz" "$OPENSSL_SHA256")"
 PCRE2_SRC="$(fetch "https://github.com/PCRE2Project/pcre2/releases/download/pcre2-$PCRE2_VERSION/pcre2-$PCRE2_VERSION.tar.gz" "$PCRE2_SHA256")"
 EXPAT_SRC="$(fetch "https://github.com/libexpat/libexpat/releases/download/R_${EXPAT_VERSION//./_}/expat-$EXPAT_VERSION.tar.xz" "$EXPAT_SHA256")"
+ZLIB_SRC="$(fetch "https://github.com/madler/zlib/releases/download/v$ZLIB_VERSION/zlib-$ZLIB_VERSION.tar.gz" "$ZLIB_SHA256")"
 NGHTTP2_SRC="$(fetch "https://github.com/nghttp2/nghttp2/releases/download/v$NGHTTP2_VERSION/nghttp2-$NGHTTP2_VERSION.tar.xz" "$NGHTTP2_SHA256")"
 
+static_sys_libs
 export PKG_CONFIG_PATH="$DEPS/lib/pkgconfig"
 export CFLAGS="-O2 -fPIC"
+export LDFLAGS="-L$DEPS/staticlib"
 
 log "static libraries"
 D="$(unpack "$OPENSSL_SRC")"
 ( cd "$D" && ./config --prefix="$DEPS" --libdir=lib no-shared no-tests no-docs -fPIC && make -j"$JOBS" build_libs && make install_dev )
+D="$(unpack "$ZLIB_SRC")"
+( cd "$D" && ./configure --prefix="$DEPS" --static && make -j"$JOBS" && make install )
 D="$(unpack "$PCRE2_SRC")"
 ( cd "$D" && ./configure --prefix="$DEPS" --disable-shared --enable-static --with-pic --enable-jit && make -j"$JOBS" && make install )
 D="$(unpack "$EXPAT_SRC")"
 ( cd "$D" && ./configure --prefix="$DEPS" --disable-shared --enable-static --with-pic --without-docbook --without-examples --without-tests && make -j"$JOBS" && make install )
 D="$(unpack "$NGHTTP2_SRC")"
 ( cd "$D" && ./configure --prefix="$DEPS" --disable-shared --enable-static --with-pic --enable-lib-only && make -j"$JOBS" && make install )
+# APR built here as static libraries (httpd's own srclib build would link them as shared libraries next to the install folder)
+D="$(unpack "$APR_SRC")"
+( cd "$D" && ./configure --prefix="$DEPS" --disable-shared --enable-static --with-pic && make -j"$JOBS" && make install )
+D="$(unpack "$APU_SRC")"
+( cd "$D" && ./configure --prefix="$DEPS" --disable-shared --enable-static --with-pic --with-apr="$DEPS" --with-expat="$DEPS" && make -j"$JOBS" && make install )
 
 log "httpd"
 SRC="$(unpack "$HTTPD_SRC")"
-rm -rf "$SRC/srclib/apr" "$SRC/srclib/apr-util"
-mv "$(unpack "$APR_SRC")" "$SRC/srclib/apr"
-mv "$(unpack "$APU_SRC")" "$SRC/srclib/apr-util"
 STAGE="$WORK/stage/httpd"
 INSTALL="$WORK/stage/httpd-install"
 rm -rf "$STAGE" "$INSTALL"
 cd "$SRC"
 ./configure --prefix="$INSTALL" \
-  --with-included-apr --with-expat="$DEPS" \
+  --with-apr="$DEPS" --with-apr-util="$DEPS" --with-expat="$DEPS" --with-z="$DEPS" \
   --with-pcre="$DEPS/bin/pcre2-config" \
   --with-ssl="$DEPS" --with-nghttp2="$DEPS" \
   --with-mpm=event \

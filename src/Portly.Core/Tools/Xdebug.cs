@@ -19,8 +19,8 @@ namespace Portly.Tools
     public static class Xdebug
     {
         // "xdebug", "php_xdebug.dll" or a full path ("/.../php-8.5.12/ext/xdebug.so")
-        static readonly Regex On = new Regex(@"^\s*zend_extension\s*=\s*""?([^"";]*[/\])?(php_)?xdebug(\.dll|\.so)?""?\s*$", RegexOptions.IgnoreCase);
-        static readonly Regex Off = new Regex(@"^\s*;\s*zend_extension\s*=\s*""?([^"";]*[/\])?(php_)?xdebug(\.dll|\.so)?""?\s*$", RegexOptions.IgnoreCase);
+        static readonly Regex On = new Regex(@"^\s*zend_extension\s*=\s*""?([^"";]*[/\\])?(php_)?xdebug(\.dll|\.so)?""?\s*$", RegexOptions.IgnoreCase);
+        static readonly Regex Off = new Regex(@"^\s*;\s*zend_extension\s*=\s*""?([^"";]*[/\\])?(php_)?xdebug(\.dll|\.so)?""?\s*$", RegexOptions.IgnoreCase);
 
         /// <summary>Windows: always (the DLL is downloaded). macOS / Linux: see <see cref="IsAvailable"/>, it depends on the PHP package.</summary>
         public static bool Available { get { return OS.IsWindows; } }

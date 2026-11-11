@@ -64,21 +64,34 @@ package() {
   echo "$OUT/$base.tar.gz"
 }
 
+# Linux: libcrypt / libuuid are not on every distribution (libcrypt.so.1 is missing on Fedora / RHEL without libxcrypt-compat), so they
+# are linked statically: a folder with only the .a files in front of the system ones makes "-lcrypt" pick them.
+static_sys_libs() {
+  [ "$OS" = linux ] || return 0
+  mkdir -p "$DEPS/staticlib"
+  local lib f
+  for lib in libcrypt.a libuuid.a; do
+    f="$(gcc -print-file-name=$lib)"
+    if [ -f "$f" ]; then cp "$f" "$DEPS/staticlib/"; else echo "note: $lib not found, that library stays dynamic"; fi
+  done
+}
+
 # Fails when a binary needs a shared library that is not part of the operating system (relocatable check).
 check_linkage() {
-  local f
+  local f bad
   for f in "$@"; do
     echo "--- linkage of $f"
     if [ "$OS" = linux ]; then
       ldd "$f" || true
-      if ldd "$f" 2>/dev/null | grep -E '=>' | grep -vE '(linux-vdso|ld-linux|ld-musl|/lib(64)?/|/usr/lib|libc\.so|libm\.so|libdl\.so|libpthread\.so|librt\.so|libcrypt\.so|libresolv\.so|libutil\.so)' ; then
-        echo "unexpected shared library in $f" >&2; [ -n "${LINKAGE_WARN:-}" ] || return 1
-      fi
+      # glibc itself only; every path in front of =>, vdso and the loader are fine, anything else is not
+      bad="$(ldd "$f" 2>/dev/null | awk '/=>/ { n=$1; sub(/\..*/, "", n); if ($3 !~ /^\/(usr\/)?lib(64)?\// || n !~ /^lib(c|m|dl|pthread|rt|resolv|util|gcc_s|stdc\+\+)$/) print $0 }')"
     else
       otool -L "$f"
-      if otool -L "$f" | tail -n +2 | grep -vE '(/usr/lib/|/System/Library/)'; then
-        echo "unexpected shared library in $f" >&2; [ -n "${LINKAGE_WARN:-}" ] || return 1
-      fi
+      bad="$(otool -L "$f" | tail -n +2 | grep -vE '^[[:space:]]+(/usr/lib/|/System/Library/)' || true)"
+    fi
+    if [ -n "$bad" ]; then
+      echo "unexpected shared library in $f:" >&2; echo "$bad" >&2
+      [ -n "${LINKAGE_WARN:-}" ] || return 1
     fi
   done
 }

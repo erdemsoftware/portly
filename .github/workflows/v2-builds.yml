@@ -76,6 +76,7 @@ jobs:
     timeout-minutes: 340
     env:
       SPC_TARGET: ${{ inputs.linux_target }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v5
       - name: Build

@@ -37,6 +37,12 @@ namespace Portly.CoreTests
             else Console.WriteLine("  (own builds end-to-end skipped: set PORTLY_OWN_BUILDS to the folder with the tar.gz artifacts)");
         }
 
+        /// <summary>A drive letter path (C:/ or C:\) in a generated file. Backslashes alone are fine: Apache escapes quotes with them.</summary>
+        static bool OwnWinPath(string text)
+        {
+            return Regex.IsMatch(text, @"(^|[\s=""'])[A-Za-z]:[/\\]", RegexOptions.Multiline);
+        }
+
         // ------------------------------------------------------------------ package layout
 
         static void OwnLayoutChecks()
@@ -103,9 +109,9 @@ namespace Portly.CoreTests
                     Check("Apache config: optional modules of the package (unixd, http2) are loaded when present", conf.Contains("LoadModule unixd_module modules/mod_unixd.so") && conf.Contains("LoadModule http2_module modules/mod_http2.so") && conf.Contains("Protocols h2 http/1.1"));
                     Check("Apache config: PHP through php-fpm on the PHP port", conf.Contains("ProxyFCGIBackendType FPM") && conf.Contains("SetHandler \"proxy:fcgi://127.0.0.1:19100/\""));
                     Check("Apache config: event MPM sizes, no Windows settings", conf.Contains("mpm_event_module") && !conf.Contains("ThreadStackSize") && !conf.Contains("AcceptFilter") && !conf.Contains("ProxyFCGISetEnvIf"));
-                    Check("Apache config: no Windows paths, LF only", !HasWindowsPath(conf) && !conf.Contains("\r"), WebConfig.ApacheConf);
+                    Check("Apache config: no Windows paths, LF only", !OwnWinPath(conf) && !conf.Contains("\r"), WebConfig.ApacheConf);
                     Check("Apache site: document root, name and PHP handler", siteConf.Contains("DocumentRoot \"" + Paths.Fwd(ownb.DocRoot) + "\"") && siteConf.Contains("ServerName " + ownb.Host) && siteConf.Contains("proxy:fcgi://127.0.0.1:19100/"));
-                    Check("Apache site: no Windows paths, LF only", !HasWindowsPath(siteConf) && !siteConf.Contains("\r"));
+                    Check("Apache site: no Windows paths, LF only", !OwnWinPath(siteConf) && !siteConf.Contains("\r"));
                     File.Delete(Path.Combine(apacheDir, "modules", "mod_http2.so"));
                     WebConfig.WriteApache(apacheDir, sites, f => 19100);
                     conf = File.ReadAllText(WebConfig.ApacheConf);
@@ -137,9 +143,9 @@ namespace Portly.CoreTests
                     Check("Nginx config: temp files in Portly's tmp (the package folder stays clean)", conf.Contains("client_body_temp_path \"" + tmp + "/nginx/client_body\"") && conf.Contains("fastcgi_temp_path     \"" + tmp + "/nginx/fastcgi\"") && Directory.Exists(Path.Combine(Paths.Tmp, "nginx")));
                     Check("Nginx config: mime.types of the package, default server on 127.0.0.1", conf.Contains("include       \"" + Paths.Fwd(nginxDir) + "/conf/mime.types\"") && conf.Contains("listen 127.0.0.1:18080 default_server;"));
                     Check("Nginx config: PHP through php-fpm with the package's fastcgi_params", conf.Contains("fastcgi_pass 127.0.0.1:19100;") && conf.Contains("include \"" + Paths.Fwd(nginxDir) + "/conf/fastcgi_params\";"));
-                    Check("Nginx config: no Windows paths, LF only", !HasWindowsPath(conf) && !conf.Contains("\r"), WebConfig.NginxConf);
+                    Check("Nginx config: no Windows paths, LF only", !OwnWinPath(conf) && !conf.Contains("\r"), WebConfig.NginxConf);
                     Check("Nginx site: server name, root and PHP", siteConf.Contains("server_name " + ownb.Host) && siteConf.Contains("root \"" + Paths.Fwd(ownb.DocRoot) + "\";") && siteConf.Contains("fastcgi_pass 127.0.0.1:19100;"));
-                    Check("Nginx site: no Windows paths, LF only", !HasWindowsPath(siteConf) && !siteConf.Contains("\r"));
+                    Check("Nginx site: no Windows paths, LF only", !OwnWinPath(siteConf) && !siteConf.Contains("\r"));
                     s.Ssl = true;
                     WebConfig.WriteNginx(nginxDir, sites, f => 19100);
                     conf = File.ReadAllText(WebConfig.NginxConf);

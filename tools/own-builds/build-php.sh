@@ -30,7 +30,13 @@ if [ "$OS" = linux ]; then
 fi
 
 ./spc doctor --auto-fix
-./spc download --with-php="$LINE" --for-extensions="$EXTS,xdebug" --prefer-pre-built
+./spc download --with-php="$LINE" --for-extensions="$EXTS,xdebug" --prefer-pre-built -U "xdebug:https://xdebug.org/files/xdebug-$XDEBUG_VERSION.tgz"
+# the Xdebug source must be the pinned one
+found=0
+while IFS= read -r f; do
+  if [ "$(sha256_of "$f")" = "$XDEBUG_SHA256" ]; then found=1; else echo "different Xdebug source file: $f" >&2; fi
+done < <(find downloads -maxdepth 2 -type f -iname '*xdebug*')
+[ "$found" = 1 ] || { echo "the downloaded Xdebug is not $XDEBUG_VERSION ($XDEBUG_SHA256)" >&2; ls -la downloads >&2; exit 1; }
 ./spc build "$EXTS" --build-cli --build-fpm --build-shared=xdebug --debug
 
 ROOT="$B/buildroot"

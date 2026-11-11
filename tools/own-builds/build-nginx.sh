@@ -10,6 +10,7 @@ OPENSSL_SRC="$(fetch "https://github.com/openssl/openssl/releases/download/opens
 PCRE2_SRC="$(fetch "https://github.com/PCRE2Project/pcre2/releases/download/pcre2-$PCRE2_VERSION/pcre2-$PCRE2_VERSION.tar.gz" "$PCRE2_SHA256")"
 ZLIB_SRC="$(fetch "https://github.com/madler/zlib/releases/download/v$ZLIB_VERSION/zlib-$ZLIB_VERSION.tar.gz" "$ZLIB_SHA256")"
 
+static_sys_libs
 SRC="$(unpack "$NGINX_SRC")"
 OPENSSL_DIR="$(unpack "$OPENSSL_SRC")"
 PCRE2_DIR="$(unpack "$PCRE2_SRC")"
@@ -26,7 +27,7 @@ configure() {
     --with-threads \
     --with-pcre="$PCRE2_DIR" --with-pcre-jit --with-zlib="$ZLIB_DIR" \
     --with-openssl="$OPENSSL_DIR" --with-openssl-opt="no-shared no-tests no-docs -fPIC" \
-    --with-cc-opt="-O2 -fstack-protector-strong -fPIC"
+    --with-cc-opt="-O2 -fstack-protector-strong -fPIC" --with-ld-opt="-L$DEPS/staticlib"
 }
 if ! configure "--with-http_v3_module"; then
   echo "HTTP/3 could not be configured here, building without it"
