@@ -30,6 +30,8 @@ namespace Portly.Desktop.UI
             SizeToContent = SizeToContent.Height;
             MaxHeight = 820;
             CanResize = false;
+            CanMinimize = false;
+            CanMaximize = false;
             ShowInTaskbar = false;
             WindowStartupLocation = WindowStartupLocation.CenterOwner;
             FlowDirection = I18n.IsRtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
@@ -49,6 +51,7 @@ namespace Portly.Desktop.UI
             SizeToContent = SizeToContent.Manual;
             Height = height;
             CanResize = true;
+            CanMaximize = true;
         }
     }
 

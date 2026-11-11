@@ -90,7 +90,7 @@ namespace Portly.Desktop
         static bool RunningFromTemp()
         {
             var temp = Path.GetTempPath().TrimEnd('\\', '/');
-            return Paths.Root.StartsWith(temp + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
+            return Paths.AppDir.StartsWith(temp + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
         }
 
         /// <summary>Windows only: copy the program files to C:\Portly and start from there. False when it failed.</summary>
