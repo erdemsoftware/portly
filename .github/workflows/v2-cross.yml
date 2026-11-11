@@ -33,6 +33,23 @@ jobs:
           export PORTLY_HOME="$RUNNER_TEMP/portly-tests"
           dotnet run --project tests/Portly.CoreTests -c Release
 
+      - name: End-to-end (real packages, real services)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          export PORTLY_HOME="$RUNNER_TEMP/portly-e2e" PORTLY_E2E=1
+          dotnet run --project tests/Portly.CoreTests -c Release --no-build -- E2EInstall
+          dotnet run --project tests/Portly.CoreTests -c Release --no-build -- Services
+
+      - uses: actions/upload-artifact@v5
+        if: failure() && runner.os != 'Windows'
+        with:
+          name: e2e-logs-${{ matrix.os }}
+          path: |
+            ${{ runner.temp }}/portly-e2e/logs/
+            ${{ runner.temp }}/portly-e2e/etc/
+          if-no-files-found: ignore
+
       - name: Screenshots
         shell: bash
         run: |
