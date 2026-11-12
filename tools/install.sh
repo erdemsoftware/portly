@@ -43,16 +43,23 @@ else
   BASE="https://github.com/$REPO/releases/latest/download"
 fi
 
-# The newest release with a file for this system, pre-releases included (GitHub lists releases newest first). Used when
-# the release marked "latest" has no file for this system, for example while macOS / Linux are in beta.
+# The newest release with a file for this system, pre-releases included. Used when the release marked "latest" has no
+# file for this system, for example while macOS / Linux are in beta. The releases feed lists tags newest first and, unlike
+# the GitHub API, has no per-address limit for anonymous requests.
 newest_with_asset() {
   command -v curl >/dev/null 2>&1 || return 1
-  url="$(curl -fsSL "https://api.github.com/repos/$REPO/releases?per_page=30" 2>/dev/null \
-    | grep -o "\"browser_download_url\": *\"https://github.com/$REPO/releases/download/[^\"/]*/Portly-[0-9][^\"/]*-$OS-$ARCH\\.$EXT\"" \
-    | head -1 | sed 's/.*"\(https:[^"]*\)"$/\1/')"
-  [ -n "$url" ] || return 1
-  BASE="${url%/*}"
-  ASSET="${url##*/}"
+  tags="$(curl -fsSL --retry 2 "https://github.com/$REPO/releases.atom" 2>/dev/null \
+    | grep -o "https://github.com/$REPO/releases/tag/v[0-9][^\"<]*" | sed 's:.*/tag/::' | head -10)" || return 1
+  for tag in $tags; do
+    case "$tag" in *[!A-Za-z0-9.-]*) continue ;; esac
+    a="Portly-${tag#v}-$OS-$ARCH.$EXT"
+    if curl -fsSLI --retry 2 -o /dev/null "https://github.com/$REPO/releases/download/$tag/$a" 2>/dev/null; then
+      BASE="https://github.com/$REPO/releases/download/$tag"
+      ASSET="$a"
+      return 0
+    fi
+  done
+  return 1
 }
 
 if [ -z "$VERSION" ] && [ -z "$FROM" ] && command -v curl >/dev/null 2>&1; then

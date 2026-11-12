@@ -1,0 +1,41 @@
+name: install-check
+
+# The one-line installer from the README, run against the real GitHub releases on macOS and Linux:
+#   curl -fsSL https://raw.githubusercontent.com/erdemsoftware/portly/main/tools/install.sh | sh
+# Runs when install.sh changes on main, every Monday, or by hand. Installs into the runner only.
+on:
+  push:
+    branches: [main]
+    paths: ['tools/install.sh']
+  schedule:
+    - cron: '17 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  install:
+    name: install.sh (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, ubuntu-24.04-arm, macos-15, macos-15-intel]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Install with the README command and start the app
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PORTLY_HOME="$RUNNER_TEMP/portly-home"
+          curl -fsSL "https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/${GITHUB_SHA}/tools/install.sh" -o install.sh
+          if [ "$RUNNER_OS" = macOS ]; then
+            PORTLY_APPS_DIR="$RUNNER_TEMP/apps" sh install.sh | tee log.txt
+            exe="$RUNNER_TEMP/apps/Portly.app/Contents/MacOS/Portly"
+          else
+            PORTLY_PREFIX="$RUNNER_TEMP/inst" sh install.sh | tee log.txt
+            exe="$RUNNER_TEMP/inst/bin/portly"
+          fi
+          grep -q "Checksum OK" log.txt
+          "$exe" --screenshot installed.png 1100 760
+          test -s installed.png
