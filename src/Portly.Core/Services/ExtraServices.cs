@@ -162,10 +162,17 @@ namespace Portly.Services
             SetState(ServiceState.Starting);
             var port = Settings.Current.MemcachedPort;
             if (!EnsurePortFree(port)) return;
-            var bind = Settings.Current.AllowLan ? "0.0.0.0" : "127.0.0.1";
-            _p = Launch(Path.Combine(dir, "bin", OS.Exe("memcached")), "-p " + port + " -U 0 -l " + bind + " -m 64", Path.Combine(dir, "bin"), null, "memcached", OnExit);
+            // programs of the package: bin\memcached.exe on Windows, memcached at the folder root of Portly's macOS / Linux build
+            var exe = PackageTypes.Exe("memcached", Path.GetFileName(dir), "memcached");
+            _p = Launch(exe, Args(port, Settings.Current.AllowLan, !OS.IsWindows && string.Equals(Environment.UserName, "root", StringComparison.Ordinal)), Path.GetDirectoryName(exe), null, "memcached", OnExit);
             if (await WaitForPort(port, _p, 10000)) { SetState(ServiceState.Running); Log.Info(I18n.T("log.started", Title + " " + VersionLabel)); }
             else SetState(ServiceState.Error, _p.HasExited ? ExitReason(_p) : I18n.T("err.timeout"));
+        }
+
+        /// <summary>No UDP, 64 MB, this computer only unless LAN access is on. memcached refuses to run as root without naming a user.</summary>
+        internal static string Args(int port, bool lan, bool root)
+        {
+            return "-p " + port + " -U 0 -l " + (lan ? "0.0.0.0" : "127.0.0.1") + " -m 64" + (root ? " -u root" : "");
         }
 
         void OnExit(Process p)
@@ -180,7 +187,7 @@ namespace Portly.Services
             var p = _p;
             if (p == null || p.HasExited) { _p = null; SetState(ServiceState.Stopped); return; }
             SetState(ServiceState.Stopping);
-            await Task.Run(() => StopProcess(p, false, 0));
+            await Task.Run(() => { if (OS.IsWindows || !StopWithSignal(p, 15, 5000)) StopProcess(p, false, 0); });
             _p = null;
             SetState(ServiceState.Stopped);
         }

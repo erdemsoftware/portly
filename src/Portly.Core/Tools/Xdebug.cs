@@ -18,15 +18,43 @@ namespace Portly.Tools
     /// </summary>
     public static class Xdebug
     {
-        static readonly Regex On = new Regex(@"^\s*zend_extension\s*=\s*""?(php_)?xdebug(\.dll)?""?\s*$", RegexOptions.IgnoreCase);
-        static readonly Regex Off = new Regex(@"^\s*;\s*zend_extension\s*=\s*""?(php_)?xdebug(\.dll)?""?\s*$", RegexOptions.IgnoreCase);
+        // "xdebug", "php_xdebug.dll" or a full path ("/.../php-8.5.12/ext/xdebug.so")
+        static readonly Regex On = new Regex(@"^\s*zend_extension\s*=\s*""?([^"";]*[/\\])?(php_)?xdebug(\.dll|\.so)?""?\s*$", RegexOptions.IgnoreCase);
+        static readonly Regex Off = new Regex(@"^\s*;\s*zend_extension\s*=\s*""?([^"";]*[/\\])?(php_)?xdebug(\.dll|\.so)?""?\s*$", RegexOptions.IgnoreCase);
 
-        /// <summary>Xdebug is a loadable extension: macOS / Linux PHP is a static build that cannot load it.</summary>
+        /// <summary>Windows: always (the DLL is downloaded). macOS / Linux: see <see cref="IsAvailable"/>, it depends on the PHP package.</summary>
         public static bool Available { get { return OS.IsWindows; } }
+
+        /// <summary>
+        /// macOS / Linux: Xdebug is a loadable extension, so it needs a PHP that can load one. The static-php builds cannot; Portly's own
+        /// PHP builds ship it as ext/xdebug.so (or xdebug.so at the folder root). Null when the PHP folder has none.
+        /// </summary>
+        public static string SoPath(string phpDir)
+        {
+            if (OS.IsWindows || string.IsNullOrEmpty(phpDir)) return null;
+            foreach (var f in new[] { Path.Combine(phpDir, "ext", "xdebug.so"), Path.Combine(phpDir, "xdebug.so") })
+                if (File.Exists(f)) return f;
+            return null;
+        }
+
+        /// <summary>True when Xdebug can be switched on for this PHP folder.</summary>
+        public static bool IsAvailable(string phpDir) { return OS.IsWindows || SoPath(phpDir) != null; }
+
+        /// <summary>macOS / Linux: keeps the path of an existing xdebug zend_extension line right after Portly was moved (called by PhpConfig.Ensure).</summary>
+        internal static void RefreshPath(System.Collections.Generic.List<string> lines, string phpDir)
+        {
+            var so = SoPath(phpDir);
+            if (so == null) return;
+            for (int i = 0; i < lines.Count; i++)
+            {
+                if (On.IsMatch(lines[i])) lines[i] = "zend_extension=\"" + Paths.Fwd(so) + "\"";
+                else if (Off.IsMatch(lines[i])) lines[i] = ";zend_extension=\"" + Paths.Fwd(so) + "\"";
+            }
+        }
 
         public static bool IsEnabled(string phpDir)
         {
-            if (!OS.IsWindows) return false;
+            if (!OS.IsWindows && SoPath(phpDir) == null) return false;
             var ini = PhpConfig.IniPath(phpDir);
             return File.Exists(ini) && File.ReadAllLines(ini).Any(l => On.IsMatch(l));
         }
@@ -44,20 +72,29 @@ namespace Portly.Tools
 
         public static async Task EnableAsync(string phpDir)
         {
-            if (!OS.IsWindows) throw new Exception(PhpExtensions.TOr("ext.xdebugStatic", "Xdebug is not available in the static PHP builds used on macOS and Linux."));
-            var dll = Path.Combine(phpDir, "ext", "php_xdebug.dll");
-            if (!File.Exists(dll))
+            string so = null;
+            if (!OS.IsWindows)
             {
-                var url = DownloadUrl(Path.GetFileName(phpDir));
-                Log.Info(I18n.T("log.downloading", "Xdebug"));
-                await Net.DownloadFileAsync(url, dll, null, CancellationToken.None);
+                so = SoPath(phpDir);
+                if (so == null) throw new Exception(PhpExtensions.TOr("ext.xdebugStatic", "Xdebug is not available in the static PHP builds used on macOS and Linux."));
+            }
+            else
+            {
+                var dll = Path.Combine(phpDir, "ext", "php_xdebug.dll");
+                if (!File.Exists(dll))
+                {
+                    var url = DownloadUrl(Path.GetFileName(phpDir));
+                    Log.Info(I18n.T("log.downloading", "Xdebug"));
+                    await Net.DownloadFileAsync(url, dll, null, CancellationToken.None);
+                }
             }
             var ini = PhpConfig.IniPath(phpDir);
             var lines = File.ReadAllLines(ini, Encoding.UTF8).ToList();
             int i = lines.FindIndex(l => Off.IsMatch(l));
-            if (lines.Any(l => On.IsMatch(l))) { }
-            else if (i >= 0) lines[i] = "zend_extension=xdebug";
-            else lines.Add("zend_extension=xdebug");
+            var entry = so == null ? "zend_extension=xdebug" : "zend_extension=\"" + Paths.Fwd(so) + "\"";
+            if (lines.Any(l => On.IsMatch(l))) { if (so != null) RefreshPath(lines, phpDir); }
+            else if (i >= 0) lines[i] = entry;
+            else lines.Add(entry);
             PhpConfig.Set(lines, "xdebug.mode", "debug,develop");
             PhpConfig.Set(lines, "xdebug.start_with_request", "trigger");
             PhpConfig.Set(lines, "xdebug.client_host", "127.0.0.1");
@@ -70,7 +107,7 @@ namespace Portly.Tools
 
         public static void Disable(string phpDir)
         {
-            if (!OS.IsWindows) return;
+            if (!OS.IsWindows && SoPath(phpDir) == null) return;
             var ini = PhpConfig.IniPath(phpDir);
             var lines = File.ReadAllLines(ini, Encoding.UTF8).ToList();
             for (int i = 0; i < lines.Count; i++) if (On.IsMatch(lines[i])) lines[i] = ";" + lines[i].TrimStart();

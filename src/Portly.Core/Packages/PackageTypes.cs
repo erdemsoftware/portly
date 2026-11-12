@@ -106,6 +106,8 @@ namespace Portly.Packages
             // Redis Stack server builds: bin/redis-server and bin/redis-cli (Windows builds keep them in the folder root)
             Get("redis").DetectFile = "bin/redis-server";
             Get("redis").PathDirs = new[] { "bin" };
+            // Portly's own builds: nginx/nginx + conf/, bin/httpd + modules/ + conf/ (Apache), memcached/memcached (program at the folder root)
+            Get("memcached").DetectFile = "memcached";
         }
 
         /// <summary>

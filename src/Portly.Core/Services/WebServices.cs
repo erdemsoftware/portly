@@ -47,13 +47,24 @@ namespace Portly.Services
             if (s.Ssl && !EnsurePortFree(s.HttpsPort)) return;
 
             var httpd = Path.Combine(dir, "bin", OS.Exe("httpd"));
-            _p = Launch(httpd, "-f \"" + WebConfig.ApacheConf + "\"", Path.Combine(dir, "bin"), null, "apache-console", OnExit);
+            long errFrom = LogSize("apache-error"), conFrom = LogSize("apache-console");
+            // macOS / Linux: httpd detaches from the terminal unless told to stay in the foreground
+            _p = Launch(httpd, "-f \"" + WebConfig.ApacheConf + "\"" + (OS.IsWindows ? "" : " -DFOREGROUND"), Path.Combine(dir, "bin"), null, "apache-console", OnExit);
             if (await WaitForPort(s.HttpPort, _p, 15000))
             {
                 SetState(ServiceState.Running);
                 Log.Info(I18n.T("log.started", "Apache " + VersionLabel));
             }
-            else SetState(ServiceState.Error, _p.HasExited ? ExitReason(_p) + " " + I18n.T("err.seeLog", "apache-error.log") : I18n.T("err.timeout"));
+            else
+            {
+                string port = null;
+                if (_p.HasExited && !OS.IsWindows)
+                {
+                    try { _p.WaitForExit(); } catch { }
+                    port = WebPortProblem(LogSince("apache-console", conFrom) + "\n" + LogSince("apache-error", errFrom));
+                }
+                SetState(ServiceState.Error, port ?? (_p.HasExited ? ExitReason(_p) + " " + I18n.T("err.seeLog", "apache-error.log") : I18n.T("err.timeout")));
+            }
         }
 
         void OnExit(Process p)
@@ -68,7 +79,12 @@ namespace Portly.Services
             var p = _p;
             if (p == null || p.HasExited) { _p = null; SetState(ServiceState.Stopped); return; }
             SetState(ServiceState.Stopping);
-            await Task.Run(() => StopProcess(p, true, 8000));
+            await Task.Run(() =>
+            {
+                // macOS / Linux: SIGWINCH = graceful stop (running requests finish), then SIGTERM, then the tree is killed
+                if (!OS.IsWindows) { if (!StopWithSignal(p, 28, 10000) && !StopWithSignal(p, 15, 5000)) StopProcess(p, false, 0); }
+                else StopProcess(p, true, 8000);
+            });
             _p = null;
             SetState(ServiceState.Stopped);
             Log.Info(I18n.T("log.stopped", "Apache"));
@@ -78,6 +94,28 @@ namespace Portly.Services
         {
             var lines = (text ?? "").Split('\n').Select(l => l.Trim()).Where(l => l != "").ToList();
             return string.Join("\n", lines.Skip(Math.Max(0, lines.Count - n)));
+        }
+
+        /// <summary>
+        /// Apache / nginx that stopped at once on macOS / Linux because they cannot bind: "(13)Permission denied: ... could not bind
+        /// to address 0.0.0.0:80" (Apache), "bind() to 0.0.0.0:80 failed (13: Permission denied)" (nginx). Null for anything else.
+        /// </summary>
+        internal static string WebPortProblem(string output)
+        {
+            if (string.IsNullOrEmpty(output)) return null;
+            var m = System.Text.RegularExpressions.Regex.Match(output, @"\(13\)Permission denied.*?could not bind to address \S*?:(\d+)\s");
+            if (!m.Success) m = System.Text.RegularExpressions.Regex.Match(output, @"bind\(\) to \S*?:(\d+) failed \(13: Permission denied\)");
+            if (m.Success)
+                return TOr("err.portPrivileged", "Port {0} needs administrator rights on this system (ports below 1024). Choose a port such as 8080 in Settings, or let Portly use the low ports.", m.Groups[1].Value);
+            m = System.Text.RegularExpressions.Regex.Match(output, @"\(98\)Address already in use.*?could not bind to address \S*?:(\d+)\s");
+            if (!m.Success) m = System.Text.RegularExpressions.Regex.Match(output, @"bind\(\) to \S*?:(\d+) failed \(98: Address already in use\)");
+            if (m.Success)
+            {
+                int port = int.Parse(m.Groups[1].Value);
+                var owner = ProcessUtil.PortOwner(port);
+                return I18n.T("err.portInUse", port, owner == "" ? "?" : owner);
+            }
+            return null;
         }
     }
 
@@ -127,13 +165,23 @@ namespace Portly.Services
             if (!EnsurePortFree(s.HttpPort)) return;
             if (s.Ssl && !EnsurePortFree(s.HttpsPort)) return;
 
+            long errFrom = LogSize("nginx-error"), conFrom = LogSize("nginx-console");
             _p = Launch(exe, Args(""), _dir, null, "nginx-console", OnExit);
             if (await WaitForPort(s.HttpPort, _p, 10000))
             {
                 SetState(ServiceState.Running);
                 Log.Info(I18n.T("log.started", "Nginx " + VersionLabel));
             }
-            else SetState(ServiceState.Error, _p.HasExited ? ExitReason(_p) + " " + I18n.T("err.seeLog", "nginx-error.log") : I18n.T("err.timeout"));
+            else
+            {
+                string port = null;
+                if (_p.HasExited && !OS.IsWindows)
+                {
+                    try { _p.WaitForExit(); } catch { }
+                    port = ApacheService.WebPortProblem(LogSince("nginx-console", conFrom) + "\n" + LogSince("nginx-error", errFrom));
+                }
+                SetState(ServiceState.Error, port ?? (_p.HasExited ? ExitReason(_p) + " " + I18n.T("err.seeLog", "nginx-error.log") : I18n.T("err.timeout")));
+            }
         }
 
         void OnExit(Process p)
@@ -150,6 +198,8 @@ namespace Portly.Services
             SetState(ServiceState.Stopping);
             await Task.Run(() =>
             {
+                // macOS / Linux: SIGQUIT = graceful shutdown (the same as "nginx -s quit", without needing the pid file)
+                if (!OS.IsWindows) { if (!StopWithSignal(p, 3, 10000) && !StopWithSignal(p, 15, 5000)) StopProcess(p, false, 0); return; }
                 ProcessUtil.Run(Path.Combine(_dir, OS.Exe("nginx")), Args(" -s quit"), _dir, null, 10000);
                 if (!p.WaitForExit(5000)) StopProcess(p, false, 0);
             });

@@ -92,7 +92,8 @@ namespace Portly.Config
             {
                 { "CRT", Paths.Fwd(certs["localhost"].Item1) }, { "KEY", Paths.Fwd(certs["localhost"].Item2) }
             })) : "";
-            Templates.WriteIfChanged(ApacheConf, Templates.Render("apache-httpd.conf.tpl", v));
+            if (!OS.IsWindows) AddUnixApacheVars(apacheDir, v);
+            Templates.WriteIfChanged(ApacheConf, Templates.Render(OS.IsWindows ? "apache-httpd.conf.tpl" : "apache-httpd-unix.conf.tpl", v));
 
             // tools (/adminer, /phpmyadmin) on http://localhost only
             Directory.CreateDirectory(ApacheAlias);
@@ -143,6 +144,20 @@ namespace Portly.Config
             ToolApps.WriteDashboard(sites, ssl);
         }
 
+        /// <summary>
+        /// macOS / Linux: modules that a Portly Apache package may or may not contain (mod_unixd is built in or shared depending
+        /// on the build, mod_http2 needs nghttp2) are loaded only when their file is there.
+        /// </summary>
+        internal static void AddUnixApacheVars(string apacheDir, Dictionary<string, string> v)
+        {
+            var load = new StringBuilder();
+            foreach (var m in new[] { "unixd", "slotmem_shm", "http2" })
+                if (File.Exists(Path.Combine(apacheDir, "modules", "mod_" + m + ".so")))
+                    load.Append("LoadModule ").Append(m).Append("_module modules/mod_").Append(m).Append(".so\n");
+            v["LOAD_OPTIONAL"] = load.ToString().TrimEnd('\n');
+            v["PROTOCOLS"] = File.Exists(Path.Combine(apacheDir, "modules", "mod_http2.so")) ? "Protocols h2 http/1.1" : "# HTTP/2: this Apache package has no mod_http2";
+        }
+
         /// <summary>Port of the FrankenPHP server of a site (0 = served by the PHP FastCGI pool). Set by ServiceManager.</summary>
         public static Func<Site, int> ProxyPort = site => 0;
 
@@ -176,7 +191,8 @@ namespace Portly.Config
             v["LISTEN_V6"] = v6 ? "listen [::1]:" + s.HttpPort + " default_server;" + (ssl ? " listen [::1]:" + s.HttpsPort + " ssl default_server;" : "") : "";
             v["SSL_CERT"] = ssl ? NginxCert(certs["localhost"]) : "";
             v["PHP_LOCATION"] = defaultPhp == "" ? "" : NginxPhp(nginxDir, phpPort(defaultPhp));
-            Templates.WriteIfChanged(NginxConf, Templates.Render("nginx.conf.tpl", v));
+            if (!OS.IsWindows) Directory.CreateDirectory(Path.Combine(Paths.Tmp, "nginx"));
+            Templates.WriteIfChanged(NginxConf, Templates.Render(OS.IsWindows ? "nginx.conf.tpl" : "nginx-unix.conf.tpl", v));
 
             Directory.CreateDirectory(NginxAlias);
             var alias = new StringBuilder("# " + v["GENERATED"] + "\r\n");
