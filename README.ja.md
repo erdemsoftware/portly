@@ -58,9 +58,25 @@ Portly は、単一のフォルダーから Apache または Nginx、PHP、MySQL
 |---|---|---|---|
 | `Portly-x.y.z-win10-11.zip` | 10 / 11（64 ビット） | **はい**: アプリ + パッケージカタログ | 最新: PHP 8.5、MySQL 8.4 LTS / 26.x、Apache 2.4、Node 24 LTS ... |
 | `Portly-x.y.z-win7-8.zip`（Legacy） | 7 SP1 / 8 / 8.1（64 ビット） | **いいえ**（凍結されたカタログ） | Windows 7 で動作する最後のバージョン: PHP 8.2、MySQL 5.7、Apache 2.4 VS16、Node 13 |
-| macOS / Linux | — | — | **近日公開。** 設定のエクスポートはすでにプラットフォーム非依存です。実現に向けて、リポジトリにスターを付けるか寄付してください。 |
+| macOS / Linux | — | — | **ベータ版**: 下記の [Portly 2 ベータ版](#portly-2-beta) をご覧ください。 |
 
 Legacy エディションには .NET Framework 4.8 が必要です（Windows 10 / 11 には標準で含まれています）。
+
+<a id="portly-2-beta"></a>
+
+## Portly 2 ベータ版: macOS、Linux、そして新しい Windows アプリ
+
+Portly 2 は **macOS（Apple Silicon と Intel）、Linux（x64 と arm64）、Windows 10 / 11** で動作し、すべてのプラットフォームで同じバージョン番号を使います。現在はベータ版です。Portly 1.x が引き続き安定版であり、自動的に 2 へ更新されることはありません。
+
+- **macOS / Linux**: 1 行で実行でき、sudo は不要です（SHA-256 を検証。macOS: `/Applications/Portly.app`、Linux: `~/.local/share/portly`）:
+
+  ```sh
+  curl -fsSL https://raw.githubusercontent.com/erdemsoftware/portly/main/tools/install.sh | sh
+  ```
+
+  または [Releases](https://github.com/erdemsoftware/portly/releases) から `.dmg`、`.AppImage`、`.deb`、`.tar.gz` をダウンロードしてください。
+- **Windows 10 / 11**: 同じページの `Portly-2.x.y-beta.n-windows-x64.zip` を新しいフォルダーに展開します。
+- macOS / Linux では、Xdebug 付き PHP、Caddy、Apache、Nginx、MySQL、MariaDB、PostgreSQL、MongoDB、Redis、Memcached、Mailpit、Node.js が `~/Portly` に入ります。プロジェクトは `https://name.localhost` で開きます。
 
 ## クイックスタート
 

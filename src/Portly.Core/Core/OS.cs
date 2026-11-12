@@ -30,6 +30,40 @@ namespace Portly.Core
         public static string ExeSuffix { get { return IsWindows ? ".exe" : ""; } }
 
         public static string Exe(string name) { return name + ExeSuffix; }
+
+        /// <summary>
+        /// Linux: version of the GNU C library (2.35 on Ubuntu 22.04), or null on musl (Alpine), macOS and Windows.
+        /// Packages built against a newer glibc (catalog field minGlibc) cannot start on an older one.
+        /// </summary>
+        public static Version Glibc
+        {
+            get
+            {
+                if (!_glibcRead) { _glibcRead = true; _glibc = ReadGlibc(); }
+                return _glibc;
+            }
+        }
+        static Version _glibc;
+        static bool _glibcRead;
+
+#if NETFRAMEWORK
+        static Version ReadGlibc() { return null; }
+#else
+        [DllImport("libc", EntryPoint = "gnu_get_libc_version")]
+        static extern IntPtr GnuGetLibcVersion();
+
+        static Version ReadGlibc()
+        {
+            if (!IsLinux) return null;
+            try
+            {
+                var s = Marshal.PtrToStringAnsi(GnuGetLibcVersion());
+                Version v;
+                return s != null && Version.TryParse(s.Trim(), out v) ? v : null;
+            }
+            catch { return null; } // musl has no gnu_get_libc_version
+        }
+#endif
     }
 
     public static class Pipes

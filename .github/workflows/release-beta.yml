@@ -1,0 +1,162 @@
+name: release-beta
+
+# Portly 2 pre-release (tag v2.0.0-beta.1): packages for Windows, macOS and Linux, a GitHub pre-release, then the one-line
+# installer is tried against the published files. It never touches manifest/app.json, so Portly 1.x keeps being offered
+# the stable release only (release.yml skips tags with a suffix).
+on:
+  push:
+    tags: ['v*-*']
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: tag and version
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+      pre: ${{ steps.v.outputs.pre }}
+    steps:
+      - uses: actions/checkout@v5
+      - id: v
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="${GITHUB_REF_NAME}"
+          [[ "$tag" =~ ^v([0-9]+\.[0-9]+\.[0-9]+)-([a-z]+\.[0-9]+)$ ]] || { echo "tag must look like v2.0.0-beta.1"; exit 1; }
+          version="${BASH_REMATCH[1]}"; pre="${BASH_REMATCH[2]}"
+          app="$(sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p' src/Portly.Desktop/Portly.Desktop.csproj | head -1)"
+          [ "$app" = "$version" ] || { echo "the tag says $version but Portly.Desktop.csproj says $app"; exit 1; }
+          test -s "docs/releases/$version-$pre.md" || { echo "release notes docs/releases/$version-$pre.md are missing"; exit 1; }
+          git fetch -q origin main
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main || { echo "the tagged commit is not on main"; exit 1; }
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "pre=$pre" >> "$GITHUB_OUTPUT"
+
+  package:
+    name: package ${{ matrix.rid }}
+    needs: check
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - { rid: linux-x64, os: ubuntu-24.04 }
+          - { rid: linux-arm64, os: ubuntu-24.04-arm }
+          - { rid: osx-arm64, os: macos-15 }
+          - { rid: osx-x64, os: macos-15-intel }
+          - { rid: win-x64, os: windows-2025 }
+    runs-on: ${{ matrix.os }}
+    env:
+      PORTLY_PRERELEASE: ${{ needs.check.outputs.pre }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.0.x'
+      - name: Package (macOS / Linux)
+        if: runner.os != 'Windows'
+        run: bash tools/package-unix.sh ${{ matrix.rid }} ${{ needs.check.outputs.version }}
+      - name: Package (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./tools/package-windows.ps1 -Rid ${{ matrix.rid }} -Version ${{ needs.check.outputs.version }}
+      - name: The packaged app starts
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PORTLY_HOME="$RUNNER_TEMP/portly-pkg"
+          label="${{ needs.check.outputs.version }}-${{ needs.check.outputs.pre }}"
+          mkdir -p shots
+          case "${{ matrix.rid }}" in
+            osx-*)
+              mkdir -p "$RUNNER_TEMP/x" && ditto -x -k dist/Portly-$label-macos-*.zip "$RUNNER_TEMP/x"
+              codesign --verify --deep --strict "$RUNNER_TEMP/x/Portly.app"
+              exe="$RUNNER_TEMP/x/Portly.app/Contents/MacOS/Portly" ;;
+            linux-*)
+              mkdir -p "$RUNNER_TEMP/x" && tar -xzf dist/Portly-$label-linux-*.tar.gz -C "$RUNNER_TEMP/x"
+              exe="$(ls "$RUNNER_TEMP"/x/Portly-*/Portly)" ;;
+            win-*)
+              mkdir -p "$RUNNER_TEMP/x" && unzip -q dist/Portly-$label-windows-*.zip -d "$RUNNER_TEMP/x"
+              exe="$RUNNER_TEMP/x/Portly/Portly.exe" ;;
+          esac
+          "$exe" --screenshot shots/packaged.png 1100 760
+          test -s shots/packaged.png
+          ls -la dist
+      - uses: actions/upload-artifact@v5
+        with:
+          name: release-${{ matrix.rid }}
+          path: |
+            dist/Portly-*
+            shots/
+
+  release:
+    name: publish pre-release
+    needs: [check, package]
+    runs-on: ubuntu-24.04
+    # the same protected environment as the stable release: a tag alone cannot publish
+    environment: manifest-signing
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v5
+        with:
+          pattern: release-*
+          path: parts
+      - name: Collect the files and one SHA256SUMS
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          find parts -path '*/dist/*' -name 'Portly-*' -type f -exec cp {} out/ \;
+          cd out
+          ls -la
+          n=$(ls | wc -l)
+          # 4 macOS (dmg + zip, x2) + 6 Linux (tar.gz, deb, AppImage, x2) + 1 Windows, each also version-less
+          [ "$n" -eq 22 ] || { echo "expected 22 files, found $n"; exit 1; }
+          sha256sum Portly-* > SHA256SUMS
+          cat SHA256SUMS
+      - name: Create the GitHub pre-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          v="${{ needs.check.outputs.version }}-${{ needs.check.outputs.pre }}"
+          gh release create "$GITHUB_REF_NAME" out/* --prerelease --latest=false \
+            --title "Portly $v" --notes-file "docs/releases/$v.md" --verify-tag
+
+  verify:
+    name: install.sh from the release (${{ matrix.os }})
+    needs: [check, release]
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, ubuntu-24.04-arm, macos-15, macos-15-intel]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: The one-line installer finds and installs this pre-release
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PORTLY_HOME="$RUNNER_TEMP/portly-home"
+          # the installer of the tagged commit, run exactly the way the README says (no version given)
+          curl -fsSL "https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/${GITHUB_SHA}/tools/install.sh" -o install.sh
+          if [ "$RUNNER_OS" = macOS ]; then
+            PORTLY_APPS_DIR="$RUNNER_TEMP/apps" sh install.sh | tee log.txt
+            exe="$RUNNER_TEMP/apps/Portly.app/Contents/MacOS/Portly"
+          else
+            PORTLY_PREFIX="$RUNNER_TEMP/inst" sh install.sh | tee log.txt
+            exe="$RUNNER_TEMP/inst/bin/portly"
+          fi
+          grep -q "Checksum OK" log.txt
+          "$exe" --screenshot installed.png 1100 760
+          test -s installed.png
+          # a given version works too
+          rm -rf "$RUNNER_TEMP/apps" "$RUNNER_TEMP/inst"
+          if [ "$RUNNER_OS" = macOS ]; then
+            PORTLY_VERSION="${GITHUB_REF_NAME#v}" PORTLY_APPS_DIR="$RUNNER_TEMP/apps" sh install.sh
+          else
+            PORTLY_VERSION="${GITHUB_REF_NAME#v}" PORTLY_PREFIX="$RUNNER_TEMP/inst" sh install.sh
+          fi

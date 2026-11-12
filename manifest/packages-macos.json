@@ -2,7 +2,7 @@
   "schema": 1,
   "edition": "macos",
   "updated": "2026-11-12",
-  "comment": "Portly package catalog for macOS (x64 and arm64; entries carry an arch). Served from GitHub (main branch) and embedded in Portly as a fallback. PHP comes as static builds (php-fpm + php-cli archives extracted into one folder) from dl.static-php.dev. Redis (Redis Stack server), MongoDB and PostgreSQL (EDB universal binaries) come from their vendors; MariaDB publishes no macOS binaries.",
+  "comment": "Portly package catalog for macOS (x64 and arm64; entries carry an arch). Served from GitHub (main branch) and embedded in Portly as a fallback. PHP comes as static builds (php-fpm + php-cli archives extracted into one folder) from dl.static-php.dev. Redis (Redis Stack server), MongoDB and PostgreSQL (EDB universal binaries) come from their vendors; MariaDB publishes no macOS binaries. Portly's own builds (nginx, Apache httpd, memcached, PHP with Xdebug) come from github.com/erdemsoftware/portly-builds.",
   "packages": [
     {
       "type": "php",
@@ -107,6 +107,48 @@
         }
       ],
       "note": "static build: php-fpm + php-cli, common extensions built in"
+    },
+    {
+      "type": "php",
+      "version": "8.5.12",
+      "folder": "php-8.5.12-xdebug",
+      "url": "https://github.com/erdemsoftware/portly-builds/releases/download/php-8.5.12/php-8.5.12-macos-arm64.tar.gz",
+      "sha256": "8e216a403ae13e7f195190cee210c85b715a36c40a474732d475a30899a560a2",
+      "kind": "tar.gz",
+      "arch": "arm64",
+      "note": "php-fpm + php-cli with Xdebug (ext/xdebug.so), built by Portly",
+      "recommended": true
+    },
+    {
+      "type": "php",
+      "version": "8.5.12",
+      "folder": "php-8.5.12-xdebug",
+      "url": "https://github.com/erdemsoftware/portly-builds/releases/download/php-8.5.12/php-8.5.12-macos-x64.tar.gz",
+      "sha256": "fee3cf1d18be36809879fe23485971c4595a9b7898ccef234a6a9a3626e50808",
+      "kind": "tar.gz",
+      "arch": "x64",
+      "note": "php-fpm + php-cli with Xdebug (ext/xdebug.so), built by Portly",
+      "recommended": true
+    },
+    {
+      "type": "php",
+      "version": "8.4.27",
+      "folder": "php-8.4.27-xdebug",
+      "url": "https://github.com/erdemsoftware/portly-builds/releases/download/php-8.4.27/php-8.4.27-macos-arm64.tar.gz",
+      "sha256": "b7a832769ce11a1ae42c2747aff04800c4674f524ec470c163418d9efc56891f",
+      "kind": "tar.gz",
+      "arch": "arm64",
+      "note": "php-fpm + php-cli with Xdebug (ext/xdebug.so), built by Portly"
+    },
+    {
+      "type": "php",
+      "version": "8.4.27",
+      "folder": "php-8.4.27-xdebug",
+      "url": "https://github.com/erdemsoftware/portly-builds/releases/download/php-8.4.27/php-8.4.27-macos-x64.tar.gz",
+      "sha256": "e12820644f1e1030d2dc03f9de815eddd784571454289f1b93a2764b8f2116ac",
+      "kind": "tar.gz",
+      "arch": "x64",
+      "note": "php-fpm + php-cli with Xdebug (ext/xdebug.so), built by Portly"
     },
     {
       "type": "caddy",
@@ -519,6 +561,72 @@
       "kind": "file",
       "fileName": "wp-cli.phar",
       "note": "used for one-click WordPress",
+      "recommended": true
+    },
+    {
+      "type": "apache",
+      "version": "2.4.71",
+      "folder": "httpd-2.4.71",
+      "url": "https://github.com/erdemsoftware/portly-builds/releases/download/httpd-2.4.71/httpd-2.4.71-macos-arm64.tar.gz",
+      "sha256": "30cc51cf6e61a3ef401ed2d2e87700de4af9ea9992ac1fd018aa324e4bd331e8",
+      "kind": "tar.gz",
+      "arch": "arm64",
+      "note": "built by Portly (mod_ssl, mod_http2, mod_proxy_fcgi, mod_rewrite)",
+      "recommended": true
+    },
+    {
+      "type": "apache",
+      "version": "2.4.71",
+      "folder": "httpd-2.4.71",
+      "url": "https://github.com/erdemsoftware/portly-builds/releases/download/httpd-2.4.71/httpd-2.4.71-macos-x64.tar.gz",
+      "sha256": "713016eb94bde0ea6676aed435ba7c9fd7e56ad9380c1c9fcb92e78896a96091",
+      "kind": "tar.gz",
+      "arch": "x64",
+      "note": "built by Portly (mod_ssl, mod_http2, mod_proxy_fcgi, mod_rewrite)",
+      "recommended": true
+    },
+    {
+      "type": "nginx",
+      "version": "1.30.6",
+      "folder": "nginx-1.30.6",
+      "url": "https://github.com/erdemsoftware/portly-builds/releases/download/nginx-1.30.6/nginx-1.30.6-macos-arm64.tar.gz",
+      "sha256": "61072cc07ea08143db790ae25b0d257cd19a24ff333ea4c452b78109f6e02f7e",
+      "kind": "tar.gz",
+      "arch": "arm64",
+      "note": "built by Portly (OpenSSL, HTTP/2 and HTTP/3, no system libraries needed)",
+      "recommended": true
+    },
+    {
+      "type": "nginx",
+      "version": "1.30.6",
+      "folder": "nginx-1.30.6",
+      "url": "https://github.com/erdemsoftware/portly-builds/releases/download/nginx-1.30.6/nginx-1.30.6-macos-x64.tar.gz",
+      "sha256": "42dd632f1ceb43dd242c341d8a93be61ffdb53df184d8f8ebdbe725a61d8f06a",
+      "kind": "tar.gz",
+      "arch": "x64",
+      "note": "built by Portly (OpenSSL, HTTP/2 and HTTP/3, no system libraries needed)",
+      "recommended": true
+    },
+    {
+      "type": "memcached",
+      "version": "1.6.45",
+      "folder": "memcached-1.6.45",
+      "url": "https://github.com/erdemsoftware/portly-builds/releases/download/memcached-1.6.45/memcached-1.6.45-macos-arm64.tar.gz",
+      "sha256": "27effacc7936ce81c9f38390f9fc7faa17d443bbb110c1746ee82890edec81cf",
+      "kind": "tar.gz",
+      "arch": "arm64",
+      "note": "built by Portly",
+      "recommended": true
+    },
+    {
+      "type": "memcached",
+      "version": "1.6.45",
+      "folder": "memcached-1.6.45",
+      "url": "https://github.com/erdemsoftware/portly-builds/releases/download/memcached-1.6.45/memcached-1.6.45-macos-x64.tar.gz",
+      "sha256": "f5c224bd36c33c548e9fbd67ca875bc89949b880a8285b6690b33d4b3834d0d1",
+      "kind": "tar.gz",
+      "arch": "x64",
+      "note": "built by Portly",
       "recommended": true
     }
   ]

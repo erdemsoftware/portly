@@ -183,7 +183,7 @@ namespace Portly.Desktop
             var donate = Nav(null, I18n.T("main.donate"), "heart", async () => await ShowDonate());
             donate.Foreground = Ui.Heart;
             bottom.Children.Add(donate);
-            var ver = Ui.Label("v" + AppInfo.VersionText + " · " + OsLabel(), "muted small");
+            var ver = Ui.Label("v" + AppInfo.VersionLabel + " · " + OsLabel(), "muted small");
             ver.Margin = new Thickness(12, 10, 0, 4);
             bottom.Children.Add(ver);
 

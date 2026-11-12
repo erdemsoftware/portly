@@ -58,9 +58,25 @@ Portly 可以从单个文件夹运行 Apache 或 Nginx、PHP、MySQL 或 MariaDB
 |---|---|---|---|
 | `Portly-x.y.z-win10-11.zip` | 10 / 11(64 位) | **支持**：应用 + 软件包目录 | 最新版：PHP 8.5、MySQL 8.4 LTS / 26.x、Apache 2.4、Node 24 LTS ... |
 | `Portly-x.y.z-win7-8.zip`(Legacy) | 7 SP1 / 8 / 8.1(64 位) | **不支持**(目录已冻结) | 可在 Windows 7 上运行的最后版本：PHP 8.2、MySQL 5.7、Apache 2.4 VS16、Node 13 |
-| macOS / Linux | — | — | **即将推出。** 设置导出已与平台无关。给仓库加星或捐助，帮助它实现。 |
+| macOS / Linux | — | — | **测试版**：见下文 [Portly 2 测试版](#portly-2-beta)。 |
 
 Legacy 版需要 .NET Framework 4.8(已包含在 Windows 10 / 11 中)。
+
+<a id="portly-2-beta"></a>
+
+## Portly 2 测试版：macOS、Linux 与全新的 Windows 应用
+
+Portly 2 可在 **macOS（Apple Silicon 与 Intel）、Linux（x64 与 arm64）以及 Windows 10 / 11** 上运行，所有平台使用同一版本号。目前处于测试阶段：Portly 1.x 仍是稳定版，不会自动升级到 2。
+
+- **macOS / Linux**，一行命令，无需 sudo（校验 SHA-256；macOS：`/Applications/Portly.app`，Linux：`~/.local/share/portly`）：
+
+  ```sh
+  curl -fsSL https://raw.githubusercontent.com/erdemsoftware/portly/main/tools/install.sh | sh
+  ```
+
+  或从 [Releases](https://github.com/erdemsoftware/portly/releases) 下载 `.dmg`、`.AppImage`、`.deb` 或 `.tar.gz`。
+- **Windows 10 / 11**：同一页面中的 `Portly-2.x.y-beta.n-windows-x64.zip`，解压到一个新文件夹中。
+- 在 macOS / Linux 上：带 Xdebug 的 PHP、Caddy、Apache、Nginx、MySQL、MariaDB、PostgreSQL、MongoDB、Redis、Memcached、Mailpit 和 Node.js 安装在 `~/Portly` 中；项目在 `https://name.localhost` 打开。
 
 ## 快速开始
 

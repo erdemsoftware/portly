@@ -2,7 +2,7 @@
   "schema": 1,
   "edition": "linux",
   "updated": "2026-11-12",
-  "comment": "Portly package catalog for Linux (x64 and arm64; entries carry an arch). Served from GitHub (main branch) and embedded in Portly as a fallback. PHP comes as static builds (php-fpm + php-cli archives extracted into one folder) from dl.static-php.dev. Redis (Redis Stack server), MariaDB (x86_64 only) and MongoDB come from their vendors; PostgreSQL has no vendor binaries for Linux, so it uses the third-party Zonky embedded-postgres-binaries from Maven Central (a jar that holds a tar.xz, kind zip+tar.xz).",
+  "comment": "Portly package catalog for Linux (x64 and arm64; entries carry an arch). Served from GitHub (main branch) and embedded in Portly as a fallback. PHP comes as static builds (php-fpm + php-cli archives extracted into one folder) from dl.static-php.dev. Redis (Redis Stack server), MariaDB (x86_64 only) and MongoDB come from their vendors; PostgreSQL has no vendor binaries for Linux, so it uses the third-party Zonky embedded-postgres-binaries from Maven Central (a jar that holds a tar.xz, kind zip+tar.xz). Portly's own builds (nginx, Apache httpd, memcached, PHP with Xdebug) come from github.com/erdemsoftware/portly-builds; they need glibc 2.34+ (PHP 2.35+), given as minGlibc, and are hidden on older systems.",
   "packages": [
     {
       "type": "php",
@@ -107,6 +107,52 @@
         }
       ],
       "note": "static build: php-fpm + php-cli, common extensions built in"
+    },
+    {
+      "type": "php",
+      "version": "8.5.12",
+      "folder": "php-8.5.12-xdebug",
+      "url": "https://github.com/erdemsoftware/portly-builds/releases/download/php-8.5.12/php-8.5.12-linux-arm64.tar.gz",
+      "sha256": "8d469d25dc2c06a306de87fa963c6d4d469acd0f874d7d1b1d3e6a2cbf71625b",
+      "kind": "tar.gz",
+      "arch": "arm64",
+      "minGlibc": "2.35",
+      "note": "php-fpm + php-cli with Xdebug (ext/xdebug.so), built by Portly",
+      "recommended": true
+    },
+    {
+      "type": "php",
+      "version": "8.5.12",
+      "folder": "php-8.5.12-xdebug",
+      "url": "https://github.com/erdemsoftware/portly-builds/releases/download/php-8.5.12/php-8.5.12-linux-x64.tar.gz",
+      "sha256": "ffc1d86d9b8152002b7358786577f0aedd59e3c8afba0f8d6f295a0e0b0d2e49",
+      "kind": "tar.gz",
+      "arch": "x64",
+      "minGlibc": "2.35",
+      "note": "php-fpm + php-cli with Xdebug (ext/xdebug.so), built by Portly",
+      "recommended": true
+    },
+    {
+      "type": "php",
+      "version": "8.4.27",
+      "folder": "php-8.4.27-xdebug",
+      "url": "https://github.com/erdemsoftware/portly-builds/releases/download/php-8.4.27/php-8.4.27-linux-arm64.tar.gz",
+      "sha256": "165954dd56211db78f189a95cf82b895c1898acedeb355fd7fe69d6d213c14f8",
+      "kind": "tar.gz",
+      "arch": "arm64",
+      "minGlibc": "2.35",
+      "note": "php-fpm + php-cli with Xdebug (ext/xdebug.so), built by Portly"
+    },
+    {
+      "type": "php",
+      "version": "8.4.27",
+      "folder": "php-8.4.27-xdebug",
+      "url": "https://github.com/erdemsoftware/portly-builds/releases/download/php-8.4.27/php-8.4.27-linux-x64.tar.gz",
+      "sha256": "a0e11b65aa7d9b10130741fc8036a910598706c90eb05646ddec3dd32161c8b5",
+      "kind": "tar.gz",
+      "arch": "x64",
+      "minGlibc": "2.35",
+      "note": "php-fpm + php-cli with Xdebug (ext/xdebug.so), built by Portly"
     },
     {
       "type": "caddy",
@@ -648,6 +694,78 @@
       "kind": "file",
       "fileName": "wp-cli.phar",
       "note": "used for one-click WordPress",
+      "recommended": true
+    },
+    {
+      "type": "apache",
+      "version": "2.4.71",
+      "folder": "httpd-2.4.71",
+      "url": "https://github.com/erdemsoftware/portly-builds/releases/download/httpd-2.4.71/httpd-2.4.71-linux-arm64.tar.gz",
+      "sha256": "b237f7cac4b0735bc1b732be3c6d61f19f5ab28e3a1025941e10810b64b9c448",
+      "kind": "tar.gz",
+      "arch": "arm64",
+      "minGlibc": "2.34",
+      "note": "built by Portly (mod_ssl, mod_http2, mod_proxy_fcgi, mod_rewrite)",
+      "recommended": true
+    },
+    {
+      "type": "apache",
+      "version": "2.4.71",
+      "folder": "httpd-2.4.71",
+      "url": "https://github.com/erdemsoftware/portly-builds/releases/download/httpd-2.4.71/httpd-2.4.71-linux-x64.tar.gz",
+      "sha256": "432ca64aa65b5d7e98b877c4389ec7b3c30808e92b50c922f5e15410f2127234",
+      "kind": "tar.gz",
+      "arch": "x64",
+      "minGlibc": "2.34",
+      "note": "built by Portly (mod_ssl, mod_http2, mod_proxy_fcgi, mod_rewrite)",
+      "recommended": true
+    },
+    {
+      "type": "nginx",
+      "version": "1.30.6",
+      "folder": "nginx-1.30.6",
+      "url": "https://github.com/erdemsoftware/portly-builds/releases/download/nginx-1.30.6/nginx-1.30.6-linux-arm64.tar.gz",
+      "sha256": "318591cc1965283edfb88830a9a29d752273e8fdb2eed1cc60b927ae6de90d30",
+      "kind": "tar.gz",
+      "arch": "arm64",
+      "minGlibc": "2.34",
+      "note": "built by Portly (OpenSSL, HTTP/2 and HTTP/3, no system libraries needed)",
+      "recommended": true
+    },
+    {
+      "type": "nginx",
+      "version": "1.30.6",
+      "folder": "nginx-1.30.6",
+      "url": "https://github.com/erdemsoftware/portly-builds/releases/download/nginx-1.30.6/nginx-1.30.6-linux-x64.tar.gz",
+      "sha256": "028cb7f3614f1cf9ceda5df39120f8cbde084b48a17949c768de911db813f5e3",
+      "kind": "tar.gz",
+      "arch": "x64",
+      "minGlibc": "2.34",
+      "note": "built by Portly (OpenSSL, HTTP/2 and HTTP/3, no system libraries needed)",
+      "recommended": true
+    },
+    {
+      "type": "memcached",
+      "version": "1.6.45",
+      "folder": "memcached-1.6.45",
+      "url": "https://github.com/erdemsoftware/portly-builds/releases/download/memcached-1.6.45/memcached-1.6.45-linux-arm64.tar.gz",
+      "sha256": "1ddeb99a65b5a27c290e9ee3ac9e47e5e42ee0e71bbb3c98d21930e3edcba035",
+      "kind": "tar.gz",
+      "arch": "arm64",
+      "minGlibc": "2.34",
+      "note": "built by Portly",
+      "recommended": true
+    },
+    {
+      "type": "memcached",
+      "version": "1.6.45",
+      "folder": "memcached-1.6.45",
+      "url": "https://github.com/erdemsoftware/portly-builds/releases/download/memcached-1.6.45/memcached-1.6.45-linux-x64.tar.gz",
+      "sha256": "7ad1e8052f4480928caf05023cdd6614adb7b64935edef9a181b244244abb7fa",
+      "kind": "tar.gz",
+      "arch": "x64",
+      "minGlibc": "2.34",
+      "note": "built by Portly",
       "recommended": true
     }
   ]

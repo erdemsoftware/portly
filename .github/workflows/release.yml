@@ -2,7 +2,8 @@ name: release
 
 on:
   push:
-    tags: ['v*']
+    # a tag with a suffix (v2.0.0-beta.1) is a pre-release: release-beta.yml, which never touches manifest/app.json
+    tags: ['v*', '!v*-*']
 
 permissions:
   contents: write

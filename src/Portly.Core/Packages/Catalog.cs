@@ -25,6 +25,7 @@ namespace Portly.Packages
         public double MinOs;               // 6.1 = Win7, 10.0 = Win10
         public int Vc;                     // required VC++ 14.x runtime minor version (0 = none)
         public string Arch = "";           // macOS / Linux: "x64" | "arm64" ("" = any); ignored on Windows
+        public string MinGlibc = "";       // Linux: oldest GNU C library the build runs on ("2.35"); "" = any (static builds)
         /// <summary>More archives extracted into the same version folder (macOS / Linux: php-fpm + php-cli).</summary>
         public List<PackagePart> Parts = new List<PackagePart>();
 
@@ -151,11 +152,14 @@ namespace Portly.Packages
                     Recommended = p.Bool("recommended"),
                     Vc = p.Int("vc"),
                     Arch = p.Str("arch"),
+                    MinGlibc = p.Str("minGlibc"),
                 };
                 if (!OS.IsWindows)
                 {
                     // entries for another CPU are skipped; parts (extra archives) are read only here
                     if (e.Arch != "" && !e.Arch.Equals(OS.Arch, StringComparison.OrdinalIgnoreCase)) continue;
+                    // Linux builds made against a newer GNU C library than this system's (or for glibc on musl) are skipped
+                    if (OS.IsLinux && !GlibcFits(e.MinGlibc, OS.Glibc)) continue;
                     foreach (var q in p.Arr("parts"))
                     {
                         var part = new PackagePart { Url = q.Str("url"), Sha256 = q.Str("sha256"), Kind = q.Str("kind", "tar.gz"), Subdir = q.Str("subdir") };
@@ -177,6 +181,15 @@ namespace Portly.Packages
             if (xd != null) { XdebugVersion = xd.Str("version", XdebugVersion); Xdebug74 = xd.Str("php74", Xdebug74); }
             var donate = root.Str("donateUrl");
             if (donate.StartsWith("https://")) AppInfo.DonateUrl = donate;
+        }
+
+        /// <summary>True when an entry needing minGlibc runs on a system with this glibc (null = musl / unknown: only entries without minGlibc).</summary>
+        internal static bool GlibcFits(string minGlibc, Version system)
+        {
+            if (string.IsNullOrEmpty(minGlibc)) return true;
+            Version need;
+            if (!Version.TryParse(minGlibc, out need)) return false; // unreadable requirement: safer to hide the entry
+            return system != null && system >= need;
         }
 
         /// <summary>Add the newest PHP build of every branch listed by windows.php.net.</summary>

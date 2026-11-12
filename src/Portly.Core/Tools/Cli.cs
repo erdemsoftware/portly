@@ -89,7 +89,7 @@ namespace Portly.Tools
                 I18n.Load(Settings.Current.Language);
                 var verb = args[0].ToLowerInvariant();
                 if (verb == "help") { Print(Help()); return 0; }
-                if (verb == "version") { Print("Portly " + AppInfo.VersionText + " (" + AppInfo.EditionName + ")"); return 0; }
+                if (verb == "version") { Print("Portly " + AppInfo.VersionLabel + " (" + AppInfo.EditionName + ")"); return 0; }
                 if (!Features.IsOn("cli")) { Print(I18n.T("cli.off")); return 1; }
 
                 var pipe = Connect(1500);
@@ -294,7 +294,7 @@ namespace Portly.Tools
                 switch (verb)
                 {
                     case "help": return CliResult.Ok(Help());
-                    case "version": return CliResult.Ok("Portly " + AppInfo.VersionText + " (" + AppInfo.EditionName + ")");
+                    case "version": return CliResult.Ok("Portly " + AppInfo.VersionLabel + " (" + AppInfo.EditionName + ")");
                     case "status": return CliResult.Ok(Status());
                     case "sites": return CliResult.Ok(SitesText());
                     case "start": return await Start(rest.FirstOrDefault()).ConfigureAwait(false);

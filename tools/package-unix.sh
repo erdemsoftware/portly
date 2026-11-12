@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Builds the Portly 2 packages for macOS and Linux into dist/.
-#   tools/package-unix.sh <rid> [version]
+#   tools/package-unix.sh <rid> [version]      (PORTLY_PRERELEASE=beta.1 -> files and app label 2.0.0-beta.1)
 #   rid: osx-arm64 | osx-x64 (run on macOS)  |  linux-x64 | linux-arm64 (run on Linux)
 # macOS: Portly.app (ad-hoc signed) in Portly-<v>-macos-<arch>.dmg and .zip
 # Linux: Portly-<v>-linux-<arch>.tar.gz, .deb and .AppImage
@@ -10,6 +10,10 @@ set -euo pipefail
 RID="${1:?rid}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 VERSION="${2:-$(sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p' "$ROOT/src/Portly.Desktop/Portly.Desktop.csproj" | head -1)}"
+# pre-release (beta): the app keeps the numeric version (updates, Info.plist), file names and the label shown carry the suffix
+PRE="${PORTLY_PRERELEASE:-}"
+case "$PRE" in ""|[a-z]*[0-9]) ;; *) echo "PORTLY_PRERELEASE must look like beta.1" >&2; exit 1 ;; esac
+LABEL="$VERSION${PRE:+-$PRE}"
 ARCH="${RID#*-}"
 PUB="$ROOT/build/publish/$RID"
 DIST="$ROOT/dist"
@@ -18,7 +22,7 @@ mkdir -p "$DIST"
 
 dotnet publish "$ROOT/src/Portly.Desktop/Portly.Desktop.csproj" -c Release -r "$RID" --self-contained true \
   -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true \
-  -p:DebugType=none -p:Version="$VERSION" -o "$PUB" --nologo
+  -p:DebugType=none -p:Version="$LABEL" -o "$PUB" --nologo
 find "$PUB" -name '*.pdb' -delete
 chmod 755 "$PUB/Portly"
 
@@ -57,7 +61,7 @@ EOF
   # free ad-hoc signature: required for Apple Silicon, not a Developer ID
   codesign --force --deep --sign - "$APP"
   codesign --verify --deep --strict "$APP"
-  NAME="Portly-$VERSION-macos-$ARCH"
+  NAME="Portly-$LABEL-macos-$ARCH"
   STAGE="$ROOT/build/macos/dmg"
   mkdir -p "$STAGE"
   cp -R "$APP" "$STAGE/"
@@ -67,7 +71,7 @@ EOF
   (cd "$ROOT/build/macos" && ditto -c -k --keepParent Portly.app "$DIST/$NAME.zip")
   ;;
 linux-*)
-  NAME="Portly-$VERSION-linux-$ARCH"
+  NAME="Portly-$LABEL-linux-$ARCH"
   STAGE="$ROOT/build/linux/$NAME"
   rm -rf "$ROOT/build/linux"
   mkdir -p "$STAGE"
@@ -95,7 +99,7 @@ StartupWMClass=Portly"
   cp "$ROOT/assets/portly-256.png" "$DEB/usr/share/icons/hicolor/256x256/apps/portly.png"
   cat > "$DEB/DEBIAN/control" <<EOF
 Package: portly
-Version: $VERSION
+Version: $VERSION${PRE:+~$PRE}
 Section: devel
 Priority: optional
 Architecture: $DEBARCH
@@ -121,7 +125,10 @@ EOF
   chmod 755 "$APPDIR/AppRun"
   TOOL="$ROOT/build/linux/appimagetool"
   TOOLARCH=$([ "$ARCH" = arm64 ] && echo aarch64 || echo x86_64)
-  curl -fsSL -o "$TOOL" "https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-$TOOLARCH.AppImage"
+  # pinned release + SHA-256 (the "continuous" build changes under the same name)
+  TOOLSHA=$([ "$ARCH" = arm64 ] && echo f0837e7448a0c1e4e650a93bb3e85802546e60654ef287576f46c71c126a9158 || echo ed4ce84f0d9caff66f50bcca6ff6f35aae54ce8135408b3fa33abfc3cb384eb0)
+  curl -fsSL --retry 3 -o "$TOOL" "https://github.com/AppImage/appimagetool/releases/download/1.9.1/appimagetool-$TOOLARCH.AppImage"
+  echo "$TOOLSHA  $TOOL" | sha256sum -c - >/dev/null || { echo "appimagetool checksum mismatch" >&2; exit 1; }
   chmod 755 "$TOOL"
   ARCH=$TOOLARCH APPIMAGE_EXTRACT_AND_RUN=1 "$TOOL" --no-appstream "$APPDIR" "$DIST/$NAME.AppImage" >/dev/null
   ;;
@@ -131,10 +138,10 @@ esac
 
 # stable names (Portly-macos-arm64.zip ...) for https://github.com/erdemsoftware/portly/releases/latest/download/<name>
 # and tools/install.sh, plus the checksums install.sh verifies
-for f in "$DIST/Portly-$VERSION-"*; do
+for f in "$DIST/Portly-$LABEL-"*; do
   [ -f "$f" ] || continue
   n="$(basename "$f")"
-  cp -f "$f" "$DIST/Portly-${n#Portly-$VERSION-}"
+  cp -f "$f" "$DIST/Portly-${n#Portly-$LABEL-}"
 done
 (
   cd "$DIST"

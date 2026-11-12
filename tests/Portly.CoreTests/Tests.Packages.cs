@@ -43,9 +43,25 @@ namespace Portly.CoreTests
                 Check("catalog: entries for " + OS.Arch + " only", Catalog.Entries.All(e => e.Arch == "" || e.Arch == OS.Arch));
                 foreach (var t in new[] { "php", "caddy", "mysql", "mailpit", "nodejs", "cloudflared", "phpmyadmin", "adminer" })
                     Check("catalog: " + t + " offered", Catalog.Entries.Any(e => e.Type == t));
-                Check("catalog: php has a php-cli part", Catalog.Entries.Where(e => e.Type == "php").All(e => e.Parts.Count == 1 && e.Parts[0].Sha256.Length == 64));
+                Check("catalog: static php has a php-cli part", Catalog.Entries.Where(e => e.Type == "php" && e.Folder.EndsWith("-static")).All(e => e.Parts.Count == 1 && e.Parts[0].Sha256.Length == 64));
+                Check("catalog: own php builds are one archive", Catalog.Entries.Where(e => e.Type == "php" && e.Folder.EndsWith("-xdebug")).All(e => e.Parts.Count == 0));
+                if (OS.IsLinux) Check("catalog: glibc of this system read", OS.Glibc != null, "" + OS.Glibc);
                 Check("catalog: every entry has a sha256", Catalog.Entries.All(e => Regex.IsMatch(e.Sha256, "^[0-9a-f]{64}$")), string.Join(",", Catalog.Entries.Where(e => !Regex.IsMatch(e.Sha256, "^[0-9a-f]{64}$")).Select(e => e.Folder)));
                 Check("catalog: recommended php", Catalog.Recommended("php") != null && Catalog.Recommended("php").Version.StartsWith("8.5"));
+            }
+
+            // ---- minGlibc: Linux builds made against a newer GNU C library are hidden on older systems ----
+            Check("glibc: no requirement fits anything", Catalog.GlibcFits("", null) && Catalog.GlibcFits("", new Version(2, 17)));
+            Check("glibc: same or newer fits", Catalog.GlibcFits("2.35", new Version(2, 35)) && Catalog.GlibcFits("2.35", new Version(2, 39)));
+            Check("glibc: older system does not fit", !Catalog.GlibcFits("2.35", new Version(2, 31)) && !Catalog.GlibcFits("2.34", new Version(2, 28)));
+            Check("glibc: musl / unknown does not fit a glibc build", !Catalog.GlibcFits("2.34", null));
+            Check("glibc: unreadable requirement hides the entry", !Catalog.GlibcFits("two", new Version(2, 40)));
+            {
+                var lx = Json.ParseObject(EmbeddedCatalog("catalog.linux.json")).Arr("packages");
+                var own = lx.Where(p => p.Str("url").Contains("/portly-builds/")).ToList();
+                Check("linux catalog: own builds listed", own.Count >= 8, own.Count.ToString());
+                Check("linux catalog: every own build has minGlibc", own.All(p => p.Str("minGlibc") != ""));
+                Check("linux catalog: static php for any glibc", lx.Any(p => p.Str("type") == "php" && p.Str("minGlibc") == "" && p.Bool("recommended")));
             }
 
             // ---- both macOS / Linux catalogs are valid on every OS (read straight from the embedded files) ----

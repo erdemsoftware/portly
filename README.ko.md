@@ -58,9 +58,25 @@ Portly는 하나의 폴더에서 Apache 또는 Nginx, PHP, MySQL 또는 MariaDB,
 |---|---|---|---|
 | `Portly-x.y.z-win10-11.zip` | 10 / 11 (64비트) | **예**: 앱 + 패키지 카탈로그 | 최신: PHP 8.5, MySQL 8.4 LTS / 26.x, Apache 2.4, Node 24 LTS ... |
 | `Portly-x.y.z-win7-8.zip` (Legacy) | 7 SP1 / 8 / 8.1 (64비트) | **아니요** (고정된 카탈로그) | Windows 7에서 실행되는 마지막 버전: PHP 8.2, MySQL 5.7, Apache 2.4 VS16, Node 13 |
-| macOS / Linux | — | — | **준비 중.** 설정 내보내기는 이미 플랫폼 중립입니다. 이를 실현하는 데 도움이 되도록 저장소에 별표를 누르거나 후원해 주세요. |
+| macOS / Linux | — | — | **베타**: 아래 [Portly 2 베타](#portly-2-beta) 섹션을 참고하세요. |
 
 Legacy 에디션은 .NET Framework 4.8이 필요합니다 (Windows 10 / 11에는 이미 포함되어 있습니다).
+
+<a id="portly-2-beta"></a>
+
+## Portly 2 베타: macOS, Linux 및 새로운 Windows 앱
+
+Portly 2는 **macOS(Apple Silicon 및 Intel), Linux(x64 및 arm64), Windows 10 / 11**에서 실행되며, 모든 플랫폼에서 같은 버전 번호를 사용합니다. 현재 베타 버전이며, Portly 1.x가 계속 안정 버전으로 유지되고 자동으로 2로 업데이트되지 않습니다.
+
+- **macOS / Linux**: 한 줄 명령, sudo 불필요 (SHA-256 검사; macOS: `/Applications/Portly.app`, Linux: `~/.local/share/portly`):
+
+  ```sh
+  curl -fsSL https://raw.githubusercontent.com/erdemsoftware/portly/main/tools/install.sh | sh
+  ```
+
+  또는 [Releases](https://github.com/erdemsoftware/portly/releases)에서 `.dmg`, `.AppImage`, `.deb` 또는 `.tar.gz`를 내려받으세요.
+- **Windows 10 / 11**: 같은 페이지의 `Portly-2.x.y-beta.n-windows-x64.zip`을 새 폴더에 압축 해제합니다.
+- macOS / Linux: Xdebug 포함 PHP, Caddy, Apache, Nginx, MySQL, MariaDB, PostgreSQL, MongoDB, Redis, Memcached, Mailpit, Node.js가 `~/Portly`에 설치되며, 프로젝트는 `https://name.localhost`에서 열립니다.
 
 ## 빠른 시작
 

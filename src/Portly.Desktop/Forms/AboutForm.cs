@@ -21,7 +21,7 @@ namespace Portly.Desktop.Forms
         public AboutForm() : base(I18n.T("about.title"), 520)
         {
             var heart = Ui.Heart;
-            var names = Ui.Column(2, Ui.Label("Portly " + AppInfo.VersionText, "title"), Ui.Label(AppInfo.EditionName + "  ·  " + I18n.T("about.by"), "muted"));
+            var names = Ui.Column(2, Ui.Label("Portly " + AppInfo.VersionLabel, "title"), Ui.Label(AppInfo.EditionName + "  ·  " + I18n.T("about.by"), "muted"));
             var head = Ui.Row(new Image { Source = Ui.AppImage, Width = 48, Height = 48 }, names);
             head.Spacing = 12;
             Body.Children.Add(head);

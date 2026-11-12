@@ -58,9 +58,25 @@ Portly; Apache ya da Nginx, PHP, MySQL ya da MariaDB, PostgreSQL, MongoDB, Redis
 |---|---|---|---|
 | `Portly-x.y.z-win10-11.zip` | 10 / 11 (64 bit) | **Var**: uygulama + paket kataloğu | En güncel: PHP 8.5, MySQL 8.4 LTS / 26.x, Apache 2.4, Node 24 LTS ... |
 | `Portly-x.y.z-win7-8.zip` (Legacy) | 7 SP1 / 8 / 8.1 (64 bit) | **Yok** (sabit katalog) | Windows 7'de çalışan son sürümler: PHP 8.2, MySQL 5.7, Apache 2.4 VS16, Node 13 |
-| macOS / Linux | — | — | **Yakında.** Ayar dosyası şimdiden platformdan bağımsız. Desteklemek için yıldız verin ya da bağış yapın. |
+| macOS / Linux | — | — | **Beta**: aşağıdaki [Portly 2 beta](#portly-2-beta) bölümüne bakın. |
 
 Legacy sürüm için .NET Framework 4.8 gerekir (Windows 10 / 11'de zaten yüklüdür).
+
+<a id="portly-2-beta"></a>
+
+## Portly 2 beta: macOS, Linux ve yeni Windows uygulaması
+
+Portly 2 **macOS (Apple Silicon ve Intel), Linux (x64 ve arm64) ve Windows 10 / 11** üzerinde, her yerde aynı sürüm numarasıyla çalışır. Şu an beta aşamasında: kararlı sürüm Portly 1.x olarak kalır ve kendiliğinden bu sürüme güncellenmez.
+
+- **macOS / Linux**: tek satır, sudo gerekmez (SHA-256 denetlenir; macOS: `/Applications/Portly.app`, Linux: `~/.local/share/portly`):
+
+  ```sh
+  curl -fsSL https://raw.githubusercontent.com/erdemsoftware/portly/main/tools/install.sh | sh
+  ```
+
+  Ya da [Sürümler](https://github.com/erdemsoftware/portly/releases) sayfasından `.dmg`, `.AppImage`, `.deb` veya `.tar.gz` dosyasını indirin.
+- **Windows 10 / 11**: aynı sayfadaki `Portly-2.x.y-beta.n-windows-x64.zip` dosyasını yeni bir klasöre açın.
+- macOS / Linux'ta: Xdebug'lı PHP, Caddy, Apache, Nginx, MySQL, MariaDB, PostgreSQL, MongoDB, Redis, Memcached, Mailpit ve Node.js `~/Portly` klasöründe; projeler `https://ad.localhost` adresinde açılır.
 
 ## Hızlı başlangıç
 

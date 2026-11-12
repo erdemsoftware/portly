@@ -43,6 +43,25 @@ else
   BASE="https://github.com/$REPO/releases/latest/download"
 fi
 
+# The newest release with a file for this system, pre-releases included (GitHub lists releases newest first). Used when
+# the release marked "latest" has no file for this system, for example while macOS / Linux are in beta.
+newest_with_asset() {
+  command -v curl >/dev/null 2>&1 || return 1
+  url="$(curl -fsSL "https://api.github.com/repos/$REPO/releases?per_page=30" 2>/dev/null \
+    | grep -o "\"browser_download_url\": *\"https://github.com/$REPO/releases/download/[^\"/]*/Portly-[0-9][^\"/]*-$OS-$ARCH\\.$EXT\"" \
+    | head -1 | sed 's/.*"\(https:[^"]*\)"$/\1/')"
+  [ -n "$url" ] || return 1
+  BASE="${url%/*}"
+  ASSET="${url##*/}"
+}
+
+if [ -z "$VERSION" ] && [ -z "$FROM" ] && command -v curl >/dev/null 2>&1; then
+  if ! curl -fsSLI --retry 2 -o /dev/null "$BASE/$ASSET" 2>/dev/null; then
+    newest_with_asset || die "no Portly release for $OS-$ARCH found on https://github.com/$REPO/releases"
+    say "The latest release has no $OS-$ARCH file; using ${BASE##*/} instead."
+  fi
+fi
+
 TMP="$(mktemp -d "${TMPDIR:-/tmp}/portly-install.XXXXXX")"
 trap 'rm -rf "$TMP"' EXIT INT TERM
 

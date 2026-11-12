@@ -32,7 +32,7 @@ namespace Portly.Desktop
 
         async Task Startup()
         {
-            Log.Info(I18n.T("log.welcome", AppInfo.VersionText, AppInfo.EditionName, OsInfo.DisplayName));
+            Log.Info(I18n.T("log.welcome", AppInfo.VersionLabel, AppInfo.EditionName, OsInfo.DisplayName));
             await Task.Run(() => ServiceManager.RefreshSites());
             WatchDocRoot();
             if (OS.IsWindows)
@@ -221,7 +221,7 @@ namespace Portly.Desktop
                 UpdateNotices.MarkChecked();
                 var u = appDue ? await Updater.CheckAsync() : Updater.Available;
                 UpdateBanner();
-                if (interactive && u == null && UpdateNotices.Current.Count == 0) await Dialogs.Info(this, I18n.T("update.none", AppInfo.VersionText));
+                if (interactive && u == null && UpdateNotices.Current.Count == 0) await Dialogs.Info(this, I18n.T("update.none", AppInfo.VersionLabel));
                 if (interactive && UpdateNotices.Current.Count > 0) { ShowFromTray(); ShowPage("services"); }
                 if (u != null && !IsVisible) Alert(I18n.T("update.banner", u.Version));
             }
