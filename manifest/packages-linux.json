@@ -1,0 +1,772 @@
+{
+  "schema": 1,
+  "edition": "linux",
+  "updated": "2026-11-12",
+  "comment": "Portly package catalog for Linux (x64 and arm64; entries carry an arch). Served from GitHub (main branch) and embedded in Portly as a fallback. PHP comes as static builds (php-fpm + php-cli archives extracted into one folder) from dl.static-php.dev. Redis (Redis Stack server), MariaDB (x86_64 only) and MongoDB come from their vendors; PostgreSQL has no vendor binaries for Linux, so it uses the third-party Zonky embedded-postgres-binaries from Maven Central (a jar that holds a tar.xz, kind zip+tar.xz). Portly's own builds (nginx, Apache httpd, memcached, PHP with Xdebug) come from github.com/erdemsoftware/portly-builds; they need glibc 2.34+ (PHP 2.35+), given as minGlibc, and are hidden on older systems.",
+  "packages": [
+    {
+      "type": "php",
+      "version": "8.5.8",
+      "folder": "php-8.5.8-static",
+      "url": "https://dl.static-php.dev/static-php-cli/bulk/php-8.5.8-fpm-linux-x86_64.tar.gz",
+      "sha256": "d2a5c031ae23a72b97ed5ab739bd5b8fe75dd09754d2f406a9216b7d7c8311d8",
+      "kind": "tar.gz",
+      "arch": "x64",
+      "parts": [
+        {
+          "url": "https://dl.static-php.dev/static-php-cli/bulk/php-8.5.8-cli-linux-x86_64.tar.gz",
+          "sha256": "bfaa12e0f6f5788259bc20d0d3f08e1e851bce7f05d43e38fb77041e12a32663",
+          "kind": "tar.gz"
+        }
+      ],
+      "note": "static build: php-fpm + php-cli, common extensions built in",
+      "recommended": true
+    },
+    {
+      "type": "php",
+      "version": "8.4.23",
+      "folder": "php-8.4.23-static",
+      "url": "https://dl.static-php.dev/static-php-cli/bulk/php-8.4.23-fpm-linux-x86_64.tar.gz",
+      "sha256": "40e341db82e5e90450122462aa6038fe653b63da951c1da1f10b15d0da4a26a0",
+      "kind": "tar.gz",
+      "arch": "x64",
+      "parts": [
+        {
+          "url": "https://dl.static-php.dev/static-php-cli/bulk/php-8.4.23-cli-linux-x86_64.tar.gz",
+          "sha256": "5fa2b5f1cc9d7f79b19718926b4f4f0bb6949db52073b2fabf8ae52de3993af5",
+          "kind": "tar.gz"
+        }
+      ],
+      "note": "static build: php-fpm + php-cli, common extensions built in"
+    },
+    {
+      "type": "php",
+      "version": "8.3.32",
+      "folder": "php-8.3.32-static",
+      "url": "https://dl.static-php.dev/static-php-cli/bulk/php-8.3.32-fpm-linux-x86_64.tar.gz",
+      "sha256": "02964d89c54810471c35bbd3877e1a420693305cb2e33aab18636d0db29ff7bc",
+      "kind": "tar.gz",
+      "arch": "x64",
+      "parts": [
+        {
+          "url": "https://dl.static-php.dev/static-php-cli/bulk/php-8.3.32-cli-linux-x86_64.tar.gz",
+          "sha256": "7928396c17aabcd5bb074fe82e07b4cb693c6d04360a4415799a143a9f9686c6",
+          "kind": "tar.gz"
+        }
+      ],
+      "note": "static build: php-fpm + php-cli, common extensions built in"
+    },
+    {
+      "type": "php",
+      "version": "8.5.8",
+      "folder": "php-8.5.8-static",
+      "url": "https://dl.static-php.dev/static-php-cli/bulk/php-8.5.8-fpm-linux-aarch64.tar.gz",
+      "sha256": "4bd94d191f1f8f620a1ca76236f679d2e2491ecfa987036fc6d7a7c08e663f3b",
+      "kind": "tar.gz",
+      "arch": "arm64",
+      "parts": [
+        {
+          "url": "https://dl.static-php.dev/static-php-cli/bulk/php-8.5.8-cli-linux-aarch64.tar.gz",
+          "sha256": "86ea1fe2f6d2415eff78c2e0bcb479b221d5637c89d72e19809b65c4c0527c27",
+          "kind": "tar.gz"
+        }
+      ],
+      "note": "static build: php-fpm + php-cli, common extensions built in",
+      "recommended": true
+    },
+    {
+      "type": "php",
+      "version": "8.4.23",
+      "folder": "php-8.4.23-static",
+      "url": "https://dl.static-php.dev/static-php-cli/bulk/php-8.4.23-fpm-linux-aarch64.tar.gz",
+      "sha256": "8ca6b8d44f12f981cdd96b5aa31f6bf5373a89d201a4a49ed0feb5f242631dec",
+      "kind": "tar.gz",
+      "arch": "arm64",
+      "parts": [
+        {
+          "url": "https://dl.static-php.dev/static-php-cli/bulk/php-8.4.23-cli-linux-aarch64.tar.gz",
+          "sha256": "1faabbea9c500daab9ba202cb75ea9876191a2a8f902244e9d0464addb9b55b1",
+          "kind": "tar.gz"
+        }
+      ],
+      "note": "static build: php-fpm + php-cli, common extensions built in"
+    },
+    {
+      "type": "php",
+      "version": "8.3.32",
+      "folder": "php-8.3.32-static",
+      "url": "https://dl.static-php.dev/static-php-cli/bulk/php-8.3.32-fpm-linux-aarch64.tar.gz",
+      "sha256": "f0d50fa3d8c5114a93cef02b44a1c01642018bc1dab96644d29ef2d1034eb624",
+      "kind": "tar.gz",
+      "arch": "arm64",
+      "parts": [
+        {
+          "url": "https://dl.static-php.dev/static-php-cli/bulk/php-8.3.32-cli-linux-aarch64.tar.gz",
+          "sha256": "4c29858ecfa30d93e854d17494f422b593afa6da8ec80ae979191e69604dc955",
+          "kind": "tar.gz"
+        }
+      ],
+      "note": "static build: php-fpm + php-cli, common extensions built in"
+    },
+    {
+      "type": "php",
+      "version": "8.5.12",
+      "folder": "php-8.5.12-xdebug",
+      "url": "https://github.com/erdemsoftware/portly-builds/releases/download/php-8.5.12/php-8.5.12-linux-arm64.tar.gz",
+      "sha256": "8d469d25dc2c06a306de87fa963c6d4d469acd0f874d7d1b1d3e6a2cbf71625b",
+      "kind": "tar.gz",
+      "arch": "arm64",
+      "minGlibc": "2.35",
+      "note": "php-fpm + php-cli with Xdebug (ext/xdebug.so), built by Portly",
+      "recommended": true
+    },
+    {
+      "type": "php",
+      "version": "8.5.12",
+      "folder": "php-8.5.12-xdebug",
+      "url": "https://github.com/erdemsoftware/portly-builds/releases/download/php-8.5.12/php-8.5.12-linux-x64.tar.gz",
+      "sha256": "ffc1d86d9b8152002b7358786577f0aedd59e3c8afba0f8d6f295a0e0b0d2e49",
+      "kind": "tar.gz",
+      "arch": "x64",
+      "minGlibc": "2.35",
+      "note": "php-fpm + php-cli with Xdebug (ext/xdebug.so), built by Portly",
+      "recommended": true
+    },
+    {
+      "type": "php",
+      "version": "8.4.27",
+      "folder": "php-8.4.27-xdebug",
+      "url": "https://github.com/erdemsoftware/portly-builds/releases/download/php-8.4.27/php-8.4.27-linux-arm64.tar.gz",
+      "sha256": "165954dd56211db78f189a95cf82b895c1898acedeb355fd7fe69d6d213c14f8",
+      "kind": "tar.gz",
+      "arch": "arm64",
+      "minGlibc": "2.35",
+      "note": "php-fpm + php-cli with Xdebug (ext/xdebug.so), built by Portly"
+    },
+    {
+      "type": "php",
+      "version": "8.4.27",
+      "folder": "php-8.4.27-xdebug",
+      "url": "https://github.com/erdemsoftware/portly-builds/releases/download/php-8.4.27/php-8.4.27-linux-x64.tar.gz",
+      "sha256": "a0e11b65aa7d9b10130741fc8036a910598706c90eb05646ddec3dd32161c8b5",
+      "kind": "tar.gz",
+      "arch": "x64",
+      "minGlibc": "2.35",
+      "note": "php-fpm + php-cli with Xdebug (ext/xdebug.so), built by Portly"
+    },
+    {
+      "type": "caddy",
+      "version": "2.11.9",
+      "folder": "caddy-2.11.9",
+      "url": "https://github.com/caddyserver/caddy/releases/download/v2.11.9/caddy_2.11.9_linux_amd64.tar.gz",
+      "sha256": "5b8cb7faf8726a2028ad96a66e54e6e81e8f361bc6175e5d22bbd997cc5177fb",
+      "kind": "tar.gz",
+      "arch": "x64",
+      "note": "web server (optional feature)",
+      "recommended": true
+    },
+    {
+      "type": "caddy",
+      "version": "2.11.9",
+      "folder": "caddy-2.11.9",
+      "url": "https://github.com/caddyserver/caddy/releases/download/v2.11.9/caddy_2.11.9_linux_arm64.tar.gz",
+      "sha256": "5e377cff994fc9362a6fcf695c53f226cfca3a3ef85bd3a3687cf252d6310165",
+      "kind": "tar.gz",
+      "arch": "arm64",
+      "note": "web server (optional feature)",
+      "recommended": true
+    },
+    {
+      "type": "frankenphp",
+      "version": "1.13.5",
+      "folder": "frankenphp-1.13.5",
+      "url": "https://github.com/php/frankenphp/releases/download/v1.13.5/frankenphp-linux-x86_64",
+      "sha256": "cdb85dd2fd6c0468f53079e845c81621563024772ac400e5d1c17d0751324b71",
+      "kind": "file",
+      "fileName": "frankenphp",
+      "arch": "x64",
+      "note": "PHP built in (static)",
+      "recommended": true
+    },
+    {
+      "type": "frankenphp",
+      "version": "1.13.5",
+      "folder": "frankenphp-1.13.5",
+      "url": "https://github.com/php/frankenphp/releases/download/v1.13.5/frankenphp-linux-aarch64",
+      "sha256": "72272e9b5538b9d1cdf5bfecacc503cb3b0db8931538c81a1f2d32f3801b545e",
+      "kind": "file",
+      "fileName": "frankenphp",
+      "arch": "arm64",
+      "note": "PHP built in (static)",
+      "recommended": true
+    },
+    {
+      "type": "mysql",
+      "version": "8.4.11",
+      "folder": "mysql-8.4.11",
+      "url": "https://cdn.mysql.com/Downloads/MySQL-8.4/mysql-8.4.11-linux-glibc2.28-x86_64-minimal.tar.xz",
+      "sha256": "383f54e124d5f325d67f0c6912a8f96814eedc761a17ea30112e52fa4cc6b143",
+      "kind": "tar.xz",
+      "subdir": "mysql-8.4.11-linux-glibc2.28-x86_64-minimal",
+      "arch": "x64",
+      "tag": "LTS",
+      "note": "glibc 2.28 or newer",
+      "recommended": true
+    },
+    {
+      "type": "mysql",
+      "version": "8.4.11",
+      "folder": "mysql-8.4.11",
+      "url": "https://cdn.mysql.com/Downloads/MySQL-8.4/mysql-8.4.11-linux-glibc2.28-aarch64.tar.xz",
+      "sha256": "04b2f9791d314167a9eb83abcb476f45a7cd9e4aa88fa7a638cba40d1bc2a109",
+      "kind": "tar.xz",
+      "subdir": "mysql-8.4.11-linux-glibc2.28-aarch64",
+      "arch": "arm64",
+      "tag": "LTS",
+      "note": "glibc 2.28 or newer; full build (about 820 MB download)",
+      "recommended": true
+    },
+    {
+      "type": "redis",
+      "version": "7.4.0",
+      "folder": "redis-stack-server-7.4.0-v8",
+      "url": "https://packages.redis.io/redis-stack/redis-stack-server-7.4.0-v8.jammy.x86_64.tar.gz",
+      "sha256": "b333009ea673c8055e56496a95485ff1f4ba504dd2e1e1ee8687a831aef33715",
+      "kind": "tar.gz",
+      "subdir": "redis-stack-server-7.4.0-v8",
+      "arch": "x64",
+      "note": "Redis Stack server build by Redis Ltd (Redis 7.4; RSALv2 / SSPLv1 licence), plain redis-server without modules; built on Ubuntu 22.04 (glibc 2.35 or newer)",
+      "recommended": true
+    },
+    {
+      "type": "redis",
+      "version": "7.4.0",
+      "folder": "redis-stack-server-7.4.0-v8",
+      "url": "https://packages.redis.io/redis-stack/redis-stack-server-7.4.0-v8.jammy.arm64.tar.gz",
+      "sha256": "0098d31580e9efc77244ab80c5cacdc9923e6c7c7f9bc6ec5926367d8cc372e6",
+      "kind": "tar.gz",
+      "subdir": "redis-stack-server-7.4.0-v8",
+      "arch": "arm64",
+      "note": "Redis Stack server build by Redis Ltd (Redis 7.4; RSALv2 / SSPLv1 licence), plain redis-server without modules; built on Ubuntu 22.04 (glibc 2.35 or newer)",
+      "recommended": true
+    },
+    {
+      "type": "mariadb",
+      "version": "12.3.3",
+      "folder": "mariadb-12.3.3",
+      "url": "https://archive.mariadb.org/mariadb-12.3.3/bintar-linux-systemd-x86_64/mariadb-12.3.3-linux-systemd-x86_64.tar.gz",
+      "sha256": "a12bf7bce08a896cdd01f174f04b4ce1d5da43ec250a5e7fceb9972119514329",
+      "kind": "tar.gz",
+      "subdir": "mariadb-12.3.3-linux-systemd-x86_64",
+      "arch": "x64",
+      "tag": "newest",
+      "note": "official MariaDB binary tarball (systemd build, x86_64 only: MariaDB publishes no arm64 or macOS binaries); needs libcrypt.so.1 and libsystemd.so.0",
+      "recommended": false
+    },
+    {
+      "type": "mariadb",
+      "version": "11.8.9",
+      "folder": "mariadb-11.8.9",
+      "url": "https://archive.mariadb.org/mariadb-11.8.9/bintar-linux-systemd-x86_64/mariadb-11.8.9-linux-systemd-x86_64.tar.gz",
+      "sha256": "32f8871a2aa38b36aa418b7f4abc6fc0c6ef1ba5a45798cacb2afa52c8a6113b",
+      "kind": "tar.gz",
+      "subdir": "mariadb-11.8.9-linux-systemd-x86_64",
+      "arch": "x64",
+      "tag": "LTS",
+      "note": "official MariaDB binary tarball (systemd build, x86_64 only: MariaDB publishes no arm64 or macOS binaries); needs libcrypt.so.1 and libsystemd.so.0",
+      "recommended": true
+    },
+    {
+      "type": "mariadb",
+      "version": "11.4.13",
+      "folder": "mariadb-11.4.13",
+      "url": "https://archive.mariadb.org/mariadb-11.4.13/bintar-linux-systemd-x86_64/mariadb-11.4.13-linux-systemd-x86_64.tar.gz",
+      "sha256": "3cebf63914df3154b7cb6d548337eb2be42c773aeb641110446b72e2746cfed7",
+      "kind": "tar.gz",
+      "subdir": "mariadb-11.4.13-linux-systemd-x86_64",
+      "arch": "x64",
+      "tag": "LTS",
+      "note": "official MariaDB binary tarball (systemd build, x86_64 only: MariaDB publishes no arm64 or macOS binaries); needs libcrypt.so.1 and libsystemd.so.0",
+      "recommended": false
+    },
+    {
+      "type": "mariadb",
+      "version": "10.11.19",
+      "folder": "mariadb-10.11.19",
+      "url": "https://archive.mariadb.org/mariadb-10.11.19/bintar-linux-systemd-x86_64/mariadb-10.11.19-linux-systemd-x86_64.tar.gz",
+      "sha256": "7efb257927f31f4422f496246b32590d0b7617f3d9dd900e575de761b302d919",
+      "kind": "tar.gz",
+      "subdir": "mariadb-10.11.19-linux-systemd-x86_64",
+      "arch": "x64",
+      "tag": "LTS",
+      "note": "official MariaDB binary tarball (systemd build, x86_64 only: MariaDB publishes no arm64 or macOS binaries); needs libcrypt.so.1 and libsystemd.so.0",
+      "recommended": false
+    },
+    {
+      "type": "postgresql",
+      "version": "18.6",
+      "folder": "postgresql-18.6",
+      "url": "https://repo1.maven.org/maven2/io/zonky/test/postgres/embedded-postgres-binaries-linux-amd64/18.6.0/embedded-postgres-binaries-linux-amd64-18.6.0.jar",
+      "sha256": "008ee189eaa7ca2b58bd01dd950291e638b998392cf982297acd4779ec898ac1",
+      "kind": "zip+tar.xz",
+      "arch": "x64",
+      "note": "third-party build (Zonky embedded-postgres-binaries on Maven Central, PostgreSQL compiled from the official source, server only: no psql or pg_dump); PostgreSQL publishes no Linux binaries",
+      "recommended": true
+    },
+    {
+      "type": "postgresql",
+      "version": "18.6",
+      "folder": "postgresql-18.6",
+      "url": "https://repo1.maven.org/maven2/io/zonky/test/postgres/embedded-postgres-binaries-linux-arm64v8/18.6.0/embedded-postgres-binaries-linux-arm64v8-18.6.0.jar",
+      "sha256": "5f54e016723afa6213925a8acb939bac52944b1d348f65c7a20f0cd2928c31be",
+      "kind": "zip+tar.xz",
+      "arch": "arm64",
+      "note": "third-party build (Zonky embedded-postgres-binaries on Maven Central, PostgreSQL compiled from the official source, server only: no psql or pg_dump); PostgreSQL publishes no Linux binaries",
+      "recommended": true
+    },
+    {
+      "type": "postgresql",
+      "version": "17.11",
+      "folder": "postgresql-17.11",
+      "url": "https://repo1.maven.org/maven2/io/zonky/test/postgres/embedded-postgres-binaries-linux-amd64/17.11.0/embedded-postgres-binaries-linux-amd64-17.11.0.jar",
+      "sha256": "0dd7b72b6f335b8ecfb355fa24c5781e8a93edd09880bb77eb52ebbf29b3e96d",
+      "kind": "zip+tar.xz",
+      "arch": "x64",
+      "note": "third-party build (Zonky embedded-postgres-binaries on Maven Central, PostgreSQL compiled from the official source, server only: no psql or pg_dump); PostgreSQL publishes no Linux binaries",
+      "recommended": false
+    },
+    {
+      "type": "postgresql",
+      "version": "17.11",
+      "folder": "postgresql-17.11",
+      "url": "https://repo1.maven.org/maven2/io/zonky/test/postgres/embedded-postgres-binaries-linux-arm64v8/17.11.0/embedded-postgres-binaries-linux-arm64v8-17.11.0.jar",
+      "sha256": "8b042e0ea418b1927d95399207950da0734d27fe01e29503ade3bdc464ad4c2b",
+      "kind": "zip+tar.xz",
+      "arch": "arm64",
+      "note": "third-party build (Zonky embedded-postgres-binaries on Maven Central, PostgreSQL compiled from the official source, server only: no psql or pg_dump); PostgreSQL publishes no Linux binaries",
+      "recommended": false
+    },
+    {
+      "type": "postgresql",
+      "version": "16.15",
+      "folder": "postgresql-16.15",
+      "url": "https://repo1.maven.org/maven2/io/zonky/test/postgres/embedded-postgres-binaries-linux-amd64/16.15.0/embedded-postgres-binaries-linux-amd64-16.15.0.jar",
+      "sha256": "653abc065c682b85d3da50168fb95dc524bd85426cdec9ce3695a550ef431df2",
+      "kind": "zip+tar.xz",
+      "arch": "x64",
+      "note": "third-party build (Zonky embedded-postgres-binaries on Maven Central, PostgreSQL compiled from the official source, server only: no psql or pg_dump); PostgreSQL publishes no Linux binaries",
+      "recommended": false
+    },
+    {
+      "type": "postgresql",
+      "version": "16.15",
+      "folder": "postgresql-16.15",
+      "url": "https://repo1.maven.org/maven2/io/zonky/test/postgres/embedded-postgres-binaries-linux-arm64v8/16.15.0/embedded-postgres-binaries-linux-arm64v8-16.15.0.jar",
+      "sha256": "f846a9989d686b7977d6eca9bc9d8b2b69e3f70c7eb60e032197d9c574a6136c",
+      "kind": "zip+tar.xz",
+      "arch": "arm64",
+      "note": "third-party build (Zonky embedded-postgres-binaries on Maven Central, PostgreSQL compiled from the official source, server only: no psql or pg_dump); PostgreSQL publishes no Linux binaries",
+      "recommended": false
+    },
+    {
+      "type": "postgresql",
+      "version": "15.19",
+      "folder": "postgresql-15.19",
+      "url": "https://repo1.maven.org/maven2/io/zonky/test/postgres/embedded-postgres-binaries-linux-amd64/15.19.0/embedded-postgres-binaries-linux-amd64-15.19.0.jar",
+      "sha256": "95f0b66fe72d4ca66c815773c44cb1196ea38552463e89a35f18114b3ed1565f",
+      "kind": "zip+tar.xz",
+      "arch": "x64",
+      "note": "third-party build (Zonky embedded-postgres-binaries on Maven Central, PostgreSQL compiled from the official source, server only: no psql or pg_dump); PostgreSQL publishes no Linux binaries",
+      "recommended": false
+    },
+    {
+      "type": "postgresql",
+      "version": "15.19",
+      "folder": "postgresql-15.19",
+      "url": "https://repo1.maven.org/maven2/io/zonky/test/postgres/embedded-postgres-binaries-linux-arm64v8/15.19.0/embedded-postgres-binaries-linux-arm64v8-15.19.0.jar",
+      "sha256": "95baf4bd4af31b91b3050118df59388ed0064756b556b850669e0300aa7b9911",
+      "kind": "zip+tar.xz",
+      "arch": "arm64",
+      "note": "third-party build (Zonky embedded-postgres-binaries on Maven Central, PostgreSQL compiled from the official source, server only: no psql or pg_dump); PostgreSQL publishes no Linux binaries",
+      "recommended": false
+    },
+    {
+      "type": "postgresql",
+      "version": "14.24",
+      "folder": "postgresql-14.24",
+      "url": "https://repo1.maven.org/maven2/io/zonky/test/postgres/embedded-postgres-binaries-linux-amd64/14.24.0/embedded-postgres-binaries-linux-amd64-14.24.0.jar",
+      "sha256": "2722d05eb22c671104c9918d59d8ba9f5656898f5452a0207bb4cce21eef5dc4",
+      "kind": "zip+tar.xz",
+      "arch": "x64",
+      "note": "third-party build (Zonky embedded-postgres-binaries on Maven Central, PostgreSQL compiled from the official source, server only: no psql or pg_dump); PostgreSQL publishes no Linux binaries",
+      "recommended": false
+    },
+    {
+      "type": "postgresql",
+      "version": "14.24",
+      "folder": "postgresql-14.24",
+      "url": "https://repo1.maven.org/maven2/io/zonky/test/postgres/embedded-postgres-binaries-linux-arm64v8/14.24.0/embedded-postgres-binaries-linux-arm64v8-14.24.0.jar",
+      "sha256": "8a19b9dd0fb3cd00080e17d51ac14b5d055f352ee00568bc8c4cb3bf475b6830",
+      "kind": "zip+tar.xz",
+      "arch": "arm64",
+      "note": "third-party build (Zonky embedded-postgres-binaries on Maven Central, PostgreSQL compiled from the official source, server only: no psql or pg_dump); PostgreSQL publishes no Linux binaries",
+      "recommended": false
+    },
+    {
+      "type": "mongodb",
+      "version": "9.0.8",
+      "folder": "mongodb-9.0.8",
+      "url": "https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-ubuntu2204-9.0.8.tgz",
+      "sha256": "fdc5b3cb7b8fa653b6199854eef4a987bc0f0b7a8c5d7dd38d41e3200a39748c",
+      "kind": "tar.gz",
+      "subdir": "mongodb-linux-x86_64-ubuntu2204-9.0.8",
+      "arch": "x64",
+      "tag": "newest",
+      "note": "official MongoDB Community build for Ubuntu 22.04 (glibc 2.35 or newer; needs libcurl4 and OpenSSL 3); needs a CPU with AVX",
+      "recommended": false
+    },
+    {
+      "type": "mongodb",
+      "version": "9.0.8",
+      "folder": "mongodb-9.0.8",
+      "url": "https://fastdl.mongodb.org/linux/mongodb-linux-aarch64-ubuntu2204-9.0.8.tgz",
+      "sha256": "345a1ee1312828d6f2c9af6138c608eade9d32e1443092d16dad31c428840cf5",
+      "kind": "tar.gz",
+      "subdir": "mongodb-linux-aarch64-ubuntu2204-9.0.8",
+      "arch": "arm64",
+      "tag": "newest",
+      "note": "official MongoDB Community build for Ubuntu 22.04 (glibc 2.35 or newer; needs libcurl4 and OpenSSL 3); needs a CPU with ARMv8.2-A",
+      "recommended": false
+    },
+    {
+      "type": "mongodb",
+      "version": "8.2.12",
+      "folder": "mongodb-8.2.12",
+      "url": "https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-ubuntu2204-8.2.12.tgz",
+      "sha256": "811d2004fa772c4174ec4bbed8188da455459c02dd928d8d86ac423511cbb93e",
+      "kind": "tar.gz",
+      "subdir": "mongodb-linux-x86_64-ubuntu2204-8.2.12",
+      "arch": "x64",
+      "note": "official MongoDB Community build for Ubuntu 22.04 (glibc 2.35 or newer; needs libcurl4 and OpenSSL 3); needs a CPU with AVX",
+      "recommended": false
+    },
+    {
+      "type": "mongodb",
+      "version": "8.2.12",
+      "folder": "mongodb-8.2.12",
+      "url": "https://fastdl.mongodb.org/linux/mongodb-linux-aarch64-ubuntu2204-8.2.12.tgz",
+      "sha256": "653dcf8e27e426b983eb3160116b23b3ea04964b40d4303b9dfa3024cd797b01",
+      "kind": "tar.gz",
+      "subdir": "mongodb-linux-aarch64-ubuntu2204-8.2.12",
+      "arch": "arm64",
+      "note": "official MongoDB Community build for Ubuntu 22.04 (glibc 2.35 or newer; needs libcurl4 and OpenSSL 3); needs a CPU with ARMv8.2-A",
+      "recommended": false
+    },
+    {
+      "type": "mongodb",
+      "version": "8.0.38",
+      "folder": "mongodb-8.0.38",
+      "url": "https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-ubuntu2204-8.0.38.tgz",
+      "sha256": "760c1e5d34e694392c3f94cf417204ba7c24a157d0617f356ba74f93d5f09cd2",
+      "kind": "tar.gz",
+      "subdir": "mongodb-linux-x86_64-ubuntu2204-8.0.38",
+      "arch": "x64",
+      "tag": "LTS",
+      "note": "official MongoDB Community build for Ubuntu 22.04 (glibc 2.35 or newer; needs libcurl4 and OpenSSL 3); needs a CPU with AVX",
+      "recommended": true
+    },
+    {
+      "type": "mongodb",
+      "version": "8.0.38",
+      "folder": "mongodb-8.0.38",
+      "url": "https://fastdl.mongodb.org/linux/mongodb-linux-aarch64-ubuntu2204-8.0.38.tgz",
+      "sha256": "7748067ac32f03afd9b81297f0830f18b597d14a2212e180299f931d84a9fad7",
+      "kind": "tar.gz",
+      "subdir": "mongodb-linux-aarch64-ubuntu2204-8.0.38",
+      "arch": "arm64",
+      "tag": "LTS",
+      "note": "official MongoDB Community build for Ubuntu 22.04 (glibc 2.35 or newer; needs libcurl4 and OpenSSL 3); needs a CPU with ARMv8.2-A",
+      "recommended": true
+    },
+    {
+      "type": "mailpit",
+      "version": "1.33.1",
+      "folder": "mailpit-1.33.1",
+      "url": "https://github.com/axllent/mailpit/releases/download/v1.33.1/mailpit-linux-amd64.tar.gz",
+      "sha256": "84d7fe375ebef25df26758984dc0d5d5e17d8c0734cb2e77be7873b14ab51716",
+      "kind": "tar.gz",
+      "arch": "x64",
+      "note": "catches every mail sent by PHP",
+      "recommended": true
+    },
+    {
+      "type": "mailpit",
+      "version": "1.33.1",
+      "folder": "mailpit-1.33.1",
+      "url": "https://github.com/axllent/mailpit/releases/download/v1.33.1/mailpit-linux-arm64.tar.gz",
+      "sha256": "3c5f076cb676d6980e47da030861c6d60f1f5614103dea93cccbcdfc43198e12",
+      "kind": "tar.gz",
+      "arch": "arm64",
+      "note": "catches every mail sent by PHP",
+      "recommended": true
+    },
+    {
+      "type": "cloudflared",
+      "version": "2026.10.7",
+      "folder": "cloudflared-2026.10.7",
+      "url": "https://github.com/cloudflare/cloudflared/releases/download/2026.10.7/cloudflared-linux-amd64",
+      "sha256": "1f99fb518b83dec2ba8d870a7cc991d82a77e6196295a3d2754ba17ab9f91872",
+      "kind": "file",
+      "fileName": "cloudflared",
+      "arch": "x64",
+      "note": "share a site on the internet",
+      "recommended": true
+    },
+    {
+      "type": "cloudflared",
+      "version": "2026.10.7",
+      "folder": "cloudflared-2026.10.7",
+      "url": "https://github.com/cloudflare/cloudflared/releases/download/2026.10.7/cloudflared-linux-arm64",
+      "sha256": "3df43aedc9ff291d1735b5cb576cb97e0b157488796db2e32b28aecabb445775",
+      "kind": "file",
+      "fileName": "cloudflared",
+      "arch": "arm64",
+      "note": "share a site on the internet",
+      "recommended": true
+    },
+    {
+      "type": "nodejs",
+      "version": "24.22.3",
+      "folder": "node-v24.22.3-linux-x64",
+      "url": "https://nodejs.org/dist/v24.22.3/node-v24.22.3-linux-x64.tar.xz",
+      "sha256": "4f2b175a6d53a5c617a80dba2676238a0688cef28c6da4eba35c7d844e66fcfb",
+      "kind": "tar.xz",
+      "subdir": "node-v24.22.3-linux-x64",
+      "arch": "x64",
+      "tag": "LTS",
+      "recommended": true
+    },
+    {
+      "type": "nodejs",
+      "version": "24.22.3",
+      "folder": "node-v24.22.3-linux-arm64",
+      "url": "https://nodejs.org/dist/v24.22.3/node-v24.22.3-linux-arm64.tar.xz",
+      "sha256": "6e51a2ada00f0011cc266f65d98922b403d7ad88f809ca2aa615a5fe1ce6e86c",
+      "kind": "tar.xz",
+      "subdir": "node-v24.22.3-linux-arm64",
+      "arch": "arm64",
+      "tag": "LTS",
+      "recommended": true
+    },
+    {
+      "type": "nodejs",
+      "version": "26.13.1",
+      "folder": "node-v26.13.1-linux-x64",
+      "url": "https://nodejs.org/dist/v26.13.1/node-v26.13.1-linux-x64.tar.xz",
+      "sha256": "5c063e46bab0fbc1c17cc445d7ff129cbdcd0471be6ed83b6ab864f8143bc864",
+      "kind": "tar.xz",
+      "subdir": "node-v26.13.1-linux-x64",
+      "arch": "x64",
+      "tag": "current"
+    },
+    {
+      "type": "nodejs",
+      "version": "26.13.1",
+      "folder": "node-v26.13.1-linux-arm64",
+      "url": "https://nodejs.org/dist/v26.13.1/node-v26.13.1-linux-arm64.tar.xz",
+      "sha256": "89e1853138db51e8b82d3e98ba9c0d3f2956a28e5e55ea1b7e12d25aae92d5dd",
+      "kind": "tar.xz",
+      "subdir": "node-v26.13.1-linux-arm64",
+      "arch": "arm64",
+      "tag": "current"
+    },
+    {
+      "type": "nodejs",
+      "version": "22.23.5",
+      "folder": "node-v22.23.5-linux-x64",
+      "url": "https://nodejs.org/dist/v22.23.5/node-v22.23.5-linux-x64.tar.xz",
+      "sha256": "cdeb8670a0c81f51b4dc4ac61919f9b1ad917b304bf8221eb939570663d240f8",
+      "kind": "tar.xz",
+      "subdir": "node-v22.23.5-linux-x64",
+      "arch": "x64",
+      "tag": "LTS"
+    },
+    {
+      "type": "nodejs",
+      "version": "22.23.5",
+      "folder": "node-v22.23.5-linux-arm64",
+      "url": "https://nodejs.org/dist/v22.23.5/node-v22.23.5-linux-arm64.tar.xz",
+      "sha256": "2babb9eb5264860d540849f4b064a6fbdebcdc323657d9d382ce23d313fd5e09",
+      "kind": "tar.xz",
+      "subdir": "node-v22.23.5-linux-arm64",
+      "arch": "arm64",
+      "tag": "LTS"
+    },
+    {
+      "type": "adminer",
+      "version": "6.1.2",
+      "folder": "adminer-6.1.2",
+      "url": "https://github.com/vrana/adminer/releases/download/v6.1.2/adminer-6.1.2.php",
+      "kind": "file",
+      "fileName": "index.php",
+      "note": "http://localhost/adminer",
+      "recommended": true,
+      "sha256": "b32316156bd18ffa99c1a27617142c2e5ad72260e37f15da4e9937a3dbb15f57"
+    },
+    {
+      "type": "adminer",
+      "version": "6.0.2",
+      "folder": "adminer-6.0.2",
+      "url": "https://github.com/vrana/adminer/releases/download/v6.0.2/adminer-6.0.2.php",
+      "kind": "file",
+      "fileName": "index.php",
+      "sha256": "2d8d813523b84df7bcdfcba341845c740060c0c7974d1a1fdd676b98539847fc"
+    },
+    {
+      "type": "adminer",
+      "version": "5.4.1",
+      "folder": "adminer-5.4.1",
+      "url": "https://github.com/vrana/adminer/releases/download/v5.4.1/adminer-5.4.1.php",
+      "kind": "file",
+      "fileName": "index.php",
+      "sha256": "3f65364b4cc96b5e4cae1b3e448b7b6fa42b0da1eeba78bed9b3774ade830fce"
+    },
+    {
+      "type": "adminer",
+      "version": "4.8.1",
+      "folder": "adminer-4.8.1",
+      "url": "https://github.com/vrana/adminer/releases/download/v4.8.1/adminer-4.8.1.php",
+      "kind": "file",
+      "fileName": "index.php",
+      "note": "PHP 5 - 8.2",
+      "sha256": "2fd7e6d8f987b243ab1839249551f62adce19704c47d3d0c8dd9e57ea5b9c6b3"
+    },
+    {
+      "type": "phpmyadmin",
+      "version": "5.2.3",
+      "folder": "phpMyAdmin-5.2.3",
+      "url": "https://files.phpmyadmin.net/phpMyAdmin/5.2.3/phpMyAdmin-5.2.3-all-languages.zip",
+      "note": "http://localhost/phpmyadmin",
+      "recommended": true,
+      "sha256": "2d2e13c735366d318425c78e4ee2cc8fc648d77faba3ddea2cd516e43885733f"
+    },
+    {
+      "type": "phpmyadmin",
+      "version": "5.2.2",
+      "folder": "phpMyAdmin-5.2.2",
+      "url": "https://files.phpmyadmin.net/phpMyAdmin/5.2.2/phpMyAdmin-5.2.2-all-languages.zip",
+      "sha256": "6b99534f72ffb1d7275f50d23ca4141e1495c97d7cadb73a41d6dc580ed5ce29"
+    },
+    {
+      "type": "phpmyadmin",
+      "version": "4.9.11",
+      "folder": "phpMyAdmin-4.9.11",
+      "url": "https://files.phpmyadmin.net/phpMyAdmin/4.9.11/phpMyAdmin-4.9.11-all-languages.zip",
+      "note": "PHP 5.5 - 7.4",
+      "sha256": "d17c762d312b85ae3a8a2c452633372f686502c7c2682f9ef0e8a844fa0ff1b0"
+    },
+    {
+      "type": "composer",
+      "version": "2.11.2",
+      "folder": "composer-2.11.2",
+      "url": "https://getcomposer.org/download/2.11.2/composer.phar",
+      "sha256": "dd158c0afd41d15fac89e1b4e47b5d42911fe316c3687cd5edac98319b25d028",
+      "kind": "file",
+      "fileName": "composer.phar",
+      "recommended": true
+    },
+    {
+      "type": "composer",
+      "version": "2.2.32 LTS",
+      "folder": "composer-2.2.32",
+      "url": "https://getcomposer.org/download/2.2.32/composer.phar",
+      "sha256": "241a3d13b7c6d35d970b1f69a000298b66943541302148a438a932f5dd44a9fc",
+      "kind": "file",
+      "fileName": "composer.phar",
+      "note": "for PHP 5.3 - 7.1 projects"
+    },
+    {
+      "type": "wpcli",
+      "version": "2.12.0",
+      "folder": "wp-cli-2.12.0",
+      "url": "https://github.com/wp-cli/wp-cli/releases/download/v2.12.0/wp-cli-2.12.0.phar",
+      "sha256": "ce34ddd838f7351d6759068d09793f26755463b4a4610a5a5c0a97b68220d85c",
+      "kind": "file",
+      "fileName": "wp-cli.phar",
+      "note": "used for one-click WordPress",
+      "recommended": true
+    },
+    {
+      "type": "apache",
+      "version": "2.4.71",
+      "folder": "httpd-2.4.71",
+      "url": "https://github.com/erdemsoftware/portly-builds/releases/download/httpd-2.4.71/httpd-2.4.71-linux-arm64.tar.gz",
+      "sha256": "b237f7cac4b0735bc1b732be3c6d61f19f5ab28e3a1025941e10810b64b9c448",
+      "kind": "tar.gz",
+      "arch": "arm64",
+      "minGlibc": "2.34",
+      "note": "built by Portly (mod_ssl, mod_http2, mod_proxy_fcgi, mod_rewrite)",
+      "recommended": true
+    },
+    {
+      "type": "apache",
+      "version": "2.4.71",
+      "folder": "httpd-2.4.71",
+      "url": "https://github.com/erdemsoftware/portly-builds/releases/download/httpd-2.4.71/httpd-2.4.71-linux-x64.tar.gz",
+      "sha256": "432ca64aa65b5d7e98b877c4389ec7b3c30808e92b50c922f5e15410f2127234",
+      "kind": "tar.gz",
+      "arch": "x64",
+      "minGlibc": "2.34",
+      "note": "built by Portly (mod_ssl, mod_http2, mod_proxy_fcgi, mod_rewrite)",
+      "recommended": true
+    },
+    {
+      "type": "nginx",
+      "version": "1.30.6",
+      "folder": "nginx-1.30.6",
+      "url": "https://github.com/erdemsoftware/portly-builds/releases/download/nginx-1.30.6/nginx-1.30.6-linux-arm64.tar.gz",
+      "sha256": "318591cc1965283edfb88830a9a29d752273e8fdb2eed1cc60b927ae6de90d30",
+      "kind": "tar.gz",
+      "arch": "arm64",
+      "minGlibc": "2.34",
+      "note": "built by Portly (OpenSSL, HTTP/2 and HTTP/3, no system libraries needed)",
+      "recommended": true
+    },
+    {
+      "type": "nginx",
+      "version": "1.30.6",
+      "folder": "nginx-1.30.6",
+      "url": "https://github.com/erdemsoftware/portly-builds/releases/download/nginx-1.30.6/nginx-1.30.6-linux-x64.tar.gz",
+      "sha256": "028cb7f3614f1cf9ceda5df39120f8cbde084b48a17949c768de911db813f5e3",
+      "kind": "tar.gz",
+      "arch": "x64",
+      "minGlibc": "2.34",
+      "note": "built by Portly (OpenSSL, HTTP/2 and HTTP/3, no system libraries needed)",
+      "recommended": true
+    },
+    {
+      "type": "memcached",
+      "version": "1.6.45",
+      "folder": "memcached-1.6.45",
+      "url": "https://github.com/erdemsoftware/portly-builds/releases/download/memcached-1.6.45/memcached-1.6.45-linux-arm64.tar.gz",
+      "sha256": "1ddeb99a65b5a27c290e9ee3ac9e47e5e42ee0e71bbb3c98d21930e3edcba035",
+      "kind": "tar.gz",
+      "arch": "arm64",
+      "minGlibc": "2.34",
+      "note": "built by Portly",
+      "recommended": true
+    },
+    {
+      "type": "memcached",
+      "version": "1.6.45",
+      "folder": "memcached-1.6.45",
+      "url": "https://github.com/erdemsoftware/portly-builds/releases/download/memcached-1.6.45/memcached-1.6.45-linux-x64.tar.gz",
+      "sha256": "7ad1e8052f4480928caf05023cdd6614adb7b64935edef9a181b244244abb7fa",
+      "kind": "tar.gz",
+      "arch": "x64",
+      "minGlibc": "2.34",
+      "note": "built by Portly",
+      "recommended": true
+    }
+  ]
+}

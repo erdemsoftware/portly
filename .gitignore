@@ -3,6 +3,8 @@ build/
 dist/
 obj/
 **/obj/
+src/**/bin/
+tests/**/bin/
 *.user
 .vs/
 .vscode/
@@ -13,3 +15,9 @@ portable/
 
 # private keys kept next to the sources, never committed
 secrets/
+
+# local previews and screenshots
+.onizleme/
+
+# UI test screenshots
+ui-shots/

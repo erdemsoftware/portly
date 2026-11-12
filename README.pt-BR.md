@@ -58,9 +58,25 @@ Portly executa Apache ou Nginx, PHP, MySQL ou MariaDB, PostgreSQL, MongoDB, Redi
 |---|---|---|---|
 | `Portly-x.y.z-win10-11.zip` | 10 / 11 (64 bits) | **Sim**: aplicativo + catálogo de pacotes | Mais recentes: PHP 8.5, MySQL 8.4 LTS / 26.x, Apache 2.4, Node 24 LTS ... |
 | `Portly-x.y.z-win7-8.zip` (Legacy) | 7 SP1 / 8 / 8.1 (64 bits) | **Não** (catálogo congelado) | Últimas versões que rodam no Windows 7: PHP 8.2, MySQL 5.7, Apache 2.4 VS16, Node 13 |
-| macOS / Linux | — | — | **Em breve.** A exportação de configurações já é independente de plataforma. Dê uma estrela no repositório ou faça uma doação para ajudar a acontecer. |
+| macOS / Linux | — | — | **Beta**: veja [Portly 2 beta](#portly-2-beta) abaixo. |
 
 A edição Legacy precisa do .NET Framework 4.8 (já incluído no Windows 10 / 11).
+
+<a id="portly-2-beta"></a>
+
+## Portly 2 beta: macOS, Linux e um novo aplicativo para Windows
+
+O Portly 2 roda em **macOS (Apple Silicon e Intel), Linux (x64 e arm64) e Windows 10 / 11**, com o mesmo número de versão em todos. Está em beta: o Portly 1.x continua sendo a versão estável e não é atualizado para esta automaticamente.
+
+- **macOS / Linux**, uma linha, sem sudo (verificado por SHA-256; macOS: `/Applications/Portly.app`, Linux: `~/.local/share/portly`):
+
+  ```sh
+  curl -fsSL https://raw.githubusercontent.com/erdemsoftware/portly/main/tools/install.sh | sh
+  ```
+
+  Ou baixe o `.dmg`, `.AppImage`, `.deb` ou `.tar.gz` em [Releases](https://github.com/erdemsoftware/portly/releases).
+- **Windows 10 / 11**: `Portly-2.x.y-beta.n-windows-x64.zip` da mesma página, descompactado em uma nova pasta.
+- No macOS / Linux: PHP com Xdebug, Caddy, Apache, Nginx, MySQL, MariaDB, PostgreSQL, MongoDB, Redis, Memcached, Mailpit e Node.js em `~/Portly`; os projetos abrem em `https://nome.localhost`.
 
 ## Início rápido
 

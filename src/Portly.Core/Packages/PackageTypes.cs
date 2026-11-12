@@ -1,0 +1,202 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text.RegularExpressions;
+using Portly.Core;
+
+namespace Portly.Packages
+{
+    public class PackageType
+    {
+        public string Id;
+        public string Name;
+        /// <summary>Group in the packages window: web, php, db, dbtool, cache, mail, runtime, dev, share.</summary>
+        public string Category = "";
+        /// <summary>File that proves a version folder is a valid installation (relative to the folder).</summary>
+        public string DetectFile
+        {
+            get { return _detect; }
+            set { _detect = OS.IsWindows ? value : PackageTypes.UnixPath(value); }
+        }
+        string _detect;
+        /// <summary>Folders added to PATH for the terminal (relative to the version folder).</summary>
+        public string[] PathDirs = new[] { "" };
+        /// <summary>Optional feature id (Core/Features.cs): the type is listed only while that feature is on.</summary>
+        public string Feature = "";
+    }
+
+    /// <summary>Package kinds Portly knows how to install and use.</summary>
+    public static class PackageTypes
+    {
+        /// <summary>Category order in the packages window (title key: "pkgcat." + id).</summary>
+        public static readonly string[] Categories = { "web", "php", "db", "dbtool", "cache", "mail", "runtime", "dev", "share" };
+
+        /// <summary>Types grouped by category, in display order.</summary>
+        public static IEnumerable<PackageType> Ordered
+        {
+            get
+            {
+                var shown = All.Where(t => t.Feature == "" || Features.IsOn(t.Feature)).ToList();
+                // macOS / Linux: only what their catalog offers (no Windows-only tools)
+                if (!OS.IsWindows && Catalog.Entries.Count > 0) shown = shown.Where(t => Catalog.Entries.Any(e => e.Type == t.Id)).ToList();
+                return Categories.SelectMany(c => shown.Where(t => t.Category == c)).Concat(shown.Where(t => !Categories.Contains(t.Category)));
+            }
+        }
+
+        public static readonly List<PackageType> All = new List<PackageType>
+        {
+            new PackageType { Id = "apache", Category = "web",     Name = "Apache",     DetectFile = @"bin\httpd.exe",   PathDirs = new[] { "bin" } },
+            new PackageType { Id = "nginx", Category = "web",      Name = "Nginx",      DetectFile = "nginx.exe" },
+            new PackageType { Id = "caddy", Category = "web",      Name = "Caddy",      DetectFile = "caddy.exe",        PathDirs = new string[0], Feature = "caddy" },
+            // its folder has its own php.exe: never on PATH, so it cannot shadow the chosen PHP version
+            new PackageType { Id = "frankenphp", Category = "php", Name = "FrankenPHP", DetectFile = "frankenphp.exe",   PathDirs = new string[0], Feature = "frankenphp" },
+            new PackageType { Id = "php", Category = "php",        Name = "PHP",        DetectFile = "php-cgi.exe" },
+            new PackageType { Id = "mysql", Category = "db",      Name = "MySQL",      DetectFile = @"bin\mysqld.exe",  PathDirs = new[] { "bin" } },
+            new PackageType { Id = "nodejs", Category = "runtime",     Name = "Node.js",    DetectFile = "node.exe" },
+            new PackageType { Id = "redis", Category = "cache",      Name = "Redis",      DetectFile = "redis-server.exe" },
+            new PackageType { Id = "mailpit", Category = "mail",    Name = "Mailpit",    DetectFile = "mailpit.exe" },
+            new PackageType { Id = "mailhog", Category = "mail",    Name = "MailHog",    DetectFile = "MailHog.exe",      PathDirs = new string[0] },
+            new PackageType { Id = "smtp4dev", Category = "mail",   Name = "smtp4dev",   DetectFile = "Rnwood.Smtp4dev.exe", PathDirs = new string[0] },
+            new PackageType { Id = "cloudflared", Category = "share", Name = "Cloudflare Tunnel", DetectFile = "cloudflared.exe", PathDirs = new string[0] },
+            // Java web apps: Tomcat runs on the active Java (Temurin JRE / JDK)
+            new PackageType { Id = "tomcat", Category = "web",     Name = "Apache Tomcat", DetectFile = @"bin\bootstrap.jar", PathDirs = new string[0], Feature = "tomcat" },
+            new PackageType { Id = "java", Category = "runtime",   Name = "Java (Temurin)", DetectFile = @"bin\java.exe",   PathDirs = new[] { "bin" } },
+            // more databases and caches
+            new PackageType { Id = "mariadb", Category = "db",    Name = "MariaDB",    DetectFile = @"bin\mysqld.exe",  PathDirs = new[] { "bin" } },
+            new PackageType { Id = "postgresql", Category = "db", Name = "PostgreSQL", DetectFile = @"bin\postgres.exe", PathDirs = new[] { "bin" } },
+            new PackageType { Id = "mongodb", Category = "db",    Name = "MongoDB",    DetectFile = @"bin\mongod.exe",  PathDirs = new[] { "bin" } },
+            new PackageType { Id = "memcached", Category = "cache",  Name = "Memcached",  DetectFile = @"bin\memcached.exe", PathDirs = new string[0] },
+            // database GUIs
+            new PackageType { Id = "phpmyadmin", Category = "dbtool", Name = "phpMyAdmin", DetectFile = "index.php",        PathDirs = new string[0] },
+            new PackageType { Id = "adminer", Category = "dbtool",    Name = "Adminer",    DetectFile = "index.php",        PathDirs = new string[0] },
+            new PackageType { Id = "heidisql", Category = "dbtool",   Name = "HeidiSQL",   DetectFile = "heidisql.exe",     PathDirs = new string[0] },
+            new PackageType { Id = "dbeaver", Category = "dbtool",    Name = "DBeaver",    DetectFile = "dbeaver.exe",      PathDirs = new string[0] },
+            new PackageType { Id = "beekeeper", Category = "dbtool",  Name = "Beekeeper Studio", DetectFile = "Beekeeper-Studio.exe", PathDirs = new string[0] },
+            new PackageType { Id = "dbgate", Category = "dbtool",     Name = "DbGate",     DetectFile = "DbGate.exe",       PathDirs = new string[0] },
+            new PackageType { Id = "sqlite", Category = "db",     Name = "SQLite tools", DetectFile = "sqlite3.exe" },
+            new PackageType { Id = "sqlitebrowser", Category = "dbtool", Name = "DB Browser for SQLite", DetectFile = "DB Browser for SQLite.exe", PathDirs = new string[0] },
+            // developer tools and runtimes
+            new PackageType { Id = "git", Category = "dev",        Name = "Git",        DetectFile = @"cmd\git.exe",     PathDirs = new[] { "cmd" } },
+            new PackageType { Id = "vscode", Category = "dev",     Name = "VS Code",    DetectFile = "Code.exe",         PathDirs = new[] { "bin" } },
+            new PackageType { Id = "notepadpp", Category = "dev",  Name = "Notepad++",  DetectFile = "notepad++.exe",    PathDirs = new string[0] },
+            new PackageType { Id = "python", Category = "runtime",     Name = "Python",     DetectFile = "python.exe" },
+            new PackageType { Id = "go", Category = "runtime",         Name = "Go",         DetectFile = @"bin\go.exe",      PathDirs = new[] { "bin" } },
+            new PackageType { Id = "bun", Category = "runtime",        Name = "Bun",        DetectFile = "bun.exe" },
+            new PackageType { Id = "deno", Category = "runtime",       Name = "Deno",       DetectFile = "deno.exe" },
+            new PackageType { Id = "wpcli", Category = "php",      Name = "WP-CLI",     DetectFile = "wp-cli.phar" },
+            new PackageType { Id = "composer", Category = "php",   Name = "Composer",   DetectFile = "composer.phar" },
+        };
+
+        /// <summary>macOS / Linux layout: no ".exe", "/" instead of "\\" ("bin\mysqld.exe" -> "bin/mysqld"). Windows values stay as written.</summary>
+        internal static string UnixPath(string path)
+        {
+            if (string.IsNullOrEmpty(path)) return path;
+            path = path.Replace('\\', '/');
+            return path.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) ? path.Substring(0, path.Length - 4) : path;
+        }
+
+        static PackageTypes()
+        {
+            if (OS.IsWindows) return;
+            // per-type layout of the macOS / Linux builds (static-php: php-fpm and php at the folder root, Node.js: bin/node)
+            Get("php").DetectFile = "php-fpm";
+            Get("nodejs").DetectFile = "bin/node";
+            Get("nodejs").PathDirs = new[] { "bin" };
+            // Redis Stack server builds: bin/redis-server and bin/redis-cli (Windows builds keep them in the folder root)
+            Get("redis").DetectFile = "bin/redis-server";
+            Get("redis").PathDirs = new[] { "bin" };
+            // Portly's own builds: nginx/nginx + conf/, bin/httpd + modules/ + conf/ (Apache), memcached/memcached (program at the folder root)
+            Get("memcached").DetectFile = "memcached";
+        }
+
+        /// <summary>
+        /// Folder of a type's programs relative to the version folder: "" (php, caddy, mailpit ...) or "bin" (mysql, and nodejs
+        /// on macOS / Linux). It is the folder of the detect file.
+        /// </summary>
+        public static string ExeDir(string type)
+        {
+            var d = Get(type).DetectFile;
+            if (string.IsNullOrEmpty(d)) return "";
+            var i = Math.Max(d.LastIndexOf('/'), d.LastIndexOf('\\'));
+            return i < 0 ? "" : d.Substring(0, i);
+        }
+
+        /// <summary>
+        /// Full path of a program of a version folder on this OS: Exe("php", folder, "php-fpm") is php-fpm.exe next to
+        /// php-cgi.exe on Windows and &lt;folder&gt;/php-fpm on macOS / Linux; Exe("mysql", folder, "mysqld") is in bin.
+        /// </summary>
+        public static string Exe(string type, string folder, string name)
+        {
+            return Path.Combine(Paths.BinOf(type), folder, ExeDir(type), OS.Exe(name));
+        }
+
+        /// <summary>Exe() of the active version, or null when the type is not installed.</summary>
+        public static string ActiveExe(string type, string name)
+        {
+            var f = ActiveFolder(type);
+            return f == "" ? null : Exe(type, f, name);
+        }
+
+        public static PackageType Get(string id)
+        {
+            return All.FirstOrDefault(t => t.Id == id) ?? new PackageType { Id = id, Name = id, DetectFile = "" };
+        }
+
+        /// <summary>Installed version folders of a type, newest first.</summary>
+        public static List<string> Installed(string type)
+        {
+            var dir = Paths.BinOf(type);
+            var t = Get(type);
+            if (!Directory.Exists(dir)) return new List<string>();
+            return Directory.GetDirectories(dir)
+                .Select(Path.GetFileName)
+                .Where(f => !f.StartsWith(".") && (t.DetectFile == "" || File.Exists(Path.Combine(dir, f, t.DetectFile))))
+                .OrderByDescending(ParseVersion)
+                .ThenByDescending(f => f)
+                .ToList();
+        }
+
+        /// <summary>The active version folder name ("" when nothing is installed).</summary>
+        public static string ActiveFolder(string type)
+        {
+            var installed = Installed(type);
+            var chosen = Settings.Current.GetVersion(type);
+            if (chosen != "" && installed.Contains(chosen, StringComparer.OrdinalIgnoreCase)) return chosen;
+            return installed.FirstOrDefault() ?? "";
+        }
+
+        /// <summary>Full path of the active version, or null.</summary>
+        public static string ActiveDir(string type)
+        {
+            var f = ActiveFolder(type);
+            return f == "" ? null : Path.Combine(Paths.BinOf(type), f);
+        }
+
+        static readonly Regex VersionRx = new Regex(@"(\d+)\.(\d+)(?:\.(\d+))?(?:\.(\d+))?");
+
+        public static Version ParseVersion(string text)
+        {
+            var m = VersionRx.Match(text ?? "");
+            if (!m.Success) return new Version(0, 0);
+            int a = int.Parse(m.Groups[1].Value), b = int.Parse(m.Groups[2].Value);
+            int c = m.Groups[3].Success ? int.Parse(m.Groups[3].Value) : 0;
+            int d = m.Groups[4].Success ? int.Parse(m.Groups[4].Value) : 0;
+            return new Version(a, b, c, d);
+        }
+
+        /// <summary>"8.4" for "php-8.4.27-nts-Win32-vs17-x64".</summary>
+        public static string Branch(string text)
+        {
+            var v = ParseVersion(text);
+            return v.Major + "." + v.Minor;
+        }
+
+        /// <summary>Short label for the UI, e.g. "8.5.12" or "8.4.11".</summary>
+        public static string Label(string folder)
+        {
+            var m = VersionRx.Match(folder ?? "");
+            return m.Success ? m.Value : folder;
+        }
+    }
+}

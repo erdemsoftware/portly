@@ -289,11 +289,7 @@ namespace Portly.UI
             }
         }
 
-        public static string FormatBytes(long b)
-        {
-            if (b < 1024 * 1024) return (b / 1024) + " KB";
-            return (b / 1048576.0).ToString("0.0") + " MB";
-        }
+        public static string FormatBytes(long b) { return Units.Bytes(b); }
     }
 
     /// <summary>Combo item with display text and a value.</summary>

@@ -97,7 +97,7 @@ namespace Portly.UI
             {
                 // whole pixels per module: sharp edges for the camera
                 var qr = QrCode.Encode(url);
-                _pic.Image = qr.ToBitmap(Math.Max(2, _pic.Width / (qr.Size + 8)));
+                _pic.Image = ToBitmap(qr, Math.Max(2, _pic.Width / (qr.Size + 8)));
             }
             catch { _pic.Image = null; }
             if (old != null) old.Dispose();
@@ -117,6 +117,21 @@ namespace Portly.UI
                 d.StartPosition = f != null && f.Visible ? FormStartPosition.CenterParent : FormStartPosition.CenterScreen;
                 d.ShowDialog(owner);
             }
+        }
+
+        /// <summary>Black on white with a 4-module quiet zone, <paramref name="scale"/> pixels per module.</summary>
+        static Bitmap ToBitmap(QrCode qr, int scale)
+        {
+            int border = 4, px = (qr.Size + border * 2) * scale;
+            var bmp = new Bitmap(px, px);
+            using (var g = Graphics.FromImage(bmp))
+            {
+                g.Clear(Color.White);
+                for (int y = 0; y < qr.Size; y++)
+                    for (int x = 0; x < qr.Size; x++)
+                        if (qr[x, y]) g.FillRectangle(Brushes.Black, (x + border) * scale, (y + border) * scale, scale, scale);
+            }
+            return bmp;
         }
     }
 }
