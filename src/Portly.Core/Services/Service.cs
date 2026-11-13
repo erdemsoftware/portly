@@ -133,7 +133,7 @@ namespace Portly.Services
                 // served pages while Portly waited 30 s and gave up). After 2 s a local connect, once a second, decides.
                 if (DateTime.Now >= nextConnect)
                 {
-                    if (ProcessUtil.CanConnect(port))
+                    if (await Task.Run(() => ProcessUtil.CanConnect(port))) // a refused connect can take a moment on Windows: not on the UI thread
                     {
                         Log.Info("Port " + port + ": open (local connection) after " + (int)(DateTime.Now - start).TotalSeconds + " s, although the listener table does not list it yet.");
                         return true;
@@ -142,7 +142,7 @@ namespace Portly.Services
                 }
                 await Task.Delay(150);
             }
-            return ProcessUtil.IsPortInUse(port) || ProcessUtil.CanConnect(port);
+            return ProcessUtil.IsPortInUse(port) || await Task.Run(() => ProcessUtil.CanConnect(port));
         }
 
         /// <summary>
