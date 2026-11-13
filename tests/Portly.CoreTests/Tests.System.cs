@@ -60,6 +60,20 @@ namespace Portly.CoreTests
             Check("hosts: empty list leaves no block", !HostsFile.ApplyBlock(text, new string[0]).Contains("127.0.0.1\tshop.test"));
             Check("hosts: *.localhost needs no entry", !HostsFile.NeedsEntry("shop.localhost") && !HostsFile.NeedsEntry("localhost") && HostsFile.NeedsEntry("shop.test"));
             Check("hosts: file path of this OS", OS.IsWindows ? HostsFile.FilePath.EndsWith("hosts") && HostsFile.FilePath.Contains("drivers") : HostsFile.FilePath == "/etc/hosts", HostsFile.FilePath);
+
+            // several Portly folders share the hosts file: each one changes only its own block
+            Check("hosts: block id is 8 hex digits", System.Text.RegularExpressions.Regex.IsMatch(HostsFile.Id, "^[0-9a-f]{8}$"), HostsFile.Id);
+            var other = HostsFile.ApplyBlock(original, new[] { "other.portly" }, "00000000");
+            var both = HostsFile.ApplyBlock(other, new[] { "shop.test" });
+            Check("hosts: another Portly's block is kept", both.Contains("127.0.0.1\tother.portly") && both.Contains("127.0.0.1\tshop.test"));
+            Check("hosts: emptying ours keeps the other block", HostsFile.ApplyBlock(both, new string[0]).Contains("127.0.0.1\tother.portly") && !HostsFile.ApplyBlock(both, new string[0]).Contains("shop.test"));
+            // Portly 1.x wrote a block without an id
+            var legacy = original + nl + "# >>> Portly (auto-generated, do not edit) >>>" + nl + "127.0.0.1\tshop.portly" + nl + "127.0.0.1\tblog.portly" + nl + "# <<< Portly <<<" + nl;
+            Check("hosts: 1.x block kept when we write no names (2.0 beta next to 1.x)", HostsFile.ApplyBlock(legacy, new string[0]) == legacy);
+            var notOurs = HostsFile.ApplyBlock(legacy, new[] { "shop.test" });
+            Check("hosts: 1.x block with other names kept", notOurs.Contains("127.0.0.1\tshop.portly") && notOurs.Contains("127.0.0.1\tblog.portly") && notOurs.Contains("127.0.0.1\tshop.test"));
+            var takenOver = HostsFile.ApplyBlock(legacy, new[] { "shop.portly", "blog.portly", "new.portly" });
+            Check("hosts: 1.x block taken over when we write all its names (1.x updated in place)", !takenOver.Contains("# >>> Portly (auto-generated") && takenOver.Split(new[] { "127.0.0.1\tshop.portly" }, StringSplitOptions.None).Length == 2 && takenOver.Contains("127.0.0.1\tnew.portly") && takenOver.Contains("# my own line"));
             try { Directory.Delete(dir, true); } catch { }
         }
 
