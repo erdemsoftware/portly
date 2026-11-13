@@ -295,7 +295,10 @@ namespace Portly.Desktop.Forms
 
         PackageEntry PreviewUpdate(PkgRow r)
         {
-            return r.Type == "php" ? Catalog.ForType("php").Skip(1).FirstOrDefault() : null;
+            // screenshots: show an update only where a newer build exists ("8.5.12 - update: 8.4.27" looked like a downgrade)
+            if (r.Type != "php") return null;
+            var cur = PackageTypes.ParseVersion(r.Folder);
+            return Catalog.ForType("php").FirstOrDefault(e => PackageTypes.ParseVersion(e.Version) > cur && PackageTypes.Branch(e.Version) == PackageTypes.Branch(r.Folder));
         }
 
         void Select(Line l)
