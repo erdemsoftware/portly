@@ -108,9 +108,12 @@ namespace Portly.CoreTests
             Check("port in use is seen", ProcessUtil.IsPortInUse(port), port.ToString());
             var owner = ProcessUtil.PortOwnerInfo(port);
             Check("port owner is this process", owner != null && owner.Pid == Environment.ProcessId, owner == null ? "null" : owner.Pid + " " + owner.Name);
+            // the second opinion WaitForPort uses when the listener table misses an open port (issue #3)
+            Check("open port accepts a local connection", ProcessUtil.CanConnect(port), port.ToString());
             l.Stop();
             System.Threading.Thread.Sleep(300);
             Check("free port is free", !ProcessUtil.IsPortInUse(port));
+            Check("free port refuses a local connection", !ProcessUtil.CanConnect(port), port.ToString());
             int free = ProcessUtil.FreePort(new[] { port }, new List<int>());
             Check("FreePort picks a free one", free > 0, free.ToString());
         }

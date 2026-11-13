@@ -193,11 +193,20 @@ namespace Portly.Core
                 return IPGlobalProperties.GetIPGlobalProperties().GetActiveTcpListeners().Any(ep => ep.Port == port);
             }
             catch (PlatformNotSupportedException) { return CanConnect(port); }
-            catch { return false; }
+            catch (Exception ex)
+            {
+                // the listener table could not be read (seen on some Windows PCs): a local connect still tells the truth
+                if (!_tableErrorLogged) { _tableErrorLogged = true; Log.Warn("Port check: the listener table could not be read (" + ex.Message + "); a local connection is tried instead."); }
+                return CanConnect(port);
+            }
         }
+        static bool _tableErrorLogged;
 
-        /// <summary>macOS has no listener table in .NET: something listens when a local connect succeeds.</summary>
-        static bool CanConnect(int port)
+        /// <summary>
+        /// Something accepts connections on 127.0.0.1 / ::1 at this port. macOS has no listener table in .NET, and on
+        /// Windows it is the second opinion when the table does not show a port that is in fact open.
+        /// </summary>
+        public static bool CanConnect(int port)
         {
             foreach (var ip in new[] { IPAddress.Loopback, IPAddress.IPv6Loopback })
             {
