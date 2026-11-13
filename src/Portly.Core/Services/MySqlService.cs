@@ -170,12 +170,22 @@ namespace Portly.Services
             {
                 var log = Path.Combine(Paths.Logs, "mysql-error.log");
                 if (!File.Exists(log)) return "";
-                var tail = string.Join("\n", File.ReadAllLines(log).Reverse().Take(60));
-                foreach (var word in new[] { "corrupt", "Corrupt", "crashed", "crash recovery", "init function returned error", "Aria recovery failed", "aria_log", "Database page corruption", "redo log", "ib_logfile" })
-                    if (tail.Contains(word)) return "\n" + I18n.T("repair.hint");
+                if (LooksDamaged(File.ReadAllLines(log))) return "\n" + I18n.T("repair.hint");
             }
             catch { }
             return "";
+        }
+
+        /// <summary>The end of mysql-error.log speaks of damaged data files (then the error gets the repair hint).</summary>
+        public static bool LooksDamaged(IEnumerable<string> logLines)
+        {
+            // [System] / [Note] lines are not problems: MySQL prints "Starting XA crash recovery..." on every start and
+            // MariaDB "Starting crash recovery" after any unclean stop; neither means the data is damaged
+            var tail = string.Join("\n", logLines.Reverse().Take(60)
+                .Where(l => l.IndexOf("[System]", StringComparison.Ordinal) < 0 && l.IndexOf("[Note]", StringComparison.Ordinal) < 0));
+            foreach (var word in new[] { "corrupt", "Corrupt", "crashed", "crash recovery", "init function returned error", "Aria recovery failed", "aria_log", "Database page corruption", "redo log", "ib_logfile" })
+                if (tail.Contains(word)) return true;
+            return false;
         }
 
         async Task StartWithArgsAsync(string extra)

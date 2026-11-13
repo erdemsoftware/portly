@@ -114,6 +114,17 @@ namespace Portly.CoreTests
             System.Threading.Thread.Sleep(300);
             Check("free port is free", !ProcessUtil.IsPortInUse(port));
             Check("free port refuses a local connection", !ProcessUtil.CanConnect(port), port.ToString());
+
+            // the repair hint after MySQL stopped: not for the lines every normal start prints
+            var normal = new[]
+            {
+                "2026-11-13T11:17:22.606336Z 0 [System] [MY-010229] [Server] Starting XA crash recovery...",
+                "2026-11-13T11:17:22.609000Z 0 [System] [MY-010232] [Server] XA crash recovery finished.",
+                "2026-11-13 14:17:22 0 [Note] InnoDB: Starting crash recovery from checkpoint LSN=46846",
+                "2026-11-13T11:17:22.734714Z 0 [System] [MY-010931] [Server] mysqld.exe: ready for connections.",
+            };
+            Check("mysql: a normal start log is not called damaged", !Portly.Services.MySqlService.LooksDamaged(normal));
+            Check("mysql: a page corruption error is", Portly.Services.MySqlService.LooksDamaged(normal.Concat(new[] { "2026-11-13T11:20:00Z 0 [ERROR] [MY-011906] [InnoDB] Database page corruption on disk or a failed file read of page [page id: space=2, page number=5]." })));
             int free = ProcessUtil.FreePort(new[] { port }, new List<int>());
             Check("FreePort picks a free one", free > 0, free.ToString());
         }

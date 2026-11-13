@@ -9,7 +9,21 @@ namespace Portly.CoreTests
     /// <summary>Desktop app plumbing that needs no window: start-up routing, notification text, session-end handling (Windows).</summary>
     static partial class Program
     {
-        [DllImport("user32.dll", CharSet = CharSet.Unicode)] static extern IntPtr FindWindowW(string cls, string name);
+        [DllImport("user32.dll", CharSet = CharSet.Unicode)] static extern IntPtr FindWindowExW(IntPtr parent, IntPtr after, string cls, string name);
+        [DllImport("user32.dll")] static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint pid);
+
+        /// <summary>This process's window of that class: a Portly running on the same PC has one too, and must not get the test's messages.</summary>
+        static IntPtr OwnWindow(string cls)
+        {
+            var h = IntPtr.Zero;
+            while ((h = FindWindowExW(IntPtr.Zero, h, cls, null)) != IntPtr.Zero)
+            {
+                uint pid;
+                GetWindowThreadProcessId(h, out pid);
+                if (pid == (uint)Environment.ProcessId) return h;
+            }
+            return IntPtr.Zero;
+        }
         [DllImport("user32.dll")] static extern IntPtr SendMessageW(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
 
         static void Suite_Notify()
@@ -90,7 +104,7 @@ namespace Portly.CoreTests
         {
             int stopped = 0;
             ShutdownGuard.Start(() => Interlocked.Increment(ref stopped), () => { });
-            var hwnd = FindWindowW("PortlyShutdownWindow", null);
+            var hwnd = OwnWindow("PortlyShutdownWindow");
             Check("hidden shutdown window exists", hwnd != IntPtr.Zero);
             if (hwnd == IntPtr.Zero) return;
             Check("query end session is allowed", SendMessageW(hwnd, 0x11, IntPtr.Zero, IntPtr.Zero) != IntPtr.Zero);

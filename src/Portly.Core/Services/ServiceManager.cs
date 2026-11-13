@@ -236,8 +236,11 @@ namespace Portly.Services
                 bool any = AnyActive;
                 if (any) await Tools.Hooks.RunAsync("before-stop");
                 await Tools.Jobs.StopAllAsync();
-                await Task.WhenAll(StopWebAsync(), Nginx.StopAsync(), Apache.StopAsync(), Caddy.StopAsync(), MySql.StopAsync(), Redis.StopAsync(), Mailpit.StopAsync(),
-                    Postgres.StopAsync(), Mongo.StopAsync(), Memcached.StopAsync(), Tomcat.StopAsync());
+                // the active web server is stopped by StopWebAsync (with its PHP pools); stopping it a second time in parallel
+                // sent it two stop signals and logged "stopped" twice
+                var others = new Service[] { Nginx, Apache, Caddy }.Where(x => x != Web).Select(x => x.StopAsync());
+                await Task.WhenAll(new[] { StopWebAsync(), MySql.StopAsync(), Redis.StopAsync(), Mailpit.StopAsync(),
+                    Postgres.StopAsync(), Mongo.StopAsync(), Memcached.StopAsync(), Tomcat.StopAsync() }.Concat(others));
                 if (any) await Tools.Hooks.RunAsync("after-stop");
             });
         }

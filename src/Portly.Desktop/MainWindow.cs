@@ -64,8 +64,16 @@ namespace Portly.Desktop
             WindowStartupLocation = WindowStartupLocation.CenterScreen;
             FlowDirection = I18n.IsRtl ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
 
+            var lastStates = new Dictionary<Service, ServiceState>();
             ServiceManager.Changed += svc => Ui.Post(() =>
             {
+                // a service that fails while Portly sits in the tray (MySQL crashed, PHP keeps crashing ...): say so in a
+                // notification, otherwise nobody sees it until a page does not open
+                ServiceState before;
+                lastStates.TryGetValue(svc, out before);
+                lastStates[svc] = svc.State;
+                if (svc.State == ServiceState.Error && before != ServiceState.Error && !IsVisible && !string.IsNullOrEmpty(svc.LastError))
+                    Notify.Show("Portly", svc.Title + ": " + svc.LastError.Split('\n')[0], true);
                 UpdateRow(svc);
                 UpdateGlobal();
                 UpdateTray();

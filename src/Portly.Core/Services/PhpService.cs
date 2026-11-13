@@ -28,7 +28,15 @@ namespace Portly.Services
         {
             get
             {
-                lock (Sync) return string.Join(", ", _procs.Keys.Select(PortFor));
+                lock (Sync) if (_procs.Count > 0) return string.Join(", ", _procs.Keys.Select(PortFor));
+                // service mode: the Windows service runs the pools and the window only mirrors the state, so show the port
+                // of the default PHP (a pool the service had to move to another port is not known here)
+                if (ServiceMode.IsController && State == ServiceState.Running)
+                {
+                    var folder = PackageTypes.ActiveFolder("php");
+                    if (!string.IsNullOrEmpty(folder)) return PortFor(folder).ToString();
+                }
+                return "";
             }
         }
 
