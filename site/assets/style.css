@@ -111,7 +111,8 @@ section { padding: 110px 0 0; }
 h2 { margin: 8px 0 14px; font-size: clamp(28px, 4vw, 42px); line-height: 1.15; letter-spacing: -0.015em; }
 .sub { color: var(--muted); max-width: 680px; margin: 0 0 36px; font-size: 18px; }
 .center { text-align: center; }
-.center .sub { margin-inline: auto; }
+.center .sub, .sub.mx-auto { margin-inline: auto; }
+.sub.flush { margin-bottom: 0; }
 
 .grid { display: grid; gap: 16px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
 @media (max-width: 900px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
