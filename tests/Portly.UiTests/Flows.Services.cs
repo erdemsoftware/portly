@@ -141,7 +141,8 @@ namespace Portly.UiTests
             bool again = WaitFor(() => LogCount(I18n.T("log.started", "").Trim()) > startsBefore && my.State == ServiceState.Running && CardShows(my, "svc.running"), 180);
             Shot("mysql-restarted");
             Check("MySQL restarted from its card: stopped and started again", again && LogCount(I18n.T("log.stopped", "").Trim()) > stopsBefore, my.State + " " + my.LastError);
-            Check("MySQL restart: the restart button is usable again", NeedButton(Win, I18n.T("svc.restart") + " - " + my.Title).IsEffectivelyEnabled);
+            // "running" comes before the root password check at the end of Start; the button returns when Start has finished
+            Check("MySQL restart: the restart button is usable again", WaitFor(() => NeedButton(Win, I18n.T("svc.restart") + " - " + my.Title).IsEffectivelyEnabled, 30));
             var r = ProcessUtil.Run(Path.Combine(PackageTypes_ActiveDir("mysql"), "bin", OS.Exe("mysql")), "--protocol=TCP -h127.0.0.1 -P13306 -uroot -N -B -e \"select 1\"", null, null, 60000);
             Check("MySQL answers select 1 after the restart", r.Ok && r.Output.Split('\n').Any(l => l.Trim() == "1"), r.Output);
         }
