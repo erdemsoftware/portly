@@ -107,6 +107,7 @@ h1 .grad { background: linear-gradient(90deg, #60a5fa, #38bdf8 60%, #a5f3fc); -w
 
 /* ---------- sections ---------- */
 section { padding: 110px 0 0; }
+#download { padding-top: 90px; }
 .kicker { color: #60a5fa; font-weight: 600; font-size: 14px; letter-spacing: .08em; text-transform: uppercase; }
 h2 { margin: 8px 0 14px; font-size: clamp(28px, 4vw, 42px); line-height: 1.15; letter-spacing: -0.015em; }
 .sub { color: var(--muted); max-width: 680px; margin: 0 0 36px; font-size: 18px; }
