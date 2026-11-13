@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.NetworkInformation;
+using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
@@ -165,7 +167,31 @@ namespace Portly.Core
             {
                 return IPGlobalProperties.GetIPGlobalProperties().GetActiveTcpListeners().Any(ep => ep.Port == port);
             }
-            catch { return false; }
+            catch (Exception ex)
+            {
+                // the listener table could not be read (seen on some Windows PCs): a local connect still tells the truth
+                if (!_tableErrorLogged) { _tableErrorLogged = true; Log.Warn("Port check: the listener table could not be read (" + ex.Message + "); a local connection is tried instead."); }
+                return CanConnect(port);
+            }
+        }
+        static bool _tableErrorLogged;
+
+        /// <summary>
+        /// Something accepts connections on 127.0.0.1 / ::1 at this port: the second opinion when the listener table does
+        /// not show a port that is in fact open.
+        /// </summary>
+        public static bool CanConnect(int port)
+        {
+            foreach (var ip in new[] { IPAddress.Loopback, IPAddress.IPv6Loopback })
+            {
+                try
+                {
+                    using (var c = new TcpClient(ip.AddressFamily))
+                        if (c.ConnectAsync(ip, port).Wait(300) && c.Connected) return true;
+                }
+                catch { }
+            }
+            return false;
         }
 
 /// <summary>Which process listens on the port? Returns "name (PID n)" or "".</summary>

@@ -121,14 +121,27 @@ namespace Portly.Services
 
         protected static async Task<bool> WaitForPort(int port, Process p, int timeoutMs)
         {
-            var until = DateTime.Now.AddMilliseconds(timeoutMs);
+            var start = DateTime.Now;
+            var until = start.AddMilliseconds(timeoutMs);
+            var nextConnect = start.AddSeconds(2);
             while (DateTime.Now < until)
             {
                 if (p.HasExited) return false;
                 if (ProcessUtil.IsPortInUse(port)) return true;
+                // On some Windows PCs the listener table does not show a port that is already open (issue #3: PHP ran and
+                // served pages while Portly waited 30 s and gave up). After 2 s a local connect, once a second, decides.
+                if (DateTime.Now >= nextConnect)
+                {
+                    if (await Task.Run(() => ProcessUtil.CanConnect(port))) // a refused connect can take a moment on Windows: not on the UI thread
+                    {
+                        Log.Info("Port " + port + ": open (local connection) after " + (int)(DateTime.Now - start).TotalSeconds + " s, although the listener table does not list it yet.");
+                        return true;
+                    }
+                    nextConnect = DateTime.Now.AddSeconds(1);
+                }
                 await Task.Delay(150);
             }
-            return ProcessUtil.IsPortInUse(port);
+            return ProcessUtil.IsPortInUse(port) || await Task.Run(() => ProcessUtil.CanConnect(port));
         }
 
         protected static void StopProcess(Process p, bool ctrlC, int waitMs)
