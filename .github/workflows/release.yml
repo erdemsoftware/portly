@@ -58,6 +58,20 @@ jobs:
           $version = '${{ github.ref_name }}'.TrimStart('v')
           ./build.ps1 -Version $version -UpdateManifest
           Copy-Item manifest/app.json $env:RUNNER_TEMP/app.json
+      # copies without the version (Portly-win10-11-setup.exe ...): .../releases/latest/download/<name> then always
+      # gives the newest stable file, which is what the website's download buttons link to
+      - name: Version-less copies
+        shell: pwsh
+        run: |
+          $version = '${{ github.ref_name }}'.TrimStart('v')
+          $lines = @()
+          foreach ($f in Get-ChildItem dist -File | Where-Object Name -like "Portly-$version-*") {
+            $plain = 'Portly-' + $f.Name.Substring("Portly-$version-".Length)
+            Copy-Item $f.FullName (Join-Path 'dist' $plain)
+            $lines += "$((Get-FileHash $f.FullName -Algorithm SHA256).Hash.ToLower())  $plain"
+          }
+          if ($lines.Count -eq 0) { throw 'no release files found in dist' }
+          Add-Content dist/SHA256SUMS.txt $lines -Encoding ascii
       - name: Publish GitHub release
         shell: pwsh
         env:
