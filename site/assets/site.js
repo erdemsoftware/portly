@@ -56,21 +56,44 @@
     });
   });
 
-  // "Download": the links point to the latest release page; when GitHub answers, they go straight to the setup file
-  // and the version is shown. (GitHub's "latest" never lists a pre-release, so this is always the stable version.)
-  var links = document.querySelectorAll("[data-download]");
-  var label = document.querySelectorAll("[data-version]");
-  if (links.length && window.fetch) {
-    fetch("https://api.github.com/repos/erdemsoftware/portly/releases/latest", { headers: { Accept: "application/vnd.github+json" } })
-      .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (rel) {
-        if (!rel || !rel.assets) return;
-        var setup = rel.assets.filter(function (a) { return /-win10-11-setup\.exe$/.test(a.name); })[0];
-        if (setup && /^https:\/\/github\.com\/erdemsoftware\/portly\/releases\/download\//.test(setup.browser_download_url))
-          links.forEach(function (a) { a.href = setup.browser_download_url; });
-        var v = String(rel.tag_name || "").replace(/^v/, "");
-        if (/^\d+\.\d+\.\d+$/.test(v)) label.forEach(function (el) { el.textContent = v; });
-      })
-      .catch(function () {});
-  }
+  // the language switch remembers the choice, so the root page does not send the visitor back (see lang.js)
+  document.querySelectorAll("[data-setlang]").forEach(function (a) {
+    a.addEventListener("click", function () {
+      try { localStorage.setItem("portly-lang", a.getAttribute("data-setlang")); } catch (e) { /* ignore */ }
+    });
+  });
+
+  // Downloads. Every link already works without this: Windows uses .../releases/latest/download/<file> (always the newest
+  // stable file), macOS / Linux point to the current beta. When GitHub answers, the version numbers are filled in and
+  // macOS / Linux move to the newest release that has their files; once that is a stable release, the "beta" tags go.
+  var REPO = "https://github.com/erdemsoftware/portly/releases/download/";
+  var api = "https://api.github.com/repos/erdemsoftware/portly/releases";
+  var get = function (url) {
+    return fetch(url, { headers: { Accept: "application/vnd.github+json" } }).then(function (r) { return r.ok ? r.json() : null; });
+  };
+  var safeTag = function (t) { return /^v\d+\.\d+\.\d+(-[a-z]+\.\d+)?$/.test(t || ""); };
+  if (!window.fetch) return;
+
+  get(api + "/latest").then(function (rel) {
+    if (!rel || !safeTag(rel.tag_name)) return;
+    var v = rel.tag_name.slice(1);
+    document.querySelectorAll("[data-version]").forEach(function (el) { el.textContent = v; });
+  }).catch(function () {});
+
+  get(api + "?per_page=15").then(function (list) {
+    if (!list || !list.length) return;
+    var rel = list.filter(function (r) {
+      return !r.draft && safeTag(r.tag_name) && (r.assets || []).some(function (a) { return a.name === "Portly-macos-arm64.dmg"; });
+    })[0];
+    if (!rel) return;
+    var names = {};
+    rel.assets.forEach(function (a) { names[a.name] = true; });
+    document.querySelectorAll("[data-file]").forEach(function (a) {
+      var f = a.getAttribute("data-file");
+      if (names[f]) a.href = REPO + rel.tag_name + "/" + f;
+    });
+    var v = rel.tag_name.slice(1);
+    document.querySelectorAll("[data-beta-version]").forEach(function (el) { el.textContent = v; });
+    if (!rel.prerelease) document.querySelectorAll(".tag.beta").forEach(function (el) { el.hidden = true; });
+  }).catch(function () {});
 })();
